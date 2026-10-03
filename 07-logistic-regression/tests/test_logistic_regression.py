@@ -61,8 +61,11 @@ def test_from_scratch_agrees_with_sklearn_classifications() -> None:
         steps=3000,
     ).fit(X_scaled, y)
 
+    # scikit-learn 1.9 deprecates penalty=None. C=np.inf is the documented
+    # unregularized equivalent for this comparison.
     sk = LogisticRegression(
-        penalty=None,
+        C=np.inf,
+        l1_ratio=0.0,
         solver="lbfgs",
         max_iter=3000,
     ).fit(X_scaled, y)

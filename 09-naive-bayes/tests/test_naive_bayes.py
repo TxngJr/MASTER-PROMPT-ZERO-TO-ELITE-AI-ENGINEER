@@ -43,7 +43,18 @@ def test_multinomial_nb_matches_sklearn_predictions() -> None:
         dtype=float,
     )
     y = np.array([0, 0, 0, 1, 1, 1])
-    queries = np.array([[3, 1, 0], [0, 1, 3], [1, 1, 1]], dtype=float)
+
+    # Avoid exact posterior ties: ties are allowed to depend on deterministic
+    # implementation details and are not useful for validating the formula.
+    queries = np.array(
+        [
+            [3, 1, 0],
+            [0, 1, 3],
+            [2, 1, 1],
+            [1, 1, 2],
+        ],
+        dtype=float,
+    )
 
     ours = mod.MultinomialNBFromScratch(alpha=1.0).fit(X, y)
     sk = MultinomialNB(alpha=1.0).fit(X, y)
