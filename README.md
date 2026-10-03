@@ -2,7 +2,7 @@
 
 หลักสูตรภาษาไทยแบบ **from first principles** สำหรับการเรียน AI ตั้งแต่ Programming/Math ไปจนถึงสร้าง LLM, fine-tune, align, optimize และ deploy โดยใช้ Fedora Linux เป็นสภาพแวดล้อมหลัก
 
-> เป้าหมายของ repository นี้ไม่ใช่การจำ API แต่คือ `เข้าใจ → derive → implement → debug → experiment → build`
+> เป้าหมายของ repository นี้ไม่ใช่การจำ API แต่คือ เข้าใจ → derive → implement → debug → experiment → build
 
 ## Target machine
 
@@ -51,16 +51,14 @@ Integration:
 11. [Chapter 11 — Random Forest](11-random-forest/README.md)
 12. [Chapter 12 — Gradient Boosting](12-gradient-boosting/README.md)
 
-Chapter 12 includes AdaBoost, classic Gradient Boosting, histogram boosting และ engineering concepts ของ XGBoost / LightGBM / CatBoost.
-
 Integration:
 [Tree Ensemble Benchmark](integration-project-batch04/README.md)
 
 Optional boosting libraries:
 
-```bash
+~~~bash
 python -m pip install -r requirements-batch04-extras.txt
-```
+~~~
 
 ### Batch 05 — Geometry, Clustering & Representation
 
@@ -68,36 +66,60 @@ python -m pip install -r requirements-batch04-extras.txt
 14. [Chapter 14 — Clustering](14-clustering/README.md)
 15. [Chapter 15 — Dimensionality Reduction](15-dimensionality-reduction/README.md)
 
-Chapter 14 includes:
-
-- K-Means
-- K-Means++
-- DBSCAN
-- Hierarchical / Agglomerative Clustering
-- Gaussian Mixture Models / EM
-
-Chapter 15 includes:
-
-- PCA
-- SVD
-- TruncatedSVD concepts
-- t-SNE
-- UMAP
-
 Integration:
 [Geometry & Representation Lab](integration-project-batch05/README.md)
 
-Optional UMAP dependency:
+Optional UMAP:
 
-```bash
+~~~bash
 python -m pip install -r requirements-batch05-extras.txt
-```
+~~~
+
+### Batch 06 — Anomalies, Time & Neural Foundations
+
+16. [Chapter 16 — Anomaly Detection](16-anomaly-detection/README.md)
+17. [Chapter 17 — Time Series Forecasting](17-time-series/README.md)
+18. [Chapter 18 — Neural Network Foundations](18-neural-network-foundations/README.md)
+
+Chapter 16 includes:
+- robust z-score
+- Mahalanobis distance
+- Isolation Forest
+- Local Outlier Factor
+- One-Class SVM
+
+Chapter 17 includes:
+- naive / seasonal-naive forecasting
+- lag features
+- stationarity / differencing
+- AR / MA / ARMA / ARIMA / SARIMA
+- statsmodels ARIMA
+- walk-forward validation
+- Prophet concepts
+- ML/DL forecasting framing
+
+Chapter 18 includes:
+- neuron / perceptron
+- Linear layer
+- ReLU / Sigmoid / Tanh / Softmax
+- MLP forward pass
+- loss functions
+- computational graph foundations
+
+Integration:
+[Anomaly-Aware Forecasting & Neural Baseline Lab](integration-project-batch06/README.md)
+
+Optional Prophet:
+
+~~~bash
+python -m pip install -r requirements-batch06-extras.txt
+~~~
 
 ## Learning loop
 
 ทุกบทใช้วงจร:
 
-```text
+~~~text
 Theory
   ↓
 Intuition
@@ -115,7 +137,7 @@ Debug
 Project
   ↓
 Review
-```
+~~~
 
 อย่าข้าม exercises และอย่าอ่าน solutions ก่อนพยายามทำเอง
 
@@ -125,67 +147,75 @@ Review
 
 สร้าง environment:
 
-```bash
+~~~bash
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-```
+~~~
 
-สำหรับเนื้อหาปัจจุบันถึง Chapter 15:
+สำหรับเนื้อหาปัจจุบันถึง Chapter 18:
 
-```bash
-python -m pip install -r requirements-batch05.txt
-```
+~~~bash
+python -m pip install -r requirements-batch06.txt
+~~~
 
 รัน tests:
 
-```bash
+~~~bash
 pytest -q
-```
+~~~
 
 ## Recommended study order
 
-```text
+~~~text
 01 Programming
-   ↓
+↓
 02 Mathematics
-   ↓
+↓
 03 Scientific Python
-   ↓
+↓
 Batch 01 Integration
-   ↓
+↓
 04 Data
-   ↓
+↓
 05 ML Fundamentals
-   ↓
+↓
 06 Regression
-   ↓
+↓
 Batch 02 Integration
-   ↓
+↓
 07 Logistic Regression
-   ↓
+↓
 08 KNN
-   ↓
+↓
 09 Naive Bayes
-   ↓
+↓
 Batch 03 Integration
-   ↓
+↓
 10 Decision Trees
-   ↓
+↓
 11 Random Forest
-   ↓
+↓
 12 Gradient Boosting
-   ↓
+↓
 Batch 04 Integration
-   ↓
+↓
 13 Support Vector Machines
-   ↓
+↓
 14 Clustering
-   ↓
+↓
 15 Dimensionality Reduction
-   ↓
+↓
 Batch 05 Integration
-```
+↓
+16 Anomaly Detection
+↓
+17 Time Series
+↓
+18 Neural Network Foundations
+↓
+Batch 06 Integration
+~~~
 
 ## Reviews
 
@@ -194,6 +224,7 @@ Batch 05 Integration
 - [BATCH_03_REVIEW.md](BATCH_03_REVIEW.md) — Batch 03
 - [BATCH_04_REVIEW.md](BATCH_04_REVIEW.md) — Batch 04
 - [BATCH_05_REVIEW.md](BATCH_05_REVIEW.md) — Batch 05
+- [BATCH_06_REVIEW.md](BATCH_06_REVIEW.md) — Batch 06
 
 ## Definition of mastery
 
@@ -213,11 +244,12 @@ Batch 05 Integration
 - [x] Batch 03 — Chapters 07–09
 - [x] Batch 04 — Chapters 10–12
 - [x] Batch 05 — Chapters 13–15
-- [ ] Batch 06 — Chapters 16–18
-- [ ] Batch 07+ — รอ batch ก่อนหน้าผ่าน quality audit
+- [x] Batch 06 — Chapters 16–18
+- [ ] Batch 07 — Chapters 19–21
+- [ ] Batch 08+ — รอ batch ก่อนหน้าผ่าน quality audit
 
 บทถัดไป:
 
-- Chapter 16 — Anomaly Detection
-- Chapter 17 — Time Series
-- Chapter 18 — Neural Network Foundations
+- Chapter 19 — Backpropagation
+- Chapter 20 — Optimizers
+- Chapter 21 — Activations & Loss Functions
