@@ -14,21 +14,31 @@
 - RAM 16 GB
 - SSD 512 GB
 
-งานที่ใหญ่เกินเครื่องจะมีแนวคิด **Local Version** และ **Scaled Version** แยกกันในบทที่เกี่ยวข้อง
+งานที่ใหญ่เกินเครื่องจะมี **Local Version** และ **Scaled Version** แยกกันในบทที่เกี่ยวข้อง
 
-## Batch 01
+## Completed curriculum
 
-Batch แรกมี 3 บท:
+### Batch 01 — Foundations
 
 1. [Chapter 01 — Programming Foundations](01-programming/README.md)
 2. [Chapter 02 — Mathematics Foundations](02-mathematics/README.md)
 3. [Chapter 03 — Scientific Python](03-scientific-python/README.md)
 
-และปิดท้ายด้วย [Mini Data Science Engine](integration-project/README.md) ที่รวม Python + Linux/Git + คณิตศาสตร์ + NumPy/Pandas/Matplotlib เข้าด้วยกัน
+Integration:
+[Mini Data Science Engine](integration-project/README.md)
 
-## วิธีเรียน
+### Batch 02 — Data, ML Fundamentals & Regression
 
-ทุกบทใช้วงจรเดียวกัน:
+4. [Chapter 04 — Data Fundamentals](04-data/README.md)
+5. [Chapter 05 — Machine Learning Fundamentals](05-ml-fundamentals/README.md)
+6. [Chapter 06 — Regression](06-regression/README.md)
+
+Integration:
+[Leakage-Safe Regression System](integration-project-batch02/README.md)
+
+## Learning loop
+
+ทุกบทใช้วงจร:
 
 ```text
 Theory
@@ -50,20 +60,27 @@ Project
 Review
 ```
 
-อย่าข้าม exercise และอย่าอ่านเฉพาะ solution เพราะเป้าหมายคือสามารถอธิบายและเขียนใหม่ได้เอง
+อย่าข้าม exercises และอย่าอ่าน solutions ก่อนพยายามทำเอง
 
-## เริ่มต้น
+## Setup
 
-อ่าน [SETUP_FEDORA.md](SETUP_FEDORA.md) ก่อน แล้วสร้าง environment:
+อ่าน [SETUP_FEDORA.md](SETUP_FEDORA.md) ก่อน
+
+สร้าง environment:
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install -r requirements-batch01.txt
 ```
 
-ตรวจ environment:
+สำหรับเนื้อหาปัจจุบันถึง Chapter 06:
+
+```bash
+python -m pip install -r requirements-batch02.txt
+```
+
+ตรวจ:
 
 ```bash
 python --version
@@ -71,10 +88,30 @@ git --version
 gcc --version
 ```
 
-รัน test ทั้ง Batch:
+รัน tests ทั้ง repository:
 
 ```bash
 pytest -q
+```
+
+## Recommended study order
+
+```text
+01-programming
+    ↓
+02-mathematics
+    ↓
+03-scientific-python
+    ↓
+Batch 01 Integration Project
+    ↓
+04-data
+    ↓
+05-ml-fundamentals
+    ↓
+06-regression
+    ↓
+Batch 02 Integration Project
 ```
 
 ## Foundation references
@@ -83,23 +120,29 @@ pytest -q
 - [GLOSSARY.md](GLOSSARY.md) — ศัพท์สำคัญ
 - [MATH_REFERENCE.md](MATH_REFERENCE.md) — สูตรที่ใช้ซ้ำ
 - [TROUBLESHOOTING.md](TROUBLESHOOTING.md) — วิธี debug environment
-- [BATCH_REVIEW.md](BATCH_REVIEW.md) — checklist และ audit ของ Batch 01
+- [BATCH_REVIEW.md](BATCH_REVIEW.md) — audit Batch 01
+- [BATCH_02_REVIEW.md](BATCH_02_REVIEW.md) — audit Batch 02
 
 ## Definition of mastery
 
-บทหนึ่งถือว่า “เข้าใจ” เมื่อทำได้อย่างน้อย 6 อย่าง:
+บทหนึ่งถือว่า “เข้าใจ” เมื่อทำได้อย่างน้อย:
 
-1. **Explain** — อธิบายแนวคิดด้วยคำของตัวเอง
+1. **Explain** — อธิบายด้วยคำของตัวเอง
 2. **Derive** — ไล่ที่มาของสมการสำคัญ
-3. **Implement** — เขียนแก่นของ algorithm ได้
-4. **Debug** — หา bug จากข้อมูล/shape/type/environment ได้
-5. **Modify** — เปลี่ยนโจทย์หรือข้อกำหนดแล้วปรับ code ได้
-6. **Apply** — นำไปใช้กับข้อมูลใหม่ได้
+3. **Implement** — เขียนแก่น algorithm
+4. **Debug** — หา root cause
+5. **Modify** — เปลี่ยนโจทย์แล้วปรับ implementation
+6. **Apply** — ใช้กับข้อมูลใหม่
 
 ## Current status
 
 - [x] Batch 01 — Chapters 01–03
-- [ ] Batch 02 — Chapters 04–06
-- [ ] Batch 03+ — รอ Batch ก่อนหน้าผ่าน quality audit
+- [x] Batch 02 — Chapters 04–06
+- [ ] Batch 03 — Chapters 07–09
+- [ ] Batch 04+ — รอ batch ก่อนหน้าผ่าน quality audit
 
-Chapter 04 จะไม่ถูกสร้างก่อน Batch 01 ผ่านการตรวจ prerequisite, code, math และ project integration
+ถ้า Batch 02 CI และ mastery gate ผ่าน บทถัดไปคือ:
+
+- Chapter 07 — Logistic Regression
+- Chapter 08 — K-Nearest Neighbors
+- Chapter 09 — Naive Bayes
