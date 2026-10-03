@@ -36,6 +36,15 @@ Integration:
 Integration:
 [Leakage-Safe Regression System](integration-project-batch02/README.md)
 
+### Batch 03 — Classification Foundations
+
+7. [Chapter 07 — Logistic Regression](07-logistic-regression/README.md)
+8. [Chapter 08 — K-Nearest Neighbors](08-knn/README.md)
+9. [Chapter 09 — Naive Bayes](09-naive-bayes/README.md)
+
+Integration:
+[Classification Model Lab](integration-project-batch03/README.md)
+
 ## Learning loop
 
 ทุกบทใช้วงจร:
@@ -74,21 +83,13 @@ source .venv/bin/activate
 python -m pip install --upgrade pip
 ```
 
-สำหรับเนื้อหาปัจจุบันถึง Chapter 06:
+สำหรับเนื้อหาปัจจุบันถึง Chapter 09:
 
 ```bash
-python -m pip install -r requirements-batch02.txt
+python -m pip install -r requirements-batch03.txt
 ```
 
-ตรวจ:
-
-```bash
-python --version
-git --version
-gcc --version
-```
-
-รัน tests ทั้ง repository:
+รัน tests:
 
 ```bash
 pytest -q
@@ -97,21 +98,29 @@ pytest -q
 ## Recommended study order
 
 ```text
-01-programming
-    ↓
-02-mathematics
-    ↓
-03-scientific-python
-    ↓
-Batch 01 Integration Project
-    ↓
-04-data
-    ↓
-05-ml-fundamentals
-    ↓
-06-regression
-    ↓
-Batch 02 Integration Project
+01 Programming
+   ↓
+02 Mathematics
+   ↓
+03 Scientific Python
+   ↓
+Batch 01 Integration
+   ↓
+04 Data
+   ↓
+05 ML Fundamentals
+   ↓
+06 Regression
+   ↓
+Batch 02 Integration
+   ↓
+07 Logistic Regression
+   ↓
+08 KNN
+   ↓
+09 Naive Bayes
+   ↓
+Batch 03 Integration
 ```
 
 ## Foundation references
@@ -122,6 +131,7 @@ Batch 02 Integration Project
 - [TROUBLESHOOTING.md](TROUBLESHOOTING.md) — วิธี debug environment
 - [BATCH_REVIEW.md](BATCH_REVIEW.md) — audit Batch 01
 - [BATCH_02_REVIEW.md](BATCH_02_REVIEW.md) — audit Batch 02
+- [BATCH_03_REVIEW.md](BATCH_03_REVIEW.md) — audit Batch 03
 
 ## Definition of mastery
 
@@ -138,11 +148,12 @@ Batch 02 Integration Project
 
 - [x] Batch 01 — Chapters 01–03
 - [x] Batch 02 — Chapters 04–06
-- [ ] Batch 03 — Chapters 07–09
-- [ ] Batch 04+ — รอ batch ก่อนหน้าผ่าน quality audit
+- [x] Batch 03 — Chapters 07–09
+- [ ] Batch 04 — Chapters 10–12
+- [ ] Batch 05+ — รอ batch ก่อนหน้าผ่าน quality audit
 
-ถ้า Batch 02 CI และ mastery gate ผ่าน บทถัดไปคือ:
+บทถัดไป:
 
-- Chapter 07 — Logistic Regression
-- Chapter 08 — K-Nearest Neighbors
-- Chapter 09 — Naive Bayes
+- Chapter 10 — Decision Trees
+- Chapter 11 — Random Forest
+- Chapter 12 — Gradient Boosting
