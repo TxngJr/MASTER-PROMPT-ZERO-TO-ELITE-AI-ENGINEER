@@ -1,5 +1,6 @@
 from pathlib import Path
 import importlib.util
+import sys
 
 import numpy as np
 import pytest
@@ -10,6 +11,7 @@ MODULE_PATH = Path(__file__).parents[1] / "src" / "regression.py"
 SPEC = importlib.util.spec_from_file_location("regression", MODULE_PATH)
 assert SPEC and SPEC.loader
 reg = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = reg
 SPEC.loader.exec_module(reg)
 
 
