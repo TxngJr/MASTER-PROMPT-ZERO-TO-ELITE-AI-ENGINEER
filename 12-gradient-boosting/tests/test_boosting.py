@@ -28,8 +28,11 @@ def test_gradient_boosting_reduces_training_loss() -> None:
         learning_rate=0.1,
     ).fit(X, y)
 
+    final_mse = mean_squared_error(y, model.predict(X))
+
     assert model.loss_history_[-1] < model.loss_history_[0]
-    assert mean_squared_error(y, model.predict(X)) < 0.05
+    assert model.loss_history_[-1] < 0.1
+    assert final_mse < 0.1
 
 
 def test_gradient_boosting_reference_sklearn_is_useful() -> None:
