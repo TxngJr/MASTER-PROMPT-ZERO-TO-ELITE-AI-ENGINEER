@@ -81,31 +81,6 @@ python -m pip install -r requirements-batch05-extras.txt
 17. [Chapter 17 — Time Series Forecasting](17-time-series/README.md)
 18. [Chapter 18 — Neural Network Foundations](18-neural-network-foundations/README.md)
 
-Chapter 16 includes:
-- robust z-score
-- Mahalanobis distance
-- Isolation Forest
-- Local Outlier Factor
-- One-Class SVM
-
-Chapter 17 includes:
-- naive / seasonal-naive forecasting
-- lag features
-- stationarity / differencing
-- AR / MA / ARMA / ARIMA / SARIMA
-- statsmodels ARIMA
-- walk-forward validation
-- Prophet concepts
-- ML/DL forecasting framing
-
-Chapter 18 includes:
-- neuron / perceptron
-- Linear layer
-- ReLU / Sigmoid / Tanh / Softmax
-- MLP forward pass
-- loss functions
-- computational graph foundations
-
 Integration:
 [Anomaly-Aware Forecasting & Neural Baseline Lab](integration-project-batch06/README.md)
 
@@ -114,6 +89,51 @@ Optional Prophet:
 ~~~bash
 python -m pip install -r requirements-batch06-extras.txt
 ~~~
+
+### Batch 07 — Backpropagation, Optimizers & Stable Objectives
+
+19. [Chapter 19 — Backpropagation & Reverse-Mode Autodiff](19-backpropagation/README.md)
+20. [Chapter 20 — Optimizers](20-optimizers/README.md)
+21. [Chapter 21 — Activations & Loss Functions](21-activations-losses/README.md)
+
+Chapter 19 includes:
+- chain rule
+- computational graphs
+- reverse-mode autodiff
+- topological backward
+- gradient accumulation
+- broadcasting-aware gradients
+- matrix multiplication gradients
+- finite-difference gradient checking
+- custom NumPy Tensor class
+
+Chapter 20 includes:
+- SGD
+- Momentum
+- Nesterov option
+- AdaGrad
+- RMSProp
+- Adam
+- AdamW
+- zero_grad
+- optimizer-state memory
+- weight decay vs L2
+
+Chapter 21 includes:
+- ReLU / LeakyReLU / ELU
+- GELU
+- SiLU
+- Sigmoid / Tanh / Softmax
+- MSE / MAE / Huber
+- BCE with logits
+- multiclass cross entropy
+- label smoothing
+- numerical stability
+
+Integration:
+[Tiny Deep Learning Framework](integration-project-batch07/README.md)
+
+This integration trains a nonlinear MLP using the repository's own Tensor, backward engine, AdamW and stable BCE-with-logits implementation before introducing PyTorch.
 
 ## Learning loop
 
@@ -153,10 +173,10 @@ source .venv/bin/activate
 python -m pip install --upgrade pip
 ~~~
 
-สำหรับเนื้อหาปัจจุบันถึง Chapter 18:
+สำหรับเนื้อหาปัจจุบันถึง Chapter 21:
 
 ~~~bash
-python -m pip install -r requirements-batch06.txt
+python -m pip install -r requirements-batch07.txt
 ~~~
 
 รัน tests:
@@ -215,6 +235,14 @@ Batch 05 Integration
 18 Neural Network Foundations
 ↓
 Batch 06 Integration
+↓
+19 Backpropagation
+↓
+20 Optimizers
+↓
+21 Activations & Loss Functions
+↓
+Batch 07 Tiny Deep Learning Framework
 ~~~
 
 ## Reviews
@@ -225,6 +253,7 @@ Batch 06 Integration
 - [BATCH_04_REVIEW.md](BATCH_04_REVIEW.md) — Batch 04
 - [BATCH_05_REVIEW.md](BATCH_05_REVIEW.md) — Batch 05
 - [BATCH_06_REVIEW.md](BATCH_06_REVIEW.md) — Batch 06
+- [BATCH_07_REVIEW.md](BATCH_07_REVIEW.md) — Batch 07
 
 ## Definition of mastery
 
@@ -245,11 +274,12 @@ Batch 06 Integration
 - [x] Batch 04 — Chapters 10–12
 - [x] Batch 05 — Chapters 13–15
 - [x] Batch 06 — Chapters 16–18
-- [ ] Batch 07 — Chapters 19–21
-- [ ] Batch 08+ — รอ batch ก่อนหน้าผ่าน quality audit
+- [x] Batch 07 — Chapters 19–21
+- [ ] Batch 08 — Chapters 22–24
+- [ ] Batch 09+ — รอ batch ก่อนหน้าผ่าน quality audit
 
 บทถัดไป:
 
-- Chapter 19 — Backpropagation
-- Chapter 20 — Optimizers
-- Chapter 21 — Activations & Loss Functions
+- Chapter 22 — PyTorch
+- Chapter 23 — TensorFlow / Keras
+- Chapter 24 — Convolutional Neural Networks
