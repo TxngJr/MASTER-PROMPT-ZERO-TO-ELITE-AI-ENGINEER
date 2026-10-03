@@ -1,6 +1,6 @@
 # Zero to Elite AI Engineer
 
-หลักสูตรภาษาไทยแบบ **from first principles** สำหรับการเรียน AI ตั้งแต่พื้นฐาน Programming/Math ไปจนถึงสร้าง LLM, fine-tune, align, optimize และ deploy โดยใช้ Fedora Linux เป็นสภาพแวดล้อมหลัก
+หลักสูตรภาษาไทยแบบ **from first principles** สำหรับการเรียน AI ตั้งแต่ Programming/Math ไปจนถึงสร้าง LLM, fine-tune, align, optimize และ deploy โดยใช้ Fedora Linux เป็นสภาพแวดล้อมหลัก
 
 > เป้าหมายของ repository นี้ไม่ใช่การจำ API แต่คือ `เข้าใจ → derive → implement → debug → experiment → build`
 
@@ -45,6 +45,31 @@ Integration:
 Integration:
 [Classification Model Lab](integration-project-batch03/README.md)
 
+### Batch 04 — Trees & Ensembles
+
+10. [Chapter 10 — Decision Trees](10-decision-tree/README.md)
+11. [Chapter 11 — Random Forest](11-random-forest/README.md)
+12. [Chapter 12 — Gradient Boosting](12-gradient-boosting/README.md)
+
+Chapter 12 includes:
+- AdaBoost
+- Gradient Boosting
+- Histogram Gradient Boosting
+- XGBoost concepts
+- LightGBM concepts
+- CatBoost concepts
+
+Integration:
+[Tree Ensemble Benchmark](integration-project-batch04/README.md)
+
+Optional external boosting libraries:
+
+```bash
+python -m pip install -r requirements-batch04-extras.txt
+```
+
+Core CI intentionally does not require XGBoost/LightGBM/CatBoost so the repository remains lightweight and reliable on a normal Fedora laptop.
+
 ## Learning loop
 
 ทุกบทใช้วงจร:
@@ -83,10 +108,10 @@ source .venv/bin/activate
 python -m pip install --upgrade pip
 ```
 
-สำหรับเนื้อหาปัจจุบันถึง Chapter 09:
+สำหรับเนื้อหาปัจจุบันถึง Chapter 12:
 
 ```bash
-python -m pip install -r requirements-batch03.txt
+python -m pip install -r requirements-batch04.txt
 ```
 
 รัน tests:
@@ -121,17 +146,22 @@ Batch 02 Integration
 09 Naive Bayes
    ↓
 Batch 03 Integration
+   ↓
+10 Decision Trees
+   ↓
+11 Random Forest
+   ↓
+12 Gradient Boosting
+   ↓
+Batch 04 Integration
 ```
 
-## Foundation references
+## Reviews
 
-- [COURSE_MAP.md](COURSE_MAP.md) — แผน 80 บท
-- [GLOSSARY.md](GLOSSARY.md) — ศัพท์สำคัญ
-- [MATH_REFERENCE.md](MATH_REFERENCE.md) — สูตรที่ใช้ซ้ำ
-- [TROUBLESHOOTING.md](TROUBLESHOOTING.md) — วิธี debug environment
-- [BATCH_REVIEW.md](BATCH_REVIEW.md) — audit Batch 01
-- [BATCH_02_REVIEW.md](BATCH_02_REVIEW.md) — audit Batch 02
-- [BATCH_03_REVIEW.md](BATCH_03_REVIEW.md) — audit Batch 03
+- [BATCH_REVIEW.md](BATCH_REVIEW.md) — Batch 01
+- [BATCH_02_REVIEW.md](BATCH_02_REVIEW.md) — Batch 02
+- [BATCH_03_REVIEW.md](BATCH_03_REVIEW.md) — Batch 03
+- [BATCH_04_REVIEW.md](BATCH_04_REVIEW.md) — Batch 04
 
 ## Definition of mastery
 
@@ -149,11 +179,12 @@ Batch 03 Integration
 - [x] Batch 01 — Chapters 01–03
 - [x] Batch 02 — Chapters 04–06
 - [x] Batch 03 — Chapters 07–09
-- [ ] Batch 04 — Chapters 10–12
-- [ ] Batch 05+ — รอ batch ก่อนหน้าผ่าน quality audit
+- [x] Batch 04 — Chapters 10–12
+- [ ] Batch 05 — Chapters 13–15
+- [ ] Batch 06+ — รอ batch ก่อนหน้าผ่าน quality audit
 
 บทถัดไป:
 
-- Chapter 10 — Decision Trees
-- Chapter 11 — Random Forest
-- Chapter 12 — Gradient Boosting
+- Chapter 13 — Support Vector Machines
+- Chapter 14 — Clustering
+- Chapter 15 — Dimensionality Reduction
