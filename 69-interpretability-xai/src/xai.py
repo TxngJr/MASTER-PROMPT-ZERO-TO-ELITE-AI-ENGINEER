@@ -61,8 +61,6 @@ def integrated_gradients(
     delta = point - base
     gradient_sum = np.zeros_like(point)
 
-    # Midpoint integration avoids evaluating exactly at endpoints and is
-    # exact for the constant gradient of linear functions.
     for step in range(steps):
         alpha = (step + 0.5) / steps
         sample = base + alpha * delta
@@ -243,6 +241,8 @@ def cosine_attribution_similarity(
     if norm_a == 0 or norm_b == 0:
         return 0.0
 
-    return float(
-        np.dot(a, b) / (norm_a * norm_b)
-    )
+    similarity = np.dot(a, b) / (norm_a * norm_b)
+
+    # Numerical roundoff can produce tiny excursions outside the
+    # mathematical cosine range; clamp them away.
+    return float(np.clip(similarity, -1.0, 1.0))

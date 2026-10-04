@@ -118,7 +118,12 @@ def test_permutation_importance_finds_signal() -> None:
 
 
 def test_cosine_similarity() -> None:
-    assert mod.cosine_attribution_similarity(
+    similarity = mod.cosine_attribution_similarity(
         np.array([1.0, 2.0]),
         np.array([2.0, 4.0]),
-    ) == 1.0
+    )
+    np.testing.assert_allclose(
+        similarity,
+        1.0,
+        atol=1e-12,
+    )
