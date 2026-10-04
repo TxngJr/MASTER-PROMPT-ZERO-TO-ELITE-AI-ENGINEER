@@ -387,12 +387,65 @@ The Batch 15 integration contains:
 - a tiny U-Net segmentation experiment
 - an exact-vs-IVF vector retrieval benchmark
 
+### Batch 16 — RAG, Agents & Modern LLM Architecture
+
+46. [Chapter 46 — Retrieval-Augmented Generation](46-rag/README.md)
+47. [Chapter 47 — AI Agents / Tool Calling](47-ai-agents-tool-calling/README.md)
+48. [Chapter 48 — Modern LLM Architecture](48-llm-architecture/README.md)
+
+Chapter 46 includes:
+- parsing / chunking / overlap
+- metadata and provenance
+- dense / sparse retrieval
+- hybrid retrieval and RRF
+- MMR diversification
+- reranking
+- context packing
+- citation/source tracking
+- Recall@K / MRR
+- RAG failure taxonomy
+- authorization-aware retrieval
+
+Chapter 47 includes:
+- agent loops
+- structured tool schemas
+- argument validation
+- tool allow-lists
+- explicit state
+- step/tool budgets
+- retries and idempotency
+- read/write permission boundaries
+- prompt/tool-output injection defenses
+- approval gates
+- observability and agent evaluation
+
+Chapter 48 includes:
+- token embeddings
+- residual stream
+- RMSNorm
+- RoPE
+- causal scaled dot-product attention
+- MHA / MQA / GQA
+- SwiGLU
+- final normalization
+- weight-tied LM head
+- KV cache
+- prefill vs decode
+
+Integration:
+[RAG, Agent & Modern LLM Lab](integration-project-batch16/README.md)
+
+The Batch 16 integration contains:
+- dense+sparse RAG with RRF/context packing
+- a schema-validated allow-listed tool agent
+- a tiny modern decoder with RMSNorm, RoPE, GQA, causal SDPA and SwiGLU
+
 ## Framework Installation
 
-Core dependencies through Batch 15:
+Core dependencies through Batch 16:
 
 ~~~bash
-python -m pip install -r requirements-batch15.txt
+python -m pip install -r requirements-batch16.txt
 ~~~
 
 PyTorch remains outside the core dependency chain.
@@ -440,7 +493,7 @@ Review
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install -r requirements-batch15.txt
+python -m pip install -r requirements-batch16.txt
 ~~~
 
 Core tests:
@@ -573,6 +626,14 @@ Batch 14 Diffusion, Multimodal & Speech Lab
 45 Embeddings / Vector Databases
 ↓
 Batch 15 Recommendation, Vision & Vector Retrieval Lab
+↓
+46 Retrieval-Augmented Generation
+↓
+47 AI Agents / Tool Calling
+↓
+48 Modern LLM Architecture
+↓
+Batch 16 RAG, Agent & Modern LLM Lab
 ~~~
 
 ## Reviews
@@ -592,6 +653,7 @@ Batch 15 Recommendation, Vision & Vector Retrieval Lab
 - [BATCH_13_REVIEW.md](BATCH_13_REVIEW.md) — Batch 13
 - [BATCH_14_REVIEW.md](BATCH_14_REVIEW.md) — Batch 14
 - [BATCH_15_REVIEW.md](BATCH_15_REVIEW.md) — Batch 15
+- [BATCH_16_REVIEW.md](BATCH_16_REVIEW.md) — Batch 16
 
 ## Definition of mastery
 
@@ -621,11 +683,12 @@ Batch 15 Recommendation, Vision & Vector Retrieval Lab
 - [x] Batch 13 — Chapters 37–39
 - [x] Batch 14 — Chapters 40–42
 - [x] Batch 15 — Chapters 43–45
-- [ ] Batch 16 — Chapters 46–48
-- [ ] Batch 17+ — รอ batch ก่อนหน้าผ่าน quality audit
+- [x] Batch 16 — Chapters 46–48
+- [ ] Batch 17 — Chapters 49–51
+- [ ] Batch 18+ — รอ batch ก่อนหน้าผ่าน quality audit
 
 บทถัดไป:
 
-- Chapter 46 — Retrieval-Augmented Generation (RAG)
-- Chapter 47 — AI Agents / Tool Calling
-- Chapter 48 — LLM Architecture
+- Chapter 49 — Tokenizer From Scratch
+- Chapter 50 — LLM Pretraining From Scratch
+- Chapter 51 — LLM Dataset / Data Pipeline
