@@ -294,12 +294,58 @@ The Batch 13 integration contains:
 - a tiny DQN chain-control agent
 - explicit-density and forward-noising generative diagnostics
 
+### Batch 14 — Diffusion, Multimodal & Speech
+
+40. [Chapter 40 — Diffusion Models](40-diffusion-models/README.md)
+41. [Chapter 41 — Multimodal Models](41-multimodal-models/README.md)
+42. [Chapter 42 — Speech: STT / TTS](42-speech-stt-tts/README.md)
+
+Chapter 40 includes:
+- beta / alpha / alpha_bar schedules
+- forward noising q(x_t|x_0)
+- epsilon prediction
+- DDPM reverse process
+- DDIM intuition
+- classifier-free guidance
+- U-Net and latent diffusion
+- image / audio / video diffusion
+
+Chapter 41 includes:
+- dual encoders
+- CLIP-style contrastive learning
+- shared embedding spaces
+- image↔text retrieval
+- early / late / intermediate fusion
+- cross-attention
+- image tokens
+- VLM projectors
+- multimodal ablations
+
+Chapter 42 includes:
+- waveform / sample rate
+- framing and STFT
+- mel / log-mel features
+- CTC
+- seq2seq STT
+- Whisper-style concepts
+- TTS acoustic models
+- vocoders
+- WER / CER
+
+Integration:
+[Diffusion, Multimodal & Speech Lab](integration-project-batch14/README.md)
+
+The Batch 14 integration contains:
+- a tiny 2D DDPM epsilon predictor and reverse sampler
+- a CLIP-style dual-encoder retrieval experiment
+- a synthetic-tone CTC speech recognizer
+
 ## Framework Installation
 
-Core dependencies through Batch 13:
+Core dependencies through Batch 14:
 
 ~~~bash
-python -m pip install -r requirements-batch13.txt
+python -m pip install -r requirements-batch14.txt
 ~~~
 
 PyTorch remains outside the core dependency chain.
@@ -347,7 +393,7 @@ Review
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install -r requirements-batch13.txt
+python -m pip install -r requirements-batch14.txt
 ~~~
 
 Core tests:
@@ -464,6 +510,14 @@ Batch 12 BERT vs GPT vs T5 Lab
 39 Generative AI Foundations
 ↓
 Batch 13 Graph, Control & Generative Lab
+↓
+40 Diffusion Models
+↓
+41 Multimodal Models
+↓
+42 Speech: STT / TTS
+↓
+Batch 14 Diffusion, Multimodal & Speech Lab
 ~~~
 
 ## Reviews
@@ -481,6 +535,7 @@ Batch 13 Graph, Control & Generative Lab
 - [BATCH_11_REVIEW.md](BATCH_11_REVIEW.md) — Batch 11
 - [BATCH_12_REVIEW.md](BATCH_12_REVIEW.md) — Batch 12
 - [BATCH_13_REVIEW.md](BATCH_13_REVIEW.md) — Batch 13
+- [BATCH_14_REVIEW.md](BATCH_14_REVIEW.md) — Batch 14
 
 ## Definition of mastery
 
@@ -508,11 +563,12 @@ Batch 13 Graph, Control & Generative Lab
 - [x] Batch 11 — Chapters 31–33
 - [x] Batch 12 — Chapters 34–36
 - [x] Batch 13 — Chapters 37–39
-- [ ] Batch 14 — Chapters 40–42
-- [ ] Batch 15+ — รอ batch ก่อนหน้าผ่าน quality audit
+- [x] Batch 14 — Chapters 40–42
+- [ ] Batch 15 — Chapters 43–45
+- [ ] Batch 16+ — รอ batch ก่อนหน้าผ่าน quality audit
 
 บทถัดไป:
 
-- Chapter 40 — Diffusion Models
-- Chapter 41 — Multimodal Models
-- Chapter 42 — Speech: STT / TTS
+- Chapter 43 — Recommender Systems
+- Chapter 44 — Object Detection / Segmentation
+- Chapter 45 — Embeddings / Vector Databases
