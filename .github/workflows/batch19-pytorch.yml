@@ -1,0 +1,38 @@
+name: Batch 19 PyTorch Smoke
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  pytorch:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements-batch19.txt
+            requirements-batch19-pytorch.txt
+
+      - name: Install core dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-batch19.txt
+
+      - name: Install CPU PyTorch for CI
+        run: |
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+
+      - name: Run Batch 19 PyTorch tests
+        env:
+          MPLBACKEND: Agg
+        run: |
+          pytest -q             integration-project-batch19/tests/test_batch19_pytorch_smoke.py

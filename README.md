@@ -540,12 +540,66 @@ The Batch 18 integration contains:
 - CUDA runtime/device inspection with CPU-safe fallback
 - BF16 CPU autocast and CUDA FP16 + GradScaler paths
 
-## Framework Installation
+### Batch 19 — Fine-Tuning, LoRA/QLoRA/PEFT & Instruction Tuning
 
-Core dependencies through Batch 18:
+55. [Chapter 55 — Fine-Tuning](55-fine-tuning/README.md)
+56. [Chapter 56 — LoRA / QLoRA / PEFT](56-lora-qlora-peft/README.md)
+57. [Chapter 57 — Instruction Tuning](57-instruction-tuning/README.md)
+
+Chapter 55 includes:
+- full fine-tuning
+- freezing / unfreezing
+- trainable-parameter accounting
+- discriminative learning rates
+- early stopping
+- checkpoint selection
+- domain shift
+- catastrophic forgetting
+- retained-capability evaluation
+
+Chapter 56 includes:
+- LoRA low-rank updates
+- rank / alpha / dropout
+- target modules
+- adapter merge / unmerge
+- PEFT checkpointing
+- QLoRA frozen quantized base
+- NF4 / double-quantization concepts
+- generic codebook quantization
+- current Hugging Face PEFT configuration concepts
+
+Chapter 57 includes:
+- instruction / chat schemas
+- model-specific chat templates
+- role/control tokens
+- full-sequence vs assistant-only loss
+- ignore-index masking
+- multi-turn supervision
+- EOS / boundaries
+- packing / truncation
+- SFT data quality / deduplication
+- held-out instruction evaluation
+
+Integration:
+[Fine-Tuning, LoRA & Instruction SFT Lab](integration-project-batch19/README.md)
+
+The Batch 19 integration contains:
+- full fine-tuning on a controlled adaptation problem
+- LoRA on the same base/target mapping
+- assistant-only causal SFT on chat-like token sequences
+
+Optional Hugging Face PEFT labs:
 
 ~~~bash
-python -m pip install -r requirements-batch18.txt
+python -m pip install -r requirements-batch19-peft.txt
+~~~
+
+## Framework Installation
+
+Core dependencies through Batch 19:
+
+~~~bash
+python -m pip install -r requirements-batch19.txt
 ~~~
 
 PyTorch remains outside the core dependency chain.
@@ -593,7 +647,7 @@ Review
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install -r requirements-batch18.txt
+python -m pip install -r requirements-batch19.txt
 ~~~
 
 Core tests:
@@ -750,6 +804,14 @@ Batch 17 Raw Text to Tiny LLM Lab
 54 Mixed Precision: FP32 / FP16 / BF16
 ↓
 Batch 18 Distributed, CUDA & Precision Lab
+↓
+55 Fine-Tuning
+↓
+56 LoRA / QLoRA / PEFT
+↓
+57 Instruction Tuning
+↓
+Batch 19 Fine-Tuning, LoRA & Instruction SFT Lab
 ~~~
 
 ## Reviews
@@ -772,6 +834,7 @@ Batch 18 Distributed, CUDA & Precision Lab
 - [BATCH_16_REVIEW.md](BATCH_16_REVIEW.md) — Batch 16
 - [BATCH_17_REVIEW.md](BATCH_17_REVIEW.md) — Batch 17
 - [BATCH_18_REVIEW.md](BATCH_18_REVIEW.md) — Batch 18
+- [BATCH_19_REVIEW.md](BATCH_19_REVIEW.md) — Batch 19
 
 ## Definition of mastery
 
@@ -804,11 +867,12 @@ Batch 18 Distributed, CUDA & Precision Lab
 - [x] Batch 16 — Chapters 46–48
 - [x] Batch 17 — Chapters 49–51
 - [x] Batch 18 — Chapters 52–54
-- [ ] Batch 19 — Chapters 55–57
-- [ ] Batch 20+ — รอ batch ก่อนหน้าผ่าน quality audit
+- [x] Batch 19 — Chapters 55–57
+- [ ] Batch 20 — Chapters 58–60
+- [ ] Batch 21+ — รอ batch ก่อนหน้าผ่าน quality audit
 
 บทถัดไป:
 
-- Chapter 55 — Fine-Tuning
-- Chapter 56 — LoRA / QLoRA / PEFT
-- Chapter 57 — Instruction Tuning
+- Chapter 58 — RLHF
+- Chapter 59 — DPO / Preference Optimization
+- Chapter 60 — LLM Evaluation
