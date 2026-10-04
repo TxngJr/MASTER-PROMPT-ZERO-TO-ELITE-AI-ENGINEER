@@ -905,12 +905,76 @@ PyTorch framework smoke validates:
 - permanent prune removal
 - temperature-scaled KL distillation
 
-## Framework Installation
+### Batch 25 — Reasoning Models, Vision-Language Models & Audio/Voice
 
-Core dependencies through Batch 24:
+73. [Chapter 73 — Reasoning Models](73-reasoning-models/README.md)
+74. [Chapter 74 — Vision-Language Models](74-vision-language-models/README.md)
+75. [Chapter 75 — Audio / Voice Models](75-audio-voice-models/README.md)
+
+Chapter 73 includes:
+- test-time compute
+- self-consistency
+- majority / weighted voting
+- best-of-N
+- pass@k
+- verifier-based selection
+- process vs outcome supervision
+- search over candidate states
+- compute/token budgets
+- GRPO / RLVR concepts
+- reasoning distillation
+- cost-aware reasoning evaluation
+
+Chapter 74 includes:
+- vision encoders
+- image patch/token counting
+- visual projectors / resamplers
+- multimodal chat templates
+- image-token context budgeting
+- high-resolution / multi-image / video foundations
+- VLM pretraining
+- visual instruction tuning
+- grounding / IoU
+- OCR / document understanding
+- visual hallucination evaluation
+
+Chapter 75 includes:
+- neural audio tokens / codecs
+- audio-text-to-text models
+- streaming ASR
+- streaming TTS
+- VAD / endpointing
+- turn taking
+- barge-in
+- full-duplex voice
+- echo cancellation concepts
+- jitter buffering
+- real-time factor
+- first-response latency decomposition
+
+Integration:
+[Reasoning, VLM & Real-Time Voice Lab](integration-project-batch25/README.md)
+
+The Batch 25 integration contains:
+- budgeted self-consistency / best-of-N reasoning
+- multi-image visual-token and grounding checks
+- streaming VAD / endpointing / codec / latency planning
+- one final reasoning + vision + voice system gate
+
+Optional current Transformers multimodal/audio labs:
 
 ~~~bash
-python -m pip install -r requirements-batch24.txt
+python -m pip install -r requirements-batch25-transformers.txt
+~~~
+
+PyTorch framework smoke validates patchification, vision projection and audio RMS without downloading large checkpoints.
+
+## Framework Installation
+
+Core dependencies through Batch 25:
+
+~~~bash
+python -m pip install -r requirements-batch25.txt
 ~~~
 
 PyTorch remains outside the core dependency chain.
@@ -958,7 +1022,7 @@ Review
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install -r requirements-batch24.txt
+python -m pip install -r requirements-batch25.txt
 ~~~
 
 Core tests:
@@ -1163,6 +1227,14 @@ Batch 23 Reliable, Guarded & Interpretable AI Lab
 72 Long Context / Memory
 ↓
 Batch 24 Compression, Sparse MoE & Memory Lab
+↓
+73 Reasoning Models
+↓
+74 Vision-Language Models
+↓
+75 Audio / Voice Models
+↓
+Batch 25 Reasoning, VLM & Real-Time Voice Lab
 ~~~
 
 ## Reviews
@@ -1191,6 +1263,7 @@ Batch 24 Compression, Sparse MoE & Memory Lab
 - [BATCH_22_REVIEW.md](BATCH_22_REVIEW.md) — Batch 22
 - [BATCH_23_REVIEW.md](BATCH_23_REVIEW.md) — Batch 23
 - [BATCH_24_REVIEW.md](BATCH_24_REVIEW.md) — Batch 24
+- [BATCH_25_REVIEW.md](BATCH_25_REVIEW.md) — Batch 25
 
 ## Definition of mastery
 
@@ -1229,11 +1302,12 @@ Batch 24 Compression, Sparse MoE & Memory Lab
 - [x] Batch 22 — Chapters 64–66
 - [x] Batch 23 — Chapters 67–69
 - [x] Batch 24 — Chapters 70–72
-- [ ] Batch 25 — Chapters 73–75
-- [ ] Batch 26+ — รอ batch ก่อนหน้าผ่าน quality audit
+- [x] Batch 25 — Chapters 73–75
+- [ ] Batch 26 — Chapters 76–78
+- [ ] Batch 27 — Chapters 79–80 + Final Audit
 
 บทถัดไป:
 
-- Chapter 73 — Reasoning Models
-- Chapter 74 — Vision-Language Models (VLM)
-- Chapter 75 — Audio / Voice Models
+- Chapter 76 — World Models
+- Chapter 77 — Robotics AI
+- Chapter 78 — Edge AI / TinyML
