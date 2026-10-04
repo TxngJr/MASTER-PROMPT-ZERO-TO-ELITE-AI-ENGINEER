@@ -59,8 +59,14 @@ def asymmetric_quantize(
 
     qmin = 0
     qmax = 2**bits - 1
-    minimum = float(np.min(x))
-    maximum = float(np.max(x))
+
+    # Affine quantization should make real zero representable.
+    # If the observed tensor is entirely positive or entirely negative,
+    # extend the calibration interval to include 0 before solving for
+    # scale and zero point. Otherwise clipping the zero point can shrink
+    # the actual dequantized range.
+    minimum = min(float(np.min(x)), 0.0)
+    maximum = max(float(np.max(x)), 0.0)
 
     if maximum == minimum:
         return np.zeros_like(x, dtype=np.int64), 1.0, 0
