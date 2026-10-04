@@ -490,12 +490,62 @@ The Batch 17 integration contains:
 - packed causal token sequences
 - tiny modern LLM pretraining with AdamW, LR scheduling, clipping and checkpoint serialization
 
+### Batch 18 — Distributed Training, CUDA & Mixed Precision
+
+52. [Chapter 52 — Distributed Training](52-distributed-training/README.md)
+53. [Chapter 53 — GPU / CUDA Fundamentals](53-gpu-cuda-fundamentals/README.md)
+54. [Chapter 54 — Mixed Precision: FP32 / FP16 / BF16](54-mixed-precision/README.md)
+
+Chapter 52 includes:
+- rank / world size / process groups
+- all-reduce / all-gather / reduce-scatter / broadcast
+- DDP
+- rank-aware data sharding
+- global batch size
+- tensor parallelism
+- pipeline parallelism
+- FSDP / ZeRO concepts
+- communication and scaling efficiency
+
+Chapter 53 includes:
+- CUDA grid / block / thread hierarchy
+- SMs and 32-thread warps
+- SIMT / divergence
+- registers / global / shared memory
+- coalescing
+- bank conflicts
+- synchronization
+- streams / events
+- occupancy
+- arithmetic intensity / roofline
+- GPU profiling
+
+Chapter 54 includes:
+- FP32 / FP16 / BF16 formats
+- range vs precision
+- underflow / overflow
+- autocast
+- loss scaling
+- current torch.amp APIs
+- GradScaler
+- unscale / clipping order
+- BF16 training
+- mixed-precision memory accounting
+
+Integration:
+[Distributed, CUDA & Precision Lab](integration-project-batch18/README.md)
+
+The Batch 18 integration contains:
+- a distributed-memory/communication planning experiment
+- CUDA runtime/device inspection with CPU-safe fallback
+- BF16 CPU autocast and CUDA FP16 + GradScaler paths
+
 ## Framework Installation
 
-Core dependencies through Batch 17:
+Core dependencies through Batch 18:
 
 ~~~bash
-python -m pip install -r requirements-batch17.txt
+python -m pip install -r requirements-batch18.txt
 ~~~
 
 PyTorch remains outside the core dependency chain.
@@ -543,7 +593,7 @@ Review
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install -r requirements-batch17.txt
+python -m pip install -r requirements-batch18.txt
 ~~~
 
 Core tests:
@@ -692,6 +742,14 @@ Batch 16 RAG, Agent & Modern LLM Lab
 51 LLM Dataset / Data Pipeline
 ↓
 Batch 17 Raw Text to Tiny LLM Lab
+↓
+52 Distributed Training
+↓
+53 GPU / CUDA Fundamentals
+↓
+54 Mixed Precision: FP32 / FP16 / BF16
+↓
+Batch 18 Distributed, CUDA & Precision Lab
 ~~~
 
 ## Reviews
@@ -713,6 +771,7 @@ Batch 17 Raw Text to Tiny LLM Lab
 - [BATCH_15_REVIEW.md](BATCH_15_REVIEW.md) — Batch 15
 - [BATCH_16_REVIEW.md](BATCH_16_REVIEW.md) — Batch 16
 - [BATCH_17_REVIEW.md](BATCH_17_REVIEW.md) — Batch 17
+- [BATCH_18_REVIEW.md](BATCH_18_REVIEW.md) — Batch 18
 
 ## Definition of mastery
 
@@ -744,11 +803,12 @@ Batch 17 Raw Text to Tiny LLM Lab
 - [x] Batch 15 — Chapters 43–45
 - [x] Batch 16 — Chapters 46–48
 - [x] Batch 17 — Chapters 49–51
-- [ ] Batch 18 — Chapters 52–54
-- [ ] Batch 19+ — รอ batch ก่อนหน้าผ่าน quality audit
+- [x] Batch 18 — Chapters 52–54
+- [ ] Batch 19 — Chapters 55–57
+- [ ] Batch 20+ — รอ batch ก่อนหน้าผ่าน quality audit
 
 บทถัดไป:
 
-- Chapter 52 — Distributed Training
-- Chapter 53 — GPU / CUDA Fundamentals
-- Chapter 54 — Mixed Precision: FP32 / FP16 / BF16
+- Chapter 55 — Fine-Tuning
+- Chapter 56 — LoRA / QLoRA / PEFT
+- Chapter 57 — Instruction Tuning
