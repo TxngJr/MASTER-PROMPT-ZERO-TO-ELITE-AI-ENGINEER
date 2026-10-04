@@ -710,12 +710,81 @@ python -m pip install -r requirements-batch21-serving.txt
 
 vLLM and llama.cpp remain hardware/runtime-specific and are not forced into CPU CI.
 
-## Framework Installation
+### Batch 22 — Deploy AI, MLOps & AI Data Engineering
 
-Core dependencies through Batch 21:
+64. [Chapter 64 — Deploy AI](64-deploy-ai/README.md)
+65. [Chapter 65 — MLOps](65-mlops/README.md)
+66. [Chapter 66 — AI Data Engineering](66-ai-data-engineering/README.md)
+
+Chapter 64 includes:
+- API deployment contracts
+- Docker images / immutable artifacts
+- Kubernetes Deployment / Service
+- Gateway vs Ingress
+- ConfigMap / Secret
+- startup / readiness / liveness probes
+- GPU scheduling / device plugins
+- rolling updates
+- HPA / custom metrics
+- canary / blue-green rollout
+- cloud deployment concepts
+- rollback / graceful termination
+
+Chapter 65 includes:
+- experiment tracking
+- run / artifact fingerprinting
+- model registry
+- versions / aliases / tags
+- promotion gates
+- CI / CD / CT
+- offline / online metrics
+- data / prediction / concept drift
+- PSI
+- training-serving skew
+- champion / challenger
+- lineage / rollback
+
+Chapter 66 includes:
+- ETL / ELT
+- data lake / warehouse / lakehouse concepts
+- Parquet row groups / column chunks
+- projection / predicate pruning
+- partitioning / compaction
+- batch / streaming
+- event time / processing time
+- watermarks / late data
+- idempotency
+- data contracts / schema evolution
+- backfills / lineage
+- point-in-time correctness
+
+Integration:
+[Production ML Lifecycle Lab](integration-project-batch22/README.md)
+
+The Batch 22 integration contains:
+- contract validation / dedup / partition / lineage
+- experiment fingerprint / drift / promotion gate
+- HPA-style scaling / rollout / GPU capacity / canary planning
+- one end-to-end rollout gate across data, model and infrastructure
+
+Optional MLflow environment:
 
 ~~~bash
-python -m pip install -r requirements-batch21.txt
+python -m pip install -r requirements-batch22-mlops.txt
+~~~
+
+Optional PyArrow environment:
+
+~~~bash
+python -m pip install -r requirements-batch22-data.txt
+~~~
+
+## Framework Installation
+
+Core dependencies through Batch 22:
+
+~~~bash
+python -m pip install -r requirements-batch22.txt
 ~~~
 
 PyTorch remains outside the core dependency chain.
@@ -763,7 +832,7 @@ Review
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install -r requirements-batch21.txt
+python -m pip install -r requirements-batch22.txt
 ~~~
 
 Core tests:
@@ -944,6 +1013,14 @@ Batch 20 Preference Alignment & Evaluation Lab
 63 LLM Serving
 ↓
 Batch 21 Quantized Inference & Serving Capacity Lab
+↓
+64 Deploy AI
+↓
+65 MLOps
+↓
+66 AI Data Engineering
+↓
+Batch 22 Production ML Lifecycle Lab
 ~~~
 
 ## Reviews
@@ -969,6 +1046,7 @@ Batch 21 Quantized Inference & Serving Capacity Lab
 - [BATCH_19_REVIEW.md](BATCH_19_REVIEW.md) — Batch 19
 - [BATCH_20_REVIEW.md](BATCH_20_REVIEW.md) — Batch 20
 - [BATCH_21_REVIEW.md](BATCH_21_REVIEW.md) — Batch 21
+- [BATCH_22_REVIEW.md](BATCH_22_REVIEW.md) — Batch 22
 
 ## Definition of mastery
 
@@ -1004,11 +1082,12 @@ Batch 21 Quantized Inference & Serving Capacity Lab
 - [x] Batch 19 — Chapters 55–57
 - [x] Batch 20 — Chapters 58–60
 - [x] Batch 21 — Chapters 61–63
-- [ ] Batch 22 — Chapters 64–66
-- [ ] Batch 23+ — รอ batch ก่อนหน้าผ่าน quality audit
+- [x] Batch 22 — Chapters 64–66
+- [ ] Batch 23 — Chapters 67–69
+- [ ] Batch 24+ — รอ batch ก่อนหน้าผ่าน quality audit
 
 บทถัดไป:
 
-- Chapter 64 — Deploy AI: API / Docker / Kubernetes / Cloud
-- Chapter 65 — MLOps: Experiment Tracking / Model Registry / Monitoring
-- Chapter 66 — AI Data Engineering
+- Chapter 67 — AI Distributed Systems
+- Chapter 68 — AI Safety / Alignment / Guardrails
+- Chapter 69 — Interpretability / XAI
