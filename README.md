@@ -848,12 +848,69 @@ Optional XAI ecosystem labs:
 python -m pip install -r requirements-batch23-xai.txt
 ~~~
 
+### Batch 24 — Model Compression, Mixture of Experts & Long Context/Memory
+
+70. [Chapter 70 — Model Compression](70-model-compression/README.md)
+71. [Chapter 71 — Mixture of Experts](71-mixture-of-experts/README.md)
+72. [Chapter 72 — Long Context / Memory](72-long-context-memory/README.md)
+
+Chapter 70 includes:
+- unstructured / structured pruning
+- global magnitude pruning
+- sparsity / density
+- iterative pruning
+- teacher / student distillation
+- temperature-scaled soft targets
+- KL distillation
+- feature / relation distillation concepts
+- pruning + quantization combinations
+- compression evaluation
+
+Chapter 71 includes:
+- router softmax
+- top-k routing
+- expert load / capacity
+- overflow / token dropping
+- load-balancing auxiliary loss
+- expert collapse
+- active vs total parameters
+- expert parallelism
+- all-to-all communication
+- MoE serving trade-offs
+
+Chapter 72 includes:
+- dense vs sliding-window attention
+- RoPE scaling concepts
+- positional interpolation / extrapolation
+- KV-cache scaling
+- bounded sliding/chunked caches
+- chunking / overlap
+- context packing / compression
+- retrieval memory
+- persistent memory policy
+- long-context position evaluation
+
+Integration:
+[Compression, Sparse MoE & Memory Lab](integration-project-batch24/README.md)
+
+The Batch 24 integration contains:
+- 50% magnitude pruning + distillation diagnostics
+- sparse top-2 MoE routing / capacity / load balancing
+- dense-vs-sliding attention and long-context KV planning
+- retrieval-memory Recall@K
+- one final compression + MoE + context system gate
+
+PyTorch framework smoke validates:
+- torch.nn.utils.prune behavior
+- permanent prune removal
+- temperature-scaled KL distillation
+
 ## Framework Installation
 
-Core dependencies through Batch 23:
+Core dependencies through Batch 24:
 
 ~~~bash
-python -m pip install -r requirements-batch23.txt
+python -m pip install -r requirements-batch24.txt
 ~~~
 
 PyTorch remains outside the core dependency chain.
@@ -901,7 +958,7 @@ Review
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install -r requirements-batch23.txt
+python -m pip install -r requirements-batch24.txt
 ~~~
 
 Core tests:
@@ -1098,6 +1155,14 @@ Batch 22 Production ML Lifecycle Lab
 69 Interpretability / XAI
 ↓
 Batch 23 Reliable, Guarded & Interpretable AI Lab
+↓
+70 Model Compression
+↓
+71 Mixture of Experts
+↓
+72 Long Context / Memory
+↓
+Batch 24 Compression, Sparse MoE & Memory Lab
 ~~~
 
 ## Reviews
@@ -1125,6 +1190,7 @@ Batch 23 Reliable, Guarded & Interpretable AI Lab
 - [BATCH_21_REVIEW.md](BATCH_21_REVIEW.md) — Batch 21
 - [BATCH_22_REVIEW.md](BATCH_22_REVIEW.md) — Batch 22
 - [BATCH_23_REVIEW.md](BATCH_23_REVIEW.md) — Batch 23
+- [BATCH_24_REVIEW.md](BATCH_24_REVIEW.md) — Batch 24
 
 ## Definition of mastery
 
@@ -1162,11 +1228,12 @@ Batch 23 Reliable, Guarded & Interpretable AI Lab
 - [x] Batch 21 — Chapters 61–63
 - [x] Batch 22 — Chapters 64–66
 - [x] Batch 23 — Chapters 67–69
-- [ ] Batch 24 — Chapters 70–72
-- [ ] Batch 25+ — รอ batch ก่อนหน้าผ่าน quality audit
+- [x] Batch 24 — Chapters 70–72
+- [ ] Batch 25 — Chapters 73–75
+- [ ] Batch 26+ — รอ batch ก่อนหน้าผ่าน quality audit
 
 บทถัดไป:
 
-- Chapter 70 — Model Compression: Pruning / Distillation / Quantization
-- Chapter 71 — Mixture of Experts (MoE)
-- Chapter 72 — Long Context / Memory
+- Chapter 73 — Reasoning Models
+- Chapter 74 — Vision-Language Models (VLM)
+- Chapter 75 — Audio / Voice Models
