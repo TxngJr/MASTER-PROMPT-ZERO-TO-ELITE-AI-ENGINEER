@@ -208,12 +208,51 @@ The Batch 11 integration contains:
 - a tiny PyTorch Vision Transformer classifier
 - a NumPy Skip-Gram/GloVe/FastText embedding benchmark
 
+### Batch 12 — BERT, GPT & T5
+
+34. [Chapter 34 — BERT / Encoder Models](34-bert-encoder-models/README.md)
+35. [Chapter 35 — GPT / Decoder Models](35-gpt-decoder-models/README.md)
+36. [Chapter 36 — Encoder-Decoder / T5](36-encoder-decoder-t5/README.md)
+
+Chapter 34 includes:
+- encoder-only bidirectional Transformers
+- Masked Language Modeling
+- original BERT 15% / 80-10-10 corruption policy
+- CLS / SEP / MASK / PAD
+- segment embeddings
+- encoder fine-tuning
+
+Chapter 35 includes:
+- decoder-only causal Transformers
+- shifted next-token targets
+- causal LM objective
+- temperature / top-k / top-p sampling
+- context windows
+- KV-cache foundations
+
+Chapter 36 includes:
+- encoder-decoder architecture
+- decoder causal self-attention
+- encoder-decoder cross-attention
+- teacher forcing / shift-right
+- text-to-text framing
+- T5 span corruption
+- sentinel tokens
+
+Integration:
+[BERT vs GPT vs T5 Lab](integration-project-batch12/README.md)
+
+The Batch 12 integration trains:
+- a tiny BERT-style masked encoder
+- a tiny GPT-style causal language model
+- a tiny T5-style encoder-decoder model
+
 ## Framework Installation
 
-Core dependencies through Batch 11:
+Core dependencies through Batch 12:
 
 ~~~bash
-python -m pip install -r requirements-batch11.txt
+python -m pip install -r requirements-batch12.txt
 ~~~
 
 PyTorch remains outside the core dependency chain.
@@ -261,7 +300,7 @@ Review
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install -r requirements-batch10.txt
+python -m pip install -r requirements-batch12.txt
 ~~~
 
 Core tests:
@@ -362,6 +401,14 @@ Batch 10 Adversarial & Transformer Lab
 33 Word2Vec / GloVe / FastText
 ↓
 Batch 11 Vision & Static Embedding Lab
+↓
+34 BERT / Encoder Models
+↓
+35 GPT / Decoder Models
+↓
+36 Encoder-Decoder / T5
+↓
+Batch 12 BERT vs GPT vs T5 Lab
 ~~~
 
 ## Reviews
@@ -377,6 +424,7 @@ Batch 11 Vision & Static Embedding Lab
 - [BATCH_09_REVIEW.md](BATCH_09_REVIEW.md) — Batch 09
 - [BATCH_10_REVIEW.md](BATCH_10_REVIEW.md) — Batch 10
 - [BATCH_11_REVIEW.md](BATCH_11_REVIEW.md) — Batch 11
+- [BATCH_12_REVIEW.md](BATCH_12_REVIEW.md) — Batch 12
 
 ## Definition of mastery
 
@@ -402,11 +450,12 @@ Batch 11 Vision & Static Embedding Lab
 - [x] Batch 09 — Chapters 25–27
 - [x] Batch 10 — Chapters 28–30
 - [x] Batch 11 — Chapters 31–33
-- [ ] Batch 12 — Chapters 34–36
-- [ ] Batch 13+ — รอ batch ก่อนหน้าผ่าน quality audit
+- [x] Batch 12 — Chapters 34–36
+- [ ] Batch 13 — Chapters 37–39
+- [ ] Batch 14+ — รอ batch ก่อนหน้าผ่าน quality audit
 
 บทถัดไป:
 
-- Chapter 34 — BERT / Encoder Models
-- Chapter 35 — GPT / Decoder Models
-- Chapter 36 — Encoder-Decoder / T5
+- Chapter 37 — Graph Neural Networks
+- Chapter 38 — Reinforcement Learning
+- Chapter 39 — Generative AI Foundations
