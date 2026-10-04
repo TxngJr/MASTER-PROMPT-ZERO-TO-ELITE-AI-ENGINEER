@@ -779,12 +779,81 @@ Optional PyArrow environment:
 python -m pip install -r requirements-batch22-data.txt
 ~~~
 
-## Framework Installation
+### Batch 23 — AI Distributed Systems, Safety/Guardrails & Interpretability/XAI
 
-Core dependencies through Batch 22:
+67. [Chapter 67 — AI Distributed Systems](67-ai-distributed-systems/README.md)
+68. [Chapter 68 — AI Safety / Alignment / Guardrails](68-ai-safety-alignment-guardrails/README.md)
+69. [Chapter 69 — Interpretability / XAI](69-interpretability-xai/README.md)
+
+Chapter 67 includes:
+- failure models
+- tasks vs actors
+- retries / exponential backoff
+- idempotency
+- delivery semantics
+- bounded queues / backpressure
+- circuit breakers / bulkheads
+- sharding / rendezvous hashing
+- replication / quorum basics
+- locality / stragglers
+- distributed checkpoints
+- Ray architecture/fault-tolerance concepts
+
+Chapter 68 includes:
+- alignment vs guardrails vs application security
+- lifecycle risk management / threat modeling
+- prompt-injection trust boundaries
+- least privilege / excessive agency
+- system-prompt limitations
+- permission-aware RAG
+- output/tool-schema validation
+- approval gates
+- hard token/tool/step budgets
+- safety evaluation
+- false-positive / false-negative trade-offs
+
+Chapter 69 includes:
+- global vs local explanations
+- permutation importance
+- gradient saliency
+- Integrated Gradients
+- baseline / completeness
+- Shapley values / SHAP
+- occlusion
+- counterfactual / PDP / ICE concepts
+- stability / faithfulness / sanity checks
+- attention limitations
+- probes / activation patching / ablation
+- mechanistic-interpretability foundations
+
+Integration:
+[Reliable, Guarded & Interpretable AI Lab](integration-project-batch23/README.md)
+
+The Batch 23 integration contains:
+- distributed bounded admission / rendezvous placement / retries / circuit breaking
+- deterministic ACL / tool / approval / budget guardrails
+- Integrated Gradients / exact Shapley / permutation explanations
+- one final reliability + safety + explanation system gate
+
+Optional Ray lab:
 
 ~~~bash
-python -m pip install -r requirements-batch22.txt
+python -m pip install -r requirements-batch23-ray.txt
+~~~
+
+Optional XAI ecosystem labs:
+
+~~~bash
+# Install PyTorch first with the official selector
+python -m pip install -r requirements-batch23-xai.txt
+~~~
+
+## Framework Installation
+
+Core dependencies through Batch 23:
+
+~~~bash
+python -m pip install -r requirements-batch23.txt
 ~~~
 
 PyTorch remains outside the core dependency chain.
@@ -832,7 +901,7 @@ Review
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install -r requirements-batch22.txt
+python -m pip install -r requirements-batch23.txt
 ~~~
 
 Core tests:
@@ -1021,6 +1090,14 @@ Batch 21 Quantized Inference & Serving Capacity Lab
 66 AI Data Engineering
 ↓
 Batch 22 Production ML Lifecycle Lab
+↓
+67 AI Distributed Systems
+↓
+68 AI Safety / Alignment / Guardrails
+↓
+69 Interpretability / XAI
+↓
+Batch 23 Reliable, Guarded & Interpretable AI Lab
 ~~~
 
 ## Reviews
@@ -1047,6 +1124,7 @@ Batch 22 Production ML Lifecycle Lab
 - [BATCH_20_REVIEW.md](BATCH_20_REVIEW.md) — Batch 20
 - [BATCH_21_REVIEW.md](BATCH_21_REVIEW.md) — Batch 21
 - [BATCH_22_REVIEW.md](BATCH_22_REVIEW.md) — Batch 22
+- [BATCH_23_REVIEW.md](BATCH_23_REVIEW.md) — Batch 23
 
 ## Definition of mastery
 
@@ -1083,11 +1161,12 @@ Batch 22 Production ML Lifecycle Lab
 - [x] Batch 20 — Chapters 58–60
 - [x] Batch 21 — Chapters 61–63
 - [x] Batch 22 — Chapters 64–66
-- [ ] Batch 23 — Chapters 67–69
-- [ ] Batch 24+ — รอ batch ก่อนหน้าผ่าน quality audit
+- [x] Batch 23 — Chapters 67–69
+- [ ] Batch 24 — Chapters 70–72
+- [ ] Batch 25+ — รอ batch ก่อนหน้าผ่าน quality audit
 
 บทถัดไป:
 
-- Chapter 67 — AI Distributed Systems
-- Chapter 68 — AI Safety / Alignment / Guardrails
-- Chapter 69 — Interpretability / XAI
+- Chapter 70 — Model Compression: Pruning / Distillation / Quantization
+- Chapter 71 — Mixture of Experts (MoE)
+- Chapter 72 — Long Context / Memory

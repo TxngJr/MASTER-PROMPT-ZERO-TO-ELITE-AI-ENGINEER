@@ -1,0 +1,43 @@
+name: Batch 23 Captum Smoke
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  captum:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements-batch23.txt
+            requirements-batch23-captum.txt
+
+      - name: Install core dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-batch23.txt
+
+      - name: Install CPU PyTorch
+        run: |
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+
+      - name: Install Captum
+        run: |
+          python -m pip install captum
+
+      - name: Run Captum smoke
+        env:
+          MPLBACKEND: Agg
+        run: |
+          pytest -q \
+            integration-project-batch23/tests/test_batch23_captum_smoke.py
