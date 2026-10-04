@@ -164,12 +164,56 @@ The Batch 10 integration contains:
 - tiny PyTorch GAN on a 2D multimodal distribution
 - tiny decoder-only character Transformer language model
 
+### Batch 11 — Vision Transformers & NLP Foundations
+
+31. [Chapter 31 — Vision Transformer](31-vision-transformer/README.md)
+32. [Chapter 32 — NLP Fundamentals](32-nlp-fundamentals/README.md)
+33. [Chapter 33 — Word2Vec / GloVe / FastText](33-word-embeddings/README.md)
+
+Chapter 31 includes:
+- patchification
+- patch embedding
+- CLS token
+- learned positional embeddings
+- Transformer encoder
+- patch-size / attention-cost trade-offs
+- Tiny ViT on sklearn digits
+
+Chapter 32 includes:
+- Unicode and normalization
+- tokenization levels
+- vocabulary / UNK / PAD
+- n-gram language models
+- smoothing
+- next-token windows
+- cross-entropy / perplexity
+- padding and masks
+- corpus leakage / quality
+
+Chapter 33 includes:
+- CBOW / Skip-Gram
+- negative sampling
+- unigram^0.75 distribution
+- cosine similarity
+- co-occurrence matrices
+- GloVe
+- FastText character n-grams
+- OOV subword representations
+- intrinsic vs extrinsic evaluation
+
+Integration:
+[Vision & Static Embedding Lab](integration-project-batch11/README.md)
+
+The Batch 11 integration contains:
+- a tiny PyTorch Vision Transformer classifier
+- a NumPy Skip-Gram/GloVe/FastText embedding benchmark
+
 ## Framework Installation
 
-Core dependencies through Batch 10:
+Core dependencies through Batch 11:
 
 ~~~bash
-python -m pip install -r requirements-batch10.txt
+python -m pip install -r requirements-batch11.txt
 ~~~
 
 PyTorch remains outside the core dependency chain.
@@ -310,6 +354,14 @@ Batch 09 Sequence & Latent Representation Lab
 30 Transformer
 ↓
 Batch 10 Adversarial & Transformer Lab
+↓
+31 Vision Transformer
+↓
+32 NLP Fundamentals
+↓
+33 Word2Vec / GloVe / FastText
+↓
+Batch 11 Vision & Static Embedding Lab
 ~~~
 
 ## Reviews
@@ -324,6 +376,7 @@ Batch 10 Adversarial & Transformer Lab
 - [BATCH_08_REVIEW.md](BATCH_08_REVIEW.md) — Batch 08
 - [BATCH_09_REVIEW.md](BATCH_09_REVIEW.md) — Batch 09
 - [BATCH_10_REVIEW.md](BATCH_10_REVIEW.md) — Batch 10
+- [BATCH_11_REVIEW.md](BATCH_11_REVIEW.md) — Batch 11
 
 ## Definition of mastery
 
@@ -348,11 +401,12 @@ Batch 10 Adversarial & Transformer Lab
 - [x] Batch 08 — Chapters 22–24
 - [x] Batch 09 — Chapters 25–27
 - [x] Batch 10 — Chapters 28–30
-- [ ] Batch 11 — Chapters 31–33
-- [ ] Batch 12+ — รอ batch ก่อนหน้าผ่าน quality audit
+- [x] Batch 11 — Chapters 31–33
+- [ ] Batch 12 — Chapters 34–36
+- [ ] Batch 13+ — รอ batch ก่อนหน้าผ่าน quality audit
 
 บทถัดไป:
 
-- Chapter 31 — Vision Transformer
-- Chapter 32 — NLP Fundamentals
-- Chapter 33 — Word2Vec / GloVe / FastText
+- Chapter 34 — BERT / Encoder Models
+- Chapter 35 — GPT / Decoder Models
+- Chapter 36 — Encoder-Decoder / T5
