@@ -1,5 +1,6 @@
 from pathlib import Path
 import importlib.util
+import sys
 
 import numpy as np
 
@@ -8,6 +9,7 @@ MODULE_PATH = Path(__file__).parents[1] / "src" / "gated_rnn_numpy.py"
 SPEC = importlib.util.spec_from_file_location("gated_rnn_numpy_course", MODULE_PATH)
 assert SPEC and SPEC.loader
 mod = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = mod
 SPEC.loader.exec_module(mod)
 
 
