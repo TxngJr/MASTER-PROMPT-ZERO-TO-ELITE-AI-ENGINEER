@@ -96,44 +96,74 @@ python -m pip install -r requirements-batch06-extras.txt
 20. [Chapter 20 — Optimizers](20-optimizers/README.md)
 21. [Chapter 21 — Activations & Loss Functions](21-activations-losses/README.md)
 
-Chapter 19 includes:
-- chain rule
-- computational graphs
-- reverse-mode autodiff
-- topological backward
-- gradient accumulation
-- broadcasting-aware gradients
-- matrix multiplication gradients
-- finite-difference gradient checking
-- custom NumPy Tensor class
-
-Chapter 20 includes:
-- SGD
-- Momentum
-- Nesterov option
-- AdaGrad
-- RMSProp
-- Adam
-- AdamW
-- zero_grad
-- optimizer-state memory
-- weight decay vs L2
-
-Chapter 21 includes:
-- ReLU / LeakyReLU / ELU
-- GELU
-- SiLU
-- Sigmoid / Tanh / Softmax
-- MSE / MAE / Huber
-- BCE with logits
-- multiclass cross entropy
-- label smoothing
-- numerical stability
-
 Integration:
 [Tiny Deep Learning Framework](integration-project-batch07/README.md)
 
-This integration trains a nonlinear MLP using the repository's own Tensor, backward engine, AdamW and stable BCE-with-logits implementation before introducing PyTorch.
+This batch trains a nonlinear MLP using the repository's own Tensor, backward engine, AdamW and stable objectives before using full frameworks.
+
+### Batch 08 — Frameworks & Convolution
+
+22. [Chapter 22 — PyTorch](22-pytorch/README.md)
+23. [Chapter 23 — TensorFlow / Keras](23-tensorflow-keras/README.md)
+24. [Chapter 24 — Convolutional Neural Networks](24-cnn/README.md)
+
+Chapter 22 maps the from-scratch engine to:
+- torch.Tensor
+- autograd
+- nn.Module
+- DataLoader
+- torch.optim
+- state_dict
+- CPU / CUDA devices
+
+Chapter 23 covers:
+- tf.Tensor / tf.Variable
+- GradientTape
+- Sequential / Functional / subclassed Keras models
+- compile / fit / custom loops
+- tf.data
+- Keras saving
+- TensorFlow GPU visibility
+
+Chapter 24 covers:
+- convolution / cross-correlation
+- channels / filters
+- output-shape equations
+- padding / stride / dilation
+- receptive fields
+- pooling
+- NCHW / NHWC
+- PyTorch Conv2d
+- Keras Conv2D
+- NumPy convolution from scratch
+
+Integration:
+[Cross-Framework CNN Lab](integration-project-batch08/README.md)
+
+The integration uses the same sklearn digits data and split for both frameworks.
+
+## Framework Installation
+
+Core course dependencies through Batch 08:
+
+~~~bash
+python -m pip install -r requirements-batch08.txt
+~~~
+
+PyTorch is intentionally not pinned to a stale CUDA wheel.
+
+For the Fedora + NVIDIA machine, use the current official PyTorch selector:
+https://pytorch.org/get-started/locally/
+
+TensorFlow CPU/simple environment:
+
+~~~bash
+python -m pip install -r requirements-batch08-tensorflow.txt
+~~~
+
+For TensorFlow GPU on Linux, follow the current official TensorFlow pip GPU instructions.
+
+The heavy frameworks are isolated from the core requirements so future NumPy/scikit-learn tests do not repeatedly install multi-hundred-megabyte framework stacks.
 
 ## Learning loop
 
@@ -171,19 +201,16 @@ Review
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
+python -m pip install -r requirements-batch08.txt
 ~~~
 
-สำหรับเนื้อหาปัจจุบันถึง Chapter 21:
-
-~~~bash
-python -m pip install -r requirements-batch07.txt
-~~~
-
-รัน tests:
+Core tests:
 
 ~~~bash
 pytest -q
 ~~~
+
+Framework-specific tests require the corresponding framework environment.
 
 ## Recommended study order
 
@@ -243,6 +270,14 @@ Batch 06 Integration
 21 Activations & Loss Functions
 ↓
 Batch 07 Tiny Deep Learning Framework
+↓
+22 PyTorch
+↓
+23 TensorFlow / Keras
+↓
+24 CNN
+↓
+Batch 08 Cross-Framework CNN Lab
 ~~~
 
 ## Reviews
@@ -254,6 +289,7 @@ Batch 07 Tiny Deep Learning Framework
 - [BATCH_05_REVIEW.md](BATCH_05_REVIEW.md) — Batch 05
 - [BATCH_06_REVIEW.md](BATCH_06_REVIEW.md) — Batch 06
 - [BATCH_07_REVIEW.md](BATCH_07_REVIEW.md) — Batch 07
+- [BATCH_08_REVIEW.md](BATCH_08_REVIEW.md) — Batch 08
 
 ## Definition of mastery
 
@@ -275,11 +311,12 @@ Batch 07 Tiny Deep Learning Framework
 - [x] Batch 05 — Chapters 13–15
 - [x] Batch 06 — Chapters 16–18
 - [x] Batch 07 — Chapters 19–21
-- [ ] Batch 08 — Chapters 22–24
-- [ ] Batch 09+ — รอ batch ก่อนหน้าผ่าน quality audit
+- [x] Batch 08 — Chapters 22–24
+- [ ] Batch 09 — Chapters 25–27
+- [ ] Batch 10+ — รอ batch ก่อนหน้าผ่าน quality audit
 
 บทถัดไป:
 
-- Chapter 22 — PyTorch
-- Chapter 23 — TensorFlow / Keras
-- Chapter 24 — Convolutional Neural Networks
+- Chapter 25 — Recurrent Neural Networks
+- Chapter 26 — LSTM / GRU
+- Chapter 27 — Autoencoders / Variational Autoencoders
