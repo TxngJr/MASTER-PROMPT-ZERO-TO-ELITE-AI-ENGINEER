@@ -247,12 +247,59 @@ The Batch 12 integration trains:
 - a tiny GPT-style causal language model
 - a tiny T5-style encoder-decoder model
 
+### Batch 13 — Graphs, Reinforcement Learning & Generative Foundations
+
+37. [Chapter 37 — Graph Neural Networks](37-graph-neural-networks/README.md)
+38. [Chapter 38 — Reinforcement Learning](38-reinforcement-learning/README.md)
+39. [Chapter 39 — Generative AI Foundations](39-generative-ai-foundations/README.md)
+
+Chapter 37 includes:
+- graph / adjacency / edge-list representations
+- message passing
+- GCN normalization
+- GraphSAGE
+- Graph Attention Networks
+- node / graph / link prediction
+- oversmoothing / oversquashing
+- transductive vs inductive learning
+
+Chapter 38 includes:
+- MDPs
+- returns and discounting
+- Bellman equations
+- Q-Learning
+- DQN
+- replay buffers
+- target networks
+- REINFORCE
+- actor-critic
+- PPO clipping
+
+Chapter 39 includes:
+- generative vs discriminative models
+- explicit vs implicit density models
+- likelihood / NLL
+- autoregressive models
+- latent-variable models / ELBO
+- GANs
+- energy-based models
+- score / diffusion foundations
+- mode coverage and generative evaluation
+
+Integration:
+[Graph, Control & Generative Lab](integration-project-batch13/README.md)
+
+The Batch 13 integration contains:
+- a tiny GCN node classifier
+- a tiny DQN chain-control agent
+- explicit-density and forward-noising generative diagnostics
+
 ## Framework Installation
 
-Core dependencies through Batch 12:
+Core dependencies through Batch 13:
 
 ~~~bash
-python -m pip install -r requirements-batch12.txt
+python -m pip install -r requirements-batch13.txt
 ~~~
 
 PyTorch remains outside the core dependency chain.
@@ -300,7 +347,7 @@ Review
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install -r requirements-batch12.txt
+python -m pip install -r requirements-batch13.txt
 ~~~
 
 Core tests:
@@ -409,6 +456,14 @@ Batch 11 Vision & Static Embedding Lab
 36 Encoder-Decoder / T5
 ↓
 Batch 12 BERT vs GPT vs T5 Lab
+↓
+37 Graph Neural Networks
+↓
+38 Reinforcement Learning
+↓
+39 Generative AI Foundations
+↓
+Batch 13 Graph, Control & Generative Lab
 ~~~
 
 ## Reviews
@@ -425,6 +480,7 @@ Batch 12 BERT vs GPT vs T5 Lab
 - [BATCH_10_REVIEW.md](BATCH_10_REVIEW.md) — Batch 10
 - [BATCH_11_REVIEW.md](BATCH_11_REVIEW.md) — Batch 11
 - [BATCH_12_REVIEW.md](BATCH_12_REVIEW.md) — Batch 12
+- [BATCH_13_REVIEW.md](BATCH_13_REVIEW.md) — Batch 13
 
 ## Definition of mastery
 
@@ -451,11 +507,12 @@ Batch 12 BERT vs GPT vs T5 Lab
 - [x] Batch 10 — Chapters 28–30
 - [x] Batch 11 — Chapters 31–33
 - [x] Batch 12 — Chapters 34–36
-- [ ] Batch 13 — Chapters 37–39
-- [ ] Batch 14+ — รอ batch ก่อนหน้าผ่าน quality audit
+- [x] Batch 13 — Chapters 37–39
+- [ ] Batch 14 — Chapters 40–42
+- [ ] Batch 15+ — รอ batch ก่อนหน้าผ่าน quality audit
 
 บทถัดไป:
 
-- Chapter 37 — Graph Neural Networks
-- Chapter 38 — Reinforcement Learning
-- Chapter 39 — Generative AI Foundations
+- Chapter 40 — Diffusion Models
+- Chapter 41 — Multimodal Models
+- Chapter 42 — Speech: STT / TTS
