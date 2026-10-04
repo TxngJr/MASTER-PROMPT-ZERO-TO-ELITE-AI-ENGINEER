@@ -969,12 +969,72 @@ python -m pip install -r requirements-batch25-transformers.txt
 
 PyTorch framework smoke validates patchification, vision projection and audio RMS without downloading large checkpoints.
 
-## Framework Installation
+### Batch 26 — World Models, Robotics AI & Edge AI/TinyML
 
-Core dependencies through Batch 25:
+76. [Chapter 76 — World Models](76-world-models/README.md)
+77. [Chapter 77 — Robotics AI](77-robotics-ai/README.md)
+78. [Chapter 78 — Edge AI / TinyML](78-edge-ai-tinyml/README.md)
+
+Chapter 76 includes:
+- latent / belief states
+- action-conditioned dynamics
+- learned linear dynamics
+- multi-step imagination
+- model-predictive planning
+- receding-horizon control concepts
+- JEPA-style representation prediction
+- Dreamer-style latent imagination
+- uncertainty / model exploitation
+- world-model evaluation
+
+Chapter 77 includes:
+- observation / action spaces
+- control-loop timing
+- two-link forward kinematics
+- feedback control
+- deterministic action limits
+- behavior cloning
+- action chunking
+- VLA concepts
+- sim-to-real
+- simulation-first safety evaluation
+
+Chapter 78 includes:
+- model/tensor storage
+- Flash vs runtime RAM
+- activation/tensor-arena budgeting
+- operator coverage
+- execution providers
+- INT8 quantization
+- pruning/distillation/quantization combinations
+- latency / energy per inference
+- sensor windows / duty cycle
+- static/ring-buffer memory planning
+- ONNX Runtime Mobile/IoT concepts
+
+Integration:
+[Imagine, Act Safely & Deploy at the Edge](integration-project-batch26/README.md)
+
+The Batch 26 integration contains:
+- tiny world-model planning
+- simulation-only robot action limiting and timing checks
+- edge memory/operator/INT8/energy planning
+- one final prediction + safe-control + edge-deployment gate
+
+Optional ONNX Runtime edge lab:
 
 ~~~bash
-python -m pip install -r requirements-batch25.txt
+python -m pip install -r requirements-batch26-onnx.txt
+~~~
+
+A dedicated CI smoke creates and executes a tiny ONNX graph with CPUExecutionProvider.
+
+## Framework Installation
+
+Core dependencies through Batch 26:
+
+~~~bash
+python -m pip install -r requirements-batch26.txt
 ~~~
 
 PyTorch remains outside the core dependency chain.
@@ -1022,7 +1082,7 @@ Review
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install -r requirements-batch25.txt
+python -m pip install -r requirements-batch26.txt
 ~~~
 
 Core tests:
@@ -1235,6 +1295,14 @@ Batch 24 Compression, Sparse MoE & Memory Lab
 75 Audio / Voice Models
 ↓
 Batch 25 Reasoning, VLM & Real-Time Voice Lab
+↓
+76 World Models
+↓
+77 Robotics AI
+↓
+78 Edge AI / TinyML
+↓
+Batch 26 Imagine, Act Safely & Deploy at the Edge Lab
 ~~~
 
 ## Reviews
@@ -1264,6 +1332,7 @@ Batch 25 Reasoning, VLM & Real-Time Voice Lab
 - [BATCH_23_REVIEW.md](BATCH_23_REVIEW.md) — Batch 23
 - [BATCH_24_REVIEW.md](BATCH_24_REVIEW.md) — Batch 24
 - [BATCH_25_REVIEW.md](BATCH_25_REVIEW.md) — Batch 25
+- [BATCH_26_REVIEW.md](BATCH_26_REVIEW.md) — Batch 26
 
 ## Definition of mastery
 
@@ -1303,11 +1372,11 @@ Batch 25 Reasoning, VLM & Real-Time Voice Lab
 - [x] Batch 23 — Chapters 67–69
 - [x] Batch 24 — Chapters 70–72
 - [x] Batch 25 — Chapters 73–75
-- [ ] Batch 26 — Chapters 76–78
+- [x] Batch 26 — Chapters 76–78
 - [ ] Batch 27 — Chapters 79–80 + Final Audit
 
 บทถัดไป:
 
-- Chapter 76 — World Models
-- Chapter 77 — Robotics AI
-- Chapter 78 — Edge AI / TinyML
+- Chapter 79 — Read & Implement Papers
+- Chapter 80 — Complete LLM Capstone
+- Final Course Audit / Graduation Project
