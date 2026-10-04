@@ -340,12 +340,59 @@ The Batch 14 integration contains:
 - a CLIP-style dual-encoder retrieval experiment
 - a synthetic-tone CTC speech recognizer
 
+### Batch 15 — Recommenders, Vision Localization & Vector Retrieval
+
+43. [Chapter 43 — Recommender Systems](43-recommender-systems/README.md)
+44. [Chapter 44 — Object Detection / Segmentation](44-object-detection-segmentation/README.md)
+45. [Chapter 45 — Embeddings / Vector Databases](45-embeddings-vector-databases/README.md)
+
+Chapter 43 includes:
+- explicit / implicit feedback
+- collaborative filtering
+- matrix factorization
+- BPR
+- two-tower retrieval
+- ranking metrics
+- temporal evaluation
+- cold start and feedback loops
+
+Chapter 44 includes:
+- bounding boxes and IoU
+- NMS
+- anchor-based / anchor-free detection
+- one-stage / two-stage detectors
+- Faster R-CNN / YOLO concepts
+- semantic / instance / panoptic segmentation
+- U-Net / Mask R-CNN
+- AP / mAP concepts
+
+Chapter 45 includes:
+- embedding geometry
+- cosine / dot / L2
+- exact nearest-neighbor search
+- ANN Recall@K
+- IVF
+- HNSW
+- Product Quantization
+- metadata filtering
+- hybrid retrieval
+- reranking
+- vector-index lifecycle
+
+Integration:
+[Recommendation, Vision & Vector Retrieval Lab](integration-project-batch15/README.md)
+
+The Batch 15 integration contains:
+- a two-tower recommender trained with a BPR-style objective
+- a tiny U-Net segmentation experiment
+- an exact-vs-IVF vector retrieval benchmark
+
 ## Framework Installation
 
-Core dependencies through Batch 14:
+Core dependencies through Batch 15:
 
 ~~~bash
-python -m pip install -r requirements-batch14.txt
+python -m pip install -r requirements-batch15.txt
 ~~~
 
 PyTorch remains outside the core dependency chain.
@@ -393,7 +440,7 @@ Review
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install -r requirements-batch14.txt
+python -m pip install -r requirements-batch15.txt
 ~~~
 
 Core tests:
@@ -518,6 +565,14 @@ Batch 13 Graph, Control & Generative Lab
 42 Speech: STT / TTS
 ↓
 Batch 14 Diffusion, Multimodal & Speech Lab
+↓
+43 Recommender Systems
+↓
+44 Object Detection / Segmentation
+↓
+45 Embeddings / Vector Databases
+↓
+Batch 15 Recommendation, Vision & Vector Retrieval Lab
 ~~~
 
 ## Reviews
@@ -536,6 +591,7 @@ Batch 14 Diffusion, Multimodal & Speech Lab
 - [BATCH_12_REVIEW.md](BATCH_12_REVIEW.md) — Batch 12
 - [BATCH_13_REVIEW.md](BATCH_13_REVIEW.md) — Batch 13
 - [BATCH_14_REVIEW.md](BATCH_14_REVIEW.md) — Batch 14
+- [BATCH_15_REVIEW.md](BATCH_15_REVIEW.md) — Batch 15
 
 ## Definition of mastery
 
@@ -564,11 +620,12 @@ Batch 14 Diffusion, Multimodal & Speech Lab
 - [x] Batch 12 — Chapters 34–36
 - [x] Batch 13 — Chapters 37–39
 - [x] Batch 14 — Chapters 40–42
-- [ ] Batch 15 — Chapters 43–45
-- [ ] Batch 16+ — รอ batch ก่อนหน้าผ่าน quality audit
+- [x] Batch 15 — Chapters 43–45
+- [ ] Batch 16 — Chapters 46–48
+- [ ] Batch 17+ — รอ batch ก่อนหน้าผ่าน quality audit
 
 บทถัดไป:
 
-- Chapter 43 — Recommender Systems
-- Chapter 44 — Object Detection / Segmentation
-- Chapter 45 — Embeddings / Vector Databases
+- Chapter 46 — Retrieval-Augmented Generation (RAG)
+- Chapter 47 — AI Agents / Tool Calling
+- Chapter 48 — LLM Architecture
