@@ -99,71 +99,76 @@ python -m pip install -r requirements-batch06-extras.txt
 Integration:
 [Tiny Deep Learning Framework](integration-project-batch07/README.md)
 
-This batch trains a nonlinear MLP using the repository's own Tensor, backward engine, AdamW and stable objectives before using full frameworks.
-
 ### Batch 08 — Frameworks & Convolution
 
 22. [Chapter 22 — PyTorch](22-pytorch/README.md)
 23. [Chapter 23 — TensorFlow / Keras](23-tensorflow-keras/README.md)
 24. [Chapter 24 — Convolutional Neural Networks](24-cnn/README.md)
 
-Chapter 22 maps the from-scratch engine to:
-- torch.Tensor
-- autograd
-- nn.Module
-- DataLoader
-- torch.optim
-- state_dict
-- CPU / CUDA devices
-
-Chapter 23 covers:
-- tf.Tensor / tf.Variable
-- GradientTape
-- Sequential / Functional / subclassed Keras models
-- compile / fit / custom loops
-- tf.data
-- Keras saving
-- TensorFlow GPU visibility
-
-Chapter 24 covers:
-- convolution / cross-correlation
-- channels / filters
-- output-shape equations
-- padding / stride / dilation
-- receptive fields
-- pooling
-- NCHW / NHWC
-- PyTorch Conv2d
-- Keras Conv2D
-- NumPy convolution from scratch
-
 Integration:
 [Cross-Framework CNN Lab](integration-project-batch08/README.md)
 
-The integration uses the same sklearn digits data and split for both frameworks.
+### Batch 09 — Sequence Models & Latent Variables
+
+25. [Chapter 25 — Recurrent Neural Networks](25-rnn/README.md)
+26. [Chapter 26 — LSTM / GRU](26-lstm-gru/README.md)
+27. [Chapter 27 — Autoencoders / Variational Autoencoders](27-autoencoder-vae/README.md)
+
+Chapter 25 includes:
+- Elman RNN
+- hidden state
+- unrolling
+- BPTT
+- vanishing/exploding gradients
+- gradient clipping
+- truncated BPTT
+- variable-length / packed sequences
+- bidirectional caveats
+
+Chapter 26 includes:
+- LSTM forget/input/candidate/output gates
+- cell state
+- GRU reset/update/candidate gates
+- LSTM/GRU parameter counts
+- multi-layer/bidirectional state shapes
+- packed sequences and masking
+
+Chapter 27 includes:
+- deterministic autoencoders
+- bottlenecks
+- denoising autoencoders
+- VAE approximate posterior
+- mu / logvar
+- reparameterization trick
+- KL divergence
+- ELBO
+- beta-VAE
+- posterior collapse
+- prior sampling
+
+Integration:
+[Sequence & Latent Representation Lab](integration-project-batch09/README.md)
+
+The integration contains two experiments:
+- same-budget RNN vs LSTM vs GRU sequence-memory benchmark
+- small PyTorch VAE on sklearn digits
 
 ## Framework Installation
 
-Core course dependencies through Batch 08:
+Core dependencies through Batch 09:
 
 ~~~bash
-python -m pip install -r requirements-batch08.txt
+python -m pip install -r requirements-batch09.txt
 ~~~
 
-PyTorch is intentionally not pinned to a stale CUDA wheel.
+PyTorch is kept outside the core dependency chain.
 
-For the Fedora + NVIDIA machine, use the current official PyTorch selector:
+For Fedora + NVIDIA, use the current official PyTorch selector:
 https://pytorch.org/get-started/locally/
 
-TensorFlow CPU/simple environment:
+CPU-only CI uses PyTorch's CPU package index.
 
-~~~bash
-python -m pip install -r requirements-batch08-tensorflow.txt
-~~~
-
-For TensorFlow GPU on Linux, follow the current official TensorFlow pip GPU instructions.
-
-The heavy frameworks are isolated from the core requirements so future NumPy/scikit-learn tests do not repeatedly install multi-hundred-megabyte framework stacks.
+TensorFlow from Batch 08 remains in its dedicated framework environment.
 
 ## Learning loop
 
@@ -201,7 +206,7 @@ Review
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install -r requirements-batch08.txt
+python -m pip install -r requirements-batch09.txt
 ~~~
 
 Core tests:
@@ -278,6 +283,14 @@ Batch 07 Tiny Deep Learning Framework
 24 CNN
 ↓
 Batch 08 Cross-Framework CNN Lab
+↓
+25 RNN
+↓
+26 LSTM / GRU
+↓
+27 Autoencoder / VAE
+↓
+Batch 09 Sequence & Latent Representation Lab
 ~~~
 
 ## Reviews
@@ -290,6 +303,7 @@ Batch 08 Cross-Framework CNN Lab
 - [BATCH_06_REVIEW.md](BATCH_06_REVIEW.md) — Batch 06
 - [BATCH_07_REVIEW.md](BATCH_07_REVIEW.md) — Batch 07
 - [BATCH_08_REVIEW.md](BATCH_08_REVIEW.md) — Batch 08
+- [BATCH_09_REVIEW.md](BATCH_09_REVIEW.md) — Batch 09
 
 ## Definition of mastery
 
@@ -312,11 +326,12 @@ Batch 08 Cross-Framework CNN Lab
 - [x] Batch 06 — Chapters 16–18
 - [x] Batch 07 — Chapters 19–21
 - [x] Batch 08 — Chapters 22–24
-- [ ] Batch 09 — Chapters 25–27
-- [ ] Batch 10+ — รอ batch ก่อนหน้าผ่าน quality audit
+- [x] Batch 09 — Chapters 25–27
+- [ ] Batch 10 — Chapters 28–30
+- [ ] Batch 11+ — รอ batch ก่อนหน้าผ่าน quality audit
 
 บทถัดไป:
 
-- Chapter 25 — Recurrent Neural Networks
-- Chapter 26 — LSTM / GRU
-- Chapter 27 — Autoencoders / Variational Autoencoders
+- Chapter 28 — Generative Adversarial Networks
+- Chapter 29 — Attention
+- Chapter 30 — Transformer
