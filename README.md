@@ -651,12 +651,71 @@ Optional Hugging Face TRL labs:
 python -m pip install -r requirements-batch20-trl.txt
 ~~~
 
-## Framework Installation
+### Batch 21 — Quantization, Inference Optimization & LLM Serving
 
-Core dependencies through Batch 20:
+61. [Chapter 61 — Quantization](61-quantization/README.md)
+62. [Chapter 62 — Inference Optimization](62-inference-optimization/README.md)
+63. [Chapter 63 — LLM Serving](63-llm-serving/README.md)
+
+Chapter 61 includes:
+- symmetric / asymmetric quantization
+- scale / zero point
+- per-tensor / per-channel / grouped quantization
+- weight-only / activation quantization
+- calibration
+- GPTQ / AWQ concepts
+- GGUF distinction
+- storage/error accounting
+
+Chapter 62 includes:
+- prefill vs decode
+- KV-cache memory
+- MHA / GQA / MQA cache trade-offs
+- Dynamic / Static / Offloaded / Quantized caches
+- continuous batching
+- paged KV memory
+- prefix caching
+- chunked prefill
+- FlashAttention / SDPA
+- speculative decoding
+- TTFT / TPOT / throughput
+
+Chapter 63 includes:
+- Transformers local generation
+- vLLM
+- llama.cpp / GGUF
+- OpenAI-compatible APIs
+- streaming / cancellation
+- readiness / liveness
+- metrics / percentiles
+- backpressure / rate limits
+- autoscaling
+- canary / shadow rollouts
+- serving security boundaries
+
+Integration:
+[Quantized Inference & Serving Capacity Lab](integration-project-batch21/README.md)
+
+The Batch 21 integration contains:
+- INT8/INT4/per-channel quantization quality comparisons
+- KV-cache and paged-memory capacity planning
+- serving SLO / replica / canary planning
+- PyTorch weight-only reconstruction smoke
+
+Optional lightweight serving environment:
 
 ~~~bash
-python -m pip install -r requirements-batch20.txt
+python -m pip install -r requirements-batch21-serving.txt
+~~~
+
+vLLM and llama.cpp remain hardware/runtime-specific and are not forced into CPU CI.
+
+## Framework Installation
+
+Core dependencies through Batch 21:
+
+~~~bash
+python -m pip install -r requirements-batch21.txt
 ~~~
 
 PyTorch remains outside the core dependency chain.
@@ -704,7 +763,7 @@ Review
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install -r requirements-batch20.txt
+python -m pip install -r requirements-batch21.txt
 ~~~
 
 Core tests:
@@ -877,6 +936,14 @@ Batch 19 Fine-Tuning, LoRA & Instruction SFT Lab
 60 LLM Evaluation
 ↓
 Batch 20 Preference Alignment & Evaluation Lab
+↓
+61 Quantization
+↓
+62 Inference Optimization
+↓
+63 LLM Serving
+↓
+Batch 21 Quantized Inference & Serving Capacity Lab
 ~~~
 
 ## Reviews
@@ -901,6 +968,7 @@ Batch 20 Preference Alignment & Evaluation Lab
 - [BATCH_18_REVIEW.md](BATCH_18_REVIEW.md) — Batch 18
 - [BATCH_19_REVIEW.md](BATCH_19_REVIEW.md) — Batch 19
 - [BATCH_20_REVIEW.md](BATCH_20_REVIEW.md) — Batch 20
+- [BATCH_21_REVIEW.md](BATCH_21_REVIEW.md) — Batch 21
 
 ## Definition of mastery
 
@@ -935,11 +1003,12 @@ Batch 20 Preference Alignment & Evaluation Lab
 - [x] Batch 18 — Chapters 52–54
 - [x] Batch 19 — Chapters 55–57
 - [x] Batch 20 — Chapters 58–60
-- [ ] Batch 21 — Chapters 61–63
-- [ ] Batch 22+ — รอ batch ก่อนหน้าผ่าน quality audit
+- [x] Batch 21 — Chapters 61–63
+- [ ] Batch 22 — Chapters 64–66
+- [ ] Batch 23+ — รอ batch ก่อนหน้าผ่าน quality audit
 
 บทถัดไป:
 
-- Chapter 61 — Quantization: INT8 / INT4 / GGUF
-- Chapter 62 — Inference Optimization: KV Cache / Batching / FlashAttention
-- Chapter 63 — Serving: vLLM / llama.cpp / Transformers
+- Chapter 64 — Deploy AI: API / Docker / Kubernetes / Cloud
+- Chapter 65 — MLOps: Experiment Tracking / Model Registry / Monitoring
+- Chapter 66 — AI Data Engineering
