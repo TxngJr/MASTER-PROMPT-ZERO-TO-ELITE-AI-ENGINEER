@@ -27,23 +27,48 @@ def test_negative_sampling_distribution_sums_to_one() -> None:
     assert distribution[0] > distribution[2]
 
 
-def test_skipgram_update_is_finite_and_changes_parameters() -> None:
+def test_skipgram_updates_output_then_center_embeddings() -> None:
     model = mod.SkipGramNegativeSampling(
         vocab_size=5,
         embedding_dim=4,
         learning_rate=0.1,
         seed=3,
     )
-    before = model.input_embeddings[1].copy()
 
-    loss = model.train_pair(
+    center_before = model.input_embeddings[1].copy()
+    positive_before = model.output_embeddings[2].copy()
+
+    first_loss = model.train_pair(
         center=1,
         positive_context=2,
         negative_contexts=np.array([3, 4]),
     )
 
-    assert np.isfinite(loss)
-    assert not np.allclose(before, model.input_embeddings[1])
+    assert np.isfinite(first_loss)
+    assert not np.allclose(
+        positive_before,
+        model.output_embeddings[2],
+    )
+
+    # Output vectors start at zero, so the first center-vector gradient is
+    # exactly zero. After the first step, learned context vectors make the
+    # next center update non-zero.
+    np.testing.assert_allclose(
+        center_before,
+        model.input_embeddings[1],
+    )
+
+    second_loss = model.train_pair(
+        center=1,
+        positive_context=2,
+        negative_contexts=np.array([3, 4]),
+    )
+
+    assert np.isfinite(second_loss)
+    assert not np.allclose(
+        center_before,
+        model.input_embeddings[1],
+    )
 
 
 def test_cooccurrence_is_symmetric_for_symmetric_window() -> None:
