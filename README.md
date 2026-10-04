@@ -114,54 +114,65 @@ Integration:
 26. [Chapter 26 — LSTM / GRU](26-lstm-gru/README.md)
 27. [Chapter 27 — Autoencoders / Variational Autoencoders](27-autoencoder-vae/README.md)
 
-Chapter 25 includes:
-- Elman RNN
-- hidden state
-- unrolling
-- BPTT
-- vanishing/exploding gradients
-- gradient clipping
-- truncated BPTT
-- variable-length / packed sequences
-- bidirectional caveats
-
-Chapter 26 includes:
-- LSTM forget/input/candidate/output gates
-- cell state
-- GRU reset/update/candidate gates
-- LSTM/GRU parameter counts
-- multi-layer/bidirectional state shapes
-- packed sequences and masking
-
-Chapter 27 includes:
-- deterministic autoencoders
-- bottlenecks
-- denoising autoencoders
-- VAE approximate posterior
-- mu / logvar
-- reparameterization trick
-- KL divergence
-- ELBO
-- beta-VAE
-- posterior collapse
-- prior sampling
-
 Integration:
 [Sequence & Latent Representation Lab](integration-project-batch09/README.md)
 
-The integration contains two experiments:
-- same-budget RNN vs LSTM vs GRU sequence-memory benchmark
-- small PyTorch VAE on sklearn digits
+### Batch 10 — GAN, Attention & Transformer
+
+28. [Chapter 28 — Generative Adversarial Networks](28-gan/README.md)
+29. [Chapter 29 — Attention](29-attention/README.md)
+30. [Chapter 30 — Transformer](30-transformer/README.md)
+
+Chapter 28 includes:
+- Generator / Discriminator
+- minimax objective
+- non-saturating generator loss
+- stable BCE with logits
+- alternating optimization
+- detach semantics
+- mode collapse
+- DCGAN principles
+- Wasserstein / gradient-penalty intuition
+
+Chapter 29 includes:
+- Query / Key / Value
+- scaled dot-product attention
+- stable softmax
+- causal masks
+- padding masks
+- self-attention / cross-attention
+- multi-head attention
+- PyTorch scaled_dot_product_attention
+
+Chapter 30 includes:
+- token embeddings
+- positional encodings
+- residual connections
+- LayerNorm
+- feed-forward networks
+- encoder / decoder blocks
+- pre-norm / post-norm
+- decoder-only causal Transformer
+- vocabulary projection
+- next-token objective
+- autoregressive generation
+
+Integration:
+[Adversarial & Transformer Lab](integration-project-batch10/README.md)
+
+The Batch 10 integration contains:
+- tiny PyTorch GAN on a 2D multimodal distribution
+- tiny decoder-only character Transformer language model
 
 ## Framework Installation
 
-Core dependencies through Batch 09:
+Core dependencies through Batch 10:
 
 ~~~bash
-python -m pip install -r requirements-batch09.txt
+python -m pip install -r requirements-batch10.txt
 ~~~
 
-PyTorch is kept outside the core dependency chain.
+PyTorch remains outside the core dependency chain.
 
 For Fedora + NVIDIA, use the current official PyTorch selector:
 https://pytorch.org/get-started/locally/
@@ -206,7 +217,7 @@ Review
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install -r requirements-batch09.txt
+python -m pip install -r requirements-batch10.txt
 ~~~
 
 Core tests:
@@ -291,6 +302,14 @@ Batch 08 Cross-Framework CNN Lab
 27 Autoencoder / VAE
 ↓
 Batch 09 Sequence & Latent Representation Lab
+↓
+28 GAN
+↓
+29 Attention
+↓
+30 Transformer
+↓
+Batch 10 Adversarial & Transformer Lab
 ~~~
 
 ## Reviews
@@ -304,6 +323,7 @@ Batch 09 Sequence & Latent Representation Lab
 - [BATCH_07_REVIEW.md](BATCH_07_REVIEW.md) — Batch 07
 - [BATCH_08_REVIEW.md](BATCH_08_REVIEW.md) — Batch 08
 - [BATCH_09_REVIEW.md](BATCH_09_REVIEW.md) — Batch 09
+- [BATCH_10_REVIEW.md](BATCH_10_REVIEW.md) — Batch 10
 
 ## Definition of mastery
 
@@ -327,11 +347,12 @@ Batch 09 Sequence & Latent Representation Lab
 - [x] Batch 07 — Chapters 19–21
 - [x] Batch 08 — Chapters 22–24
 - [x] Batch 09 — Chapters 25–27
-- [ ] Batch 10 — Chapters 28–30
-- [ ] Batch 11+ — รอ batch ก่อนหน้าผ่าน quality audit
+- [x] Batch 10 — Chapters 28–30
+- [ ] Batch 11 — Chapters 31–33
+- [ ] Batch 12+ — รอ batch ก่อนหน้าผ่าน quality audit
 
 บทถัดไป:
 
-- Chapter 28 — Generative Adversarial Networks
-- Chapter 29 — Attention
-- Chapter 30 — Transformer
+- Chapter 31 — Vision Transformer
+- Chapter 32 — NLP Fundamentals
+- Chapter 33 — Word2Vec / GloVe / FastText
