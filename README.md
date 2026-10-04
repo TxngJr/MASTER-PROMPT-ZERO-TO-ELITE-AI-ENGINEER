@@ -594,12 +594,69 @@ Optional Hugging Face PEFT labs:
 python -m pip install -r requirements-batch19-peft.txt
 ~~~
 
-## Framework Installation
+### Batch 20 — RLHF, DPO / Preference Optimization & LLM Evaluation
 
-Core dependencies through Batch 19:
+58. [Chapter 58 — RLHF](58-rlhf/README.md)
+59. [Chapter 59 — DPO / Preference Optimization](59-dpo-preference-optimization/README.md)
+60. [Chapter 60 — LLM Evaluation](60-llm-evaluation/README.md)
+
+Chapter 58 includes:
+- preference-pair datasets
+- Bradley-Terry reward modeling
+- pairwise reward accuracy
+- policy / reference models
+- exact categorical KL
+- sampled policy-reference log-ratios
+- KL-shaped rewards
+- advantages
+- PPO ratios / clipping
+- reward hacking / overoptimization
+
+Chapter 59 includes:
+- completion log-probabilities
+- policy / reference preference margins
+- standard sigmoid DPO loss
+- beta
+- completion masking
+- length audits
+- reference log-probability caching
+- IPO / ORPO / KTO concepts
+- current TRL DPO configuration concepts
+
+Chapter 60 includes:
+- exact match / token F1
+- multiple-choice evaluation
+- pairwise evaluation
+- Brier score / ECE calibration
+- human / LLM-as-judge concepts
+- bootstrap confidence intervals
+- paired model comparisons
+- contamination audits
+- slice evaluation
+- reproducibility manifests
+- latency / throughput / memory evaluation
+
+Integration:
+[Preference Alignment & Evaluation Lab](integration-project-batch20/README.md)
+
+The Batch 20 integration contains:
+- a Bradley-Terry reward-model experiment
+- DPO against a frozen reference policy
+- paired-bootstrap model comparison
+- normalized exact-hash contamination auditing
+
+Optional Hugging Face TRL labs:
 
 ~~~bash
-python -m pip install -r requirements-batch19.txt
+python -m pip install -r requirements-batch20-trl.txt
+~~~
+
+## Framework Installation
+
+Core dependencies through Batch 20:
+
+~~~bash
+python -m pip install -r requirements-batch20.txt
 ~~~
 
 PyTorch remains outside the core dependency chain.
@@ -647,7 +704,7 @@ Review
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install -r requirements-batch19.txt
+python -m pip install -r requirements-batch20.txt
 ~~~
 
 Core tests:
@@ -812,6 +869,14 @@ Batch 18 Distributed, CUDA & Precision Lab
 57 Instruction Tuning
 ↓
 Batch 19 Fine-Tuning, LoRA & Instruction SFT Lab
+↓
+58 RLHF
+↓
+59 DPO / Preference Optimization
+↓
+60 LLM Evaluation
+↓
+Batch 20 Preference Alignment & Evaluation Lab
 ~~~
 
 ## Reviews
@@ -835,6 +900,7 @@ Batch 19 Fine-Tuning, LoRA & Instruction SFT Lab
 - [BATCH_17_REVIEW.md](BATCH_17_REVIEW.md) — Batch 17
 - [BATCH_18_REVIEW.md](BATCH_18_REVIEW.md) — Batch 18
 - [BATCH_19_REVIEW.md](BATCH_19_REVIEW.md) — Batch 19
+- [BATCH_20_REVIEW.md](BATCH_20_REVIEW.md) — Batch 20
 
 ## Definition of mastery
 
@@ -868,11 +934,12 @@ Batch 19 Fine-Tuning, LoRA & Instruction SFT Lab
 - [x] Batch 17 — Chapters 49–51
 - [x] Batch 18 — Chapters 52–54
 - [x] Batch 19 — Chapters 55–57
-- [ ] Batch 20 — Chapters 58–60
-- [ ] Batch 21+ — รอ batch ก่อนหน้าผ่าน quality audit
+- [x] Batch 20 — Chapters 58–60
+- [ ] Batch 21 — Chapters 61–63
+- [ ] Batch 22+ — รอ batch ก่อนหน้าผ่าน quality audit
 
 บทถัดไป:
 
-- Chapter 58 — RLHF
-- Chapter 59 — DPO / Preference Optimization
-- Chapter 60 — LLM Evaluation
+- Chapter 61 — Quantization: INT8 / INT4 / GGUF
+- Chapter 62 — Inference Optimization: KV Cache / Batching / FlashAttention
+- Chapter 63 — Serving: vLLM / llama.cpp / Transformers
