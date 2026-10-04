@@ -440,12 +440,62 @@ The Batch 16 integration contains:
 - a schema-validated allow-listed tool agent
 - a tiny modern decoder with RMSNorm, RoPE, GQA, causal SDPA and SwiGLU
 
+### Batch 17 — Tokenizer, Pretraining & LLM Data Pipeline
+
+49. [Chapter 49 — Tokenizer From Scratch](49-tokenizer-from-scratch/README.md)
+50. [Chapter 50 — LLM Pretraining From Scratch](50-llm-pretraining-from-scratch/README.md)
+51. [Chapter 51 — LLM Dataset / Data Pipeline](51-llm-dataset-pipeline/README.md)
+
+Chapter 49 includes:
+- Unicode / UTF-8 bytes
+- byte-level vocabulary
+- BPE pair counting and deterministic merges
+- merge ranks
+- encode / decode
+- special-token design
+- multilingual compression evaluation
+- tokenizer artifact/versioning
+
+Chapter 50 includes:
+- causal LM input/target shifting
+- cross-entropy / perplexity
+- AdamW
+- warmup + cosine decay
+- gradient accumulation
+- gradient clipping
+- validation
+- tokens seen / throughput
+- checkpoint/resume concepts
+
+Chapter 51 includes:
+- document schema / provenance
+- Unicode normalization
+- exact deduplication
+- near-dedup concepts
+- document-level splitting
+- frozen-tokenizer contract
+- token packing
+- sharding / streaming
+- data mixtures
+- dataset manifests
+- contamination auditing
+
+Integration:
+[Raw Text to Tiny LLM](integration-project-batch17/README.md)
+
+The Batch 17 integration contains:
+- normalized/deduplicated document pipeline
+- deterministic document-level train/validation/test split
+- byte-level BPE trained on train documents only
+- packed causal token sequences
+- tiny modern LLM pretraining with AdamW, LR scheduling, clipping and checkpoint serialization
+
 ## Framework Installation
 
-Core dependencies through Batch 16:
+Core dependencies through Batch 17:
 
 ~~~bash
-python -m pip install -r requirements-batch16.txt
+python -m pip install -r requirements-batch17.txt
 ~~~
 
 PyTorch remains outside the core dependency chain.
@@ -493,7 +543,7 @@ Review
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install -r requirements-batch16.txt
+python -m pip install -r requirements-batch17.txt
 ~~~
 
 Core tests:
@@ -634,6 +684,14 @@ Batch 15 Recommendation, Vision & Vector Retrieval Lab
 48 Modern LLM Architecture
 ↓
 Batch 16 RAG, Agent & Modern LLM Lab
+↓
+49 Tokenizer From Scratch
+↓
+50 LLM Pretraining From Scratch
+↓
+51 LLM Dataset / Data Pipeline
+↓
+Batch 17 Raw Text to Tiny LLM Lab
 ~~~
 
 ## Reviews
@@ -654,6 +712,7 @@ Batch 16 RAG, Agent & Modern LLM Lab
 - [BATCH_14_REVIEW.md](BATCH_14_REVIEW.md) — Batch 14
 - [BATCH_15_REVIEW.md](BATCH_15_REVIEW.md) — Batch 15
 - [BATCH_16_REVIEW.md](BATCH_16_REVIEW.md) — Batch 16
+- [BATCH_17_REVIEW.md](BATCH_17_REVIEW.md) — Batch 17
 
 ## Definition of mastery
 
@@ -684,11 +743,12 @@ Batch 16 RAG, Agent & Modern LLM Lab
 - [x] Batch 14 — Chapters 40–42
 - [x] Batch 15 — Chapters 43–45
 - [x] Batch 16 — Chapters 46–48
-- [ ] Batch 17 — Chapters 49–51
-- [ ] Batch 18+ — รอ batch ก่อนหน้าผ่าน quality audit
+- [x] Batch 17 — Chapters 49–51
+- [ ] Batch 18 — Chapters 52–54
+- [ ] Batch 19+ — รอ batch ก่อนหน้าผ่าน quality audit
 
 บทถัดไป:
 
-- Chapter 49 — Tokenizer From Scratch
-- Chapter 50 — LLM Pretraining From Scratch
-- Chapter 51 — LLM Dataset / Data Pipeline
+- Chapter 52 — Distributed Training
+- Chapter 53 — GPU / CUDA Fundamentals
+- Chapter 54 — Mixed Precision: FP32 / FP16 / BF16
