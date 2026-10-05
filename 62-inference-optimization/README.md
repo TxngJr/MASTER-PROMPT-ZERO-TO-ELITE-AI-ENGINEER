@@ -94,7 +94,7 @@ Modern Transformers provides multiple strategies:
 - Offloaded cache — trades GPU memory for CPU transfer overhead
 - Quantized cache — lowers cache memory with extra quantization costs
 
-Static cache can waste capacity/work when real sequence lengths are far below the configured maximum. citeturn379622search0turn379622search2
+Static cache can waste capacity/work when real sequence lengths are far below the configured maximum. (see references.md)
 
 ## 9. Latency vs Throughput
 
@@ -123,7 +123,7 @@ Collect requests inside a short scheduling window and form a batch. Larger windo
 
 Instead of waiting for every sequence in a batch to finish, finished slots are replaced by new work during serving.
 
-This improves utilization for variable output lengths. vLLM currently lists continuous batching as a core feature. citeturn912558search4
+This improves utilization for variable output lengths. vLLM currently lists continuous batching as a core feature. (see references.md)
 
 ## 13. Paged KV Cache
 
@@ -137,7 +137,7 @@ physical KV blocks
 
 This reduces allocator fragmentation and supports flexible sequence growth.
 
-vLLM's current cache remains block-oriented, though its historical PagedAttention design document explicitly warns that it is not a literal description of all current kernel code. citeturn379622search3
+vLLM's current cache remains block-oriented, though its historical PagedAttention design document explicitly warns that it is not a literal description of all current kernel code. (see references.md)
 
 ## 14. Block Usage
 
@@ -162,7 +162,7 @@ new request suffix
 ↓ compute only missing suffix
 ~~~
 
-Current vLLM uses hash-based automatic prefix caching. citeturn912558search5
+Current vLLM uses hash-based automatic prefix caching. (see references.md)
 
 ## 16. Chunked Prefill
 
@@ -178,7 +178,7 @@ Important:
 
 ## 18. PyTorch SDPA
 
-PyTorch scaled_dot_product_attention can dispatch to optimized backends depending on device, dtype and shape. Current torch.nn.attention exposes backend controls and FlashAttention implementations. citeturn379622search5
+PyTorch scaled_dot_product_attention can dispatch to optimized backends depending on device, dtype and shape. Current torch.nn.attention exposes backend controls and FlashAttention implementations. (see references.md)
 
 ## 19. Speculative Decoding
 
@@ -209,7 +209,7 @@ Possible proposal sources include:
 - suffix/prefix heuristics
 - learned multi-token heads
 
-Current vLLM documents several speculative-decoding approaches. citeturn912558search4
+Current vLLM documents several speculative-decoding approaches. (see references.md)
 
 ## 22. Tensor Parallel Inference
 

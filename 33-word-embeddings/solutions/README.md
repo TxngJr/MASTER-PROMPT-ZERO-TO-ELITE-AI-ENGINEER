@@ -1,7 +1,21 @@
-# Chapter 33 Solutions — Key Ideas
-
-- Skip-Gram predicts contexts from centers; CBOW predicts centers from context.
-- Negative sampling replaces full-vocabulary softmax with positive/noise discrimination.
-- GloVe fits embedding dot products to log co-occurrence statistics with a weighting function.
-- FastText composes representations from character n-grams and can represent some unseen words.
-- Cosine similarity is a geometric diagnostic, not proof of semantic truth.
+# Word Embeddings — Solutions
+1. Define distributional hypothesis by purpose, input, output, and the problem it addresses.
+2. Define Word2Vec operationally with an explicit example.
+3. Explain where CBOW appears and what quantity it changes.
+4. State what Skip-gram controls and one valid condition.
+5. Compare distributional hypothesis and Word2Vec by role, assumptions, and computational effect.
+6. Trace Skip-gram from setting to intermediate result to final metric.
+7. State the limitation involving negative sampling, its observable symptom, and an appropriate correction.
+8. Compare two cosine similarity settings and state the statistical or computational difference.
+9. Keep the distributional hypothesis calculation visible, validate inputs, and use deterministic tiny data.
+10. Include one normal case and one edge case with expected values.
+11. Check important intermediate values and the core property of CBOW.
+12. Fix the seed, record data, configuration, and metric, then state one limitation.
+13. Compare expected and actual shapes or types at each stage and correct the earliest mismatch.
+14. Use a numerically stable formulation and verify finite outputs on extreme values.
+15. Fit learned preprocessing on training data only and keep validation and test data separate.
+16. Measure runtime and memory, identify the dominant operation, improve it, and verify equivalent output.
+17. Trace the algorithm from input through distributional hypothesis, CBOW, and Skip-gram to output and state dominant complexity.
+18. Match seed, data, preprocessing, parameters, and reduction conventions before comparing implementations.
+19. Change one factor only, keep other conditions fixed, and report measured differences across repeated runs when randomness matters.
+20. Include input checks, measured quality/resources, versioned code/data/configuration, reproducibility metadata, and a falsifiable question involving negative sampling or cosine similarity.

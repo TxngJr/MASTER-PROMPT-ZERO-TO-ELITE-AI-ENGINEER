@@ -71,7 +71,7 @@ They enable relative-position structure without simply adding a learned position
 
 Extending beyond training context often requires modifying positional frequencies/positions rather than merely increasing one config integer.
 
-Transformers currently documents RoPE types including default, linear, dynamic/NTK, YaRN, LongRoPE and Llama3-style scaling. citeturn744269search1turn744269search6
+Transformers currently documents RoPE types including default, linear, dynamic/NTK, YaRN, LongRoPE and Llama3-style scaling. (see references.md)
 
 Each variant has its own assumptions and configuration.
 
@@ -113,7 +113,7 @@ Long context can become cache-memory limited even when model weights fit.
 
 ## 11. Sliding / Chunked Cache Bounds
 
-Current Transformers cache documentation notes that cache growth stops at the configured sliding-window/chunk size for layers using sliding or chunked attention. citeturn315138search6
+Current Transformers cache documentation notes that cache growth stops at the configured sliding-window/chunk size for layers using sliding or chunked attention. (see references.md)
 
 That does not imply every layer in every model has bounded cache.
 

@@ -169,11 +169,11 @@ Instead of predicting one action at a time, a policy can predict a chunk:
 
 This can capture temporal consistency and reduce inference frequency.
 
-Current LeRobot policy APIs expose action queues/chunk-aware policy behavior for several policies. citeturn518178search5
+Current LeRobot policy APIs expose action queues/chunk-aware policy behavior for several policies. (see references.md)
 
 ## 15. Modern Robot Policies
 
-LeRobot's current policy ecosystem includes ACT, SmolVLA, π0/π0.5 and other policy families, illustrating how quickly robot-learning architectures are evolving. citeturn518178search5
+LeRobot's current policy ecosystem includes ACT, SmolVLA, π0/π0.5 and other policy families, illustrating how quickly robot-learning architectures are evolving. (see references.md)
 
 Learn the abstractions before memorizing one policy name.
 
@@ -191,7 +191,7 @@ robot action tokens / continuous actions
 
 VLA models aim to ground language/vision representations in embodied actions.
 
-Current LeRobot documentation explicitly describes VLA-style policies and the challenges of heterogeneous robot/action/camera spaces. citeturn518178search12
+Current LeRobot documentation explicitly describes VLA-style policies and the challenges of heterogeneous robot/action/camera spaces. (see references.md)
 
 ## 17. World Models + Robotics
 
@@ -206,7 +206,7 @@ world model imagines outcome
 planner chooses action
 ~~~
 
-Current LeRobot v0.6 release also added world-model-policy work and simulation evaluation tooling. citeturn518178search10
+Current LeRobot v0.6 release also added world-model-policy work and simulation evaluation tooling. (see references.md)
 
 ## 18. Imitation vs RL vs Planning
 
@@ -264,7 +264,7 @@ Success rate alone can hide unsafe behavior.
 
 ## 22. Current LeRobot Deployment
 
-Current LeRobot rollout tooling supports deploying trained policies with different rollout strategies and emphasizes checking whether selected compute can meet required control rate. citeturn518178search6
+Current LeRobot rollout tooling supports deploying trained policies with different rollout strategies and emphasizes checking whether selected compute can meet required control rate. (see references.md)
 
 For this course, treat real-robot rollout as an advanced supervised lab, not a required home exercise.
 

@@ -1,7 +1,21 @@
-# Chapter 30 Solutions — Key Ideas
-
-- embeddings map discrete ids to continuous model vectors.
-- position information is required because content-only self-attention does not by itself encode intended token order.
-- residual paths and normalization stabilize deep block composition.
-- attention mixes information across positions; FFNs transform each position's features.
-- decoder-only language models use causal self-attention and next-token cross-entropy.
+# Transformer — Solutions
+1. Define self-attention by purpose, input, output, and the problem it addresses.
+2. Define residual connection operationally and give an explicit example.
+3. Explain where LayerNorm appears and what quantity it changes.
+4. State what feed-forward network controls and one condition that must remain valid.
+5. Compare self-attention and residual connection by role, assumptions, and computational effect.
+6. Trace feed-forward network from setting to intermediate result to final metric.
+7. State the limitation involving positional encoding, its observable symptom, and an appropriate correction.
+8. Compare two encoder-decoder settings and state the statistical or computational difference.
+9. Keep the self-attention calculation visible, validate inputs, and use deterministic tiny data.
+10. Include one normal case and one edge case with expected values.
+11. Check important intermediate values and the core property of LayerNorm.
+12. Fix the seed, record data, configuration, and metric, then state one limitation.
+13. Compare expected and actual shapes or types at each stage and correct the earliest mismatch.
+14. Use a numerically stable formulation and verify finite outputs on extreme values.
+15. Fit learned preprocessing on training data only and keep validation and test data separate.
+16. Measure runtime and memory, identify the dominant operation, improve it, and verify equivalent output.
+17. Trace the algorithm from input through self-attention, LayerNorm, and feed-forward network to output and state dominant complexity.
+18. Match seed, data, preprocessing, parameters, and reduction conventions before comparing implementations.
+19. Change one factor only, keep other conditions fixed, and report the measured difference across repeated runs when randomness matters.
+20. Include input checks, measured quality/resources, versioned code/data/configuration, reproducibility metadata, and a falsifiable question involving positional encoding or encoder-decoder.

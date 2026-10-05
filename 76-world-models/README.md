@@ -117,7 +117,7 @@ This can discard unpredictable nuisance detail while preserving useful structure
 
 Joint-Embedding Predictive Architectures predict representations of unseen/target content rather than reconstructing raw input exactly.
 
-Meta's current V-JEPA 2 release explicitly frames this direction as world-model research and highlights robotics/physical-world applications. citeturn518178search16
+Meta's current V-JEPA 2 release explicitly frames this direction as world-model research and highlights robotics/physical-world applications. (see references.md)
 
 An educational objective:
 

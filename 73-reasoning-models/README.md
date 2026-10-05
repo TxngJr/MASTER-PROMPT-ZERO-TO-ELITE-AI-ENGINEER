@@ -198,7 +198,7 @@ Reinforcement learning with verifiable rewards uses rewards that can be checked 
 
 Group-relative methods compare sampled outputs from the same prompt rather than requiring the exact same critic design as PPO.
 
-Current Hugging Face TRL includes GRPOTrainer alongside SFT, DPO and reward-modeling trainers. citeturn537494search5
+Current Hugging Face TRL includes GRPOTrainer alongside SFT, DPO and reward-modeling trainers. (see references.md)
 
 ## 17. Reasoning Distillation
 

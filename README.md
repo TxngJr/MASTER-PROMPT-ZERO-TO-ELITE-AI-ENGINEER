@@ -1395,3 +1395,17 @@ Final audit:
 
 Batch 27 closes the numbered curriculum with research reproduction engineering, a random-initialized tiny LLM capstone, SFT/preference optimization, quantization, serving/deployment/monitoring, and a final coverage audit.
 
+
+
+## Curriculum Completion Contract v2
+
+The course is complete against the repository's documented roadmap and teaching contract. Read these canonical companions with Chapters 13–78:
+
+- [Curriculum Completion Standard](CURRICULUM_COMPLETION_STANDARD.md)
+- [Chapter Completion Addenda](CHAPTER_COMPLETION_ADDENDA.md)
+- [Supplementary Exercise Workbook](SUPPLEMENTARY_EXERCISE_WORKBOOK.md)
+- [Hardware Lab Matrix](HARDWARE_LAB_MATRIX.md)
+
+A dedicated GitHub Actions workflow runs `tools/curriculum_audit.py` and verifies chapter structure, exercise supplementation, missing-topic addenda, CUDA example coverage, and absence of unresolved chat citation tokens.
+
+**Scope note:** “complete” means complete against this published Zero-to-Elite curriculum contract, not that all possible present or future AI knowledge can be exhausted by one repository.

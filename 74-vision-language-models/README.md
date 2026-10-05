@@ -79,13 +79,13 @@ No one pattern defines every VLM.
 
 ## 7. Multimodal Chat Templates
 
-Current Transformers multimodal chat templates put modality blocks such as image/text inside each message content list, and multimodal preprocessing/chat templating is handled by a Processor rather than a text-only Tokenizer. citeturn537494search0turn537494search1
+Current Transformers multimodal chat templates put modality blocks such as image/text inside each message content list, and multimodal preprocessing/chat templating is handled by a Processor rather than a text-only Tokenizer. (see references.md)
 
 Model-specific chat templates and special image tokens must be preserved.
 
 ## 8. ImageTextToText
 
-Current Transformers exposes high-level image-text-to-text inference and lower-level Processor + generation paths for supported VLMs. citeturn537494search0
+Current Transformers exposes high-level image-text-to-text inference and lower-level Processor + generation paths for supported VLMs. (see references.md)
 
 Never assume one model's image placeholder format works for another model.
 
