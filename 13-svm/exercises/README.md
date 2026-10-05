@@ -1,16 +1,33 @@
-# Chapter 13 Exercises
+# Chapter 13 Exercises — Support Vector Machines
 
-1. derive distance from point to hyperplane
-2. explain why margin width is `2/||w||`
-3. calculate hinge loss for 5 samples
-4. implement margin diagnostic
-5. plot 2D hyperplane + margins
-6. compare C = 0.01, 0.1, 1, 10, 100
-7. compare linear vs RBF
-8. grid-search C/gamma with CV
-9. benchmark LinearSVC vs SVC on increasing n
-10. explain support-vector count vs inference latency
+Complete all 20. Keep code, calculations, plots, seeds, and short written conclusions.
 
-Challenge:
-- implement polynomial feature map explicitly and compare to polynomial kernel on tiny data
-- derive dual objective conceptually
+## Level 1 — Recall
+1. Define **maximum margin** and state its purpose.
+2. Define **hinge loss** and give one concrete example.
+3. Define **soft-margin C** and name one important hyperparameter or control.
+4. Define **kernel trick** and state one limitation.
+
+## Level 2 — Understanding
+5. Explain how maximum margin changes model behavior compared with a simpler baseline.
+6. State the main assumptions behind hinge loss and describe one violation.
+7. Derive or justify the central objective/update/criterion used by this chapter; define every symbol.
+8. Compare soft-margin C and kernel trick on bias, variance, compute, and interpretability.
+
+## Level 3 — Coding
+9. Implement a tiny independent reference for the chapter's central calculation without calling a high-level estimator.
+10. Add input validation for shapes, dtypes, invalid hyperparameters, and empty inputs.
+11. Add a deterministic experiment with a fixed seed and one synthetic dataset where the expected behavior is obvious.
+12. Add at least two unit tests: one normal case and one edge case derived from a mathematical invariant.
+
+## Level 4 — Debugging
+13. Create a deliberately wrong implementation that produces plausible output; identify the bug using an invariant rather than visual inspection alone.
+14. Construct a leakage or split bug, measure the inflated metric, then fix it and explain the difference.
+15. Create a numerical/scale/pathological-input failure and add a guard or diagnostic.
+16. Profile the implementation, find the dominant cost, and propose one optimization that preserves results.
+
+## Level 5 — Challenge
+17. Run a matched baseline vs chapter method across at least three seeds or data resamples; report mean and variability.
+18. Perform a one-factor ablation on a central hyperparameter/component and explain the mechanism behind the observed change.
+19. Design a production contract: accepted inputs, preprocessing, versioning, latency/memory budget, monitoring metric, and rollback condition.
+20. Write a mini research note containing claim, method, baseline, controlled protocol, result table, failure case, limitation, and next experiment.
