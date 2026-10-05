@@ -1,16 +1,33 @@
-# Chapter 22 Exercises
+# Chapter 22 Exercises — PyTorch
 
-1. Create tensors with float32, float16, int64, bool.
-2. Explain view vs reshape on contiguous/non-contiguous tensors.
-3. Build a 20→64→32→5 MLP.
-4. Count all parameters by hand and verify with code.
-5. Write a training loop without helper functions.
-6. Demonstrate gradient accumulation when zero_grad is omitted.
-7. Compare model.train() and model.eval() using Dropout.
-8. Save/load state_dict and verify identical predictions.
-9. Benchmark CPU vs CUDA for increasing matrix sizes.
-10. Inspect CUDA allocated/reserved memory during a training step.
+Complete all 20 exercises and retain code, calculations, plots, seeds, and concise conclusions.
 
-Challenge:
-- write a custom nn.Module implementing a residual MLP block
-- write a custom Dataset and collate function
+## Level 1 — Recall
+1. Define **tensor semantics** and its role.
+2. Define **autograd** and one numerical concern.
+3. Define **nn.Module and optimizers** and identify its state/parameters.
+4. Define **DataLoader/checkpoint/eval workflows** and one limitation.
+
+## Level 2 — Understanding
+5. Trace the forward computation involving tensor semantics and annotate tensor shapes.
+6. State assumptions and failure modes for autograd.
+7. Derive the central objective/gradient/update and verify a toy scalar/vector case by hand.
+8. Compare nn.Module and optimizers and DataLoader/checkpoint/eval workflows on abstraction, state, compute, memory, and debugging.
+
+## Level 3 — Coding
+9. Implement the chapter's central calculation using low-level tensor/NumPy operations rather than a high-level model wrapper.
+10. Add shape/dtype/device/range validation and clear errors.
+11. Build a fixed-seed tiny training or forward/backward smoke test with known expected behavior.
+12. Add invariant-based tests, including one gradient/reference comparison where appropriate.
+
+## Level 4 — Debugging
+13. Create an axis/reduction/shape bug that runs but yields wrong results; diagnose with assertions.
+14. Create a train/eval, gradient-state, checkpoint, or masking bug; fix it and add a regression test.
+15. Trigger a numerical problem such as overflow, saturation, exploding gradients, or division by zero; implement a stable form or guard.
+16. Profile one workload and optimize the actual bottleneck while proving numerical equivalence.
+
+## Level 5 — Challenge
+17. Compare two valid configurations across at least three seeds; report mean/variability and resource usage.
+18. Run a one-factor ablation on a layer/objective/state choice and explain the mechanism.
+19. Write a deployment contract covering accepted tensor shapes/dtypes, preprocessing, artifact version, device policy, limits, monitoring, and rollback.
+20. Write a research note with claim, matched baseline, protocol, metrics, diagnostics, failure case, limitation, and next experiment.

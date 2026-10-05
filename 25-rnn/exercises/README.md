@@ -1,16 +1,33 @@
-# Chapter 25 Exercises
+# Chapter 25 Exercises — Recurrent Neural Networks
 
-1. Trace a 3-step RNN by hand.
-2. Derive all tensor shapes for B=32,T=50,D=16,H=64.
-3. Show why parameters are shared across time.
-4. Implement ReLU RNN in addition to tanh.
-5. Add a sequence-to-one readout.
-6. Plot hidden-state norms across long sequences.
-7. Demonstrate exploding gradients with a simple recurrent scalar system.
-8. Add gradient clipping to a PyTorch training loop.
-9. Use pack_padded_sequence with unsorted variable lengths.
-10. Compare unidirectional vs bidirectional classification when the full sequence is available.
+Complete all 20 exercises and retain code, calculations, plots, seeds, and concise conclusions.
 
-Challenge:
-- connect the Batch 07 autodiff Tensor to an RNN unrolled for several steps
-- implement truncated BPTT on a synthetic stream
+## Level 1 — Recall
+1. Define **recurrent state** and its role.
+2. Define **BPTT** and one numerical concern.
+3. Define **vanishing/exploding gradients** and identify its state/parameters.
+4. Define **sequence masking and evaluation** and one limitation.
+
+## Level 2 — Understanding
+5. Trace the forward computation involving recurrent state and annotate tensor shapes.
+6. State assumptions and failure modes for BPTT.
+7. Derive the central objective/gradient/update and verify a toy scalar/vector case by hand.
+8. Compare vanishing/exploding gradients and sequence masking and evaluation on abstraction, state, compute, memory, and debugging.
+
+## Level 3 — Coding
+9. Implement the chapter's central calculation using low-level tensor/NumPy operations rather than a high-level model wrapper.
+10. Add shape/dtype/device/range validation and clear errors.
+11. Build a fixed-seed tiny training or forward/backward smoke test with known expected behavior.
+12. Add invariant-based tests, including one gradient/reference comparison where appropriate.
+
+## Level 4 — Debugging
+13. Create an axis/reduction/shape bug that runs but yields wrong results; diagnose with assertions.
+14. Create a train/eval, gradient-state, checkpoint, or masking bug; fix it and add a regression test.
+15. Trigger a numerical problem such as overflow, saturation, exploding gradients, or division by zero; implement a stable form or guard.
+16. Profile one workload and optimize the actual bottleneck while proving numerical equivalence.
+
+## Level 5 — Challenge
+17. Compare two valid configurations across at least three seeds; report mean/variability and resource usage.
+18. Run a one-factor ablation on a layer/objective/state choice and explain the mechanism.
+19. Write a deployment contract covering accepted tensor shapes/dtypes, preprocessing, artifact version, device policy, limits, monitoring, and rollback.
+20. Write a research note with claim, matched baseline, protocol, metrics, diagnostics, failure case, limitation, and next experiment.

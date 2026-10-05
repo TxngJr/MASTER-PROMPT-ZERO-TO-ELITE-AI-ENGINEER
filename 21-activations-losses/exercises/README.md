@@ -1,16 +1,33 @@
-# Chapter 21 Exercises
+# Chapter 21 Exercises — Activations and Losses
 
-1. derive sigmoid derivative
-2. derive softmax Jacobian
-3. derive softmax + cross-entropy simplification
-4. implement logsumexp
-5. compare naive BCE vs BCE-with-logits on ±1000
-6. compare MSE/MAE/Huber on an outlier
-7. plot ReLU/LeakyReLU/GELU/SiLU
-8. gradient-check Huber
-9. test label smoothing epsilon values
-10. derive SiLU derivative
+Complete all 20 exercises and retain code, calculations, plots, seeds, and concise conclusions.
 
-Challenge:
-- focal loss with stable logits
-- multiclass class-weighted CE
+## Level 1 — Recall
+1. Define **ReLU/GELU/SiLU families** and its role.
+2. Define **softmax and cross-entropy** and one numerical concern.
+3. Define **KL divergence** and identify its state/parameters.
+4. Define **contrastive loss and metric-learning objectives** and one limitation.
+
+## Level 2 — Understanding
+5. Trace the forward computation involving ReLU/GELU/SiLU families and annotate tensor shapes.
+6. State assumptions and failure modes for softmax and cross-entropy.
+7. Derive the central objective/gradient/update and verify a toy scalar/vector case by hand.
+8. Compare KL divergence and contrastive loss and metric-learning objectives on abstraction, state, compute, memory, and debugging.
+
+## Level 3 — Coding
+9. Implement the chapter's central calculation using low-level tensor/NumPy operations rather than a high-level model wrapper.
+10. Add shape/dtype/device/range validation and clear errors.
+11. Build a fixed-seed tiny training or forward/backward smoke test with known expected behavior.
+12. Add invariant-based tests, including one gradient/reference comparison where appropriate.
+
+## Level 4 — Debugging
+13. Create an axis/reduction/shape bug that runs but yields wrong results; diagnose with assertions.
+14. Create a train/eval, gradient-state, checkpoint, or masking bug; fix it and add a regression test.
+15. Trigger a numerical problem such as overflow, saturation, exploding gradients, or division by zero; implement a stable form or guard.
+16. Profile one workload and optimize the actual bottleneck while proving numerical equivalence.
+
+## Level 5 — Challenge
+17. Compare two valid configurations across at least three seeds; report mean/variability and resource usage.
+18. Run a one-factor ablation on a layer/objective/state choice and explain the mechanism.
+19. Write a deployment contract covering accepted tensor shapes/dtypes, preprocessing, artifact version, device policy, limits, monitoring, and rollback.
+20. Write a research note with claim, matched baseline, protocol, metrics, diagnostics, failure case, limitation, and next experiment.
