@@ -1,16 +1,33 @@
-# Chapter 16 Exercises
+# Chapter 16 Exercises — Anomaly Detection
 
-1. compare mean/std vs median/MAD under contamination
-2. derive Mahalanobis distance from covariance whitening intuition
-3. implement percentile threshold sweep
-4. compare IsolationForest contamination values
-5. compare LOF n_neighbors
-6. compare OneClassSVM nu/gamma
-7. plot PR curve for rare anomalies
-8. create contextual time anomaly
-9. measure detector stability across seeds
-10. test high-dimensional noise features
+Complete all 20 exercises. Save code, calculations, plots, seeds, and concise conclusions.
 
-Challenge:
-- implement a tiny isolation tree/path-length scorer
-- implement rolling anomaly scores for time series without future leakage
+## Level 1 — Recall
+1. Define **statistical outliers**.
+2. Define **Isolation Forest** and its main role.
+3. Define **one-class methods** and one important control/hyperparameter.
+4. Define **threshold calibration** and one limitation.
+
+## Level 2 — Understanding
+5. Explain the mechanism connecting statistical outliers to the chapter's output.
+6. State the assumptions behind Isolation Forest and construct one violation.
+7. Derive the central objective/update/recurrence; define every symbol and shape.
+8. Compare one-class methods and threshold calibration in stability, compute, data needs, and failure modes.
+
+## Level 3 — Coding
+9. Implement a tiny independent version of the central calculation using Python/NumPy primitives.
+10. Add validation for shape, dtype, range, empty input, and illegal hyperparameters.
+11. Build a fixed-seed synthetic experiment where expected behavior is known before execution.
+12. Add at least two invariant-based unit tests plus a comparison against a trusted tiny reference when feasible.
+
+## Level 4 — Debugging
+13. Introduce a wrong sign/axis/update/order bug that still runs; diagnose it using invariants.
+14. Create a train/eval, leakage, or state-management bug; measure its effect and fix it.
+15. Create a numerical extreme that causes overflow, underflow, instability, or degenerate behavior; implement a stable fix.
+16. Profile one workload, identify the dominant operation or allocation, optimize it, and prove output equivalence.
+
+## Level 5 — Challenge
+17. Compare a baseline and chapter method over at least three seeds/resamples and report variability.
+18. Run a one-factor ablation on a central component or hyperparameter and explain the mechanism.
+19. Specify a production contract with inputs, artifact versions, resource limits, monitoring, and rollback.
+20. Write a mini research report: claim, fair baseline, protocol, result table, diagnostics, limitation, and next experiment.

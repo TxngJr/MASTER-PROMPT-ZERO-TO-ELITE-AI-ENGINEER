@@ -1,16 +1,33 @@
-# Chapter 20 Exercises
+# Chapter 20 Exercises — Optimizers
 
-1. derive SGD update on f(x)=x²
-2. derive Momentum trajectory on a 2D ravine
-3. implement Nesterov with a documented convention
-4. compare AdaGrad and RMSProp effective learning rates
-5. calculate first two Adam steps by hand
-6. measure optimizer state memory
-7. add global gradient clipping
-8. compare Adam L2-style decay vs AdamW
-9. create parameter groups
-10. add cosine learning-rate scheduler
+Complete all 20 exercises. Save code, calculations, plots, seeds, and concise conclusions.
 
-Challenge:
-- AMSGrad
-- decoupled weight decay exclusions for bias parameters
+## Level 1 — Recall
+1. Define **SGD and momentum**.
+2. Define **RMSProp** and its main role.
+3. Define **Adam/AdamW** and one important control/hyperparameter.
+4. Define **learning-rate schedules** and one limitation.
+
+## Level 2 — Understanding
+5. Explain the mechanism connecting SGD and momentum to the chapter's output.
+6. State the assumptions behind RMSProp and construct one violation.
+7. Derive the central objective/update/recurrence; define every symbol and shape.
+8. Compare Adam/AdamW and learning-rate schedules in stability, compute, data needs, and failure modes.
+
+## Level 3 — Coding
+9. Implement a tiny independent version of the central calculation using Python/NumPy primitives.
+10. Add validation for shape, dtype, range, empty input, and illegal hyperparameters.
+11. Build a fixed-seed synthetic experiment where expected behavior is known before execution.
+12. Add at least two invariant-based unit tests plus a comparison against a trusted tiny reference when feasible.
+
+## Level 4 — Debugging
+13. Introduce a wrong sign/axis/update/order bug that still runs; diagnose it using invariants.
+14. Create a train/eval, leakage, or state-management bug; measure its effect and fix it.
+15. Create a numerical extreme that causes overflow, underflow, instability, or degenerate behavior; implement a stable fix.
+16. Profile one workload, identify the dominant operation or allocation, optimize it, and prove output equivalence.
+
+## Level 5 — Challenge
+17. Compare a baseline and chapter method over at least three seeds/resamples and report variability.
+18. Run a one-factor ablation on a central component or hyperparameter and explain the mechanism.
+19. Specify a production contract with inputs, artifact versions, resource limits, monitoring, and rollback.
+20. Write a mini research report: claim, fair baseline, protocol, result table, diagnostics, limitation, and next experiment.

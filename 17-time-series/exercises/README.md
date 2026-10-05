@@ -1,16 +1,33 @@
-# Chapter 17 Exercises
+# Chapter 17 Exercises — Time Series
 
-1. create naive and seasonal-naive baselines
-2. build lag matrix for p=7
-3. implement expanding-window validation
-4. plot ACF/PACF
-5. compare differencing d=0/1/2
-6. fit ARIMA orders and compare validation MAE
-7. add rolling mean/std features with shift(1)
-8. compare recursive vs direct horizon models
-9. test regime shift
-10. compare MAE/RMSE/MAPE behavior
+Complete all 20 exercises. Save code, calculations, plots, seeds, and concise conclusions.
 
-Challenge:
-- implement AR(p) recursive refit walk-forward
-- build Prophet optional lab with ds/y input and compare against seasonal naive
+## Level 1 — Recall
+1. Define **trend and seasonality**.
+2. Define **stationarity and autocorrelation** and its main role.
+3. Define **ARIMA/SARIMA** and one important control/hyperparameter.
+4. Define **forecast evaluation** and one limitation.
+
+## Level 2 — Understanding
+5. Explain the mechanism connecting trend and seasonality to the chapter's output.
+6. State the assumptions behind stationarity and autocorrelation and construct one violation.
+7. Derive the central objective/update/recurrence; define every symbol and shape.
+8. Compare ARIMA/SARIMA and forecast evaluation in stability, compute, data needs, and failure modes.
+
+## Level 3 — Coding
+9. Implement a tiny independent version of the central calculation using Python/NumPy primitives.
+10. Add validation for shape, dtype, range, empty input, and illegal hyperparameters.
+11. Build a fixed-seed synthetic experiment where expected behavior is known before execution.
+12. Add at least two invariant-based unit tests plus a comparison against a trusted tiny reference when feasible.
+
+## Level 4 — Debugging
+13. Introduce a wrong sign/axis/update/order bug that still runs; diagnose it using invariants.
+14. Create a train/eval, leakage, or state-management bug; measure its effect and fix it.
+15. Create a numerical extreme that causes overflow, underflow, instability, or degenerate behavior; implement a stable fix.
+16. Profile one workload, identify the dominant operation or allocation, optimize it, and prove output equivalence.
+
+## Level 5 — Challenge
+17. Compare a baseline and chapter method over at least three seeds/resamples and report variability.
+18. Run a one-factor ablation on a central component or hyperparameter and explain the mechanism.
+19. Specify a production contract with inputs, artifact versions, resource limits, monitoring, and rollback.
+20. Write a mini research report: claim, fair baseline, protocol, result table, diagnostics, limitation, and next experiment.
