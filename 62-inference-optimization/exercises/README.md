@@ -1,16 +1,33 @@
-# Chapter 62 Exercises
+# Chapter 62 Exercises — Inference Optimization
 
-1. Calculate KV-cache memory for MHA/GQA/MQA.
-2. Compare DynamicCache and StaticCache trade-offs.
-3. Calculate padding efficiency for variable-length batches.
-4. Calculate paged-block tail fragmentation.
-5. Estimate prefix-cache prefill savings.
-6. Explain why decode can be memory-bandwidth bound.
-7. Explain FlashAttention without claiming linear dense attention.
-8. Measure speculative acceptance rate.
-9. Compare TTFT/TPOT at multiple concurrencies.
-10. Design a continuous-batching scheduler simulation.
+Complete all 20 with benchmark configs, code, plots and concise operational conclusions.
 
-Challenge:
-- benchmark use_cache=True vs False on a tiny Transformers model
-- build a discrete-event continuous-batching simulator
+## Level 1 — Recall
+1. Define **prefill vs decode**.
+2. Define **KV cache** and its resource effect.
+3. Define **batching and continuous batching** and one operational constraint.
+4. Define **FlashAttention/PagedAttention/speculative-decoding concepts** and one failure mode.
+
+## Level 2 — Understanding
+5. Trace an artifact/request from load through response/telemetry and identify resource ownership.
+6. State assumptions behind KV cache and construct one violation.
+7. Derive a central byte/latency/throughput/quantization/SLO calculation and verify units.
+8. Compare batching and continuous batching and FlashAttention/PagedAttention/speculative-decoding concepts in latency, throughput, memory, complexity and resilience.
+
+## Level 3 — Coding
+9. Implement/simulate one core quantization/cache/scheduler/API/monitoring calculation with explicit state.
+10. Add request/config/artifact validation plus strict limits and clear errors.
+11. Build a deterministic single-request correctness baseline before optimization.
+12. Add invariant tests for artifact identity, bounded inputs, quantization/cache state, health or metric calculations.
+
+## Level 4 — Debugging
+13. Introduce a cache/scale/batching/version/config bug that still serves responses; diagnose and regression-test.
+14. Create timeout/cancellation/overload/rollout failure and verify cleanup or rollback.
+15. Stress memory, queue, context/output length or concurrency until SLO failure; add a bounded mitigation.
+16. Benchmark with warmup and repeated measurements; profile components and optimize the actual bottleneck.
+
+## Level 5 — Challenge
+17. Compare baseline vs optimized configuration with identical workload and quality target; report tail latency, throughput, memory and quality.
+18. Ablate one cache/batching/quantization/deployment/monitoring component and explain the mechanism.
+19. Write a production runbook covering deploy, health, alerts, incident triage, canary, rollback and artifact/config recovery.
+20. Write an engineering report with claim, matched benchmark, workload, hardware, results, failure test, limitation and next experiment.

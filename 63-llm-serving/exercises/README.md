@@ -1,16 +1,33 @@
-# Chapter 63 Exercises
+# Chapter 63 Exercises — LLM Serving
 
-1. Design an OpenAI-compatible chat request schema.
-2. Add streaming/cancellation semantics to a toy server.
-3. Define liveness and readiness separately.
-4. Compute p50/p95/p99 from request traces.
-5. Use Little's Law for concurrency planning.
-6. Add bounded queue/backpressure behavior.
-7. Design token-aware rate limits.
-8. Calculate replica count with utilization headroom.
-9. Design a 5% canary rollout and rollback criteria.
-10. Create a reproducible serving benchmark manifest.
+Complete all 20 with benchmark configs, code, plots and concise operational conclusions.
 
-Challenge:
-- expose a tiny local model through FastAPI
-- compare the same prompt workload on Transformers, vLLM or llama.cpp where hardware permits
+## Level 1 — Recall
+1. Define **request lifecycle**.
+2. Define **batch/concurrency control** and its resource effect.
+3. Define **streaming and cancellation** and one operational constraint.
+4. Define **latency/SLO/observability** and one failure mode.
+
+## Level 2 — Understanding
+5. Trace an artifact/request from load through response/telemetry and identify resource ownership.
+6. State assumptions behind batch/concurrency control and construct one violation.
+7. Derive a central byte/latency/throughput/quantization/SLO calculation and verify units.
+8. Compare streaming and cancellation and latency/SLO/observability in latency, throughput, memory, complexity and resilience.
+
+## Level 3 — Coding
+9. Implement/simulate one core quantization/cache/scheduler/API/monitoring calculation with explicit state.
+10. Add request/config/artifact validation plus strict limits and clear errors.
+11. Build a deterministic single-request correctness baseline before optimization.
+12. Add invariant tests for artifact identity, bounded inputs, quantization/cache state, health or metric calculations.
+
+## Level 4 — Debugging
+13. Introduce a cache/scale/batching/version/config bug that still serves responses; diagnose and regression-test.
+14. Create timeout/cancellation/overload/rollout failure and verify cleanup or rollback.
+15. Stress memory, queue, context/output length or concurrency until SLO failure; add a bounded mitigation.
+16. Benchmark with warmup and repeated measurements; profile components and optimize the actual bottleneck.
+
+## Level 5 — Challenge
+17. Compare baseline vs optimized configuration with identical workload and quality target; report tail latency, throughput, memory and quality.
+18. Ablate one cache/batching/quantization/deployment/monitoring component and explain the mechanism.
+19. Write a production runbook covering deploy, health, alerts, incident triage, canary, rollback and artifact/config recovery.
+20. Write an engineering report with claim, matched benchmark, workload, hardware, results, failure test, limitation and next experiment.
