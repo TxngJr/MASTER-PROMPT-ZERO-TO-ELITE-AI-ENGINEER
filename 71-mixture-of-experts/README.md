@@ -86,7 +86,7 @@ large total parameter count
 
 ## 7. Mixtral Example
 
-Current Transformers Mixtral documentation describes eight experts per MoE MLP with top-2 token routing and exposes router logits / auxiliary routing loss. citeturn744269search0turn744269search8
+Current Transformers Mixtral documentation describes eight experts per MoE MLP with top-2 token routing and exposes router logits / auxiliary routing loss. (see references.md)
 
 This is one architecture, not a universal MoE rule.
 
@@ -143,7 +143,7 @@ where:
 
 A perfectly uniform case gives approximately 1 under this formulation.
 
-Current Transformers Mixtral exposes an auxiliary load-balancing loss coefficient and router logits; newer docs also mention router z-loss/load-balancing terms. citeturn744269search7
+Current Transformers Mixtral exposes an auxiliary load-balancing loss coefficient and router logits; newer docs also mention router z-loss/load-balancing terms. (see references.md)
 
 ## 12. Expert Collapse
 
@@ -210,7 +210,7 @@ Communication can dominate if tokens are small, network is slow or expert placem
 
 ## 18. DeepSpeed MoE
 
-Current DeepSpeed MoE documentation supports expert parallelism and combinations with other forms of parallelism; its inference material also emphasizes communication scheduling across expert parallelism. citeturn315138search1turn315138search3
+Current DeepSpeed MoE documentation supports expert parallelism and combinations with other forms of parallelism; its inference material also emphasizes communication scheduling across expert parallelism. (see references.md)
 
 ## 19. Memory
 

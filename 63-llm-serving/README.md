@@ -45,7 +45,7 @@ Transformers is excellent for model loading, experimentation, custom generation 
 model.generate(...)
 ~~~
 
-Current Transformers supports streaming through streamer objects so applications can surface generated text incrementally. citeturn131463search3turn131463search6
+Current Transformers supports streaming through streamer objects so applications can surface generated text incrementally. (see references.md)
 
 It is not automatically a high-throughput multi-tenant scheduler.
 
@@ -78,7 +78,7 @@ Exact support differs by runtime.
 
 ## 6. vLLM
 
-vLLM currently targets high-throughput serving with continuous batching, chunked prefill, prefix caching, quantization, optimized attention, speculative decoding, distributed inference and streaming. It exposes OpenAI-compatible APIs including Completions, Chat Completions and Responses. citeturn912558search4turn131463search2
+vLLM currently targets high-throughput serving with continuous batching, chunked prefill, prefix caching, quantization, optimized attention, speculative decoding, distributed inference and streaming. It exposes OpenAI-compatible APIs including Completions, Chat Completions and Responses. (see references.md)
 
 ## 7. vLLM Launch Concept
 
@@ -92,11 +92,11 @@ Pin runtime/model revisions in production rather than depending on moving defaul
 
 ## 8. llama.cpp
 
-llama.cpp focuses on efficient inference across CPU and accelerator backends and is especially important for GGUF and local deployment. Current project docs include an OpenAI-compatible server path. citeturn912558search2turn912558search6
+llama.cpp focuses on efficient inference across CPU and accelerator backends and is especially important for GGUF and local deployment. Current project docs include an OpenAI-compatible server path. (see references.md)
 
 ## 9. llama.cpp Server
 
-Current server docs include chat/completions, Responses-style APIs, embeddings, parallel decoding, continuous batching, monitoring and speculative decoding. Pin a release because exact commands/options can evolve. citeturn912558search3
+Current server docs include chat/completions, Responses-style APIs, embeddings, parallel decoding, continuous batching, monitoring and speculative decoding. Pin a release because exact commands/options can evolve. (see references.md)
 
 ## 10. GGUF Deployment
 
@@ -153,7 +153,7 @@ A process can be live but not ready while a model is loading.
 
 Avoid health checks that generate model text every few seconds. Use lightweight engine/readiness checks.
 
-Current vLLM has a `/health` endpoint that returns success or engine-failure status. citeturn131463search11
+Current vLLM has a `/health` endpoint that returns success or engine-failure status. (see references.md)
 
 ## 17. Metrics
 
@@ -169,7 +169,7 @@ Track:
 - prefix-cache hit rate
 - tokens/sec
 
-vLLM currently exposes Prometheus-compatible metrics at `/metrics`, including request, KV-cache and latency measurements. citeturn131463search0turn131463search8
+vLLM currently exposes Prometheus-compatible metrics at `/metrics`, including request, KV-cache and latency measurements. (see references.md)
 
 ## 18. Percentiles
 
@@ -254,7 +254,7 @@ Avoid logging sensitive prompt/output contents unless justified and protected.
 
 Use network boundaries, authentication/authorization, reverse proxy/API gateway, TLS, rate limits, request validation and secret management.
 
-Current vLLM explicitly warns that `--api-key` protects only certain path prefixes and should not be treated as the sole production security boundary. citeturn131463search1turn131463search4
+Current vLLM explicitly warns that `--api-key` protects only certain path prefixes and should not be treated as the sole production security boundary. (see references.md)
 
 ## 32. Container / Orchestrator
 
