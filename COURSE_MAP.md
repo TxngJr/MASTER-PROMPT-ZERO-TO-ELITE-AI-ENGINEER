@@ -112,3 +112,19 @@
 - Batch 27: 79–80 + Final Curriculum Audit
 
 แต่ละ batch ต้องผ่าน 4 gate: Concept, Math, Code และ Integration
+
+
+## Batch 27 — Research Engineering & Final Capstone
+
+79. Research Paper Engineering
+80. Build Your Own LLM From Scratch
+
+Integration:
+- claim → reproduction contract → controlled experiment
+- raw corpus → tokenizer → decoder LM → pretraining
+- SFT → preference optimization → quantization
+- serving/deployment/monitoring
+- final curriculum audit
+
+Final artifact:
+- FINAL_CURRICULUM_AUDIT.md
