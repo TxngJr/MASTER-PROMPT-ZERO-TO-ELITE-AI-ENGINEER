@@ -1,16 +1,33 @@
-# Chapter 50 Exercises
+# Chapter 50 Exercises — LLM Pretraining From Scratch
 
-1. Build shifted causal LM targets.
-2. Calculate CE/perplexity by hand.
-3. Create fixed-length token windows.
-4. Derive effective tokens/update under accumulation.
-5. Implement warmup+cosine LR.
-6. Compare Adam vs AdamW weight decay conceptually.
-7. Implement global-norm clipping.
-8. Build train/validation loops.
-9. Save model+optimizer+step checkpoint.
-10. Resume and verify identical next update under fixed RNG/state.
+Complete all 20. Keep code, configs, seeds, traces, metrics, and short conclusions.
 
-Challenge:
-- implement gradient accumulation with variable valid-token counts
-- verify a tiny decoder can overfit one short sequence
+## Level 1 — Recall
+1. Define **causal windows and next-token prediction**.
+2. Define **random initialization** and its role.
+3. Define **optimizer/schedule/gradient clipping** and one interoperability/architecture property.
+4. Define **validation, perplexity and checkpoints** and one failure mode.
+
+## Level 2 — Understanding
+5. Trace raw input/data through the system to final output and annotate state/shapes/artifacts.
+6. State assumptions behind random initialization and construct one violating example.
+7. Derive/formalize the chapter's central probability/similarity/tokenization/objective/contract and verify a toy case.
+8. Compare optimizer/schedule/gradient clipping and validation, perplexity and checkpoints in quality, state, security, compute, and failure behavior.
+
+## Level 3 — Coding
+9. Implement one central operation/protocol from low-level primitives without hiding the mechanism in a high-level framework.
+10. Add validation for schemas/IDs/shapes/ranges/masks/state transitions and untrusted external outputs.
+11. Build a deterministic tiny end-to-end smoke test with known expected behavior.
+12. Add invariant tests including one round-trip/reference/authorization/target-alignment check as appropriate.
+
+## Level 4 — Debugging
+13. Create a state/mask/tokenizer/ranking/schema bug that still runs; diagnose and regression-test the fix.
+14. Create leakage, stale-index/state, or unsafe-permission behavior and demonstrate why the result is misleading/dangerous.
+15. Trigger a context/tool-loop/numerical/resource failure and add a principled bound, timeout, validation, or stable formulation.
+16. Profile preprocessing/retrieval/tool/model components separately and optimize the measured bottleneck.
+
+## Level 5 — Challenge
+17. Compare baseline and chapter method over at least three seeds/resamples or matched request sets with equal budgets.
+18. Ablate one tokenizer/retrieval/state/architecture/training component and explain the mechanism.
+19. Define a production security/reliability contract: versions, permissions, limits, timeouts, monitoring, fallback and rollback.
+20. Write a research-style report with claim, baseline, protocol, resource budget, results, failure/security analysis, limitation, and next experiment.
