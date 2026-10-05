@@ -1,16 +1,33 @@
-# Chapter 59 Exercises
+# Chapter 59 Exercises — DPO and Preference Optimization
 
-1. Sum token log-probabilities over completion masks.
-2. Compute policy chosen-vs-rejected margin.
-3. Compute the reference margin.
-4. Derive standard DPO logits and loss.
-5. Sweep beta and plot loss curves.
-6. Measure pairwise preference accuracy.
-7. Audit chosen/rejected response lengths.
-8. Cache reference log-probabilities and verify cache invalidation rules.
-9. Implement the educational IPO squared objective.
-10. Compare DPO with a reward-model/PPO pipeline conceptually.
+Complete all 20 and retain configs, prompts/pairs, seeds, metrics and short conclusions.
 
-Challenge:
-- train a tiny categorical policy with DPO on synthetic preference pairs
-- reproduce the same experiment using the optional TRL environment
+## Level 1 — Recall
+1. Define **chosen/rejected pairs**.
+2. Define **reference-policy log ratios** and its data/model role.
+3. Define **DPO objective** and one optimization/evaluation risk.
+4. Define **IPO/ORPO/KTO concepts and evaluation** and one limitation.
+
+## Level 2 — Understanding
+5. Trace one training/evaluation example from raw text/pair to scalar loss/metric.
+6. State assumptions behind reference-policy log ratios and construct one violation.
+7. Derive the core objective/metric and verify a tiny numeric/log-probability example.
+8. Compare DPO objective and IPO/ORPO/KTO concepts and evaluation in supervision, stability, compute, and evaluation.
+
+## Level 3 — Coding
+9. Implement a tiny independent loss/metric/masking/low-rank calculation from low-level tensor operations.
+10. Validate pair ordering, token masks, sequence lengths, frozen/trainable parameters and finite scores.
+11. Build a fixed-seed tiny post-training/evaluation smoke test with known expected direction.
+12. Add invariant tests for masking, reference freezing, parameter counts, pair preference or metric range.
+
+## Level 4 — Debugging
+13. Create an assistant-mask/pair-order/reference-update bug that still trains; diagnose and regression-test.
+14. Create evaluator leakage, contaminated prompts, or mismatched decoding and show the misleading result before fixing it.
+15. Trigger unstable reward/log-ratio/loss or OOM behavior; add a principled stability/resource mitigation.
+16. Profile model/reference/evaluator/tokenization components and optimize the measured bottleneck.
+
+## Level 5 — Challenge
+17. Compare base vs post-trained model over at least three seeds/resamples/judge repeats with matched prompts/decoding.
+18. Ablate one data/objective/adapter/evaluator component and explain the behavioral mechanism.
+19. Design a release gate with capability, safety, regression, latency/memory, monitoring, and rollback criteria.
+20. Write a research report with claim, baseline, protocol, evaluator assumptions, uncertainty, failure slices, limitation and next experiment.

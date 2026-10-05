@@ -1,16 +1,33 @@
-# Chapter 56 Exercises
+# Chapter 56 Exercises — LoRA, QLoRA and PEFT
 
-1. Derive LoRA parameter count for a 4096×4096 linear layer at ranks 4/8/16/64.
-2. Implement A/B low-rank updates.
-3. Verify B=0 makes the initial adapter a no-op.
-4. Sweep rank and measure trainable ratio.
-5. Merge/unmerge adapters numerically.
-6. Apply LoRA to attention projections in a tiny transformer.
-7. Compare q/v-only vs all-linear targeting.
-8. Estimate full FT vs LoRA optimizer-state memory.
-9. Quantize a toy matrix with a generic 16-level codebook and measure error.
-10. Build adapter metadata that pins the base-model revision.
+Complete all 20 and retain configs, prompts/pairs, seeds, metrics and short conclusions.
 
-Challenge:
-- reproduce a PEFT LoraConfig experiment with the optional requirements file
-- compare full fine-tuning and LoRA on the same tiny adaptation task
+## Level 1 — Recall
+1. Define **low-rank adaptation**.
+2. Define **rank/alpha/dropout** and its data/model role.
+3. Define **quantized-base adaptation** and one optimization/evaluation risk.
+4. Define **adapter merge/save/evaluation** and one limitation.
+
+## Level 2 — Understanding
+5. Trace one training/evaluation example from raw text/pair to scalar loss/metric.
+6. State assumptions behind rank/alpha/dropout and construct one violation.
+7. Derive the core objective/metric and verify a tiny numeric/log-probability example.
+8. Compare quantized-base adaptation and adapter merge/save/evaluation in supervision, stability, compute, and evaluation.
+
+## Level 3 — Coding
+9. Implement a tiny independent loss/metric/masking/low-rank calculation from low-level tensor operations.
+10. Validate pair ordering, token masks, sequence lengths, frozen/trainable parameters and finite scores.
+11. Build a fixed-seed tiny post-training/evaluation smoke test with known expected direction.
+12. Add invariant tests for masking, reference freezing, parameter counts, pair preference or metric range.
+
+## Level 4 — Debugging
+13. Create an assistant-mask/pair-order/reference-update bug that still trains; diagnose and regression-test.
+14. Create evaluator leakage, contaminated prompts, or mismatched decoding and show the misleading result before fixing it.
+15. Trigger unstable reward/log-ratio/loss or OOM behavior; add a principled stability/resource mitigation.
+16. Profile model/reference/evaluator/tokenization components and optimize the measured bottleneck.
+
+## Level 5 — Challenge
+17. Compare base vs post-trained model over at least three seeds/resamples/judge repeats with matched prompts/decoding.
+18. Ablate one data/objective/adapter/evaluator component and explain the behavioral mechanism.
+19. Design a release gate with capability, safety, regression, latency/memory, monitoring, and rollback criteria.
+20. Write a research report with claim, baseline, protocol, evaluator assumptions, uncertainty, failure slices, limitation and next experiment.
