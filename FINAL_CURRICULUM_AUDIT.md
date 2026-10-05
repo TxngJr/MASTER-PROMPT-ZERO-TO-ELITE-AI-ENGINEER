@@ -271,3 +271,21 @@ deploy and monitor a bounded AI system
 Roadmap Programming → Math → ML → DL → Transformer → LLM → Alignment → Systems → Multimodal → Robotics → Edge ถูกเชื่อมครบใน Chapters 01–80 และ integration projects
 
 Repository นี้ควรถูกเรียกว่า **broad end-to-end AI engineering curriculum** ไม่ใช่คำกล่าวว่า exhaustive ต่อ AI ทุก subfield
+
+
+## Remediation Pass v2 — Completion Contract
+
+A repository-wide adversarial audit found teaching-contract gaps after the original Chapter 80 completion. Those gaps have now been addressed through canonical companion material and targeted chapter additions:
+
+- Chapters 13–78 receive a 20-question total exercise path through local exercises plus the supplementary workbook; expected solution checks are included.
+- Missing pedagogical labels/sections are supplied by the per-chapter completion addenda while the detailed core theory/code remains in each chapter.
+- Train-model chapters use the hardware lab matrix for local-vs-scaled expectations, memory estimation, dataset/context/batch starting points and VRAM verification.
+- Added explicit coverage for Contrastive Loss, SARSA, MFCC, MCP concepts, WordPiece/Unigram, FP64/TF32/FP8/INT8 format distinctions and a real CUDA vector-add kernel example.
+- Removed unresolved ChatGPT citation tokens from affected README files; chapter references.md files remain the canonical reference lists.
+- Added an executable curriculum audit and CI workflow so completion is machine-checked on future changes.
+
+### Final status
+
+**Specification-complete:** yes, against `CURRICULUM_COMPLETION_STANDARD.md`.
+
+**Exhaustive coverage of all AI knowledge:** no such finite claim is made. Specialized areas listed elsewhere in this audit remain optional extensions unless promoted into the published core roadmap.

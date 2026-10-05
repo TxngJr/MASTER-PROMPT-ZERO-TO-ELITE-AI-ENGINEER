@@ -317,7 +317,7 @@ Activation-aware Weight Quantization observes activation behavior to identify es
 
 The method protects/scales important weights before aggressive low-bit quantization.
 
-Current Transformers documentation supports loading AWQ models and describes AWQ as 4-bit activation-aware weight quantization. citeturn912558search1
+Current Transformers documentation supports loading AWQ models and describes AWQ as 4-bit activation-aware weight quantization. (see references.md)
 
 ## 21. bitsandbytes
 
@@ -349,7 +349,7 @@ A GGUF file may contain different quantized tensor formats.
 
 llama.cpp focuses on efficient local CPU/GPU inference and supports many low-bit representations in GGUF workflows.
 
-Current llama.cpp can run quantized GGUF models across CPU and multiple accelerator backends. citeturn912558search2
+Current llama.cpp can run quantized GGUF models across CPU and multiple accelerator backends. (see references.md)
 
 ## 24. Storage Math
 
@@ -432,7 +432,7 @@ Strategies:
 - mixed bit widths
 - calibration-aware methods
 
-Current Transformers quantization configs expose modules that should not be converted for some methods. citeturn912558search0
+Current Transformers quantization configs expose modules that should not be converted for some methods. (see references.md)
 
 ## 29. From Scratch
 

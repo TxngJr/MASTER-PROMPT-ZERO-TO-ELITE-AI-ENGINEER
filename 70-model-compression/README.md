@@ -72,7 +72,7 @@ Actual memory/runtime gains may require sparse representation, structural remova
 
 ## 8. PyTorch Pruning
 
-Current PyTorch documentation still provides `torch.nn.utils.prune` utilities and an official pruning tutorial for sparsifying modules. citeturn744269search4
+Current PyTorch documentation still provides `torch.nn.utils.prune` utilities and an official pruning tutorial for sparsifying modules. (see references.md)
 
 PyTorch pruning commonly uses masks/reparameterization until pruning is made permanent.
 
@@ -100,7 +100,7 @@ Student:
 smaller / cheaper
 ~~~
 
-Current PyTorch's official distillation tutorial demonstrates adding a soft-target teacher loss to ordinary supervised training. citeturn315138search0
+Current PyTorch's official distillation tutorial demonstrates adding a soft-target teacher loss to ordinary supervised training. (see references.md)
 
 ## 11. Temperature
 

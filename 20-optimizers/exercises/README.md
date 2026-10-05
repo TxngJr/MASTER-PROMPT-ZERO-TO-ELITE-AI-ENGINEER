@@ -1,16 +1,31 @@
-# Chapter 20 Exercises
+# Optimizers — Exercises
 
-1. derive SGD update on f(x)=x²
-2. derive Momentum trajectory on a 2D ravine
-3. implement Nesterov with a documented convention
-4. compare AdaGrad and RMSProp effective learning rates
-5. calculate first two Adam steps by hand
-6. measure optimizer state memory
-7. add global gradient clipping
-8. compare Adam L2-style decay vs AdamW
-9. create parameter groups
-10. add cosine learning-rate scheduler
+## Level 1 — Recall
+1. Define SGD.
+2. Define momentum with a small example.
+3. Explain RMSProp.
+4. Explain Adam.
 
-Challenge:
-- AMSGrad
-- decoupled weight decay exclusions for bias parameters
+## Level 2 — Understanding
+5. Compare SGD and momentum.
+6. Explain how Adam changes model behavior.
+7. Explain a common limitation involving AdamW.
+8. Explain the tradeoff introduced by learning-rate schedule.
+
+## Level 3 — Coding
+9. Implement a small from-scratch example of SGD.
+10. Add deterministic tests for Exercise 9.
+11. Implement the main computation behind RMSProp.
+12. Run a small seeded experiment using momentum, Adam, and learning-rate schedule.
+
+## Level 4 — Analysis
+13. Explain a common shape or data mismatch for this topic.
+14. Explain one numerical-stability concern.
+15. Explain the correct train, validation, and test workflow.
+16. Measure runtime and memory of the main computation.
+
+## Level 5 — Challenge
+17. Derive the main input-to-output algorithm for Optimizers.
+18. Compare a scratch implementation with a trusted library on identical data.
+19. Compare a baseline with a controlled change involving AdamW.
+20. Summarize validation, reproducibility, monitoring, and one open research question.
