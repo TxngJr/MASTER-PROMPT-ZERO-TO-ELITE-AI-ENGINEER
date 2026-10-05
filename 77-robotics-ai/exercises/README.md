@@ -1,18 +1,33 @@
-# Chapter 77 Exercises
+# Chapter 77 Exercises — Robotics AI
 
-All required exercises are simulation-only.
+Complete all 20 with code, configs, seeds, plots and short conclusions.
 
-1. Compute two-link forward kinematics for several joint angles.
-2. Implement deterministic action clipping.
-3. Simulate proportional control to a target in 1D/2D.
-4. Measure behavior-cloning MSE on a toy expert dataset.
-5. Compare one-step actions vs action chunks in simulation.
-6. Measure trajectory path length and smoothness.
-7. Calculate control-loop latency budgets at 10/20/50 Hz.
-8. Simulate observation noise and state-estimation error.
-9. Design sim-to-real evaluation slices without deploying hardware.
-10. Build a VLA architecture diagram showing observation/action interfaces.
+## Level 1 — Recall
+1. Define **perception-state-action loop**.
+2. Define **kinematics/control concepts** and its role.
+3. Define **imitation/RL/VLA concepts** and one uncertainty/resource/safety issue.
+4. Define **sim-to-real and safety** and one limitation.
 
-Challenge:
-- train a tiny behavior-cloning policy in a numerical simulator
-- add deterministic action limits and timeout checks
+## Level 2 — Understanding
+5. Trace one end-to-end state/data/claim → model → output/action/evidence path.
+6. State assumptions behind kinematics/control concepts and construct one violation.
+7. Derive one central objective/dynamics/resource equation and verify a toy case.
+8. Compare imitation/RL/VLA concepts and sim-to-real and safety on quality, uncertainty, compute, safety and evidence.
+
+## Level 3 — Coding
+9. Implement/simulate one central operation from explicit low-level primitives.
+10. Add validation for state/sensor/input/model/config/resource bounds.
+11. Build a fixed-seed tiny task with a known expected trajectory/output/result.
+12. Add invariant tests for state transitions, memory/resource math, split/tokenizer identity, or reproducibility metadata.
+
+## Level 4 — Debugging
+13. Create a model/state/sensor/data/config bug that still produces plausible output; diagnose and regression-test.
+14. Create leakage, sim/real mismatch, unsafe action/resource assumption, or reproduction-protocol mismatch and fix it.
+15. Stress horizon/input/context/latency/memory until failure and add a documented safety/resource bound.
+16. Profile the complete pipeline and optimize only the measured bottleneck while preserving correctness/safety.
+
+## Level 5 — Challenge
+17. Compare baseline and chapter method over at least three seeds/scenarios with matched compute/data budgets.
+18. Ablate one model/planning/sensor/reproduction/training component and explain the mechanism.
+19. Write a deployment/publication gate with correctness, resource, safety, reproducibility, monitoring and rollback/limitations criteria.
+20. Produce a final engineering/research report with claim, baseline, protocol, full results, failures, resource accounting, limitations and next experiment.
