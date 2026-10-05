@@ -90,13 +90,13 @@ High token rates increase autoregressive generation cost.
 
 ## 8. Audio-Text-to-Text
 
-Current Transformers documentation defines audio-text-to-text models as systems that accept audio plus text and generate text, enabling transcription, audio QA and instruction-following over audio. citeturn537494search2
+Current Transformers documentation defines audio-text-to-text models as systems that accept audio plus text and generate text, enabling transcription, audio QA and instruction-following over audio. (see references.md)
 
 This differs from classic ASR whose target is primarily transcription.
 
 ## 9. TTS
 
-Current Transformers exposes text-to-audio/text-to-speech pipelines for supported speech synthesis models. citeturn537494search3
+Current Transformers exposes text-to-audio/text-to-speech pipelines for supported speech synthesis models. (see references.md)
 
 TTS evaluation includes intelligibility, naturalness, speaker/style consistency where appropriate, and latency.
 

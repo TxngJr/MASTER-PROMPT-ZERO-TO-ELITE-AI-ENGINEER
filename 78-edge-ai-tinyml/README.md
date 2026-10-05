@@ -105,17 +105,17 @@ Audit:
 
 ## 9. ONNX Runtime Mobile
 
-Current ONNX Runtime mobile docs support CPU by default and execution providers such as XNNPACK, NNAPI and CoreML depending on platform. They explicitly recommend measuring binary size, model size, latency and power. citeturn518178search0turn518178search13
+Current ONNX Runtime mobile docs support CPU by default and execution providers such as XNNPACK, NNAPI and CoreML depending on platform. They explicitly recommend measuring binary size, model size, latency and power. (see references.md)
 
 Execution-provider support is model/device-specific.
 
 ## 10. ONNX Runtime IoT / Edge
 
-ONNX Runtime's current IoT/edge guidance emphasizes local privacy/offline/latency benefits while also warning about model-size and hardware-processing constraints. citeturn518178search3
+ONNX Runtime's current IoT/edge guidance emphasizes local privacy/offline/latency benefits while also warning about model-size and hardware-processing constraints. (see references.md)
 
 ## 11. Minimal Runtime Builds
 
-Current ONNX Runtime docs note that reduced-operator prebuilt mobile packages are no longer provided from version 1.19 onward; use full operator packages or build a custom runtime for the required operator set. citeturn518178search11
+Current ONNX Runtime docs note that reduced-operator prebuilt mobile packages are no longer provided from version 1.19 onward; use full operator packages or build a custom runtime for the required operator set. (see references.md)
 
 This makes operator inventories part of deployment engineering.
 
@@ -127,7 +127,7 @@ INT8 affine quantization:
 real ≈ scale * (quantized - zero_point)
 ~~~
 
-Current ONNX Runtime quantization documentation supports 8-bit linear quantization and also documents INT4/UINT4 paths for supported operations/models. citeturn518178search15
+Current ONNX Runtime quantization documentation supports 8-bit linear quantization and also documents INT4/UINT4 paths for supported operations/models. (see references.md)
 
 ## 13. Calibration
 
