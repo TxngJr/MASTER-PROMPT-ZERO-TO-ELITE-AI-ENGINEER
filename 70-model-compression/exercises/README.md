@@ -1,16 +1,33 @@
-# Chapter 70 Exercises
+# Chapter 70 Exercises — Model Compression
 
-1. Compute sparsity/density for several matrices.
-2. Implement global magnitude pruning.
-3. Compare layerwise vs global pruning.
-4. Remove entire low-norm rows/channels.
-5. Measure quality vs sparsity curve.
-6. Explain why a dense masked tensor may not save storage.
-7. Compute teacher/student soft targets at T=1,2,4.
-8. Derive the KD KL objective with T^2 scaling.
-9. Compare hard-label-only vs hard+KD student training.
-10. Design pruning+quantization evaluation.
+Complete all 20 with code/configs, test fixtures, metrics and conclusions.
 
-Challenge:
-- reproduce PyTorch pruning behavior on a tiny network
-- distill a larger classifier into a smaller student and benchmark final inference
+## Level 1 — Recall
+1. Define **pruning**.
+2. Define **distillation** and its guarantee/goal.
+3. Define **low-rank factorization** and one assumption.
+4. Define **compression-quality-latency trade-offs** and one limitation.
+
+## Level 2 — Understanding
+5. Trace one input/event/model/request through the full system and identify state/ownership/trust boundaries.
+6. State assumptions behind distillation and construct one violation.
+7. Derive/formalize one key metric/invariant/objective and verify a toy calculation.
+8. Compare low-rank factorization and compression-quality-latency trade-offs in reliability, quality, cost and interpretability/safety.
+
+## Level 3 — Coding
+9. Implement/simulate one core data/system/safety/explanation/compression mechanism from explicit primitives.
+10. Add schema/range/permission/state/version validation.
+11. Build a deterministic fixture that demonstrates correct behavior and one expected failure.
+12. Add invariant tests for idempotency/lineage/permissions/attribution/compression quality as appropriate.
+
+## Level 4 — Debugging
+13. Introduce a duplicate/retry/version/permission/attribution/compression bug that still looks plausible; diagnose and regression-test.
+14. Create distribution shift, stale data/model state, or adversarial input and demonstrate why aggregate metrics hide it.
+15. Trigger overload/resource/safety failure and add a bounded fallback or mitigation.
+16. Profile cost by component and optimize the measured bottleneck without weakening correctness/safety.
+
+## Level 5 — Challenge
+17. Compare baseline and chapter method over multiple seeds/slices/failure fixtures with matched workload.
+18. Ablate one reliability/safety/explainer/compression component and explain the mechanism.
+19. Write a production incident/runbook contract with ownership, alerts, triage, rollback and evidence retention.
+20. Write an engineering/research report with claim, baseline, protocol, stress/adversarial tests, resource/quality results, limitations and next experiment.
