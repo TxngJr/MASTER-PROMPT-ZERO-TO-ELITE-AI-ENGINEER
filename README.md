@@ -1373,10 +1373,25 @@ Batch 26 Imagine, Act Safely & Deploy at the Edge Lab
 - [x] Batch 24 — Chapters 70–72
 - [x] Batch 25 — Chapters 73–75
 - [x] Batch 26 — Chapters 76–78
-- [ ] Batch 27 — Chapters 79–80 + Final Audit
+- [x] Batch 27 — Chapters 79–80 + Final Audit
 
 บทถัดไป:
 
 - Chapter 79 — Read & Implement Papers
 - Chapter 80 — Complete LLM Capstone
 - Final Course Audit / Graduation Project
+
+
+### Batch 27 — Research Engineering & Final LLM Capstone
+
+79. [Chapter 79 — Research Paper Engineering](79-research-paper-engineering/README.md)
+80. [Chapter 80 — Build Your Own LLM From Scratch](80-build-llm-from-scratch/README.md)
+
+Integration:
+[Research-to-Production Tiny LLM](integration-project-batch27/README.md)
+
+Final audit:
+[FINAL_CURRICULUM_AUDIT.md](FINAL_CURRICULUM_AUDIT.md)
+
+Batch 27 closes the numbered curriculum with research reproduction engineering, a random-initialized tiny LLM capstone, SFT/preference optimization, quantization, serving/deployment/monitoring, and a final coverage audit.
+

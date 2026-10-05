@@ -21,3 +21,22 @@
 | Vector | ลำดับตัวเลข 1 มิติ |
 | Vectorization | ใช้ array operation แทน loop ระดับ Python |
 | Virtual environment | environment แยก Python dependencies |
+
+
+## Batch 27 additions
+
+**Reproduction Contract** — เอกสารที่กำหนด claim, data, model, training และ evaluation conditions ที่จะทำซ้ำ
+
+**Ablation Study** — controlled experiment ที่เอาหรือเปลี่ยน component เพื่อวัด contribution
+
+**Experiment Fingerprint** — deterministic hash ของ canonical experiment configuration ใช้ตรวจ config drift
+
+**Accelerator-Hours** — accelerator count × wall-clock hours ใช้เป็น compute-accounting measure แบบง่าย
+
+**Concept Reproduction** — การทำซ้ำกลไกหลักบน scale เล็กโดยไม่อ้าง benchmark equivalence
+
+**Causal Window** — input/target token window ที่เลื่อนหนึ่งตำแหน่งสำหรับ next-token prediction
+
+**Preference Pair** — prompt พร้อม chosen/rejected response สำหรับ preference-learning objective
+
+**Reproducibility Manifest** — record ที่ผูก code, data, tokenizer, model config, seed, environment และ metrics
