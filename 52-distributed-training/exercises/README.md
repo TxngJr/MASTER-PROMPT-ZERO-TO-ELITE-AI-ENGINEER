@@ -1,16 +1,33 @@
-# Chapter 52 Exercises
+# Chapter 52 Exercises — Distributed Training
 
-1. Shard 103 sample IDs across 8 ranks.
-2. Calculate global batch and tokens/update.
-3. Average gradients from four ranks by hand.
-4. Estimate ring all-reduce payload for a 2 GB gradient tensor.
-5. Compare ZeRO-style stage 0–3 model-state memory.
-6. Calculate pipeline bubble efficiency for multiple microbatch counts.
-7. Draw data vs tensor vs pipeline parallel layouts.
-8. Explain why unequal rank step counts can deadlock.
-9. Design rank-aware checkpoint metadata.
-10. Measure strong-scaling efficiency from benchmark timings.
+Complete all 20. Keep configs, commands, seeds, profiler/timing notes, and concise conclusions.
 
-Challenge:
-- write a two-process CPU torch.distributed demo with Gloo
-- compare DDP-equivalent averaged gradients with a single large batch
+## Level 1 — Recall
+1. Define **DDP and collectives**.
+2. Define **tensor/pipeline parallelism** and its primary resource trade-off.
+3. Define **FSDP/ZeRO sharding** and one correctness risk.
+4. Define **global batch, topology and checkpoints** and one operational concern.
+
+## Level 2 — Understanding
+5. Trace one batch/shard/kernel/model step end to end and identify ownership/dtype/device at each stage.
+6. State assumptions behind tensor/pipeline parallelism and construct one violation.
+7. Derive a central memory/communication/precision/global-batch formula and verify a numeric example.
+8. Compare FSDP/ZeRO sharding and global batch, topology and checkpoints in memory, compute, communication/numerics, and operational complexity.
+
+## Level 3 — Coding
+9. Implement or simulate one central system/precision/data calculation using low-level Python/NumPy/PyTorch primitives.
+10. Add validation for ranks/shapes/dtypes/ranges/shard boundaries/checkpoint metadata.
+11. Build a deterministic tiny smoke test that can run on CPU and, when available, GPU.
+12. Add invariant tests for sample ownership, byte/count calculations, numerical tolerance, or checkpoint round-trip.
+
+## Level 4 — Debugging
+13. Create a wrong global-batch/shard/dtype/cast-order bug that still runs; diagnose and regression-test it.
+14. Create duplicated/missing samples, incomplete checkpoint state, or train/eval mismatch; demonstrate and fix.
+15. Trigger OOM/overflow/underflow/precision drift or communication imbalance and add a principled mitigation.
+16. Benchmark correctly with warmup/synchronization as needed; identify and optimize the actual bottleneck.
+
+## Level 5 — Challenge
+17. Compare two configurations with matched model/data/tokens across at least three runs; report quality plus resource metrics.
+18. Ablate one sharding/precision/data/fine-tuning component and explain why the result changes.
+19. Write an operational contract covering topology/device/dtype/data/checkpoint versions, restart, monitoring and rollback.
+20. Write a research note with claim, matched baseline, protocol, hardware/resource accounting, results, failure analysis, limitation and next experiment.
