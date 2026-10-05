@@ -1,16 +1,33 @@
-# Chapter 71 Exercises
+# Chapter 71 Exercises — Mixture of Experts
 
-1. Compute top-2 router weights by hand.
-2. Measure expert load on a token batch.
-3. Derive capacity for multiple capacity factors.
-4. Simulate overflow and dropped-assignment rate.
-5. Calculate Switch-style load-balancing loss.
-6. Compare total vs active parameters.
-7. Measure router entropy.
-8. Add router jitter in a training-only simulation.
-9. Design expert placement across four GPUs.
-10. Estimate all-to-all traffic from token assignments.
+Complete all 20 with code, calculations, configs, seeds and concise conclusions.
 
-Challenge:
-- implement a tiny NumPy MoE layer with linear experts
-- reproduce one small PyTorch sparse-MoE block and audit expert load
+## Level 1 — Recall
+1. Define **router/gating**.
+2. Define **top-k expert selection** and its state/representation role.
+3. Define **load balancing** and one quality/compute trade-off.
+4. Define **expert parallelism and capacity** and one failure mode.
+
+## Level 2 — Understanding
+5. Trace input/context/modalities through the complete model/system and annotate shapes/state.
+6. State assumptions behind top-k expert selection and construct one violation.
+7. Derive a central routing/context/candidate/alignment/feature calculation and verify a toy case.
+8. Compare load balancing and expert parallelism and capacity in quality, compute, memory, supervision and failure behavior.
+
+## Level 3 — Coding
+9. Implement/simulate one central routing/memory/voting/projection/audio operation from low-level primitives.
+10. Add shape/range/capacity/context/candidate/modality validation.
+11. Build a fixed-seed tiny task with known expected routing/memory/vote/alignment behavior.
+12. Add invariant tests for routing sums/load, cache bytes/length, candidate statistics, projection shapes or feature values.
+
+## Level 4 — Debugging
+13. Create a collapsed router/cache/context/vote/projection bug that still runs; diagnose and regression-test.
+14. Create an unfair compute-budget or preprocessing mismatch and show the misleading comparison before fixing it.
+15. Stress context/candidate/modalities/capacity until resource or quality failure and add a documented bound.
+16. Profile routing/attention/encoder/verifier/decode components separately and optimize the measured bottleneck.
+
+## Level 5 — Challenge
+17. Compare baseline and advanced method over at least three seeds/sample sets with matched compute/token budgets.
+18. Ablate one router/memory/verifier/projector/representation component and explain the mechanism.
+19. Define a production contract covering state isolation, max context/candidates/modalities, resource limits, monitoring and fallback.
+20. Write a research report with claim, matched baseline, compute budget, results, failure/grounding analysis, limitations and next experiment.

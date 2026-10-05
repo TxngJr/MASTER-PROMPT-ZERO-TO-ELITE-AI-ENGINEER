@@ -1,16 +1,33 @@
-# Chapter 75 Exercises
+# Chapter 75 Exercises — Audio and Voice Models
 
-1. Convert seconds to sample counts at 16k/24k/48kHz.
-2. Build overlapping streaming frame ranges.
-3. Compute RMS and energy-based VAD flags.
-4. Tune endpoint silence and measure turn-end latency.
-5. Calculate codec bitrate for multiple codebook configurations.
-6. Calculate audio tokens/sec.
-7. Compare RTF with first-response latency.
-8. Design a barge-in cancellation state machine.
-9. Calculate jitter-buffer milliseconds.
-10. Design evaluation slices for noise/accent/device/overlap.
+Complete all 20 with code, calculations, configs, seeds and concise conclusions.
 
-Challenge:
-- build a local streaming VAD + endpoint simulator
-- connect mock streaming ASR -> text responder -> mock streaming TTS with cancellation
+## Level 1 — Recall
+1. Define **audio token/feature representations**.
+2. Define **speech/audio encoders** and its state/representation role.
+3. Define **speech-language generation** and one quality/compute trade-off.
+4. Define **voice evaluation, latency and safety** and one failure mode.
+
+## Level 2 — Understanding
+5. Trace input/context/modalities through the complete model/system and annotate shapes/state.
+6. State assumptions behind speech/audio encoders and construct one violation.
+7. Derive a central routing/context/candidate/alignment/feature calculation and verify a toy case.
+8. Compare speech-language generation and voice evaluation, latency and safety in quality, compute, memory, supervision and failure behavior.
+
+## Level 3 — Coding
+9. Implement/simulate one central routing/memory/voting/projection/audio operation from low-level primitives.
+10. Add shape/range/capacity/context/candidate/modality validation.
+11. Build a fixed-seed tiny task with known expected routing/memory/vote/alignment behavior.
+12. Add invariant tests for routing sums/load, cache bytes/length, candidate statistics, projection shapes or feature values.
+
+## Level 4 — Debugging
+13. Create a collapsed router/cache/context/vote/projection bug that still runs; diagnose and regression-test.
+14. Create an unfair compute-budget or preprocessing mismatch and show the misleading comparison before fixing it.
+15. Stress context/candidate/modalities/capacity until resource or quality failure and add a documented bound.
+16. Profile routing/attention/encoder/verifier/decode components separately and optimize the measured bottleneck.
+
+## Level 5 — Challenge
+17. Compare baseline and advanced method over at least three seeds/sample sets with matched compute/token budgets.
+18. Ablate one router/memory/verifier/projector/representation component and explain the mechanism.
+19. Define a production contract covering state isolation, max context/candidates/modalities, resource limits, monitoring and fallback.
+20. Write a research report with claim, matched baseline, compute budget, results, failure/grounding analysis, limitations and next experiment.

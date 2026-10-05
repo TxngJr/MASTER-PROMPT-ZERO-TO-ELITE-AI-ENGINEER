@@ -1,16 +1,33 @@
-# Chapter 73 Exercises
+# Chapter 73 Exercises — Reasoning Models
 
-1. Compare single-sample accuracy with self-consistency.
-2. Compute pass@1/pass@3/pass@5 from one sample set.
-3. Allocate a fixed token budget across N candidates.
-4. Build a deterministic verifier for a toy arithmetic task.
-5. Compare majority vote vs best-of-N verifier selection.
-6. Measure solved-per-1k-tokens.
-7. Simulate a weak verifier and show reward hacking/selective failure.
-8. Implement a small beam/best-first search over a toy state graph.
-9. Compare outcome vs process labels on the same examples.
-10. Design a compute-matched reasoning benchmark.
+Complete all 20 with code, calculations, configs, seeds and concise conclusions.
 
-Challenge:
-- build a verifier-guided search on a symbolic toy problem
-- distill verifier-filtered candidate solutions into a smaller policy/model
+## Level 1 — Recall
+1. Define **test-time compute**.
+2. Define **self-consistency/best-of-N** and its state/representation role.
+3. Define **verifiers and search** and one quality/compute trade-off.
+4. Define **process/outcome supervision and RLVR concepts** and one failure mode.
+
+## Level 2 — Understanding
+5. Trace input/context/modalities through the complete model/system and annotate shapes/state.
+6. State assumptions behind self-consistency/best-of-N and construct one violation.
+7. Derive a central routing/context/candidate/alignment/feature calculation and verify a toy case.
+8. Compare verifiers and search and process/outcome supervision and RLVR concepts in quality, compute, memory, supervision and failure behavior.
+
+## Level 3 — Coding
+9. Implement/simulate one central routing/memory/voting/projection/audio operation from low-level primitives.
+10. Add shape/range/capacity/context/candidate/modality validation.
+11. Build a fixed-seed tiny task with known expected routing/memory/vote/alignment behavior.
+12. Add invariant tests for routing sums/load, cache bytes/length, candidate statistics, projection shapes or feature values.
+
+## Level 4 — Debugging
+13. Create a collapsed router/cache/context/vote/projection bug that still runs; diagnose and regression-test.
+14. Create an unfair compute-budget or preprocessing mismatch and show the misleading comparison before fixing it.
+15. Stress context/candidate/modalities/capacity until resource or quality failure and add a documented bound.
+16. Profile routing/attention/encoder/verifier/decode components separately and optimize the measured bottleneck.
+
+## Level 5 — Challenge
+17. Compare baseline and advanced method over at least three seeds/sample sets with matched compute/token budgets.
+18. Ablate one router/memory/verifier/projector/representation component and explain the mechanism.
+19. Define a production contract covering state isolation, max context/candidates/modalities, resource limits, monitoring and fallback.
+20. Write a research report with claim, matched baseline, compute budget, results, failure/grounding analysis, limitations and next experiment.
