@@ -1,16 +1,33 @@
-# Chapter 36 Exercises
+# Chapter 36 Exercises — Encoder-Decoder and T5
 
-1. Trace encoder/decoder/cross-attention shapes.
-2. Construct decoder inputs by shifting targets right.
-3. Build source/target padding masks.
-4. Draw all three seq2seq masks.
-5. Implement cross-attention using Chapter 29 attention.
-6. Construct T5 span-corruption examples by hand.
-7. Implement random non-overlapping span selection.
-8. Train a tiny copy/reverse seq2seq task.
-9. Compare greedy vs beam-style decoding conceptually.
-10. Compare BERT/GPT/T5 objectives in a table.
+Complete all 20 exercises. Save code, calculations, plots, seeds, trajectories/samples, and concise conclusions.
 
-Challenge:
-- implement cached decoder self-attention
-- cache encoder K/V projections for cross-attention
+## Level 1 — Recall
+1. Define **encoder-decoder factorization**.
+2. Define **cross-attention** and its update/role.
+3. Define **teacher forcing and seq2seq loss** and one source of variance/instability.
+4. Define **text-to-text task formulation** and one important trade-off.
+
+## Level 2 — Understanding
+5. Trace the algorithm from input/state through objective/update to output/action/sample.
+6. State assumptions behind cross-attention and construct one failure case.
+7. Derive the central equation/objective/update and verify a tiny hand calculation.
+8. Compare teacher forcing and seq2seq loss and text-to-text task formulation in supervision, stability, compute/sample cost, and evaluation.
+
+## Level 3 — Coding
+9. Implement a minimal independent version of the chapter's central operator/update with low-level primitives.
+10. Add validation for shapes, probabilities/ranges, masks/terminal state, graph indices, or schedule parameters as appropriate.
+11. Build a fixed-seed toy task whose expected behavior can be checked directly.
+12. Add invariant tests plus one tiny reference comparison.
+
+## Level 4 — Debugging
+13. Introduce a terminal/mask/index/target/sign bug that still runs; diagnose and regression-test the fix.
+14. Create a stochastic-evaluation bug such as one-seed reporting, bad reset, or mismatched sampling budget; fix the protocol.
+15. Trigger numerical/optimization instability and add a principled diagnostic/mitigation.
+16. Profile environment/data/model/sampling components separately and optimize the measured bottleneck without changing semantics.
+
+## Level 5 — Challenge
+17. Compare a baseline and chapter method over at least three seeds with matched data/rollout/sample budgets.
+18. Ablate one central component and explain the mechanism behind the result.
+19. Design a bounded production contract with input/environment limits, iterative-compute cap, artifact versions, monitoring, and rollback.
+20. Write a research-style report with claim, baseline, protocol, full stochastic results, failure analysis, limitations, and next experiment.

@@ -1,16 +1,33 @@
-# Chapter 37 Exercises
+# Chapter 37 Exercises — Graph Neural Networks
 
-1. Build adjacency matrices from edge lists.
-2. Derive GCN normalization for a 3-node chain.
-3. Implement sum/mean/max aggregation.
-4. Verify aggregation invariance to neighbor ordering.
-5. Build a two-layer NumPy GCN forward pass.
-6. Implement GraphSAGE mean aggregation.
-7. Implement one-head GAT attention on a tiny graph.
-8. Compare 1–8 GCN layers and observe oversmoothing.
-9. Build graph-level mean/sum pooling.
-10. Create a simple link-prediction decoder.
+Complete all 20 exercises. Save code, calculations, plots, seeds, trajectories/samples, and concise conclusions.
 
-Challenge:
-- implement sparse edge-list GCN aggregation without materializing NxN adjacency
-- compare homophilous and heterophilous synthetic graphs
+## Level 1 — Recall
+1. Define **message passing**.
+2. Define **GCN** and its update/role.
+3. Define **GraphSAGE** and one source of variance/instability.
+4. Define **GAT and graph-level pooling** and one important trade-off.
+
+## Level 2 — Understanding
+5. Trace the algorithm from input/state through objective/update to output/action/sample.
+6. State assumptions behind GCN and construct one failure case.
+7. Derive the central equation/objective/update and verify a tiny hand calculation.
+8. Compare GraphSAGE and GAT and graph-level pooling in supervision, stability, compute/sample cost, and evaluation.
+
+## Level 3 — Coding
+9. Implement a minimal independent version of the chapter's central operator/update with low-level primitives.
+10. Add validation for shapes, probabilities/ranges, masks/terminal state, graph indices, or schedule parameters as appropriate.
+11. Build a fixed-seed toy task whose expected behavior can be checked directly.
+12. Add invariant tests plus one tiny reference comparison.
+
+## Level 4 — Debugging
+13. Introduce a terminal/mask/index/target/sign bug that still runs; diagnose and regression-test the fix.
+14. Create a stochastic-evaluation bug such as one-seed reporting, bad reset, or mismatched sampling budget; fix the protocol.
+15. Trigger numerical/optimization instability and add a principled diagnostic/mitigation.
+16. Profile environment/data/model/sampling components separately and optimize the measured bottleneck without changing semantics.
+
+## Level 5 — Challenge
+17. Compare a baseline and chapter method over at least three seeds with matched data/rollout/sample budgets.
+18. Ablate one central component and explain the mechanism behind the result.
+19. Design a bounded production contract with input/environment limits, iterative-compute cap, artifact versions, monitoring, and rollback.
+20. Write a research-style report with claim, baseline, protocol, full stochastic results, failure analysis, limitations, and next experiment.
