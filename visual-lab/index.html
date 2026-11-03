@@ -1,0 +1,1167 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="บทเรียน AI Engineer ภาษาไทย พร้อมคณิตศาสตร์ทีละขั้นและห้องทดลองที่คำนวณจริง"><title>Programming: ติดตามค่าจน debug ได้ · AI Engineer Studio</title><link rel="stylesheet" href="assets/styles.css"><link rel="stylesheet" href="assets/course.css"><script defer src="assets/lessons.js"></script><script defer src="assets/chapter-meta.js"></script><script defer src="assets/course-math.js"></script><script defer src="assets/course-models.js"></script><script defer src="assets/course-models-v3.js"></script><script defer src="assets/course-assessment.js"></script><script defer src="assets/course-mastery.js"></script><script defer src="assets/course-catalog.js"></script><script defer src="assets/book-content.js"></script><script defer src="assets/course-render.js"></script><script defer src="assets/course-mastery-panel.js"></script><script defer src="assets/quality-report.js"></script><script defer src="assets/course-app.js"></script></head>
+<body data-chapter="1" data-root="../"><a class="skip-link" href="#main">ข้ามไปบทเรียน</a>
+<aside class="sidebar" id="sidebar" aria-label="เลือกบทเรียน"><a class="brand" href="../visual-lab/index.html"><span class="brand-mark">ai</span><span>AI ENGINEER<small>LEARN · DERIVE · BUILD</small></span></a><div class="sidebar-intro">อ่านให้เข้าใจ · คำนวณให้เห็น · เขียนให้เป็น</div><label class="search-box"><input id="search" type="search" placeholder="ค้นหาบท / attention" aria-label="ค้นหาบทเรียน"></label><label class="filter-label" for="phase-filter">เส้นทางการเรียน <span id="nav-count"></span></label><select id="phase-filter"><option value="">ทุก Phase</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option></select><nav id="chapter-list" class="chapter-list" aria-label="รายชื่อบท"></nav><div class="course-progress"><div><span>ผ่านโจทย์ในเว็บ</span><strong id="progress-count">0 / 80</strong></div><progress id="course-progress" max="80" value="0" aria-label="บทที่ผ่านโจทย์"></progress><a id="resume-link" href="#chapter-1">อ่านต่อจากเดิม →</a></div></aside>
+<button class="nav-backdrop" id="nav-backdrop" aria-label="ปิดเมนู" hidden></button>
+<main id="main" tabindex="-1"><header class="topbar"><div><button id="nav-toggle" class="icon-button mobile-menu" aria-label="เปิดเมนูบทเรียน" aria-expanded="false" aria-controls="sidebar">☰</button><span id="breadcrumb"></span></div><span class="local-badge"><i></i> คำนวณในเครื่อง · ไม่มี API</span></header><div class="content">
+<div class="chapter-navigation"><label for="chapter-select" class="sr-only">เลือกบทเรียน</label><select id="chapter-select"></select><div class="chapter-arrows"><button id="prev-chapter" class="icon-button" aria-label="บทก่อนหน้า">←</button><button id="next-chapter" class="icon-button" aria-label="บทถัดไป">→</button></div></div>
+<section class="chapter-hero"><div><p id="chapter-kicker" class="eyebrow"></p><h1 id="chapter-title">Programming: ติดตามค่าจน debug ได้</h1><p class="english-title" id="chapter-english"></p></div><span class="hero-symbol">f(x) ↗</span></section>
+<p id="quality-status" class="quality-status"></p><div id="mastery-status" class="mastery-status"></div><div class="reading-route"><a href="#chapter-1/section/overview">01 อ่านบทเรียน</a><a href="#workbench">02 ทดลองสมการ</a><a href="#practice">03 ฝึกและตรวจงาน</a><a href="#mastery-review">04 หลักฐานตามเกณฑ์</a></div>
+<nav id="lesson-toc" class="lesson-toc" aria-label="สารบัญบท"></nav>
+<section id="overview" class="course-overview"><span class="eyebrow">THE LEARNING CONTRACT</span><h2>เรียนบทนี้แล้วต้องทำอะไรได้</h2><p id="chapter-purpose"></p><div id="chapter-objectives"></div><div class="learning-hint">ทำนาย → เปลี่ยนทีละค่า → ตรวจตัวเลข → อธิบายเหตุผล → เขียนด้วย Python เอง</div></section>
+<section class="workbench lab-card" id="workbench" aria-label="ห้องทดลองคำนวณจริง"><div class="card-header"><div><span class="live-dot"></span><span class="eyebrow">COMPUTATION WORKBENCH</span></div><span class="simulation-label">ทุกภาพใช้ผลคำนวณชุดเดียวกัน</span></div><div class="lab-top"><label for="lab-select">เลือกกลไกที่ต้องการทดลอง</label><select id="lab-select"></select><p id="lab-question"></p></div><div class="workbench-grid"><div class="viz-column"><div class="compare-labels"><span>เส้นทึบ: ปัจจุบัน</span><span>เส้นประ: baseline ที่ตรึงไว้</span></div><div id="simulation" class="simulation"></div><div id="metrics" class="metrics"></div><div id="baseline-diff" class="baseline-diff"></div><div class="playback"><div class="playback-buttons"><button class="primary-button" id="update-once">อัปเดตหนึ่งก้าว</button><button class="secondary-button" id="train-many">▶ ฝึก 30 ก้าว</button><button class="icon-button" id="back-state" aria-label="ย้อนประวัติ">↶</button><button class="icon-button" id="forward-state" aria-label="ประวัติถัดไป">↷</button></div></div><div class="lab-secondary-actions"><button id="pin-baseline" class="text-button">ตรึง baseline ปัจจุบัน</button><button id="reset-lab" class="text-button">คืนค่าเริ่มต้น</button><button id="download-state" class="text-button">บันทึกผล JSON</button><span id="history-status"></span></div><p id="simulation-note" class="simulation-note"></p><p class="lab-error" id="lab-error" role="alert" hidden></p></div><div class="controls-column"><h3>เปลี่ยนทีละตัว แล้วสังเกตผล</h3><div id="lab-controls"></div><p class="control-note">แก้ weight ด้วยมือจะคำนวณ forward ใหม่; optimizer เปลี่ยน weights เมื่อกดอัปเดตเท่านั้น</p></div></div>
+<div class="trace-section"><div class="trace-toolbar"><h3>เดินสมการทีละ operation</h3><div><button id="trace-prev" class="icon-button" aria-label="operation ก่อนหน้า">←</button><button id="play-trace" class="secondary-button" aria-pressed="false">▶ เล่น flow</button><button id="trace-next" class="icon-button" aria-label="operation ถัดไป">→</button><span id="stage-counter"></span></div></div><label class="motion-control"><input id="reduce-motion" type="checkbox"> ลดภาพเคลื่อนไหว (หยุดการเล่นที่ค้างอยู่)</label><div id="operation-steps" class="operation-steps"></div><div id="flow-diagram" class="flow-diagram"></div><div id="active-operation" class="active-operation" aria-live="polite"></div><p class="control-note">ตัวเลขบนภาพปัดเศษเพื่อให้อ่านง่าย; บันทึก JSON เพื่อดูค่าที่ใช้คำนวณเต็ม precision</p><details open><summary>ตารางค่าระหว่างทาง — ตรวจด้วยมือได้</summary><div id="result-table"></div></details><div id="tensor-tables" class="tensor-tables"></div><details id="surface-details"><summary>ดู loss surface และเส้นทางของ w₁,b (ตรึง controls อื่น)</summary><div id="surface-chart"></div><p>surface คำนวณ objective ปัจจุบันโดยตรึง degree, penalty, ข้อมูล และ weights อื่น เส้นทางแสดงเฉพาะ snapshots ที่ค่าเหล่านี้ตรงกัน; นอกช่วง w=[−1,5], b=[−2,4] ให้ตรวจค่าจริงใน history</p></details><details><summary>ประวัติการเปลี่ยนค่า</summary><div id="history-table"></div></details></div></section>
+<article id="chapter-article" class="chapter-article"><section id="mechanism-1" class="teaching-section"><span class="section-kicker">CHAPTER 01 · ภาพ → สมการ → โค้ด</span><h2>1. ตัวแปรไม่ใช่กล่องที่คัดลอก object ทุกครั้ง</h2><h3>โจทย์และเหตุผล</h3><p>เมื่อ a และ b อ้าง mutable object เดียวกัน การแก้ผ่านชื่อหนึ่งเห็นได้ผ่านอีกชื่อ จึงต้องแยก assignment, shallow copy และการสร้าง object ใหม่ ลองเขียน append_score ที่ใช้ list เป็น default แล้วเรียกสองครั้งก่อนแก้เป็น None</p><h3>ตัวอย่างและคำอธิบาย</h3><p>variable name ต่างจาก object อย่างไร?</p><p>ชื่อ variable เป็น reference ที่ผูกกับ object ไม่ใช่สำเนาของ object: <code>a=[1]; b=a; b.append(2)</code> ทำให้ทั้ง a และ b เห็น <code>[1,2]</code>. แต่ <code>b=[9]</code> เปลี่ยน binding ของ b เท่านั้น a ยังเป็น <code>[1,2]</code>; ใช้กรณีนี้แยก mutation กับ reassignment.</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>values: รายการตัวเลข,initial=2,4,6,8; threshold: เกณฑ์ x &gt; threshold,initial=4; limit: จำนวนสมาชิกที่อ่าน,initial=4</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = [2, 4, 6, 8]; ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</li><li>if x&gt;4: total+=x = 14; loop อ่านตามลำดับ; ค่าเท่ากับ threshold ไม่ผ่าน &gt;</li><li>finite / normalized / bounded = 14; เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="program-control-flow--branch-ก-บ">เปิดการทดลองนี้</a><p class="failure-box">Bug คือ scores=[] ถูกใช้ซ้ำข้าม calls. เปลี่ยน signature เป็น `def append_score(score,scores=None)` และสร้าง list ใหม่เมื่อ scores is None. Regression test ต้องเรียกสองครั้งโดยไม่ส่ง scores และตรวจว่า object ไม่ใช่ตัวเดียวกัน พร้อมกรณี caller ส่ง list ที่ตั้งใจให้ mutate.; รัน filter/accumulation จริงใน browser; limit สอนการหยุด iteration</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>ชื่อ variable เป็น reference ที่ผูกกับ object ไม่ใช่สำเนาของ object: <code>a=[1]; b=a; b.append(2)</code> ทำให้ทั้ง a และ b เห็น <code>[1,2]</code>. แต่ <code>b=[9]</code> เปลี่ยน binding ของ b เท่านั้น a ยังเป็น <code>[1,2]</code>; ใช้กรณีนี้แยก mutation กับ reassignment.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-1-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = [2, 4, 6, 8]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>if x&gt;4: total+=x</code> = 14<p>loop อ่านตามลำดับ; ค่าเท่ากับ threshold ไม่ผ่าน &gt;</p></li><li><code>finite / normalized / bounded</code> = 14<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-1-visual"><summary>ภาพและ shape</summary><p>รัน filter/accumulation จริงใน browser; limit สอนการหยุด iteration</p><ol><li><code>shape / range</code> = [2, 4, 6, 8]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>if x&gt;4: total+=x</code> = 14<p>loop อ่านตามลำดับ; ค่าเท่ากับ threshold ไม่ผ่าน &gt;</p></li><li><code>finite / normalized / bounded</code> = 14<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-1-code"><summary>โค้ด</summary><p>ชื่อ variable เป็น reference ที่ผูกกับ object ไม่ใช่สำเนาของ object: <code>a=[1]; b=a; b.append(2)</code> ทำให้ทั้ง a และ b เห็น <code>[1,2]</code>. แต่ <code>b=[9]</code> เปลี่ยน binding ของ b เท่านั้น a ยังเป็น <code>[1,2]</code>; ใช้กรณีนี้แยก mutation กับ reassignment.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-1-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = [2, 4, 6, 8]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>if x&gt;4: total+=x</code> = 14<p>loop อ่านตามลำดับ; ค่าเท่ากับ threshold ไม่ผ่าน &gt;</p></li><li><code>finite / normalized / bounded</code> = 14<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-1"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-2" class="teaching-section"><span class="section-kicker">CHAPTER 01 · ภาพ → สมการ → โค้ด</span><h2>2. loop เป็นลำดับการเปลี่ยน state ที่ตรวจได้</h2><h3>โจทย์และเหตุผล</h3><p>อ่านค่าก่อนเข้าเงื่อนไข ผล True/False และ accumulator หลังแต่ละรอบ ถ้าผลรวมผิด ให้หาสมาชิกตัวแรกที่ state แตกจากการคำนวณมือ อย่าเริ่มเปลี่ยนหลายบรรทัดพร้อมกัน</p><h3>ตัวอย่างและคำอธิบาย</h3><p>เพิ่ม flag <code>--limit</code> เพื่ออ่านเพียง N rows</p><p>เพิ่ม argparse argument <code>--limit</code> แบบ int ตรวจว่า ≥0 แล้วหยุดเมื่ออ่าน data rows ครบ N หลัง header. ไฟล์สามแถวกับ limit=2 ต้องรายงานสองแถว; limit=0 ไม่อ่าน data, ไม่มี flag อ่านครบ; อย่า off-by-one โดยนับ header เป็นแถวแรก.</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>values: รายการตัวเลข,initial=2,4,6,8; threshold: เกณฑ์ x &gt; threshold,initial=4; limit: จำนวนสมาชิกที่อ่าน,initial=2</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = [2, 4]; ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</li><li>if x&gt;4: total+=x = 0; loop อ่านตามลำดับ; ค่าเท่ากับ threshold ไม่ผ่าน &gt;</li><li>finite / normalized / bounded = 0; เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="program-iteration--อ-านบางส-วนขอ">เปิดการทดลองนี้</a><p class="failure-box">Bug คือ scores=[] ถูกใช้ซ้ำข้าม calls. เปลี่ยน signature เป็น `def append_score(score,scores=None)` และสร้าง list ใหม่เมื่อ scores is None. Regression test ต้องเรียกสองครั้งโดยไม่ส่ง scores และตรวจว่า object ไม่ใช่ตัวเดียวกัน พร้อมกรณี caller ส่ง list ที่ตั้งใจให้ mutate.; รัน filter/accumulation จริงใน browser; limit สอนการหยุด iteration</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>เพิ่ม argparse argument <code>--limit</code> แบบ int ตรวจว่า ≥0 แล้วหยุดเมื่ออ่าน data rows ครบ N หลัง header. ไฟล์สามแถวกับ limit=2 ต้องรายงานสองแถว; limit=0 ไม่อ่าน data, ไม่มี flag อ่านครบ; อย่า off-by-one โดยนับ header เป็นแถวแรก.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-2-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = [2, 4]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>if x&gt;4: total+=x</code> = 0<p>loop อ่านตามลำดับ; ค่าเท่ากับ threshold ไม่ผ่าน &gt;</p></li><li><code>finite / normalized / bounded</code> = 0<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-2-visual"><summary>ภาพและ shape</summary><p>รัน filter/accumulation จริงใน browser; limit สอนการหยุด iteration</p><ol><li><code>shape / range</code> = [2, 4]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>if x&gt;4: total+=x</code> = 0<p>loop อ่านตามลำดับ; ค่าเท่ากับ threshold ไม่ผ่าน &gt;</p></li><li><code>finite / normalized / bounded</code> = 0<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-2-code"><summary>โค้ด</summary><p>เพิ่ม argparse argument <code>--limit</code> แบบ int ตรวจว่า ≥0 แล้วหยุดเมื่ออ่าน data rows ครบ N หลัง header. ไฟล์สามแถวกับ limit=2 ต้องรายงานสองแถว; limit=0 ไม่อ่าน data, ไม่มี flag อ่านครบ; อย่า off-by-one โดยนับ header เป็นแถวแรก.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-2-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = [2, 4]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>if x&gt;4: total+=x</code> = 0<p>loop อ่านตามลำดับ; ค่าเท่ากับ threshold ไม่ผ่าน &gt;</p></li><li><code>finite / normalized / bounded</code> = 0<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-2"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-3" class="teaching-section"><span class="section-kicker">CHAPTER 01 · ภาพ → สมการ → โค้ด</span><h2>3. จากฟังก์ชันสู่ CLI ที่ทำซ้ำได้</h2><h3>โจทย์และเหตุผล</h3><p>แยก core calculation ออกจากการอ่านไฟล์และ arguments ตรวจ empty input และ invalid path ด้วย tests ใช้ virtual environment และบันทึก commit/config เพื่อให้การทดลอง AI ในบทต่อไปรันซ้ำได้</p><h3>ตัวอย่างและคำอธิบาย</h3><p>ใช้ <code>pathlib</code> หาไฟล์ <code>.csv</code> ทั้งหมดใต้ directory</p><p>ใช้ <code>sorted(Path(root).rglob('*.csv'))</code> แล้วกรอง is_file เพื่อไม่รวม directory ชื่อ .csv. สร้าง temporary directory ที่มี a.csv, nested/b.csv,c.txt แล้วตรวจว่าได้สองไฟล์ตามลำดับ deterministic; missing root ต้องมี policy ชัด ไม่รายงานว่า dataset ว่างเงียบ ๆ.</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>batch: batch rows,initial=3; bias: bias scalar,initial=1; column: selected feature,initial=1</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = &quot;X=(3,3), b=scalar&quot;; ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</li><li>Y=X+b; mean(Y,axis=0) = [3, 4, 5]; broadcast scalar ไปทุก element แล้วลดแกนแถว</li><li>finite / normalized / bounded = [3, 4, 5]; เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="arrays-จาก-list-ไป-array--shape">เปิดการทดลองนี้</a><p class="failure-box">Bug คือ scores=[] ถูกใช้ซ้ำข้าม calls. เปลี่ยน signature เป็น `def append_score(score,scores=None)` และสร้าง list ใหม่เมื่อ scores is None. Regression test ต้องเรียกสองครั้งโดยไม่ส่ง scores และตรวจว่า object ไม่ใช่ตัวเดียวกัน พร้อมกรณี caller ส่ง list ที่ตั้งใจให้ mutate.; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>ใช้ <code>sorted(Path(root).rglob('*.csv'))</code> แล้วกรอง is_file เพื่อไม่รวม directory ชื่อ .csv. สร้าง temporary directory ที่มี a.csv, nested/b.csv,c.txt แล้วตรวจว่าได้สองไฟล์ตามลำดับ deterministic; missing root ต้องมี policy ชัด ไม่รายงานว่า dataset ว่างเงียบ ๆ.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-3-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = &quot;X=(3,3), b=scalar&quot;<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>Y=X+b; mean(Y,axis=0)</code> = [3, 4, 5]<p>broadcast scalar ไปทุก element แล้วลดแกนแถว</p></li><li><code>finite / normalized / bounded</code> = [3, 4, 5]<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-3-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>shape / range</code> = &quot;X=(3,3), b=scalar&quot;<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>Y=X+b; mean(Y,axis=0)</code> = [3, 4, 5]<p>broadcast scalar ไปทุก element แล้วลดแกนแถว</p></li><li><code>finite / normalized / bounded</code> = [3, 4, 5]<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-3-code"><summary>โค้ด</summary><p>ใช้ <code>sorted(Path(root).rglob('*.csv'))</code> แล้วกรอง is_file เพื่อไม่รวม directory ชื่อ .csv. สร้าง temporary directory ที่มี a.csv, nested/b.csv,c.txt แล้วตรวจว่าได้สองไฟล์ตามลำดับ deterministic; missing root ต้องมี policy ชัด ไม่รายงานว่า dataset ว่างเงียบ ๆ.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-3-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = &quot;X=(3,3), b=scalar&quot;<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>Y=X+b; mean(Y,axis=0)</code> = [3, 4, 5]<p>broadcast scalar ไปทุก element แล้วลดแกนแถว</p></li><li><code>finite / normalized / bounded</code> = [3, 4, 5]<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-3"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="reference" class="canonical-section"><h2>เนื้อหาครบทุกหัวข้อ พร้อมแผนที่ objective</h2><nav class="source-toc"><a href="#chapter-1/section/topic-1">1. Why This Matters</a> <a href="#chapter-1/section/topic-2">2. Prerequisites</a> <a href="#chapter-1/section/topic-3">3. Learning Objectives</a> <a href="#chapter-1/section/topic-4">4. Mental Model</a> <a href="#chapter-1/section/topic-5">5. Study Order</a> <a href="#chapter-1/section/topic-6">6. First Python Program</a> <a href="#chapter-1/section/topic-7">7. Data Types</a> <a href="#chapter-1/section/topic-8">8. Control Flow</a> <a href="#chapter-1/section/topic-9">9. Functions</a> <a href="#chapter-1/section/topic-10">10. Classes</a> <a href="#chapter-1/section/topic-11">11. Iterators and Generators</a> <a href="#chapter-1/section/topic-12">12. Exceptions</a> <a href="#chapter-1/section/topic-13">13. Modules and Packages</a> <a href="#chapter-1/section/topic-14">14. Linux/Bash</a> <a href="#chapter-1/section/topic-15">15. Git Workflow</a> <a href="#chapter-1/section/topic-16">16. Memory Mental Model</a> <a href="#chapter-1/section/topic-17">17. Debugging</a> <a href="#chapter-1/section/topic-18">18. Performance</a> <a href="#chapter-1/section/topic-19">19. Production Perspective</a> <a href="#chapter-1/section/topic-20">20. Research Perspective</a> <a href="#chapter-1/section/topic-21">21. Common Mistakes</a> <a href="#chapter-1/section/topic-22">22. Interview Questions</a> <a href="#chapter-1/section/topic-23">23. Chapter Checklist</a> <a href="#chapter-1/section/topic-24">24. What&#x27;s Next</a> </nav><section id="topic-1" class="source-topic"><span id="source-01-programming-canonical-chapter-01-programming-foundations" class="legacy-anchor"></span><span id="source-01-programming-canonical-1-why-this-matters" class="legacy-anchor"></span><h3>1. Why This Matters</h3>
+<p>AI engineering คือ software engineering ที่มีข้อมูลและคณิตศาสตร์เข้ามาเพิ่ม ถ้า Python, Linux, Git และ debugging ยังไม่แน่น เราจะเสียเวลาแก้ environment มากกว่าเรียน model</p>
+<p>บทนี้มีเป้าหมายให้คุณ “เขียนโปรแกรมเพื่อทดลอง” ได้ ไม่ใช่แค่จำ syntax</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>1. Why This Matters</h3>
+<p>AI engineering คือ software engineering ที่มีข้อมูลและคณิตศาสตร์เข้ามาเพิ่ม ถ้า Python, Linux, Git และ debugging ยังไม่แน่น เราจะเสียเวลาแก้ environment มากกว่าเรียน model</p>
+<p>บทนี้มีเป้าหมายให้คุณ “เขียนโปรแกรมเพื่อทดลอง” ได้ ไม่ใช่แค่จำ syntax</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-1-equation"><summary>สมการ</summary><h3>1. Why This Matters</h3>
+<p>AI engineering คือ software engineering ที่มีข้อมูลและคณิตศาสตร์เข้ามาเพิ่ม ถ้า Python, Linux, Git และ debugging ยังไม่แน่น เราจะเสียเวลาแก้ environment มากกว่าเรียน model</p>
+<p>บทนี้มีเป้าหมายให้คุณ “เขียนโปรแกรมเพื่อทดลอง” ได้ ไม่ใช่แค่จำ syntax</p></details><details id="help-topic-1-visual"><summary>ภาพและ shape</summary><h3>1. Why This Matters</h3>
+<p>AI engineering คือ software engineering ที่มีข้อมูลและคณิตศาสตร์เข้ามาเพิ่ม ถ้า Python, Linux, Git และ debugging ยังไม่แน่น เราจะเสียเวลาแก้ environment มากกว่าเรียน model</p>
+<p>บทนี้มีเป้าหมายให้คุณ “เขียนโปรแกรมเพื่อทดลอง” ได้ ไม่ใช่แค่จำ syntax</p></details><details id="help-topic-1-code"><summary>โค้ด</summary><h3>1. Why This Matters</h3>
+<p>AI engineering คือ software engineering ที่มีข้อมูลและคณิตศาสตร์เข้ามาเพิ่ม ถ้า Python, Linux, Git และ debugging ยังไม่แน่น เราจะเสียเวลาแก้ environment มากกว่าเรียน model</p>
+<p>บทนี้มีเป้าหมายให้คุณ “เขียนโปรแกรมเพื่อทดลอง” ได้ ไม่ใช่แค่จำ syntax</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-1-result"><summary>ผลการทดลอง</summary><h3>1. Why This Matters</h3>
+<p>AI engineering คือ software engineering ที่มีข้อมูลและคณิตศาสตร์เข้ามาเพิ่ม ถ้า Python, Linux, Git และ debugging ยังไม่แน่น เราจะเสียเวลาแก้ environment มากกว่าเรียน model</p>
+<p>บทนี้มีเป้าหมายให้คุณ “เขียนโปรแกรมเพื่อทดลอง” ได้ ไม่ใช่แค่จำ syntax</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-1"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-2" class="source-topic"><span id="source-01-programming-canonical-2-prerequisites" class="legacy-anchor"></span><h3>2. Prerequisites</h3>
+<ul>
+<li>ใช้ terminal ได้ในระดับเปิดและพิมพ์คำสั่ง</li>
+<li>ไม่ต้องมีพื้นฐาน Python มาก่อน</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>2. Prerequisites</h3>
+<ul>
+<li>ใช้ terminal ได้ในระดับเปิดและพิมพ์คำสั่ง</li>
+<li>ไม่ต้องมีพื้นฐาน Python มาก่อน</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-2-equation"><summary>สมการ</summary><h3>2. Prerequisites</h3>
+<ul>
+<li>ใช้ terminal ได้ในระดับเปิดและพิมพ์คำสั่ง</li>
+<li>ไม่ต้องมีพื้นฐาน Python มาก่อน</li>
+</ul></details><details id="help-topic-2-visual"><summary>ภาพและ shape</summary><h3>2. Prerequisites</h3>
+<ul>
+<li>ใช้ terminal ได้ในระดับเปิดและพิมพ์คำสั่ง</li>
+<li>ไม่ต้องมีพื้นฐาน Python มาก่อน</li>
+</ul></details><details id="help-topic-2-code"><summary>โค้ด</summary><h3>2. Prerequisites</h3>
+<ul>
+<li>ใช้ terminal ได้ในระดับเปิดและพิมพ์คำสั่ง</li>
+<li>ไม่ต้องมีพื้นฐาน Python มาก่อน</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-2-result"><summary>ผลการทดลอง</summary><h3>2. Prerequisites</h3>
+<ul>
+<li>ใช้ terminal ได้ในระดับเปิดและพิมพ์คำสั่ง</li>
+<li>ไม่ต้องมีพื้นฐาน Python มาก่อน</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-2"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-3" class="source-topic"><span id="source-01-programming-canonical-3-learning-objectives" class="legacy-anchor"></span><h3>3. Learning Objectives</h3>
+<p>By the end of this chapter you can:</p>
+<ul>
+<li>อธิบาย variable, value, type, object และ reference</li>
+<li>ใช้ condition, loop, function, class, iterator, exception</li>
+<li>เขียน type hints และแบ่ง code เป็น module</li>
+<li>ใช้ standard library สำคัญ เช่น <code>pathlib</code>, <code>csv</code>, <code>argparse</code></li>
+<li>ใช้ Bash สำรวจ filesystem/process/environment</li>
+<li>ใช้ Git แบบ branch → diff → commit</li>
+<li>อธิบาย stack/heap/pointer ในระดับ mental model</li>
+<li>debug โปรแกรมจาก traceback และ regression test</li>
+<li>สร้าง CLI Dataset Inspector</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>3. Learning Objectives</h3>
+<p>By the end of this chapter you can:</p>
+<ul>
+<li>อธิบาย variable, value, type, object และ reference</li>
+<li>ใช้ condition, loop, function, class, iterator, exception</li>
+<li>เขียน type hints และแบ่ง code เป็น module</li>
+<li>ใช้ standard library สำคัญ เช่น <code>pathlib</code>, <code>csv</code>, <code>argparse</code></li>
+<li>ใช้ Bash สำรวจ filesystem/process/environment</li>
+<li>ใช้ Git แบบ branch → diff → commit</li>
+<li>อธิบาย stack/heap/pointer ในระดับ mental model</li>
+<li>debug โปรแกรมจาก traceback และ regression test</li>
+<li>สร้าง CLI Dataset Inspector</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-3-equation"><summary>สมการ</summary><h3>3. Learning Objectives</h3>
+<p>By the end of this chapter you can:</p>
+<ul>
+<li>อธิบาย variable, value, type, object และ reference</li>
+<li>ใช้ condition, loop, function, class, iterator, exception</li>
+<li>เขียน type hints และแบ่ง code เป็น module</li>
+<li>ใช้ standard library สำคัญ เช่น <code>pathlib</code>, <code>csv</code>, <code>argparse</code></li>
+<li>ใช้ Bash สำรวจ filesystem/process/environment</li>
+<li>ใช้ Git แบบ branch → diff → commit</li>
+<li>อธิบาย stack/heap/pointer ในระดับ mental model</li>
+<li>debug โปรแกรมจาก traceback และ regression test</li>
+<li>สร้าง CLI Dataset Inspector</li>
+</ul></details><details id="help-topic-3-visual"><summary>ภาพและ shape</summary><h3>3. Learning Objectives</h3>
+<p>By the end of this chapter you can:</p>
+<ul>
+<li>อธิบาย variable, value, type, object และ reference</li>
+<li>ใช้ condition, loop, function, class, iterator, exception</li>
+<li>เขียน type hints และแบ่ง code เป็น module</li>
+<li>ใช้ standard library สำคัญ เช่น <code>pathlib</code>, <code>csv</code>, <code>argparse</code></li>
+<li>ใช้ Bash สำรวจ filesystem/process/environment</li>
+<li>ใช้ Git แบบ branch → diff → commit</li>
+<li>อธิบาย stack/heap/pointer ในระดับ mental model</li>
+<li>debug โปรแกรมจาก traceback และ regression test</li>
+<li>สร้าง CLI Dataset Inspector</li>
+</ul></details><details id="help-topic-3-code"><summary>โค้ด</summary><h3>3. Learning Objectives</h3>
+<p>By the end of this chapter you can:</p>
+<ul>
+<li>อธิบาย variable, value, type, object และ reference</li>
+<li>ใช้ condition, loop, function, class, iterator, exception</li>
+<li>เขียน type hints และแบ่ง code เป็น module</li>
+<li>ใช้ standard library สำคัญ เช่น <code>pathlib</code>, <code>csv</code>, <code>argparse</code></li>
+<li>ใช้ Bash สำรวจ filesystem/process/environment</li>
+<li>ใช้ Git แบบ branch → diff → commit</li>
+<li>อธิบาย stack/heap/pointer ในระดับ mental model</li>
+<li>debug โปรแกรมจาก traceback และ regression test</li>
+<li>สร้าง CLI Dataset Inspector</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-3-result"><summary>ผลการทดลอง</summary><h3>3. Learning Objectives</h3>
+<p>By the end of this chapter you can:</p>
+<ul>
+<li>อธิบาย variable, value, type, object และ reference</li>
+<li>ใช้ condition, loop, function, class, iterator, exception</li>
+<li>เขียน type hints และแบ่ง code เป็น module</li>
+<li>ใช้ standard library สำคัญ เช่น <code>pathlib</code>, <code>csv</code>, <code>argparse</code></li>
+<li>ใช้ Bash สำรวจ filesystem/process/environment</li>
+<li>ใช้ Git แบบ branch → diff → commit</li>
+<li>อธิบาย stack/heap/pointer ในระดับ mental model</li>
+<li>debug โปรแกรมจาก traceback และ regression test</li>
+<li>สร้าง CLI Dataset Inspector</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-3"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-4" class="source-topic"><span id="source-01-programming-canonical-4-mental-model" class="legacy-anchor"></span><h3>4. Mental Model</h3>
+<pre><code class="language-text">source code
+   ↓
+Python interpreter
+   ↓
+objects + references
+   ↓
+OS process
+   ↓
+CPU / memory / files
+</code></pre>
+<p>โปรแกรม AI ในอนาคตก็ยังอยู่บนฐานเดียวกัน เพียงมี array/tensor/GPU เพิ่มเข้ามา</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-4-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>4. Mental Model</h3>
+<pre><code class="language-text">source code
+   ↓
+Python interpreter
+   ↓
+objects + references
+   ↓
+OS process
+   ↓
+CPU / memory / files
+</code></pre>
+<p>โปรแกรม AI ในอนาคตก็ยังอยู่บนฐานเดียวกัน เพียงมี array/tensor/GPU เพิ่มเข้ามา</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-4-equation"><summary>สมการ</summary><h3>4. Mental Model</h3>
+<pre><code class="language-text">source code
+   ↓
+Python interpreter
+   ↓
+objects + references
+   ↓
+OS process
+   ↓
+CPU / memory / files
+</code></pre>
+<p>โปรแกรม AI ในอนาคตก็ยังอยู่บนฐานเดียวกัน เพียงมี array/tensor/GPU เพิ่มเข้ามา</p></details><details id="help-topic-4-visual"><summary>ภาพและ shape</summary><h3>4. Mental Model</h3>
+<pre><code class="language-text">source code
+   ↓
+Python interpreter
+   ↓
+objects + references
+   ↓
+OS process
+   ↓
+CPU / memory / files
+</code></pre>
+<p>โปรแกรม AI ในอนาคตก็ยังอยู่บนฐานเดียวกัน เพียงมี array/tensor/GPU เพิ่มเข้ามา</p></details><details id="help-topic-4-code"><summary>โค้ด</summary><h3>4. Mental Model</h3>
+<pre><code class="language-text">source code
+   ↓
+Python interpreter
+   ↓
+objects + references
+   ↓
+OS process
+   ↓
+CPU / memory / files
+</code></pre>
+<p>โปรแกรม AI ในอนาคตก็ยังอยู่บนฐานเดียวกัน เพียงมี array/tensor/GPU เพิ่มเข้ามา</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-4-result"><summary>ผลการทดลอง</summary><h3>4. Mental Model</h3>
+<pre><code class="language-text">source code
+   ↓
+Python interpreter
+   ↓
+objects + references
+   ↓
+OS process
+   ↓
+CPU / memory / files
+</code></pre>
+<p>โปรแกรม AI ในอนาคตก็ยังอยู่บนฐานเดียวกัน เพียงมี array/tensor/GPU เพิ่มเข้ามา</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-4"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-5" class="source-topic"><span id="source-01-programming-canonical-5-study-order" class="legacy-anchor"></span><h3>5. Study Order</h3>
+<ol>
+<li><a href="../01-programming/theory/01-python-foundations.md">Python Foundations</a></li>
+<li><a href="../01-programming/theory/02-linux-git-memory.md">Linux, Bash, Git, C/C++ Memory Model</a></li>
+<li>อ่านและรัน <a href="../01-programming/src/dataset_inspector.py">Dataset Inspector</a></li>
+<li>ทำ <a href="../01-programming/exercises/README.md">Exercises</a></li>
+<li>ตรวจด้วย <a href="../01-programming/solutions/README.md">Solutions</a></li>
+<li>ทำ <a href="../01-programming/mini-project/README.md">Mini Project</a></li>
+</ol><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-5-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>5. Study Order</h3>
+<ol>
+<li><a href="theory/01-python-foundations.md">Python Foundations</a></li>
+<li><a href="theory/02-linux-git-memory.md">Linux, Bash, Git, C/C++ Memory Model</a></li>
+<li>อ่านและรัน <a href="src/dataset_inspector.py">Dataset Inspector</a></li>
+<li>ทำ <a href="exercises/README.md">Exercises</a></li>
+<li>ตรวจด้วย <a href="solutions/README.md">Solutions</a></li>
+<li>ทำ <a href="mini-project/README.md">Mini Project</a></li>
+</ol><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-5-equation"><summary>สมการ</summary><h3>5. Study Order</h3>
+<ol>
+<li><a href="theory/01-python-foundations.md">Python Foundations</a></li>
+<li><a href="theory/02-linux-git-memory.md">Linux, Bash, Git, C/C++ Memory Model</a></li>
+<li>อ่านและรัน <a href="src/dataset_inspector.py">Dataset Inspector</a></li>
+<li>ทำ <a href="exercises/README.md">Exercises</a></li>
+<li>ตรวจด้วย <a href="solutions/README.md">Solutions</a></li>
+<li>ทำ <a href="mini-project/README.md">Mini Project</a></li>
+</ol></details><details id="help-topic-5-visual"><summary>ภาพและ shape</summary><h3>5. Study Order</h3>
+<ol>
+<li><a href="theory/01-python-foundations.md">Python Foundations</a></li>
+<li><a href="theory/02-linux-git-memory.md">Linux, Bash, Git, C/C++ Memory Model</a></li>
+<li>อ่านและรัน <a href="src/dataset_inspector.py">Dataset Inspector</a></li>
+<li>ทำ <a href="exercises/README.md">Exercises</a></li>
+<li>ตรวจด้วย <a href="solutions/README.md">Solutions</a></li>
+<li>ทำ <a href="mini-project/README.md">Mini Project</a></li>
+</ol></details><details id="help-topic-5-code"><summary>โค้ด</summary><h3>5. Study Order</h3>
+<ol>
+<li><a href="theory/01-python-foundations.md">Python Foundations</a></li>
+<li><a href="theory/02-linux-git-memory.md">Linux, Bash, Git, C/C++ Memory Model</a></li>
+<li>อ่านและรัน <a href="src/dataset_inspector.py">Dataset Inspector</a></li>
+<li>ทำ <a href="exercises/README.md">Exercises</a></li>
+<li>ตรวจด้วย <a href="solutions/README.md">Solutions</a></li>
+<li>ทำ <a href="mini-project/README.md">Mini Project</a></li>
+</ol><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-5-result"><summary>ผลการทดลอง</summary><h3>5. Study Order</h3>
+<ol>
+<li><a href="theory/01-python-foundations.md">Python Foundations</a></li>
+<li><a href="theory/02-linux-git-memory.md">Linux, Bash, Git, C/C++ Memory Model</a></li>
+<li>อ่านและรัน <a href="src/dataset_inspector.py">Dataset Inspector</a></li>
+<li>ทำ <a href="exercises/README.md">Exercises</a></li>
+<li>ตรวจด้วย <a href="solutions/README.md">Solutions</a></li>
+<li>ทำ <a href="mini-project/README.md">Mini Project</a></li>
+</ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-5"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-6" class="source-topic"><span id="source-01-programming-canonical-6-first-python-program" class="legacy-anchor"></span><h3>6. First Python Program</h3>
+<pre><code class="language-python">message: str = &quot;AI starts with fundamentals.&quot;
+print(message)
+</code></pre>
+<p><code>message</code> คือชื่อที่อ้างถึง object ชนิด <code>str</code></p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-6-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>6. First Python Program</h3>
+<pre><code class="language-python">message: str = &quot;AI starts with fundamentals.&quot;
+print(message)
+</code></pre>
+<p><code>message</code> คือชื่อที่อ้างถึง object ชนิด <code>str</code></p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-6-equation"><summary>สมการ</summary><h3>6. First Python Program</h3>
+<pre><code class="language-python">message: str = &quot;AI starts with fundamentals.&quot;
+print(message)
+</code></pre>
+<p><code>message</code> คือชื่อที่อ้างถึง object ชนิด <code>str</code></p></details><details id="help-topic-6-visual"><summary>ภาพและ shape</summary><h3>6. First Python Program</h3>
+<pre><code class="language-python">message: str = &quot;AI starts with fundamentals.&quot;
+print(message)
+</code></pre>
+<p><code>message</code> คือชื่อที่อ้างถึง object ชนิด <code>str</code></p></details><details id="help-topic-6-code"><summary>โค้ด</summary><h3>6. First Python Program</h3>
+<pre><code class="language-python">message: str = &quot;AI starts with fundamentals.&quot;
+print(message)
+</code></pre>
+<p><code>message</code> คือชื่อที่อ้างถึง object ชนิด <code>str</code></p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-6-result"><summary>ผลการทดลอง</summary><h3>6. First Python Program</h3>
+<pre><code class="language-python">message: str = &quot;AI starts with fundamentals.&quot;
+print(message)
+</code></pre>
+<p><code>message</code> คือชื่อที่อ้างถึง object ชนิด <code>str</code></p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-6"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-7" class="source-topic"><span id="source-01-programming-canonical-7-data-types" class="legacy-anchor"></span><h3>7. Data Types</h3>
+<p>ชนิดพื้นฐานที่ใช้บ่อย:</p>
+<pre><code class="language-python">age: int = 20
+learning_rate: float = 0.001
+is_training: bool = True
+model_name: str = &quot;tiny-model&quot;
+features: list[float] = [1.2, 3.4, 5.6]
+metadata: dict[str, str] = {&quot;source&quot;: &quot;local&quot;}
+</code></pre>
+<p>Type hint ช่วยคนและ static tooling แต่ Python ยังเป็น dynamically typed language</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>ชื่อ variable เป็น reference ที่ผูกกับ object ไม่ใช่สำเนาของ object: <code>a=[1]; b=a; b.append(2)</code> ทำให้ทั้ง a และ b เห็น <code>[1,2]</code>. แต่ <code>b=[9]</code> เปลี่ยน binding ของ b เท่านั้น a ยังเป็น <code>[1,2]</code>; ใช้กรณีนี้แยก mutation กับ reassignment.</p><p>Mutable เปลี่ยนเนื้อหา object เดิมได้ เช่น list.append ส่วน immutable เช่น int/tuple เปลี่ยนค่าโดยสร้าง/อ้าง object ใหม่. <code>a=(1,); b=a; b+=(2,)</code> ให้ a=(1,),b=(1,2); tuple ที่เก็บ list ยังมี list ภายในที่ mutable ได้.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-7-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>ชื่อ variable เป็น reference ที่ผูกกับ object ไม่ใช่สำเนาของ object: <code>a=[1]; b=a; b.append(2)</code> ทำให้ทั้ง a และ b เห็น <code>[1,2]</code>. แต่ <code>b=[9]</code> เปลี่ยน binding ของ b เท่านั้น a ยังเป็น <code>[1,2]</code>; ใช้กรณีนี้แยก mutation กับ reassignment.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-7-equation"><summary>สมการ</summary><p>ชื่อ variable เป็น reference ที่ผูกกับ object ไม่ใช่สำเนาของ object: <code>a=[1]; b=a; b.append(2)</code> ทำให้ทั้ง a และ b เห็น <code>[1,2]</code>. แต่ <code>b=[9]</code> เปลี่ยน binding ของ b เท่านั้น a ยังเป็น <code>[1,2]</code>; ใช้กรณีนี้แยก mutation กับ reassignment.</p></details><details id="help-topic-7-visual"><summary>ภาพและ shape</summary><p>ชื่อ variable เป็น reference ที่ผูกกับ object ไม่ใช่สำเนาของ object: <code>a=[1]; b=a; b.append(2)</code> ทำให้ทั้ง a และ b เห็น <code>[1,2]</code>. แต่ <code>b=[9]</code> เปลี่ยน binding ของ b เท่านั้น a ยังเป็น <code>[1,2]</code>; ใช้กรณีนี้แยก mutation กับ reassignment.</p></details><details id="help-topic-7-code"><summary>โค้ด</summary><p>ชื่อ variable เป็น reference ที่ผูกกับ object ไม่ใช่สำเนาของ object: <code>a=[1]; b=a; b.append(2)</code> ทำให้ทั้ง a และ b เห็น <code>[1,2]</code>. แต่ <code>b=[9]</code> เปลี่ยน binding ของ b เท่านั้น a ยังเป็น <code>[1,2]</code>; ใช้กรณีนี้แยก mutation กับ reassignment.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-7-result"><summary>ผลการทดลอง</summary><p>ชื่อ variable เป็น reference ที่ผูกกับ object ไม่ใช่สำเนาของ object: <code>a=[1]; b=a; b.append(2)</code> ทำให้ทั้ง a และ b เห็น <code>[1,2]</code>. แต่ <code>b=[9]</code> เปลี่ยน binding ของ b เท่านั้น a ยังเป็น <code>[1,2]</code>; ใช้กรณีนี้แยก mutation กับ reassignment.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-7"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-8" class="source-topic"><span id="source-01-programming-canonical-8-control-flow" class="legacy-anchor"></span><h3>8. Control Flow</h3>
+<pre><code class="language-python">loss = 0.42
+
+if loss &lt; 0.1:
+    status = &quot;excellent&quot;
+elif loss &lt; 0.5:
+    status = &quot;learning&quot;
+else:
+    status = &quot;needs work&quot;
+</code></pre>
+<p>Loop:</p>
+<pre><code class="language-python">losses = [1.0, 0.8, 0.6]
+
+for epoch, loss in enumerate(losses, start=1):
+    print(epoch, loss)
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>เพิ่ม argparse argument <code>--limit</code> แบบ int ตรวจว่า ≥0 แล้วหยุดเมื่ออ่าน data rows ครบ N หลัง header. ไฟล์สามแถวกับ limit=2 ต้องรายงานสองแถว; limit=0 ไม่อ่าน data, ไม่มี flag อ่านครบ; อย่า off-by-one โดยนับ header เป็นแถวแรก.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-8-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>เพิ่ม argparse argument <code>--limit</code> แบบ int ตรวจว่า ≥0 แล้วหยุดเมื่ออ่าน data rows ครบ N หลัง header. ไฟล์สามแถวกับ limit=2 ต้องรายงานสองแถว; limit=0 ไม่อ่าน data, ไม่มี flag อ่านครบ; อย่า off-by-one โดยนับ header เป็นแถวแรก.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-8-equation"><summary>สมการ</summary><p>เพิ่ม argparse argument <code>--limit</code> แบบ int ตรวจว่า ≥0 แล้วหยุดเมื่ออ่าน data rows ครบ N หลัง header. ไฟล์สามแถวกับ limit=2 ต้องรายงานสองแถว; limit=0 ไม่อ่าน data, ไม่มี flag อ่านครบ; อย่า off-by-one โดยนับ header เป็นแถวแรก.</p></details><details id="help-topic-8-visual"><summary>ภาพและ shape</summary><p>เพิ่ม argparse argument <code>--limit</code> แบบ int ตรวจว่า ≥0 แล้วหยุดเมื่ออ่าน data rows ครบ N หลัง header. ไฟล์สามแถวกับ limit=2 ต้องรายงานสองแถว; limit=0 ไม่อ่าน data, ไม่มี flag อ่านครบ; อย่า off-by-one โดยนับ header เป็นแถวแรก.</p></details><details id="help-topic-8-code"><summary>โค้ด</summary><p>เพิ่ม argparse argument <code>--limit</code> แบบ int ตรวจว่า ≥0 แล้วหยุดเมื่ออ่าน data rows ครบ N หลัง header. ไฟล์สามแถวกับ limit=2 ต้องรายงานสองแถว; limit=0 ไม่อ่าน data, ไม่มี flag อ่านครบ; อย่า off-by-one โดยนับ header เป็นแถวแรก.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-8-result"><summary>ผลการทดลอง</summary><p>เพิ่ม argparse argument <code>--limit</code> แบบ int ตรวจว่า ≥0 แล้วหยุดเมื่ออ่าน data rows ครบ N หลัง header. ไฟล์สามแถวกับ limit=2 ต้องรายงานสองแถว; limit=0 ไม่อ่าน data, ไม่มี flag อ่านครบ; อย่า off-by-one โดยนับ header เป็นแถวแรก.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-8"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-9" class="source-topic"><span id="source-01-programming-canonical-9-functions" class="legacy-anchor"></span><h3>9. Functions</h3>
+<pre><code class="language-python">def mean(values: list[float]) -&gt; float:
+    if not values:
+        raise ValueError(&quot;values must not be empty&quot;)
+    return sum(values) / len(values)
+</code></pre>
+<p>หลักสำคัญ:</p>
+<ul>
+<li>function ควรทำหน้าที่ชัดเจน</li>
+<li>validate input เมื่อ failure ไม่ควรถูกซ่อน</li>
+<li>prefer return value แทน global mutable state</li>
+</ul><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>Default expression ถูกประเมินครั้งเดียวตอนสร้าง function จึงใช้ list เดิมข้าม calls. แก้เป็น <code>scores=None</code> แล้วสร้าง <code>scores=[]</code> ภายในเมื่อเป็น None. ทดสอบเรียก append_score(1) และ append_score(2) แยกกันต้องได้ [1] กับ [2]; ถ้าส่ง list เองจึงค่อยใช้ list นั้นตามสัญญา.</p><p>แปลง values เป็น list หนึ่งครั้ง ตรวจว่าไม่ว่าง แล้ว <code>return sum(values)/len(values)</code>; ถ้าว่าง raise ValueError. Expected: [2,4]→3.0, [0]→0.0, []→ValueError; กำหนดชัดว่าจะรับ generator และ reject nonfinite/nonnumeric อย่างไร.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-9-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Default expression ถูกประเมินครั้งเดียวตอนสร้าง function จึงใช้ list เดิมข้าม calls. แก้เป็น <code>scores=None</code> แล้วสร้าง <code>scores=[]</code> ภายในเมื่อเป็น None. ทดสอบเรียก append_score(1) และ append_score(2) แยกกันต้องได้ [1] กับ [2]; ถ้าส่ง list เองจึงค่อยใช้ list นั้นตามสัญญา.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-9-equation"><summary>สมการ</summary><p>Default expression ถูกประเมินครั้งเดียวตอนสร้าง function จึงใช้ list เดิมข้าม calls. แก้เป็น <code>scores=None</code> แล้วสร้าง <code>scores=[]</code> ภายในเมื่อเป็น None. ทดสอบเรียก append_score(1) และ append_score(2) แยกกันต้องได้ [1] กับ [2]; ถ้าส่ง list เองจึงค่อยใช้ list นั้นตามสัญญา.</p></details><details id="help-topic-9-visual"><summary>ภาพและ shape</summary><p>Default expression ถูกประเมินครั้งเดียวตอนสร้าง function จึงใช้ list เดิมข้าม calls. แก้เป็น <code>scores=None</code> แล้วสร้าง <code>scores=[]</code> ภายในเมื่อเป็น None. ทดสอบเรียก append_score(1) และ append_score(2) แยกกันต้องได้ [1] กับ [2]; ถ้าส่ง list เองจึงค่อยใช้ list นั้นตามสัญญา.</p></details><details id="help-topic-9-code"><summary>โค้ด</summary><p>Default expression ถูกประเมินครั้งเดียวตอนสร้าง function จึงใช้ list เดิมข้าม calls. แก้เป็น <code>scores=None</code> แล้วสร้าง <code>scores=[]</code> ภายในเมื่อเป็น None. ทดสอบเรียก append_score(1) และ append_score(2) แยกกันต้องได้ [1] กับ [2]; ถ้าส่ง list เองจึงค่อยใช้ list นั้นตามสัญญา.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-9-result"><summary>ผลการทดลอง</summary><p>Default expression ถูกประเมินครั้งเดียวตอนสร้าง function จึงใช้ list เดิมข้าม calls. แก้เป็น <code>scores=None</code> แล้วสร้าง <code>scores=[]</code> ภายในเมื่อเป็น None. ทดสอบเรียก append_score(1) และ append_score(2) แยกกันต้องได้ [1] กับ [2]; ถ้าส่ง list เองจึงค่อยใช้ list นั้นตามสัญญา.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-9"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-10" class="source-topic"><span id="source-01-programming-canonical-10-classes" class="legacy-anchor"></span><h3>10. Classes</h3>
+<pre><code class="language-python">class RunningMean:
+    def __init__(self) -&gt; None:
+        self.total = 0.0
+        self.count = 0
+
+    def update(self, value: float) -&gt; None:
+        self.total += value
+        self.count += 1
+
+    def value(self) -&gt; float:
+        if self.count == 0:
+            raise ValueError(&quot;no observations&quot;)
+        return self.total / self.count
+</code></pre>
+<p>ในอนาคต <code>torch.nn.Module</code> ก็ใช้แนวคิด object/class แบบนี้</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-10-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>10. Classes</h3>
+<pre><code class="language-python">class RunningMean:
+    def __init__(self) -&gt; None:
+        self.total = 0.0
+        self.count = 0
+
+    def update(self, value: float) -&gt; None:
+        self.total += value
+        self.count += 1
+
+    def value(self) -&gt; float:
+        if self.count == 0:
+            raise ValueError(&quot;no observations&quot;)
+        return self.total / self.count
+</code></pre>
+<p>ในอนาคต <code>torch.nn.Module</code> ก็ใช้แนวคิด object/class แบบนี้</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-10-equation"><summary>สมการ</summary><h3>10. Classes</h3>
+<pre><code class="language-python">class RunningMean:
+    def __init__(self) -&gt; None:
+        self.total = 0.0
+        self.count = 0
+
+    def update(self, value: float) -&gt; None:
+        self.total += value
+        self.count += 1
+
+    def value(self) -&gt; float:
+        if self.count == 0:
+            raise ValueError(&quot;no observations&quot;)
+        return self.total / self.count
+</code></pre>
+<p>ในอนาคต <code>torch.nn.Module</code> ก็ใช้แนวคิด object/class แบบนี้</p></details><details id="help-topic-10-visual"><summary>ภาพและ shape</summary><h3>10. Classes</h3>
+<pre><code class="language-python">class RunningMean:
+    def __init__(self) -&gt; None:
+        self.total = 0.0
+        self.count = 0
+
+    def update(self, value: float) -&gt; None:
+        self.total += value
+        self.count += 1
+
+    def value(self) -&gt; float:
+        if self.count == 0:
+            raise ValueError(&quot;no observations&quot;)
+        return self.total / self.count
+</code></pre>
+<p>ในอนาคต <code>torch.nn.Module</code> ก็ใช้แนวคิด object/class แบบนี้</p></details><details id="help-topic-10-code"><summary>โค้ด</summary><h3>10. Classes</h3>
+<pre><code class="language-python">class RunningMean:
+    def __init__(self) -&gt; None:
+        self.total = 0.0
+        self.count = 0
+
+    def update(self, value: float) -&gt; None:
+        self.total += value
+        self.count += 1
+
+    def value(self) -&gt; float:
+        if self.count == 0:
+            raise ValueError(&quot;no observations&quot;)
+        return self.total / self.count
+</code></pre>
+<p>ในอนาคต <code>torch.nn.Module</code> ก็ใช้แนวคิด object/class แบบนี้</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-10-result"><summary>ผลการทดลอง</summary><h3>10. Classes</h3>
+<pre><code class="language-python">class RunningMean:
+    def __init__(self) -&gt; None:
+        self.total = 0.0
+        self.count = 0
+
+    def update(self, value: float) -&gt; None:
+        self.total += value
+        self.count += 1
+
+    def value(self) -&gt; float:
+        if self.count == 0:
+            raise ValueError(&quot;no observations&quot;)
+        return self.total / self.count
+</code></pre>
+<p>ในอนาคต <code>torch.nn.Module</code> ก็ใช้แนวคิด object/class แบบนี้</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-10"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-11" class="source-topic"><span id="source-01-programming-canonical-11-iterators-and-generators" class="legacy-anchor"></span><h3>11. Iterators and Generators</h3>
+<p>Generator ช่วย stream data โดยไม่ต้องโหลดทั้งหมดเข้าหน่วยความจำ:</p>
+<pre><code class="language-python">def squares(limit: int):
+    for n in range(limit):
+        yield n * n
+</code></pre>
+<p>แนวคิดนี้จะกลับมาใน DataLoader และ streaming dataset</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>Generator เก็บสถานะการ iteration และผลิตสมาชิกทีละตัว จึงไม่จำเป็นต้องสร้างรายการ N ตัวพร้อมกัน. ผลรวมจาก generator ยังต้องอ่าน N ตัวและใช้ O(N) time แต่ accumulator ใช้ O(1) extra memory; ถ้าเรียก list(generator) จะกลับไปใช้ O(N) memory.</p><p>ใช้ <code>for value in range(0,N+1,2): yield value</code> เมื่อกำหนด inclusive 0..N. Expected N=5→[0,2,4],N=0→[0],N=-1→[] หรือ reject ตาม contract ที่ประกาศ; ผลเป็น iterator ไม่ใช่ list จนกว่าจะ materialize.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-11-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Generator เก็บสถานะการ iteration และผลิตสมาชิกทีละตัว จึงไม่จำเป็นต้องสร้างรายการ N ตัวพร้อมกัน. ผลรวมจาก generator ยังต้องอ่าน N ตัวและใช้ O(N) time แต่ accumulator ใช้ O(1) extra memory; ถ้าเรียก list(generator) จะกลับไปใช้ O(N) memory.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-11-equation"><summary>สมการ</summary><p>Generator เก็บสถานะการ iteration และผลิตสมาชิกทีละตัว จึงไม่จำเป็นต้องสร้างรายการ N ตัวพร้อมกัน. ผลรวมจาก generator ยังต้องอ่าน N ตัวและใช้ O(N) time แต่ accumulator ใช้ O(1) extra memory; ถ้าเรียก list(generator) จะกลับไปใช้ O(N) memory.</p></details><details id="help-topic-11-visual"><summary>ภาพและ shape</summary><p>Generator เก็บสถานะการ iteration และผลิตสมาชิกทีละตัว จึงไม่จำเป็นต้องสร้างรายการ N ตัวพร้อมกัน. ผลรวมจาก generator ยังต้องอ่าน N ตัวและใช้ O(N) time แต่ accumulator ใช้ O(1) extra memory; ถ้าเรียก list(generator) จะกลับไปใช้ O(N) memory.</p></details><details id="help-topic-11-code"><summary>โค้ด</summary><p>Generator เก็บสถานะการ iteration และผลิตสมาชิกทีละตัว จึงไม่จำเป็นต้องสร้างรายการ N ตัวพร้อมกัน. ผลรวมจาก generator ยังต้องอ่าน N ตัวและใช้ O(N) time แต่ accumulator ใช้ O(1) extra memory; ถ้าเรียก list(generator) จะกลับไปใช้ O(N) memory.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-11-result"><summary>ผลการทดลอง</summary><p>Generator เก็บสถานะการ iteration และผลิตสมาชิกทีละตัว จึงไม่จำเป็นต้องสร้างรายการ N ตัวพร้อมกัน. ผลรวมจาก generator ยังต้องอ่าน N ตัวและใช้ O(N) time แต่ accumulator ใช้ O(1) extra memory; ถ้าเรียก list(generator) จะกลับไปใช้ O(N) memory.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-11"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-12" class="source-topic"><span id="source-01-programming-canonical-12-exceptions" class="legacy-anchor"></span><h3>12. Exceptions</h3>
+<p>อย่าจับ exception กว้างเกินจำเป็น:</p>
+<pre><code class="language-python">try:
+    value = float(raw)
+except ValueError:
+    print(&quot;not a number&quot;)
+</code></pre>
+<p>หลีกเลี่ยง:</p>
+<pre><code class="language-python">try:
+    ...
+except Exception:
+    pass
+</code></pre>
+<p>เพราะมันซ่อน root cause</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>การกลืน exception ทำให้ผู้เรียกเห็นเหมือนสำเร็จทั้งที่ state ไม่ครบ. จับ exception ที่รู้วิธีรับมือ เช่น FileNotFoundError พร้อม path แล้วคืน error/raise ต่อ; ทดสอบไฟล์หายต้องไม่รายงาน row_count=0 ว่าเป็นไฟล์ปกติ.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-12-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>การกลืน exception ทำให้ผู้เรียกเห็นเหมือนสำเร็จทั้งที่ state ไม่ครบ. จับ exception ที่รู้วิธีรับมือ เช่น FileNotFoundError พร้อม path แล้วคืน error/raise ต่อ; ทดสอบไฟล์หายต้องไม่รายงาน row_count=0 ว่าเป็นไฟล์ปกติ.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-12-equation"><summary>สมการ</summary><p>การกลืน exception ทำให้ผู้เรียกเห็นเหมือนสำเร็จทั้งที่ state ไม่ครบ. จับ exception ที่รู้วิธีรับมือ เช่น FileNotFoundError พร้อม path แล้วคืน error/raise ต่อ; ทดสอบไฟล์หายต้องไม่รายงาน row_count=0 ว่าเป็นไฟล์ปกติ.</p></details><details id="help-topic-12-visual"><summary>ภาพและ shape</summary><p>การกลืน exception ทำให้ผู้เรียกเห็นเหมือนสำเร็จทั้งที่ state ไม่ครบ. จับ exception ที่รู้วิธีรับมือ เช่น FileNotFoundError พร้อม path แล้วคืน error/raise ต่อ; ทดสอบไฟล์หายต้องไม่รายงาน row_count=0 ว่าเป็นไฟล์ปกติ.</p></details><details id="help-topic-12-code"><summary>โค้ด</summary><p>การกลืน exception ทำให้ผู้เรียกเห็นเหมือนสำเร็จทั้งที่ state ไม่ครบ. จับ exception ที่รู้วิธีรับมือ เช่น FileNotFoundError พร้อม path แล้วคืน error/raise ต่อ; ทดสอบไฟล์หายต้องไม่รายงาน row_count=0 ว่าเป็นไฟล์ปกติ.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-12-result"><summary>ผลการทดลอง</summary><p>การกลืน exception ทำให้ผู้เรียกเห็นเหมือนสำเร็จทั้งที่ state ไม่ครบ. จับ exception ที่รู้วิธีรับมือ เช่น FileNotFoundError พร้อม path แล้วคืน error/raise ต่อ; ทดสอบไฟล์หายต้องไม่รายงาน row_count=0 ว่าเป็นไฟล์ปกติ.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-12"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-13" class="source-topic"><span id="source-01-programming-canonical-13-modules-and-packages" class="legacy-anchor"></span><h3>13. Modules and Packages</h3>
+<p>ถ้าไฟล์โต ให้แยกตาม responsibility:</p>
+<pre><code class="language-text">project/
+├── app.py
+├── data.py
+├── metrics.py
+└── tests/
+</code></pre>
+<p>import:</p>
+<pre><code class="language-python">from pathlib import Path
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>Virtual environment แยก interpreter/dependencies ของโครงงาน เพื่อไม่ให้การอัปเกรด library งานหนึ่งเปลี่ยนอีกงาน. ตรวจ <code>sys.executable</code> และ <code>python -m pip --version</code> ว่าอยู่ environment เดียวกัน แล้วบันทึก requirements; venv ไม่แยก kernel/OS เหมือน VM.</p><p>ใช้ <code>sorted(Path(root).rglob('*.csv'))</code> แล้วกรอง is_file เพื่อไม่รวม directory ชื่อ .csv. สร้าง temporary directory ที่มี a.csv, nested/b.csv,c.txt แล้วตรวจว่าได้สองไฟล์ตามลำดับ deterministic; missing root ต้องมี policy ชัด ไม่รายงานว่า dataset ว่างเงียบ ๆ.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-13-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Virtual environment แยก interpreter/dependencies ของโครงงาน เพื่อไม่ให้การอัปเกรด library งานหนึ่งเปลี่ยนอีกงาน. ตรวจ <code>sys.executable</code> และ <code>python -m pip --version</code> ว่าอยู่ environment เดียวกัน แล้วบันทึก requirements; venv ไม่แยก kernel/OS เหมือน VM.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-13-equation"><summary>สมการ</summary><p>Virtual environment แยก interpreter/dependencies ของโครงงาน เพื่อไม่ให้การอัปเกรด library งานหนึ่งเปลี่ยนอีกงาน. ตรวจ <code>sys.executable</code> และ <code>python -m pip --version</code> ว่าอยู่ environment เดียวกัน แล้วบันทึก requirements; venv ไม่แยก kernel/OS เหมือน VM.</p></details><details id="help-topic-13-visual"><summary>ภาพและ shape</summary><p>Virtual environment แยก interpreter/dependencies ของโครงงาน เพื่อไม่ให้การอัปเกรด library งานหนึ่งเปลี่ยนอีกงาน. ตรวจ <code>sys.executable</code> และ <code>python -m pip --version</code> ว่าอยู่ environment เดียวกัน แล้วบันทึก requirements; venv ไม่แยก kernel/OS เหมือน VM.</p></details><details id="help-topic-13-code"><summary>โค้ด</summary><p>Virtual environment แยก interpreter/dependencies ของโครงงาน เพื่อไม่ให้การอัปเกรด library งานหนึ่งเปลี่ยนอีกงาน. ตรวจ <code>sys.executable</code> และ <code>python -m pip --version</code> ว่าอยู่ environment เดียวกัน แล้วบันทึก requirements; venv ไม่แยก kernel/OS เหมือน VM.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-13-result"><summary>ผลการทดลอง</summary><p>Virtual environment แยก interpreter/dependencies ของโครงงาน เพื่อไม่ให้การอัปเกรด library งานหนึ่งเปลี่ยนอีกงาน. ตรวจ <code>sys.executable</code> และ <code>python -m pip --version</code> ว่าอยู่ environment เดียวกัน แล้วบันทึก requirements; venv ไม่แยก kernel/OS เหมือน VM.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-13"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-14" class="source-topic"><span id="source-01-programming-canonical-14-linuxbash" class="legacy-anchor"></span><h3>14. Linux/Bash</h3>
+<p>คำสั่งขั้นต่ำ:</p>
+<pre><code class="language-bash">pwd
+ls -lah
+mkdir -p data/raw
+cp source.csv data/raw/
+mv old.csv new.csv
+find . -type f
+grep -R &quot;TODO&quot; .
+ps aux
+echo &quot;$PATH&quot;
+</code></pre>
+<p>อย่ารันคำสั่งที่แก้ระบบด้วย <code>sudo</code> ถ้ายังไม่รู้ว่ามันเปลี่ยนอะไร</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>PATH เป็นลำดับ directories ที่ shell ใช้ค้น executable เมื่อพิมพ์ชื่อที่ไม่มี slash. ถ้ามี python หลายตัว ตัวแรกที่เจอถูกใช้; ตรวจ <code>command -v python</code> และ <code>python -c 'import sys;print(sys.executable)'</code>. การเปลี่ยน current directory ไม่เท่ากับเปลี่ยน PATH.</p><p><code>python -m pip</code> ใช้ pip module ของ interpreter ตัวที่เรียก จึงลดความเสี่ยงติดตั้งไปอีก Python เมื่อ executable pip ใน PATH ต่างกัน. ยืนยันจาก sys.executable และ pip --version; ไม่ควรแก้ด้วย sudo pip เพื่อกลบ environment mismatch.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-14-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>PATH เป็นลำดับ directories ที่ shell ใช้ค้น executable เมื่อพิมพ์ชื่อที่ไม่มี slash. ถ้ามี python หลายตัว ตัวแรกที่เจอถูกใช้; ตรวจ <code>command -v python</code> และ <code>python -c 'import sys;print(sys.executable)'</code>. การเปลี่ยน current directory ไม่เท่ากับเปลี่ยน PATH.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-14-equation"><summary>สมการ</summary><p>PATH เป็นลำดับ directories ที่ shell ใช้ค้น executable เมื่อพิมพ์ชื่อที่ไม่มี slash. ถ้ามี python หลายตัว ตัวแรกที่เจอถูกใช้; ตรวจ <code>command -v python</code> และ <code>python -c 'import sys;print(sys.executable)'</code>. การเปลี่ยน current directory ไม่เท่ากับเปลี่ยน PATH.</p></details><details id="help-topic-14-visual"><summary>ภาพและ shape</summary><p>PATH เป็นลำดับ directories ที่ shell ใช้ค้น executable เมื่อพิมพ์ชื่อที่ไม่มี slash. ถ้ามี python หลายตัว ตัวแรกที่เจอถูกใช้; ตรวจ <code>command -v python</code> และ <code>python -c 'import sys;print(sys.executable)'</code>. การเปลี่ยน current directory ไม่เท่ากับเปลี่ยน PATH.</p></details><details id="help-topic-14-code"><summary>โค้ด</summary><p>PATH เป็นลำดับ directories ที่ shell ใช้ค้น executable เมื่อพิมพ์ชื่อที่ไม่มี slash. ถ้ามี python หลายตัว ตัวแรกที่เจอถูกใช้; ตรวจ <code>command -v python</code> และ <code>python -c 'import sys;print(sys.executable)'</code>. การเปลี่ยน current directory ไม่เท่ากับเปลี่ยน PATH.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-14-result"><summary>ผลการทดลอง</summary><p>PATH เป็นลำดับ directories ที่ shell ใช้ค้น executable เมื่อพิมพ์ชื่อที่ไม่มี slash. ถ้ามี python หลายตัว ตัวแรกที่เจอถูกใช้; ตรวจ <code>command -v python</code> และ <code>python -c 'import sys;print(sys.executable)'</code>. การเปลี่ยน current directory ไม่เท่ากับเปลี่ยน PATH.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-14"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-15" class="source-topic"><span id="source-01-programming-canonical-15-git-workflow" class="legacy-anchor"></span><h3>15. Git Workflow</h3>
+<pre><code class="language-bash">git status
+git switch -c feature/ch01-lab
+git diff
+git add .
+git commit -m &quot;feat: complete chapter 01 lab&quot;
+</code></pre>
+<p>คิด Git เป็น graph ของ commits ไม่ใช่ cloud backup อย่างเดียว</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>Commit อ้าง snapshot ของ tree, parent commit(s), author/committer และข้อความ พร้อม content-addressed objects. การแก้ไฟล์ใน working tree ยังไม่อยู่ใน commit จน stage/commit; ตรวจ <code>git diff</code> และ <code>git diff --staged</code> แยกสองสถานะก่อนบันทึก.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-15-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Commit อ้าง snapshot ของ tree, parent commit(s), author/committer และข้อความ พร้อม content-addressed objects. การแก้ไฟล์ใน working tree ยังไม่อยู่ใน commit จน stage/commit; ตรวจ <code>git diff</code> และ <code>git diff --staged</code> แยกสองสถานะก่อนบันทึก.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-15-equation"><summary>สมการ</summary><p>Commit อ้าง snapshot ของ tree, parent commit(s), author/committer และข้อความ พร้อม content-addressed objects. การแก้ไฟล์ใน working tree ยังไม่อยู่ใน commit จน stage/commit; ตรวจ <code>git diff</code> และ <code>git diff --staged</code> แยกสองสถานะก่อนบันทึก.</p></details><details id="help-topic-15-visual"><summary>ภาพและ shape</summary><p>Commit อ้าง snapshot ของ tree, parent commit(s), author/committer และข้อความ พร้อม content-addressed objects. การแก้ไฟล์ใน working tree ยังไม่อยู่ใน commit จน stage/commit; ตรวจ <code>git diff</code> และ <code>git diff --staged</code> แยกสองสถานะก่อนบันทึก.</p></details><details id="help-topic-15-code"><summary>โค้ด</summary><p>Commit อ้าง snapshot ของ tree, parent commit(s), author/committer และข้อความ พร้อม content-addressed objects. การแก้ไฟล์ใน working tree ยังไม่อยู่ใน commit จน stage/commit; ตรวจ <code>git diff</code> และ <code>git diff --staged</code> แยกสองสถานะก่อนบันทึก.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-15-result"><summary>ผลการทดลอง</summary><p>Commit อ้าง snapshot ของ tree, parent commit(s), author/committer และข้อความ พร้อม content-addressed objects. การแก้ไฟล์ใน working tree ยังไม่อยู่ใน commit จน stage/commit; ตรวจ <code>git diff</code> และ <code>git diff --staged</code> แยกสองสถานะก่อนบันทึก.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-15"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-16" class="source-topic"><span id="source-01-programming-canonical-16-memory-mental-model" class="legacy-anchor"></span><h3>16. Memory Mental Model</h3>
+<p>สำหรับพื้นฐาน C/C++:</p>
+<ul>
+<li><strong>stack</strong> — มักใช้กับ call frames/local data ที่อายุสัมพันธ์กับ scope</li>
+<li><strong>heap</strong> — dynamic allocation</li>
+<li><strong>pointer</strong> — ค่า address ที่อ้างตำแหน่งหน่วยความจำ</li>
+<li><strong>reference</strong> — ชื่อ/handle ที่อ้าง object ตาม semantics ของภาษา</li>
+</ul>
+<p>อย่าเหมารวมว่า “Python variable อยู่ stack” หรือ “Python object ทุกอย่างอยู่ heap” เป็นกฎภาษาที่ใช้ reasoning ได้ทุกกรณี; implementation มีรายละเอียดมากกว่านั้น</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>ชื่อ variable เป็น reference ที่ผูกกับ object ไม่ใช่สำเนาของ object: <code>a=[1]; b=a; b.append(2)</code> ทำให้ทั้ง a และ b เห็น <code>[1,2]</code>. แต่ <code>b=[9]</code> เปลี่ยน binding ของ b เท่านั้น a ยังเป็น <code>[1,2]</code>; ใช้กรณีนี้แยก mutation กับ reassignment.</p><p>Mutable เปลี่ยนเนื้อหา object เดิมได้ เช่น list.append ส่วน immutable เช่น int/tuple เปลี่ยนค่าโดยสร้าง/อ้าง object ใหม่. <code>a=(1,); b=a; b+=(2,)</code> ให้ a=(1,),b=(1,2); tuple ที่เก็บ list ยังมี list ภายในที่ mutable ได้.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-16-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>ชื่อ variable เป็น reference ที่ผูกกับ object ไม่ใช่สำเนาของ object: <code>a=[1]; b=a; b.append(2)</code> ทำให้ทั้ง a และ b เห็น <code>[1,2]</code>. แต่ <code>b=[9]</code> เปลี่ยน binding ของ b เท่านั้น a ยังเป็น <code>[1,2]</code>; ใช้กรณีนี้แยก mutation กับ reassignment.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-16-equation"><summary>สมการ</summary><p>ชื่อ variable เป็น reference ที่ผูกกับ object ไม่ใช่สำเนาของ object: <code>a=[1]; b=a; b.append(2)</code> ทำให้ทั้ง a และ b เห็น <code>[1,2]</code>. แต่ <code>b=[9]</code> เปลี่ยน binding ของ b เท่านั้น a ยังเป็น <code>[1,2]</code>; ใช้กรณีนี้แยก mutation กับ reassignment.</p></details><details id="help-topic-16-visual"><summary>ภาพและ shape</summary><p>ชื่อ variable เป็น reference ที่ผูกกับ object ไม่ใช่สำเนาของ object: <code>a=[1]; b=a; b.append(2)</code> ทำให้ทั้ง a และ b เห็น <code>[1,2]</code>. แต่ <code>b=[9]</code> เปลี่ยน binding ของ b เท่านั้น a ยังเป็น <code>[1,2]</code>; ใช้กรณีนี้แยก mutation กับ reassignment.</p></details><details id="help-topic-16-code"><summary>โค้ด</summary><p>ชื่อ variable เป็น reference ที่ผูกกับ object ไม่ใช่สำเนาของ object: <code>a=[1]; b=a; b.append(2)</code> ทำให้ทั้ง a และ b เห็น <code>[1,2]</code>. แต่ <code>b=[9]</code> เปลี่ยน binding ของ b เท่านั้น a ยังเป็น <code>[1,2]</code>; ใช้กรณีนี้แยก mutation กับ reassignment.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-16-result"><summary>ผลการทดลอง</summary><p>ชื่อ variable เป็น reference ที่ผูกกับ object ไม่ใช่สำเนาของ object: <code>a=[1]; b=a; b.append(2)</code> ทำให้ทั้ง a และ b เห็น <code>[1,2]</code>. แต่ <code>b=[9]</code> เปลี่ยน binding ของ b เท่านั้น a ยังเป็น <code>[1,2]</code>; ใช้กรณีนี้แยก mutation กับ reassignment.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-16"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-17" class="source-topic"><span id="source-01-programming-canonical-17-debugging" class="legacy-anchor"></span><h3>17. Debugging</h3>
+<p>วงจร:</p>
+<pre><code class="language-text">reproduce
+→ read traceback
+→ inspect state
+→ reduce input
+→ form hypothesis
+→ test hypothesis
+→ fix
+→ add regression test
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>Bug คือ scores=[] ถูกใช้ซ้ำข้าม calls. เปลี่ยน signature เป็น <code>def append_score(score,scores=None)</code> และสร้าง list ใหม่เมื่อ scores is None. Regression test ต้องเรียกสองครั้งโดยไม่ส่ง scores และตรวจว่า object ไม่ใช่ตัวเดียวกัน พร้อมกรณี caller ส่ง list ที่ตั้งใจให้ mutate.</p><p>ตรวจ current directory, resolved absolute path, environment/PATH, interpreter/venv, file permissions/user และตัวแปร config ที่กำหนด data root. บันทึกค่าจากทั้ง terminal A/B แล้วเปลี่ยนทีละปัจจัย; ข้อความ 'ไฟล์หาไม่เจอ' อย่างเดียวไม่พอระบุสาเหตุ.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-17-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Bug คือ scores=[] ถูกใช้ซ้ำข้าม calls. เปลี่ยน signature เป็น <code>def append_score(score,scores=None)</code> และสร้าง list ใหม่เมื่อ scores is None. Regression test ต้องเรียกสองครั้งโดยไม่ส่ง scores และตรวจว่า object ไม่ใช่ตัวเดียวกัน พร้อมกรณี caller ส่ง list ที่ตั้งใจให้ mutate.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-17-equation"><summary>สมการ</summary><p>Bug คือ scores=[] ถูกใช้ซ้ำข้าม calls. เปลี่ยน signature เป็น <code>def append_score(score,scores=None)</code> และสร้าง list ใหม่เมื่อ scores is None. Regression test ต้องเรียกสองครั้งโดยไม่ส่ง scores และตรวจว่า object ไม่ใช่ตัวเดียวกัน พร้อมกรณี caller ส่ง list ที่ตั้งใจให้ mutate.</p></details><details id="help-topic-17-visual"><summary>ภาพและ shape</summary><p>Bug คือ scores=[] ถูกใช้ซ้ำข้าม calls. เปลี่ยน signature เป็น <code>def append_score(score,scores=None)</code> และสร้าง list ใหม่เมื่อ scores is None. Regression test ต้องเรียกสองครั้งโดยไม่ส่ง scores และตรวจว่า object ไม่ใช่ตัวเดียวกัน พร้อมกรณี caller ส่ง list ที่ตั้งใจให้ mutate.</p></details><details id="help-topic-17-code"><summary>โค้ด</summary><p>Bug คือ scores=[] ถูกใช้ซ้ำข้าม calls. เปลี่ยน signature เป็น <code>def append_score(score,scores=None)</code> และสร้าง list ใหม่เมื่อ scores is None. Regression test ต้องเรียกสองครั้งโดยไม่ส่ง scores และตรวจว่า object ไม่ใช่ตัวเดียวกัน พร้อมกรณี caller ส่ง list ที่ตั้งใจให้ mutate.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-17-result"><summary>ผลการทดลอง</summary><p>Bug คือ scores=[] ถูกใช้ซ้ำข้าม calls. เปลี่ยน signature เป็น <code>def append_score(score,scores=None)</code> และสร้าง list ใหม่เมื่อ scores is None. Regression test ต้องเรียกสองครั้งโดยไม่ส่ง scores และตรวจว่า object ไม่ใช่ตัวเดียวกัน พร้อมกรณี caller ส่ง list ที่ตั้งใจให้ mutate.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-17"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-18" class="source-topic"><span id="source-01-programming-canonical-18-performance" class="legacy-anchor"></span><h3>18. Performance</h3>
+<p>Big-O ตัวอย่าง:</p>
+<ul>
+<li>index list: โดยทั่วไป O(1)</li>
+<li>scan list: O(n)</li>
+<li>nested scan: มัก O(n²)</li>
+<li>dictionary lookup: average-case โดยทั่วไป O(1)</li>
+</ul>
+<p>แต่ performance จริงยังขึ้นกับ memory layout, cache และ constant factor</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>Generator เก็บสถานะการ iteration และผลิตสมาชิกทีละตัว จึงไม่จำเป็นต้องสร้างรายการ N ตัวพร้อมกัน. ผลรวมจาก generator ยังต้องอ่าน N ตัวและใช้ O(N) time แต่ accumulator ใช้ O(1) extra memory; ถ้าเรียก list(generator) จะกลับไปใช้ O(N) memory.</p><p>เรียงค่าตัวเลขเป็น a; n คี่ใช้ a[n//2], n คู่เฉลี่ย a[n//2-1:n//2+1]. [9,1,3]→3,[1,9]→5; [] ต้อง reject หรือรายงาน missing อย่างชัดเจน. บันทึกจำนวนค่าที่ parse ไม่ได้แยกจากจำนวนค่าที่ใช้คำนวณ.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-18-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Generator เก็บสถานะการ iteration และผลิตสมาชิกทีละตัว จึงไม่จำเป็นต้องสร้างรายการ N ตัวพร้อมกัน. ผลรวมจาก generator ยังต้องอ่าน N ตัวและใช้ O(N) time แต่ accumulator ใช้ O(1) extra memory; ถ้าเรียก list(generator) จะกลับไปใช้ O(N) memory.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-18-equation"><summary>สมการ</summary><p>Generator เก็บสถานะการ iteration และผลิตสมาชิกทีละตัว จึงไม่จำเป็นต้องสร้างรายการ N ตัวพร้อมกัน. ผลรวมจาก generator ยังต้องอ่าน N ตัวและใช้ O(N) time แต่ accumulator ใช้ O(1) extra memory; ถ้าเรียก list(generator) จะกลับไปใช้ O(N) memory.</p></details><details id="help-topic-18-visual"><summary>ภาพและ shape</summary><p>Generator เก็บสถานะการ iteration และผลิตสมาชิกทีละตัว จึงไม่จำเป็นต้องสร้างรายการ N ตัวพร้อมกัน. ผลรวมจาก generator ยังต้องอ่าน N ตัวและใช้ O(N) time แต่ accumulator ใช้ O(1) extra memory; ถ้าเรียก list(generator) จะกลับไปใช้ O(N) memory.</p></details><details id="help-topic-18-code"><summary>โค้ด</summary><p>Generator เก็บสถานะการ iteration และผลิตสมาชิกทีละตัว จึงไม่จำเป็นต้องสร้างรายการ N ตัวพร้อมกัน. ผลรวมจาก generator ยังต้องอ่าน N ตัวและใช้ O(N) time แต่ accumulator ใช้ O(1) extra memory; ถ้าเรียก list(generator) จะกลับไปใช้ O(N) memory.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-18-result"><summary>ผลการทดลอง</summary><p>Generator เก็บสถานะการ iteration และผลิตสมาชิกทีละตัว จึงไม่จำเป็นต้องสร้างรายการ N ตัวพร้อมกัน. ผลรวมจาก generator ยังต้องอ่าน N ตัวและใช้ O(N) time แต่ accumulator ใช้ O(1) extra memory; ถ้าเรียก list(generator) จะกลับไปใช้ O(N) memory.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-18"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-19" class="source-topic"><span id="source-01-programming-canonical-19-production-perspective" class="legacy-anchor"></span><h3>19. Production Perspective</h3>
+<p>Production code ต้องใส่ใจ:</p>
+<ul>
+<li>input validation</li>
+<li>logging</li>
+<li>configuration</li>
+<li>reproducibility</li>
+<li>tests</li>
+<li>error messages</li>
+<li>dependency isolation</li>
+</ul><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>ใช้ csv.DictReader อ่านทีละ row เพิ่ม row_count และ missing_count ต่อ column ด้วยกฎ missing ที่ระบุ. สำหรับ <code>a,b\n1,\n,2\n</code> ได้สองแถวและ missing(a)=missing(b)=1; peak state ขึ้นกับจำนวน columns ไม่ใช่จำนวน rows. ทดสอบ blank string, whitespace และ malformed row แยกกัน.</p><p>ใช้ token set ที่ประกาศ เช่น true/false หลัง strip/lower; ตัดสิน bool ก่อน numeric เพราะ bool เป็น subclass ของ int ใน Python. ['true','False']→boolean, ['true','1']→mixed ถ้าไม่รองรับ 1/0; ทดสอบ missing,unknown token และบันทึกจำนวน invalid แทนบังคับแปลงทุกค่า.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-19-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>ใช้ csv.DictReader อ่านทีละ row เพิ่ม row_count และ missing_count ต่อ column ด้วยกฎ missing ที่ระบุ. สำหรับ <code>a,b\n1,\n,2\n</code> ได้สองแถวและ missing(a)=missing(b)=1; peak state ขึ้นกับจำนวน columns ไม่ใช่จำนวน rows. ทดสอบ blank string, whitespace และ malformed row แยกกัน.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-19-equation"><summary>สมการ</summary><p>ใช้ csv.DictReader อ่านทีละ row เพิ่ม row_count และ missing_count ต่อ column ด้วยกฎ missing ที่ระบุ. สำหรับ <code>a,b\n1,\n,2\n</code> ได้สองแถวและ missing(a)=missing(b)=1; peak state ขึ้นกับจำนวน columns ไม่ใช่จำนวน rows. ทดสอบ blank string, whitespace และ malformed row แยกกัน.</p></details><details id="help-topic-19-visual"><summary>ภาพและ shape</summary><p>ใช้ csv.DictReader อ่านทีละ row เพิ่ม row_count และ missing_count ต่อ column ด้วยกฎ missing ที่ระบุ. สำหรับ <code>a,b\n1,\n,2\n</code> ได้สองแถวและ missing(a)=missing(b)=1; peak state ขึ้นกับจำนวน columns ไม่ใช่จำนวน rows. ทดสอบ blank string, whitespace และ malformed row แยกกัน.</p></details><details id="help-topic-19-code"><summary>โค้ด</summary><p>ใช้ csv.DictReader อ่านทีละ row เพิ่ม row_count และ missing_count ต่อ column ด้วยกฎ missing ที่ระบุ. สำหรับ <code>a,b\n1,\n,2\n</code> ได้สองแถวและ missing(a)=missing(b)=1; peak state ขึ้นกับจำนวน columns ไม่ใช่จำนวน rows. ทดสอบ blank string, whitespace และ malformed row แยกกัน.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-19-result"><summary>ผลการทดลอง</summary><p>ใช้ csv.DictReader อ่านทีละ row เพิ่ม row_count และ missing_count ต่อ column ด้วยกฎ missing ที่ระบุ. สำหรับ <code>a,b\n1,\n,2\n</code> ได้สองแถวและ missing(a)=missing(b)=1; peak state ขึ้นกับจำนวน columns ไม่ใช่จำนวน rows. ทดสอบ blank string, whitespace และ malformed row แยกกัน.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-19"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-20" class="source-topic"><span id="source-01-programming-canonical-20-research-perspective" class="legacy-anchor"></span><h3>20. Research Perspective</h3>
+<p>Research prototype ที่ reproduce ไม่ได้มีคุณค่าน้อยลงมาก การบันทึก seed, package versions และ command จึงเป็น engineering skill ที่สำคัญต่อ science</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-20-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>20. Research Perspective</h3>
+<p>Research prototype ที่ reproduce ไม่ได้มีคุณค่าน้อยลงมาก การบันทึก seed, package versions และ command จึงเป็น engineering skill ที่สำคัญต่อ science</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-20-equation"><summary>สมการ</summary><h3>20. Research Perspective</h3>
+<p>Research prototype ที่ reproduce ไม่ได้มีคุณค่าน้อยลงมาก การบันทึก seed, package versions และ command จึงเป็น engineering skill ที่สำคัญต่อ science</p></details><details id="help-topic-20-visual"><summary>ภาพและ shape</summary><h3>20. Research Perspective</h3>
+<p>Research prototype ที่ reproduce ไม่ได้มีคุณค่าน้อยลงมาก การบันทึก seed, package versions และ command จึงเป็น engineering skill ที่สำคัญต่อ science</p></details><details id="help-topic-20-code"><summary>โค้ด</summary><h3>20. Research Perspective</h3>
+<p>Research prototype ที่ reproduce ไม่ได้มีคุณค่าน้อยลงมาก การบันทึก seed, package versions และ command จึงเป็น engineering skill ที่สำคัญต่อ science</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-20-result"><summary>ผลการทดลอง</summary><h3>20. Research Perspective</h3>
+<p>Research prototype ที่ reproduce ไม่ได้มีคุณค่าน้อยลงมาก การบันทึก seed, package versions และ command จึงเป็น engineering skill ที่สำคัญต่อ science</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-20"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-21" class="source-topic"><span id="source-01-programming-canonical-21-common-mistakes" class="legacy-anchor"></span><h3>21. Common Mistakes</h3>
+<ol>
+<li>ใช้ mutable default argument</li>
+<li>ใช้ global state มากเกิน</li>
+<li><code>except Exception: pass</code></li>
+<li>path แบบ hard-code</li>
+<li>ใช้ <code>sudo pip</code></li>
+<li>commit secret</li>
+<li>แก้ code โดยไม่ reproduce bug</li>
+<li>ไม่อ่าน traceback</li>
+<li>สับสน <code>=</code> กับ equality</li>
+<li>สับสน object กับ variable name</li>
+<li>โหลด dataset ใหญ่ทั้งหมดทั้งที่ stream ได้</li>
+<li>commit generated files ขนาดใหญ่</li>
+</ol><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-21-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>21. Common Mistakes</h3>
+<ol>
+<li>ใช้ mutable default argument</li>
+<li>ใช้ global state มากเกิน</li>
+<li><code>except Exception: pass</code></li>
+<li>path แบบ hard-code</li>
+<li>ใช้ <code>sudo pip</code></li>
+<li>commit secret</li>
+<li>แก้ code โดยไม่ reproduce bug</li>
+<li>ไม่อ่าน traceback</li>
+<li>สับสน <code>=</code> กับ equality</li>
+<li>สับสน object กับ variable name</li>
+<li>โหลด dataset ใหญ่ทั้งหมดทั้งที่ stream ได้</li>
+<li>commit generated files ขนาดใหญ่</li>
+</ol><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-21-equation"><summary>สมการ</summary><h3>21. Common Mistakes</h3>
+<ol>
+<li>ใช้ mutable default argument</li>
+<li>ใช้ global state มากเกิน</li>
+<li><code>except Exception: pass</code></li>
+<li>path แบบ hard-code</li>
+<li>ใช้ <code>sudo pip</code></li>
+<li>commit secret</li>
+<li>แก้ code โดยไม่ reproduce bug</li>
+<li>ไม่อ่าน traceback</li>
+<li>สับสน <code>=</code> กับ equality</li>
+<li>สับสน object กับ variable name</li>
+<li>โหลด dataset ใหญ่ทั้งหมดทั้งที่ stream ได้</li>
+<li>commit generated files ขนาดใหญ่</li>
+</ol></details><details id="help-topic-21-visual"><summary>ภาพและ shape</summary><h3>21. Common Mistakes</h3>
+<ol>
+<li>ใช้ mutable default argument</li>
+<li>ใช้ global state มากเกิน</li>
+<li><code>except Exception: pass</code></li>
+<li>path แบบ hard-code</li>
+<li>ใช้ <code>sudo pip</code></li>
+<li>commit secret</li>
+<li>แก้ code โดยไม่ reproduce bug</li>
+<li>ไม่อ่าน traceback</li>
+<li>สับสน <code>=</code> กับ equality</li>
+<li>สับสน object กับ variable name</li>
+<li>โหลด dataset ใหญ่ทั้งหมดทั้งที่ stream ได้</li>
+<li>commit generated files ขนาดใหญ่</li>
+</ol></details><details id="help-topic-21-code"><summary>โค้ด</summary><h3>21. Common Mistakes</h3>
+<ol>
+<li>ใช้ mutable default argument</li>
+<li>ใช้ global state มากเกิน</li>
+<li><code>except Exception: pass</code></li>
+<li>path แบบ hard-code</li>
+<li>ใช้ <code>sudo pip</code></li>
+<li>commit secret</li>
+<li>แก้ code โดยไม่ reproduce bug</li>
+<li>ไม่อ่าน traceback</li>
+<li>สับสน <code>=</code> กับ equality</li>
+<li>สับสน object กับ variable name</li>
+<li>โหลด dataset ใหญ่ทั้งหมดทั้งที่ stream ได้</li>
+<li>commit generated files ขนาดใหญ่</li>
+</ol><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-21-result"><summary>ผลการทดลอง</summary><h3>21. Common Mistakes</h3>
+<ol>
+<li>ใช้ mutable default argument</li>
+<li>ใช้ global state มากเกิน</li>
+<li><code>except Exception: pass</code></li>
+<li>path แบบ hard-code</li>
+<li>ใช้ <code>sudo pip</code></li>
+<li>commit secret</li>
+<li>แก้ code โดยไม่ reproduce bug</li>
+<li>ไม่อ่าน traceback</li>
+<li>สับสน <code>=</code> กับ equality</li>
+<li>สับสน object กับ variable name</li>
+<li>โหลด dataset ใหญ่ทั้งหมดทั้งที่ stream ได้</li>
+<li>commit generated files ขนาดใหญ่</li>
+</ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-21"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-22" class="source-topic"><span id="source-01-programming-canonical-22-interview-questions" class="legacy-anchor"></span><h3>22. Interview Questions</h3>
+<ol>
+<li>list กับ tuple ต่างกันอย่างไร?</li>
+<li>mutable/immutable คืออะไร?</li>
+<li>generator ต่างจาก list อย่างไร?</li>
+<li>context manager มีไว้ทำอะไร?</li>
+<li>exception handling ที่ดีควรเป็นแบบใด?</li>
+<li>process กับ program ต่างกันอย่างไร?</li>
+<li>environment variable คืออะไร?</li>
+<li>Git branch คืออะไร?</li>
+<li>pointer คืออะไร?</li>
+<li>ทำไม test สำคัญต่อ ML code?</li>
+</ol><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-22-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>22. Interview Questions</h3>
+<ol>
+<li>list กับ tuple ต่างกันอย่างไร?</li>
+<li>mutable/immutable คืออะไร?</li>
+<li>generator ต่างจาก list อย่างไร?</li>
+<li>context manager มีไว้ทำอะไร?</li>
+<li>exception handling ที่ดีควรเป็นแบบใด?</li>
+<li>process กับ program ต่างกันอย่างไร?</li>
+<li>environment variable คืออะไร?</li>
+<li>Git branch คืออะไร?</li>
+<li>pointer คืออะไร?</li>
+<li>ทำไม test สำคัญต่อ ML code?</li>
+</ol><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-22-equation"><summary>สมการ</summary><h3>22. Interview Questions</h3>
+<ol>
+<li>list กับ tuple ต่างกันอย่างไร?</li>
+<li>mutable/immutable คืออะไร?</li>
+<li>generator ต่างจาก list อย่างไร?</li>
+<li>context manager มีไว้ทำอะไร?</li>
+<li>exception handling ที่ดีควรเป็นแบบใด?</li>
+<li>process กับ program ต่างกันอย่างไร?</li>
+<li>environment variable คืออะไร?</li>
+<li>Git branch คืออะไร?</li>
+<li>pointer คืออะไร?</li>
+<li>ทำไม test สำคัญต่อ ML code?</li>
+</ol></details><details id="help-topic-22-visual"><summary>ภาพและ shape</summary><h3>22. Interview Questions</h3>
+<ol>
+<li>list กับ tuple ต่างกันอย่างไร?</li>
+<li>mutable/immutable คืออะไร?</li>
+<li>generator ต่างจาก list อย่างไร?</li>
+<li>context manager มีไว้ทำอะไร?</li>
+<li>exception handling ที่ดีควรเป็นแบบใด?</li>
+<li>process กับ program ต่างกันอย่างไร?</li>
+<li>environment variable คืออะไร?</li>
+<li>Git branch คืออะไร?</li>
+<li>pointer คืออะไร?</li>
+<li>ทำไม test สำคัญต่อ ML code?</li>
+</ol></details><details id="help-topic-22-code"><summary>โค้ด</summary><h3>22. Interview Questions</h3>
+<ol>
+<li>list กับ tuple ต่างกันอย่างไร?</li>
+<li>mutable/immutable คืออะไร?</li>
+<li>generator ต่างจาก list อย่างไร?</li>
+<li>context manager มีไว้ทำอะไร?</li>
+<li>exception handling ที่ดีควรเป็นแบบใด?</li>
+<li>process กับ program ต่างกันอย่างไร?</li>
+<li>environment variable คืออะไร?</li>
+<li>Git branch คืออะไร?</li>
+<li>pointer คืออะไร?</li>
+<li>ทำไม test สำคัญต่อ ML code?</li>
+</ol><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-22-result"><summary>ผลการทดลอง</summary><h3>22. Interview Questions</h3>
+<ol>
+<li>list กับ tuple ต่างกันอย่างไร?</li>
+<li>mutable/immutable คืออะไร?</li>
+<li>generator ต่างจาก list อย่างไร?</li>
+<li>context manager มีไว้ทำอะไร?</li>
+<li>exception handling ที่ดีควรเป็นแบบใด?</li>
+<li>process กับ program ต่างกันอย่างไร?</li>
+<li>environment variable คืออะไร?</li>
+<li>Git branch คืออะไร?</li>
+<li>pointer คืออะไร?</li>
+<li>ทำไม test สำคัญต่อ ML code?</li>
+</ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-22"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-23" class="source-topic"><span id="source-01-programming-canonical-23-chapter-checklist" class="legacy-anchor"></span><h3>23. Chapter Checklist</h3>
+<ul>
+<li>[ ] เขียน function พร้อม validation</li>
+<li>[ ] ใช้ class เก็บ state</li>
+<li>[ ] เขียน generator</li>
+<li>[ ] อ่าน traceback</li>
+<li>[ ] ใช้ <code>pathlib</code></li>
+<li>[ ] parse CLI arguments</li>
+<li>[ ] ใช้ Git branch/diff/commit</li>
+<li>[ ] อธิบาย stack/heap/pointer</li>
+<li>[ ] test Dataset Inspector ผ่าน</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-23-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>23. Chapter Checklist</h3>
+<ul>
+<li>[ ] เขียน function พร้อม validation</li>
+<li>[ ] ใช้ class เก็บ state</li>
+<li>[ ] เขียน generator</li>
+<li>[ ] อ่าน traceback</li>
+<li>[ ] ใช้ <code>pathlib</code></li>
+<li>[ ] parse CLI arguments</li>
+<li>[ ] ใช้ Git branch/diff/commit</li>
+<li>[ ] อธิบาย stack/heap/pointer</li>
+<li>[ ] test Dataset Inspector ผ่าน</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-23-equation"><summary>สมการ</summary><h3>23. Chapter Checklist</h3>
+<ul>
+<li>[ ] เขียน function พร้อม validation</li>
+<li>[ ] ใช้ class เก็บ state</li>
+<li>[ ] เขียน generator</li>
+<li>[ ] อ่าน traceback</li>
+<li>[ ] ใช้ <code>pathlib</code></li>
+<li>[ ] parse CLI arguments</li>
+<li>[ ] ใช้ Git branch/diff/commit</li>
+<li>[ ] อธิบาย stack/heap/pointer</li>
+<li>[ ] test Dataset Inspector ผ่าน</li>
+</ul></details><details id="help-topic-23-visual"><summary>ภาพและ shape</summary><h3>23. Chapter Checklist</h3>
+<ul>
+<li>[ ] เขียน function พร้อม validation</li>
+<li>[ ] ใช้ class เก็บ state</li>
+<li>[ ] เขียน generator</li>
+<li>[ ] อ่าน traceback</li>
+<li>[ ] ใช้ <code>pathlib</code></li>
+<li>[ ] parse CLI arguments</li>
+<li>[ ] ใช้ Git branch/diff/commit</li>
+<li>[ ] อธิบาย stack/heap/pointer</li>
+<li>[ ] test Dataset Inspector ผ่าน</li>
+</ul></details><details id="help-topic-23-code"><summary>โค้ด</summary><h3>23. Chapter Checklist</h3>
+<ul>
+<li>[ ] เขียน function พร้อม validation</li>
+<li>[ ] ใช้ class เก็บ state</li>
+<li>[ ] เขียน generator</li>
+<li>[ ] อ่าน traceback</li>
+<li>[ ] ใช้ <code>pathlib</code></li>
+<li>[ ] parse CLI arguments</li>
+<li>[ ] ใช้ Git branch/diff/commit</li>
+<li>[ ] อธิบาย stack/heap/pointer</li>
+<li>[ ] test Dataset Inspector ผ่าน</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-23-result"><summary>ผลการทดลอง</summary><h3>23. Chapter Checklist</h3>
+<ul>
+<li>[ ] เขียน function พร้อม validation</li>
+<li>[ ] ใช้ class เก็บ state</li>
+<li>[ ] เขียน generator</li>
+<li>[ ] อ่าน traceback</li>
+<li>[ ] ใช้ <code>pathlib</code></li>
+<li>[ ] parse CLI arguments</li>
+<li>[ ] ใช้ Git branch/diff/commit</li>
+<li>[ ] อธิบาย stack/heap/pointer</li>
+<li>[ ] test Dataset Inspector ผ่าน</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-23"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-24" class="source-topic"><span id="source-01-programming-canonical-24-whats-next" class="legacy-anchor"></span><h3>24. What's Next</h3>
+<p>Chapter 02 จะเปลี่ยน “ตัวเลขในโปรแกรม” ให้เป็นภาษาคณิตศาสตร์ของ AI: vector, matrix, derivative, probability และ statistics</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-24-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>24. What's Next</h3>
+<p>Chapter 02 จะเปลี่ยน “ตัวเลขในโปรแกรม” ให้เป็นภาษาคณิตศาสตร์ของ AI: vector, matrix, derivative, probability และ statistics</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-24-equation"><summary>สมการ</summary><h3>24. What's Next</h3>
+<p>Chapter 02 จะเปลี่ยน “ตัวเลขในโปรแกรม” ให้เป็นภาษาคณิตศาสตร์ของ AI: vector, matrix, derivative, probability และ statistics</p></details><details id="help-topic-24-visual"><summary>ภาพและ shape</summary><h3>24. What's Next</h3>
+<p>Chapter 02 จะเปลี่ยน “ตัวเลขในโปรแกรม” ให้เป็นภาษาคณิตศาสตร์ของ AI: vector, matrix, derivative, probability และ statistics</p></details><details id="help-topic-24-code"><summary>โค้ด</summary><h3>24. What's Next</h3>
+<p>Chapter 02 จะเปลี่ยน “ตัวเลขในโปรแกรม” ให้เป็นภาษาคณิตศาสตร์ของ AI: vector, matrix, derivative, probability และ statistics</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-24-result"><summary>ผลการทดลอง</summary><h3>24. What's Next</h3>
+<p>Chapter 02 จะเปลี่ยน “ตัวเลขในโปรแกรม” ให้เป็นภาษาคณิตศาสตร์ของ AI: vector, matrix, derivative, probability และ statistics</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-24"> อ่านหัวข้อนี้แล้ว</label></section></section><section id="objective-evidence" class="canonical-section"><h2>พิสูจน์ความสามารถทีละ objective</h2><p>ทำกรณีใหม่ก่อนเปิด reference แล้วบันทึกงานด้านล่าง ให้ผู้ตรวจใช้ rubric ตรวจคำอธิบาย ผลคำนวณ โค้ด และข้อจำกัด บันทึกเก็บในเบราว์เซอร์เครื่องนี้ กดส่งออกเพื่อสำรองหรือส่งให้ผู้ตรวจ เว็บไม่ได้รันโค้ดหรือตัดสินผลงานแทนผู้ตรวจ</p><button type="button" class="secondary-button" data-export-evidence>ส่งออกหลักฐานบทนี้เป็น JSON</button><p role="status" id="evidence-export-status"></p><details id="ch01-objective-01" class="objective-proof"><summary>อธิบาย variable, value, type, object และ reference</summary><p>อธิบาย variable, value, type, object และ reference: ใช้กรณีในหัวข้อ Data Types, Memory Mental Model เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch01-evidence-01"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch01-evidence-01-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch01-evidence-01-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch01-evidence-01-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch01-evidence-01-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch01-evidence-01-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch01-evidence-01-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch01-evidence-01-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch01-evidence-01-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>ชื่อ variable เป็น reference ที่ผูกกับ object ไม่ใช่สำเนาของ object: <code>a=[1]; b=a; b.append(2)</code> ทำให้ทั้ง a และ b เห็น <code>[1,2]</code>. แต่ <code>b=[9]</code> เปลี่ยน binding ของ b เท่านั้น a ยังเป็น <code>[1,2]</code>; ใช้กรณีนี้แยก mutation กับ reassignment.</p><h3>7. Data Types</h3>
+<p>ชนิดพื้นฐานที่ใช้บ่อย:</p>
+<pre><code class="language-python">age: int = 20
+learning_rate: float = 0.001
+is_training: bool = True
+model_name: str = &quot;tiny-model&quot;
+features: list[float] = [1.2, 3.4, 5.6]
+metadata: dict[str, str] = {&quot;source&quot;: &quot;local&quot;}
+</code></pre>
+<p>Type hint ช่วยคนและ static tooling แต่ Python ยังเป็น dynamically typed language</p>
+<h3>16. Memory Mental Model</h3>
+<p>สำหรับพื้นฐาน C/C++:</p>
+<ul>
+<li><strong>stack</strong> — มักใช้กับ call frames/local data ที่อายุสัมพันธ์กับ scope</li>
+<li><strong>heap</strong> — dynamic allocation</li>
+<li><strong>pointer</strong> — ค่า address ที่อ้างตำแหน่งหน่วยความจำ</li>
+<li><strong>reference</strong> — ชื่อ/handle ที่อ้าง object ตาม semantics ของภาษา</li>
+</ul>
+<p>อย่าเหมารวมว่า “Python variable อยู่ stack” หรือ “Python object ทุกอย่างอยู่ heap” เป็นกฎภาษาที่ใช้ reasoning ได้ทุกกรณี; implementation มีรายละเอียดมากกว่านั้น</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch01-objective-02" class="objective-proof"><summary>ใช้ condition, loop, function, class, iterator, exception</summary><p>ใช้ condition, loop, function, class, iterator, exception: ใช้กรณีในหัวข้อ Control Flow, Functions, Classes, Iterators and Generators, Exceptions เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch01-evidence-02"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch01-evidence-02-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch01-evidence-02-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch01-evidence-02-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch01-evidence-02-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch01-evidence-02-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch01-evidence-02-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch01-evidence-02-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch01-evidence-02-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>Default expression ถูกประเมินครั้งเดียวตอนสร้าง function จึงใช้ list เดิมข้าม calls. แก้เป็น <code>scores=None</code> แล้วสร้าง <code>scores=[]</code> ภายในเมื่อเป็น None. ทดสอบเรียก append_score(1) และ append_score(2) แยกกันต้องได้ [1] กับ [2]; ถ้าส่ง list เองจึงค่อยใช้ list นั้นตามสัญญา.</p><h3>8. Control Flow</h3>
+<pre><code class="language-python">loss = 0.42
+
+if loss &lt; 0.1:
+    status = &quot;excellent&quot;
+elif loss &lt; 0.5:
+    status = &quot;learning&quot;
+else:
+    status = &quot;needs work&quot;
+</code></pre>
+<p>Loop:</p>
+<pre><code class="language-python">losses = [1.0, 0.8, 0.6]
+
+for epoch, loss in enumerate(losses, start=1):
+    print(epoch, loss)
+</code></pre>
+<h3>9. Functions</h3>
+<pre><code class="language-python">def mean(values: list[float]) -&gt; float:
+    if not values:
+        raise ValueError(&quot;values must not be empty&quot;)
+    return sum(values) / len(values)
+</code></pre>
+<p>หลักสำคัญ:</p>
+<ul>
+<li>function ควรทำหน้าที่ชัดเจน</li>
+<li>validate input เมื่อ failure ไม่ควรถูกซ่อน</li>
+<li>prefer return value แทน global mutable state</li>
+</ul>
+<h3>10. Classes</h3>
+<pre><code class="language-python">class RunningMean:
+    def __init__(self) -&gt; None:
+        self.total = 0.0
+        self.count = 0
+
+    def update(self, value: float) -&gt; None:
+        self.total += value
+        self.count += 1
+
+    def value(self) -&gt; float:
+        if self.count == 0:
+            raise ValueError(&quot;no observations&quot;)
+        return self.total / self.count
+</code></pre>
+<p>ในอนาคต <code>torch.nn.Module</code> ก็ใช้แนวคิด object/class แบบนี้</p>
+<h3>11. Iterators and Generators</h3>
+<p>Generator ช่วย stream data โดยไม่ต้องโหลดทั้งหมดเข้าหน่วยความจำ:</p>
+<pre><code class="language-python">def squares(limit: int):
+    for n in range(limit):
+        yield n * n
+</code></pre>
+<p>แนวคิดนี้จะกลับมาใน DataLoader และ streaming dataset</p>
+<h3>12. Exceptions</h3>
+<p>อย่าจับ exception กว้างเกินจำเป็น:</p>
+<pre><code class="language-python">try:
+    value = float(raw)
+except ValueError:
+    print(&quot;not a number&quot;)
+</code></pre>
+<p>หลีกเลี่ยง:</p>
+<pre><code class="language-python">try:
+    ...
+except Exception:
+    pass
+</code></pre>
+<p>เพราะมันซ่อน root cause</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch01-objective-03" class="objective-proof"><summary>เขียน type hints และแบ่ง code เป็น module</summary><p>เขียน type hints และแบ่ง code เป็น module: ใช้กรณีในหัวข้อ Functions, Modules and Packages เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch01-evidence-03"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch01-evidence-03-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch01-evidence-03-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch01-evidence-03-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch01-evidence-03-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch01-evidence-03-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch01-evidence-03-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch01-evidence-03-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch01-evidence-03-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>Virtual environment แยก interpreter/dependencies ของโครงงาน เพื่อไม่ให้การอัปเกรด library งานหนึ่งเปลี่ยนอีกงาน. ตรวจ <code>sys.executable</code> และ <code>python -m pip --version</code> ว่าอยู่ environment เดียวกัน แล้วบันทึก requirements; venv ไม่แยก kernel/OS เหมือน VM.</p><h3>9. Functions</h3>
+<pre><code class="language-python">def mean(values: list[float]) -&gt; float:
+    if not values:
+        raise ValueError(&quot;values must not be empty&quot;)
+    return sum(values) / len(values)
+</code></pre>
+<p>หลักสำคัญ:</p>
+<ul>
+<li>function ควรทำหน้าที่ชัดเจน</li>
+<li>validate input เมื่อ failure ไม่ควรถูกซ่อน</li>
+<li>prefer return value แทน global mutable state</li>
+</ul>
+<h3>13. Modules and Packages</h3>
+<p>ถ้าไฟล์โต ให้แยกตาม responsibility:</p>
+<pre><code class="language-text">project/
+├── app.py
+├── data.py
+├── metrics.py
+└── tests/
+</code></pre>
+<p>import:</p>
+<pre><code class="language-python">from pathlib import Path
+</code></pre></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch01-objective-04" class="objective-proof"><summary>ใช้ standard library สำคัญ เช่น `pathlib`, `csv`, `argparse`</summary><p>ใช้ standard library สำคัญ เช่น `pathlib`, `csv`, `argparse`: ใช้กรณีในหัวข้อ First Python Program, Modules and Packages เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch01-evidence-04"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch01-evidence-04-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch01-evidence-04-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch01-evidence-04-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch01-evidence-04-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch01-evidence-04-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch01-evidence-04-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch01-evidence-04-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch01-evidence-04-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>Virtual environment แยก interpreter/dependencies ของโครงงาน เพื่อไม่ให้การอัปเกรด library งานหนึ่งเปลี่ยนอีกงาน. ตรวจ <code>sys.executable</code> และ <code>python -m pip --version</code> ว่าอยู่ environment เดียวกัน แล้วบันทึก requirements; venv ไม่แยก kernel/OS เหมือน VM.</p><h3>6. First Python Program</h3>
+<pre><code class="language-python">message: str = &quot;AI starts with fundamentals.&quot;
+print(message)
+</code></pre>
+<p><code>message</code> คือชื่อที่อ้างถึง object ชนิด <code>str</code></p>
+<h3>13. Modules and Packages</h3>
+<p>ถ้าไฟล์โต ให้แยกตาม responsibility:</p>
+<pre><code class="language-text">project/
+├── app.py
+├── data.py
+├── metrics.py
+└── tests/
+</code></pre>
+<p>import:</p>
+<pre><code class="language-python">from pathlib import Path
+</code></pre></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch01-objective-05" class="objective-proof"><summary>ใช้ Bash สำรวจ filesystem/process/environment</summary><p>ใช้ Bash สำรวจ filesystem/process/environment: ใช้กรณีในหัวข้อ Linux/Bash เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch01-evidence-05"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch01-evidence-05-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch01-evidence-05-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch01-evidence-05-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch01-evidence-05-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch01-evidence-05-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch01-evidence-05-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch01-evidence-05-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch01-evidence-05-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>PATH เป็นลำดับ directories ที่ shell ใช้ค้น executable เมื่อพิมพ์ชื่อที่ไม่มี slash. ถ้ามี python หลายตัว ตัวแรกที่เจอถูกใช้; ตรวจ <code>command -v python</code> และ <code>python -c 'import sys;print(sys.executable)'</code>. การเปลี่ยน current directory ไม่เท่ากับเปลี่ยน PATH.</p><h3>14. Linux/Bash</h3>
+<p>คำสั่งขั้นต่ำ:</p>
+<pre><code class="language-bash">pwd
+ls -lah
+mkdir -p data/raw
+cp source.csv data/raw/
+mv old.csv new.csv
+find . -type f
+grep -R &quot;TODO&quot; .
+ps aux
+echo &quot;$PATH&quot;
+</code></pre>
+<p>อย่ารันคำสั่งที่แก้ระบบด้วย <code>sudo</code> ถ้ายังไม่รู้ว่ามันเปลี่ยนอะไร</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch01-objective-06" class="objective-proof"><summary>ใช้ Git แบบ branch → diff → commit</summary><p>ใช้ Git แบบ branch → diff → commit: ใช้กรณีในหัวข้อ Git Workflow เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch01-evidence-06"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch01-evidence-06-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch01-evidence-06-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch01-evidence-06-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch01-evidence-06-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch01-evidence-06-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch01-evidence-06-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch01-evidence-06-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch01-evidence-06-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>Commit อ้าง snapshot ของ tree, parent commit(s), author/committer และข้อความ พร้อม content-addressed objects. การแก้ไฟล์ใน working tree ยังไม่อยู่ใน commit จน stage/commit; ตรวจ <code>git diff</code> และ <code>git diff --staged</code> แยกสองสถานะก่อนบันทึก.</p><h3>15. Git Workflow</h3>
+<pre><code class="language-bash">git status
+git switch -c feature/ch01-lab
+git diff
+git add .
+git commit -m &quot;feat: complete chapter 01 lab&quot;
+</code></pre>
+<p>คิด Git เป็น graph ของ commits ไม่ใช่ cloud backup อย่างเดียว</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch01-objective-07" class="objective-proof"><summary>อธิบาย stack/heap/pointer ในระดับ mental model</summary><p>อธิบาย stack/heap/pointer ในระดับ mental model: ใช้กรณีในหัวข้อ Memory Mental Model เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch01-evidence-07"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch01-evidence-07-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch01-evidence-07-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch01-evidence-07-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch01-evidence-07-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch01-evidence-07-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch01-evidence-07-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch01-evidence-07-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch01-evidence-07-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>ชื่อ variable เป็น reference ที่ผูกกับ object ไม่ใช่สำเนาของ object: <code>a=[1]; b=a; b.append(2)</code> ทำให้ทั้ง a และ b เห็น <code>[1,2]</code>. แต่ <code>b=[9]</code> เปลี่ยน binding ของ b เท่านั้น a ยังเป็น <code>[1,2]</code>; ใช้กรณีนี้แยก mutation กับ reassignment.</p><h3>16. Memory Mental Model</h3>
+<p>สำหรับพื้นฐาน C/C++:</p>
+<ul>
+<li><strong>stack</strong> — มักใช้กับ call frames/local data ที่อายุสัมพันธ์กับ scope</li>
+<li><strong>heap</strong> — dynamic allocation</li>
+<li><strong>pointer</strong> — ค่า address ที่อ้างตำแหน่งหน่วยความจำ</li>
+<li><strong>reference</strong> — ชื่อ/handle ที่อ้าง object ตาม semantics ของภาษา</li>
+</ul>
+<p>อย่าเหมารวมว่า “Python variable อยู่ stack” หรือ “Python object ทุกอย่างอยู่ heap” เป็นกฎภาษาที่ใช้ reasoning ได้ทุกกรณี; implementation มีรายละเอียดมากกว่านั้น</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch01-objective-08" class="objective-proof"><summary>debug โปรแกรมจาก traceback และ regression test</summary><p>debug โปรแกรมจาก traceback และ regression test: ใช้กรณีในหัวข้อ Debugging เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch01-evidence-08"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch01-evidence-08-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch01-evidence-08-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch01-evidence-08-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch01-evidence-08-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch01-evidence-08-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch01-evidence-08-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch01-evidence-08-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch01-evidence-08-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>Bug คือ scores=[] ถูกใช้ซ้ำข้าม calls. เปลี่ยน signature เป็น <code>def append_score(score,scores=None)</code> และสร้าง list ใหม่เมื่อ scores is None. Regression test ต้องเรียกสองครั้งโดยไม่ส่ง scores และตรวจว่า object ไม่ใช่ตัวเดียวกัน พร้อมกรณี caller ส่ง list ที่ตั้งใจให้ mutate.</p><h3>17. Debugging</h3>
+<p>วงจร:</p>
+<pre><code class="language-text">reproduce
+→ read traceback
+→ inspect state
+→ reduce input
+→ form hypothesis
+→ test hypothesis
+→ fix
+→ add regression test
+</code></pre></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch01-objective-09" class="objective-proof"><summary>สร้าง CLI Dataset Inspector</summary><p>สร้าง CLI Dataset Inspector: ใช้กรณีในหัวข้อ First Python Program, Production Perspective เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch01-evidence-09"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch01-evidence-09-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch01-evidence-09-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch01-evidence-09-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch01-evidence-09-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch01-evidence-09-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch01-evidence-09-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch01-evidence-09-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch01-evidence-09-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>ใช้ csv.DictReader อ่านทีละ row เพิ่ม row_count และ missing_count ต่อ column ด้วยกฎ missing ที่ระบุ. สำหรับ <code>a,b\n1,\n,2\n</code> ได้สองแถวและ missing(a)=missing(b)=1; peak state ขึ้นกับจำนวน columns ไม่ใช่จำนวน rows. ทดสอบ blank string, whitespace และ malformed row แยกกัน.</p><h3>6. First Python Program</h3>
+<pre><code class="language-python">message: str = &quot;AI starts with fundamentals.&quot;
+print(message)
+</code></pre>
+<p><code>message</code> คือชื่อที่อ้างถึง object ชนิด <code>str</code></p>
+<h3>19. Production Perspective</h3>
+<p>Production code ต้องใส่ใจ:</p>
+<ul>
+<li>input validation</li>
+<li>logging</li>
+<li>configuration</li>
+<li>reproducibility</li>
+<li>tests</li>
+<li>error messages</li>
+<li>dependency isolation</li>
+</ul></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch01-objective-10" class="objective-proof"><summary>Performance</summary><p>Performance: ใช้กรณีในหัวข้อ Performance เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch01-evidence-10"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch01-evidence-10-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch01-evidence-10-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch01-evidence-10-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch01-evidence-10-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch01-evidence-10-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch01-evidence-10-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch01-evidence-10-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch01-evidence-10-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>Generator เก็บสถานะการ iteration และผลิตสมาชิกทีละตัว จึงไม่จำเป็นต้องสร้างรายการ N ตัวพร้อมกัน. ผลรวมจาก generator ยังต้องอ่าน N ตัวและใช้ O(N) time แต่ accumulator ใช้ O(1) extra memory; ถ้าเรียก list(generator) จะกลับไปใช้ O(N) memory.</p><h3>18. Performance</h3>
+<p>Big-O ตัวอย่าง:</p>
+<ul>
+<li>index list: โดยทั่วไป O(1)</li>
+<li>scan list: O(n)</li>
+<li>nested scan: มัก O(n²)</li>
+<li>dictionary lookup: average-case โดยทั่วไป O(1)</li>
+</ul>
+<p>แต่ performance จริงยังขึ้นกับ memory layout, cache และ constant factor</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details></section><section id="implementation" class="canonical-section"><h2>Implementation และ tests ที่รันบนเครื่องได้</h2><details><summary>01-programming/src/dataset_inspector.py</summary><pre><code>&quot;&quot;&quot;Small CSV inspector using only the Python standard library.&quot;&quot;&quot;
+
+from __future__ import annotations
+
+import argparse
+import csv
+import json
+from pathlib import Path
+from typing import Any
+
+
+MISSING_TOKENS = {&quot;&quot;, &quot;na&quot;, &quot;n/a&quot;, &quot;null&quot;, &quot;none&quot;}
+
+
+def is_missing(value: str) -&gt; bool:
+    return value.strip().lower() in MISSING_TOKENS
+
+
+def load_csv(path: Path) -&gt; list[dict[str, str]]:
+    if not path.exists():
+        raise FileNotFoundError(f&quot;CSV file not found: {path}&quot;)
+    if not path.is_file():
+        raise ValueError(f&quot;Path is not a file: {path}&quot;)
+
+    with path.open(&quot;r&quot;, encoding=&quot;utf-8-sig&quot;, newline=&quot;&quot;) as file:
+        reader = csv.DictReader(file)
+        if not reader.fieldnames:
+            raise ValueError(&quot;CSV must contain a header row&quot;)
+        return [dict(row) for row in reader]
+
+
+def infer_column_type(values: list[str]) -&gt; str:
+    observed = [value.strip() for value in values if not is_missing(value)]
+    if not observed:
+        return &quot;unknown&quot;
+
+    try:
+        for value in observed:
+            int(value)
+        return &quot;int&quot;
+    except ValueError:
+        pass
+
+    try:
+        for value in observed:
+            float(value)
+        return &quot;float&quot;
+    except ValueError:
+        return &quot;str&quot;
+
+
+def numeric_summary(values: list[str]) -&gt; dict[str, float]:
+    numbers = [float(value) for value in values if not is_missing(value)]
+    if not numbers:
+        return {}
+    return {
+        &quot;min&quot;: min(numbers),
+        &quot;max&quot;: max(numbers),
+        &quot;mean&quot;: sum(numbers) / len(numbers),
+    }
+
+
+def summarize_rows(rows: list[dict[str, str]]) -&gt; dict[str, Any]:
+    if not rows:
+        return {&quot;rows&quot;: 0, &quot;columns&quot;: 0, &quot;schema&quot;: {}}
+
+    columns = list(rows[0].keys())
+    schema: dict[str, Any] = {}
+
+    for column in columns:
+        values = [row.get(column, &quot;&quot;) for row in rows]
+        inferred = infer_column_type(values)
+        item: dict[str, Any] = {
+            &quot;type&quot;: inferred,
+            &quot;missing&quot;: sum(is_missing(value) for value in values),
+            &quot;unique&quot;: len({value for value in values if not is_missing(value)}),
+        }
+        if inferred in {&quot;int&quot;, &quot;float&quot;}:
+            item.update(numeric_summary(values))
+        schema[column] = item
+
+    return {
+        &quot;rows&quot;: len(rows),
+        &quot;columns&quot;: len(columns),
+        &quot;schema&quot;: schema,
+    }
+
+
+def build_parser() -&gt; argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description=&quot;Inspect a CSV dataset.&quot;)
+    parser.add_argument(&quot;csv_path&quot;, type=Path, help=&quot;Path to a CSV file&quot;)
+    return parser
+
+
+def main() -&gt; None:
+    args = build_parser().parse_args()
+    rows = load_csv(args.csv_path)
+    summary = summarize_rows(rows)
+    print(json.dumps(summary, indent=2, ensure_ascii=False))
+
+
+if __name__ == &quot;__main__&quot;:
+    main()
+</code></pre></details><details><summary>01-programming/tests/test_dataset_inspector.py</summary><pre><code>from pathlib import Path
+import importlib.util
+
+
+MODULE_PATH = Path(__file__).parents[1] / &quot;src&quot; / &quot;dataset_inspector.py&quot;
+SPEC = importlib.util.spec_from_file_location(&quot;dataset_inspector&quot;, MODULE_PATH)
+assert SPEC and SPEC.loader
+dataset_inspector = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(dataset_inspector)
+
+
+def test_infer_column_type() -&gt; None:
+    assert dataset_inspector.infer_column_type([&quot;1&quot;, &quot;2&quot;, &quot;&quot;]) == &quot;int&quot;
+    assert dataset_inspector.infer_column_type([&quot;1.5&quot;, &quot;2.0&quot;]) == &quot;float&quot;
+    assert dataset_inspector.infer_column_type([&quot;cat&quot;, &quot;dog&quot;]) == &quot;str&quot;
+
+
+def test_load_and_summarize(tmp_path: Path) -&gt; None:
+    csv_path = tmp_path / &quot;sample.csv&quot;
+    csv_path.write_text(
+        &quot;name,score,age\n&quot;
+        &quot;Ann,10.5,20\n&quot;
+        &quot;Bob,,21\n&quot;
+        &quot;Cara,7.5,20\n&quot;,
+        encoding=&quot;utf-8&quot;,
+    )
+
+    rows = dataset_inspector.load_csv(csv_path)
+    summary = dataset_inspector.summarize_rows(rows)
+
+    assert summary[&quot;rows&quot;] == 3
+    assert summary[&quot;columns&quot;] == 3
+    assert summary[&quot;schema&quot;][&quot;score&quot;][&quot;missing&quot;] == 1
+    assert summary[&quot;schema&quot;][&quot;score&quot;][&quot;mean&quot;] == 9.0
+    assert summary[&quot;schema&quot;][&quot;age&quot;][&quot;type&quot;] == &quot;int&quot;
+
+
+def test_empty_rows() -&gt; None:
+    assert dataset_inspector.summarize_rows([]) == {
+        &quot;rows&quot;: 0,
+        &quot;columns&quot;: 0,
+        &quot;schema&quot;: {},
+    }
+</code></pre></details></section><section id="glossary" class="canonical-section"><h2>อภิธานศัพท์ — คำไทย ความหมาย และข้อควรตรวจ</h2><dl><dt>tensor</dt><dd>เทนเซอร์: ชุดตัวเลขที่มีแกน เช่น scalar ไม่มีแกน, vector หนึ่งแกน, matrix สองแกน; shape บอกขนาดแต่ละแกน ไม่บอกความหมายของแกนจนกว่าจะระบุ</dd><dt>shape</dt><dd>รูปทรงข้อมูล: (B,T,d) หมายถึง batch × เวลา/ตำแหน่ง × features; ใช้ชื่อแกนกำกับเสมอ การ transpose เปลี่ยนแกนแต่ไม่ใช่แค่เปลี่ยนชื่อ</dd><dt>batch</dt><dd>กลุ่มตัวอย่างที่คำนวณร่วมกันหนึ่งครั้ง; B คือจำนวนตัวอย่าง ไม่ใช่จำนวน features หรือจำนวน optimizer updates</dd><dt>weight w / θ</dt><dd>น้ำหนักหรือพารามิเตอร์ที่โมเดลใช้คำนวณ; แก้ด้วยมือทำ forward ใหม่ ส่วน optimizer ต้องรับ gradient แล้วกด update จึงแก้ state</dd><dt>bias b</dt><dd>ค่าคงที่ที่บวกกับผลเชิงเส้น; regression scalar bias เพิ่ม Δ ทำให้ prediction ทุกจุดเพิ่ม Δ เท่ากัน</dd><dt>prediction ŷ</dt><dd>ค่าที่โมเดลทำนายจาก input และพารามิเตอร์ปัจจุบัน; เครื่องหมายหมวกแยกจาก target y ที่มาจากข้อมูล</dd><dt>residual e</dt><dd>ความคลาดเคลื่อน ในเว็บนี้นิยาม prediction − target; บางตำราใช้เครื่องหมายกลับกัน จึงต้องตรวจนิยามก่อนเทียบสูตร gradient</dd><dt>MSE</dt><dd>mean squared error = ผลรวม residual กำลังสองหารจำนวนรายการที่ระบุ; มีหน่วยเป็น target ยกกำลังสอง และการใช้ sum แทน mean เปลี่ยน scale gradient</dd><dt>loss L / objective J</dt><dd>จำนวนที่ optimizer ต้องการลด; objective อาจรวม data loss และ regularization จึงต้องดูองค์ประกอบและ reduction ให้ตรง implementation</dd><dt>gradient ∇ / ∂</dt><dd>เวกเตอร์ของ partial derivatives บอกอัตราเปลี่ยน loss ต่อพารามิเตอร์แต่ละตัว; ∂ ใช้เมื่อเปลี่ยนตัวหนึ่งโดยตรึงตัวอื่น</dd><dt>chain rule</dt><dd>กฎลูกโซ่: คูณอนุพันธ์ตามเส้นทาง และบวก contribution จากทุกเส้นทางที่มารวมกัน ใช้ย้อนจาก loss ถึง weights</dd><dt>learning rate η</dt><dd>ขนาดตัวคูณ gradient ใน update θnew=θ−ηg; η≥0, ศูนย์หมายถึงไม่มีการขยับพารามิเตอร์ ก้าวใหญ่เกินอาจ diverge</dd><dt>regularization λ</dt><dd>ตัวคูณค่าลงโทษ ต้อง λ≥0 ตามนิยามการลงโทษ; Ridge λΣw² เพิ่ม gradient 2λw โดยบท Regression นี้ไม่ลงโทษ bias</dd><dt>baseline</dt><dd>สถานะอ้างอิงที่ตรึงไว้สำหรับเทียบ; ต้องเก็บ snapshot ไม่อ้าง object ปัจจุบันที่แก้ตามไปด้วย</dd><dt>invariant</dt><dd>คุณสมบัติที่กลไกต้องรักษา เช่น probability รวม1, shape สอดคล้อง, queue ไม่เกิน capacity; ใช้ tests ตรวจได้มากกว่าดูภาพสวย</dd><dt>optimizer state</dt><dd>ความจำของอัลกอริทึม เช่น velocity, moments และ completed updates; คืนเฉพาะ weights ยังไม่เท่ากับเริ่มการฝึกใหม่ทั้งหมด</dd><dt>finite difference</dt><dd>ประมาณ derivative ด้วย [f(x+h)−f(x−h)]/(2h); h&gt;0, ใช้ smooth point และลองหลาย h เพื่อแยก truncation error จาก roundoff</dd><dt>softmax</dt><dd>แปลง logits เป็นความน่าจะเป็นตามแกนที่กำหนด; ลบ max ก่อน exp เพื่อความเสถียร และ fully masked row ต้องมีนโยบายชัดเจน</dd><dt>logit</dt><dd>คะแนนก่อน sigmoid/softmax ไม่ใช่ probability; อาจเป็นจำนวนจริงติดลบหรือเกิน1ได้ จึงห้ามส่งให้ loss ที่คาด probability โดยไม่แปลง</dd><dt>temperature τ / T</dt><dd>ตัวหาร logits ก่อน softmax; ต้องเป็นบวก ค่าเล็กทำ distribution แหลมขึ้น โดยไม่เท่ากับ retrain weights</dd><dt>mask</dt><dd>ตัวกำหนดตำแหน่งที่อ่านหรือคิด loss ได้; causal mask ปิดอนาคต, padding mask ปิดข้อมูลเติม, loss mask เลือก target แต่ละอย่างคนละหน้าที่</dd><dt>Q / K / V</dt><dd>query ใช้ค้นข้อมูล, key ใช้จับคู่ query, value เป็นข้อมูลที่ถูกถัวเฉลี่ย; เป็น learned projections ของ representation ไม่ใช่ป้ายความหมายตายตัว</dd><dt>head</dt><dd>ส่วนของ feature representation ที่ทำ attention แยกกัน แล้ว concat/project กลับ; ต้องตรวจ d_model หารจำนวน heads ลงตัว</dd><dt>ε-neighborhood</dt><dd>เพื่อนบ้านทั้งหมดที่มีระยะไม่เกิน ε รวมจุดตัวเองใน DBSCAN นี้; ε มีหน่วยเดียวกับพิกัด ไม่ใช่จำนวน k ที่ใช้โหวต</dd><dt>core / border / noise</dt><dd>DBSCAN core มีเพื่อนบ้านรวมตัวเองถึง min_samples; border อยู่ใกล้ core แต่เพื่อนบ้านไม่ถึง; noise ไม่ถูกเชื่อมกับ core cluster ใด</dd><dt>bootstrap</dt><dd>สุ่ม observations แบบ replacement ขนาดเท่าเดิมซ้ำหลายครั้งแล้วคำนวณ statistic ใหม่; seed ทำให้ตรวจซ้ำได้ แต่ไม่แก้สมมติฐาน IID ที่ผิด</dd><dt>confidence interval</dt><dd>ช่วงที่สร้างด้วย procedure ที่มี coverage ตามสมมติฐาน; ช่วงหนึ่งที่ได้แล้วไม่ใช่ posterior probability ของ parameter และ sample เล็กยังไม่แน่นอนมาก</dd><dt>validation / test</dt><dd>validation ใช้เลือกโมเดล/ค่าตั้ง ส่วน test ใช้ประเมินหลัง freeze การตัดสินใจ; fit preprocessing/tokenizer จาก test เป็น leakage</dd><dt>leakage</dt><dd>ข้อมูลที่ควรยังไม่รู้ไหลเข้า training/การเลือกโมเดล เช่น future feature หรือเอกสารซ้ำข้าม split ทำให้ metric ดูดีเกินการใช้งานจริง</dd><dt>queue / capacity</dt><dd>queue คือรายการรอ, capacity การให้บริการรวม = workers × service rate ตามแบบจำลอง; เพิ่ม timeout ไม่เพิ่มกำลังประมวลผล</dd><dt>state transition</dt><dd>การเปลี่ยนสถานะเมื่อเกิดเหตุการณ์ที่อนุญาต เช่น queued→active→done; ต้องระบุ guard, side effect และเหตุผลเมื่อ transition ถูกปฏิเสธ</dd><dt>latency / throughput</dt><dd>latency คือเวลาต่อคำขอ, throughput คือปริมาณงานต่อหน่วยเวลา; batching อาจเพิ่ม throughput แต่เพิ่มเวลารอ จึงต้องวัดทั้งคู่</dd><dt>idempotency</dt><dd>ทำคำขอ business operation เดิมซ้ำแล้ว side effect เกิดครั้งเดียวตาม key และ transaction protocol; ไม่ได้รับประกันจากการใช้ UUID ใหม่ทุก attempt</dd><dt>local lab</dt><dd>โปรแกรม Python และ tests ที่ผู้เรียนรันบนเครื่อง; เว็บเก็บเพียงคำยืนยันของผู้เรียน การผ่าน tests ของโค้ดต้นแบบไม่ใช่ผลตรวจโค้ดผู้เรียน</dd></dl></section></article>
+<section id="practice" class="practice-section"><span class="eyebrow">PRACTICE · DEBUG · BUILD</span><h2>พิสูจน์ด้วยการลงมือทำ</h2><div id="web-checks"></div><div class="retry-actions"><button class="secondary-button" id="retry-checks">เริ่มทำโจทย์ในเว็บใหม่</button><button class="text-button" id="undo-retry" hidden>คืนผลก่อนเริ่มใหม่</button></div><div id="exercise-content"><h2>แบบฝึก 20 ข้อ — เฉลยเฉพาะข้อ</h2><p>ทำคำตอบก่อนเปิด hints; โจทย์ปลายเปิดให้ใช้ตัวอย่างคำตอบและหลักฐานราย objective ตรวจงานจริง</p><section id="exercise-1" class="exercise-item"><h3>ข้อ 1</h3><p>variable name ต่างจาก object อย่างไร?</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Data Types, Memory Mental Model: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ชื่อ variable เป็น reference ที่ผูกกับ object ไม่ใช่สำเนาของ object: `a=[1]; b=a; b.append(…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ชื่อ variable เป็น reference ที่ผูกกับ object ไม่ใช่สำเนาของ object: <code>a=[1]; b=a; b.append(2)</code> ทำให้ทั้ง a และ b เห็น <code>[1,2]</code>. แต่ <code>b=[9]</code> เปลี่ยน binding ของ b เท่…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ชื่อ variable เป็น reference ที่ผูกกับ object ไม่ใช่สำเนาของ object: <code>a=[1]; b=a; b.append(2)</code> ทำให้ทั้ง a และ b เห็น <code>[1,2]</code>. แต่ <code>b=[9]</code> เปลี่ยน binding ของ b เท่านั้น a ยังเป็น <code>[1,2]</code>; ใช้กรณีนี้แยก mutation กับ reassignment.</p><p>อ้างอิง: <a href="#chapter-1/section/topic-7">Data Types</a>, <a href="#chapter-1/section/topic-16">Memory Mental Model</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch01-exercise-01"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-2" class="exercise-item"><h3>ข้อ 2</h3><p>mutable กับ immutable ต่างกันอย่างไร?</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Data Types, Memory Mental Model: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): Mutable เปลี่ยนเนื้อหา object เดิมได้ เช่น list.append ส่วน immutable เช่น int/tuple เ…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: Mutable เปลี่ยนเนื้อหา object เดิมได้ เช่น list.append ส่วน immutable เช่น int/tuple เปลี่ยนค่าโดยสร้าง/อ้าง object ใหม่. <code>a=(1,); b=a; b+=(2,)</code> ให้ a=(1,)…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>Mutable เปลี่ยนเนื้อหา object เดิมได้ เช่น list.append ส่วน immutable เช่น int/tuple เปลี่ยนค่าโดยสร้าง/อ้าง object ใหม่. <code>a=(1,); b=a; b+=(2,)</code> ให้ a=(1,),b=(1,2); tuple ที่เก็บ list ยังมี list ภายในที่ mutable ได้.</p><p>อ้างอิง: <a href="#chapter-1/section/topic-7">Data Types</a>, <a href="#chapter-1/section/topic-16">Memory Mental Model</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch01-exercise-02"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-3" class="exercise-item"><h3>ข้อ 3</h3><p><code>==</code> กับ <code>is</code> ต่างกันอย่างไร?</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Data Types: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): <code>==</code> ตรวจความเท่ากันของค่า ส่วน <code>is</code> ตรวจ identity. <code>a=[1]; b=[1]</code> ให้ a==b เป…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: <code>==</code> ตรวจความเท่ากันของค่า ส่วน <code>is</code> ตรวจ identity. <code>a=[1]; b=[1]</code> ให้ a==b เป็น True แต่ a is b เป็น False. ใช้ <code>x is None</code> ตรวจ sentinel; …</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p><code>==</code> ตรวจความเท่ากันของค่า ส่วน <code>is</code> ตรวจ identity. <code>a=[1]; b=[1]</code> ให้ a==b เป็น True แต่ a is b เป็น False. ใช้ <code>x is None</code> ตรวจ sentinel; อย่าอาศัย interning ของเลข/strings เป็นตรรกะของโปรแกรม.</p><p>อ้างอิง: <a href="#chapter-1/section/topic-7">Data Types</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch01-exercise-03"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-4" class="exercise-item"><h3>ข้อ 4</h3><p>virtual environment มีประโยชน์อะไร?</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Modules and Packages: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): Virtual environment แยก interpreter/dependencies ของโครงงาน เพื่อไม่ให้การอัปเกรด library งานหนึ่งเป…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: Virtual environment แยก interpreter/dependencies ของโครงงาน เพื่อไม่ให้การอัปเกรด library งานหนึ่งเปลี่ยนอีกงาน. ตรวจ <code>sys.executable</code> และ <code>python -m pip --version</code> ว่าอยู่ environ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>Virtual environment แยก interpreter/dependencies ของโครงงาน เพื่อไม่ให้การอัปเกรด library งานหนึ่งเปลี่ยนอีกงาน. ตรวจ <code>sys.executable</code> และ <code>python -m pip --version</code> ว่าอยู่ environment เดียวกัน แล้วบันทึก requirements; venv ไม่แยก kernel/OS เหมือน VM.</p><p>อ้างอิง: <a href="#chapter-1/section/topic-13">Modules and Packages</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch01-exercise-04"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-5" class="exercise-item"><h3>ข้อ 5</h3><p>Git commit เก็บอะไร?</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Git Workflow: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): Commit อ้าง snapshot ของ tree, parent commit(s), author/committer และข้อความ พร้อม content-add…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: Commit อ้าง snapshot ของ tree, parent commit(s), author/committer และข้อความ พร้อม content-addressed objects. การแก้ไฟล์ใน working tree ยังไม่อยู่ใน commit จน stage/comm…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>Commit อ้าง snapshot ของ tree, parent commit(s), author/committer และข้อความ พร้อม content-addressed objects. การแก้ไฟล์ใน working tree ยังไม่อยู่ใน commit จน stage/commit; ตรวจ <code>git diff</code> และ <code>git diff --staged</code> แยกสองสถานะก่อนบันทึก.</p><p>อ้างอิง: <a href="#chapter-1/section/topic-15">Git Workflow</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch01-exercise-05"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-6" class="exercise-item"><h3>ข้อ 6</h3><p>ทำไม mutable default argument จึงเป็น bug ได้?</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Functions: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): Default expression ถูกประเมินครั้งเดียวตอนสร้าง function จึงใช้ list เดิมข้าม calls. แก้เป็น <code>scores=None</code> …</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: Default expression ถูกประเมินครั้งเดียวตอนสร้าง function จึงใช้ list เดิมข้าม calls. แก้เป็น <code>scores=None</code> แล้วสร้าง <code>scores=[]</code> ภายในเมื่อเป็น None. ทดสอบเรียก append_score(1) และ append_scor…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>Default expression ถูกประเมินครั้งเดียวตอนสร้าง function จึงใช้ list เดิมข้าม calls. แก้เป็น <code>scores=None</code> แล้วสร้าง <code>scores=[]</code> ภายในเมื่อเป็น None. ทดสอบเรียก append_score(1) และ append_score(2) แยกกันต้องได้ [1] กับ [2]; ถ้าส่ง list เองจึงค่อยใช้ list นั้นตามสัญญา.</p><p>อ้างอิง: <a href="#chapter-1/section/topic-9">Functions</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch01-exercise-06"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-7" class="exercise-item"><h3>ข้อ 7</h3><p>generator ช่วยเรื่อง memory อย่างไร?</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Iterators and Generators, Performance: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): Generator เก็บสถานะการ iteration และผลิตสมาชิกทีละตัว จึงไม่จำเป็นต้องสร้างรายการ N ตัวพร้อมกัน…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: Generator เก็บสถานะการ iteration และผลิตสมาชิกทีละตัว จึงไม่จำเป็นต้องสร้างรายการ N ตัวพร้อมกัน. ผลรวมจาก generator ยังต้องอ่าน N ตัวและใช้ O(N) time แต่ accumulator ใช้ O…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>Generator เก็บสถานะการ iteration และผลิตสมาชิกทีละตัว จึงไม่จำเป็นต้องสร้างรายการ N ตัวพร้อมกัน. ผลรวมจาก generator ยังต้องอ่าน N ตัวและใช้ O(N) time แต่ accumulator ใช้ O(1) extra memory; ถ้าเรียก list(generator) จะกลับไปใช้ O(N) memory.</p><p>อ้างอิง: <a href="#chapter-1/section/topic-11">Iterators and Generators</a>, <a href="#chapter-1/section/topic-18">Performance</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch01-exercise-07"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-8" class="exercise-item"><h3>ข้อ 8</h3><p>ทำไม <code>except Exception: pass</code> อันตราย?</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Exceptions: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): การกลืน exception ทำให้ผู้เรียกเห็นเหมือนสำเร็จทั้งที่ state ไม่ครบ. จับ exception ที…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: การกลืน exception ทำให้ผู้เรียกเห็นเหมือนสำเร็จทั้งที่ state ไม่ครบ. จับ exception ที่รู้วิธีรับมือ เช่น FileNotFoundError พร้อม path แล้วคืน error/raise…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>การกลืน exception ทำให้ผู้เรียกเห็นเหมือนสำเร็จทั้งที่ state ไม่ครบ. จับ exception ที่รู้วิธีรับมือ เช่น FileNotFoundError พร้อม path แล้วคืน error/raise ต่อ; ทดสอบไฟล์หายต้องไม่รายงาน row_count=0 ว่าเป็นไฟล์ปกติ.</p><p>อ้างอิง: <a href="#chapter-1/section/topic-12">Exceptions</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch01-exercise-08"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-9" class="exercise-item"><h3>ข้อ 9</h3><p>อธิบาย PATH ด้วยคำของตัวเอง</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Linux/Bash: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): PATH เป็นลำดับ directories ที่ shell ใช้ค้น executable เมื่อพิมพ์ชื่อที่ไม่มี slash. ถ้ามี python หลาย…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: PATH เป็นลำดับ directories ที่ shell ใช้ค้น executable เมื่อพิมพ์ชื่อที่ไม่มี slash. ถ้ามี python หลายตัว ตัวแรกที่เจอถูกใช้; ตรวจ <code>command -v python</code> และ `python -c 'import sys;print…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>PATH เป็นลำดับ directories ที่ shell ใช้ค้น executable เมื่อพิมพ์ชื่อที่ไม่มี slash. ถ้ามี python หลายตัว ตัวแรกที่เจอถูกใช้; ตรวจ <code>command -v python</code> และ <code>python -c 'import sys;print(sys.executable)'</code>. การเปลี่ยน current directory ไม่เท่ากับเปลี่ยน PATH.</p><p>อ้างอิง: <a href="#chapter-1/section/topic-14">Linux/Bash</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch01-exercise-09"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-10" class="exercise-item"><h3>ข้อ 10</h3><p>program กับ process ต่างกันอย่างไร?</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Memory Mental Model: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): Program คือชุดคำสั่ง/ไฟล์ ส่วน process คือ instance ที่ OS กำลังรัน มี PID, environment, curr…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: Program คือชุดคำสั่ง/ไฟล์ ส่วน process คือ instance ที่ OS กำลังรัน มี PID, environment, current directory และ address space. รัน script เดียวสองครั้งเป็นสอง processes;…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>Program คือชุดคำสั่ง/ไฟล์ ส่วน process คือ instance ที่ OS กำลังรัน มี PID, environment, current directory และ address space. รัน script เดียวสองครั้งเป็นสอง processes; error จาก relative path อาจเกิดเพราะ current directories ต่างกัน.</p><p>อ้างอิง: <a href="#chapter-1/section/topic-16">Memory Mental Model</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch01-exercise-10"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-11" class="exercise-item"><h3>ข้อ 11</h3><p>เขียน <code>safe_mean(values)</code> ที่ reject empty list</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Functions: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): แปลง values เป็น list หนึ่งครั้ง ตรวจว่าไม่ว่าง แล้ว <code>return sum(values)/len(values)</code>; ถ้า…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: แปลง values เป็น list หนึ่งครั้ง ตรวจว่าไม่ว่าง แล้ว <code>return sum(values)/len(values)</code>; ถ้าว่าง raise ValueError. Expected: [2,4]→3.0, [0]→0.0, []→ValueError; กำหน…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>แปลง values เป็น list หนึ่งครั้ง ตรวจว่าไม่ว่าง แล้ว <code>return sum(values)/len(values)</code>; ถ้าว่าง raise ValueError. Expected: [2,4]→3.0, [0]→0.0, []→ValueError; กำหนดชัดว่าจะรับ generator และ reject nonfinite/nonnumeric อย่างไร.</p><p>อ้างอิง: <a href="#chapter-1/section/topic-9">Functions</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch01-exercise-11"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-12" class="exercise-item"><h3>ข้อ 12</h3><p>เขียน generator ที่ yield เลขคู่ 0..N</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Iterators and Generators: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ใช้ <code>for value in range(0,N+1,2): yield value</code> เมื่อกำหนด inclusive 0..N. Expe…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ใช้ <code>for value in range(0,N+1,2): yield value</code> เมื่อกำหนด inclusive 0..N. Expected N=5→[0,2,4],N=0→[0],N=-1→[] หรือ reject ตาม contract ที่ปร…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ใช้ <code>for value in range(0,N+1,2): yield value</code> เมื่อกำหนด inclusive 0..N. Expected N=5→[0,2,4],N=0→[0],N=-1→[] หรือ reject ตาม contract ที่ประกาศ; ผลเป็น iterator ไม่ใช่ list จนกว่าจะ materialize.</p><p>อ้างอิง: <a href="#chapter-1/section/topic-11">Iterators and Generators</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch01-exercise-12"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-13" class="exercise-item"><h3>ข้อ 13</h3><p>ใช้ <code>pathlib</code> หาไฟล์ <code>.csv</code> ทั้งหมดใต้ directory</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Modules and Packages: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ใช้ <code>sorted(Path(root).rglob('*.csv'))</code> แล้วกรอง is_file เพื่อไม่รวม directory ชื่อ .csv. สร้าง tempor…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ใช้ <code>sorted(Path(root).rglob('*.csv'))</code> แล้วกรอง is_file เพื่อไม่รวม directory ชื่อ .csv. สร้าง temporary directory ที่มี a.csv, nested/b.csv,c.txt แล้วตรวจว่าได้สองไฟล์ตามลำดับ determi…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ใช้ <code>sorted(Path(root).rglob('*.csv'))</code> แล้วกรอง is_file เพื่อไม่รวม directory ชื่อ .csv. สร้าง temporary directory ที่มี a.csv, nested/b.csv,c.txt แล้วตรวจว่าได้สองไฟล์ตามลำดับ deterministic; missing root ต้องมี policy ชัด ไม่รายงานว่า dataset ว่างเงียบ ๆ.</p><p>อ้างอิง: <a href="#chapter-1/section/topic-13">Modules and Packages</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch01-exercise-13"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-14" class="exercise-item"><h3>ข้อ 14</h3><p>เพิ่ม median ลง Dataset Inspector โดยไม่ใช้ pandas</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Performance: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): เรียงค่าตัวเลขเป็น a; n คี่ใช้ a[n//2], n คู่เฉลี่ย a[n//2-1:n//2+1]. [9,1,3…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: เรียงค่าตัวเลขเป็น a; n คี่ใช้ a[n//2], n คู่เฉลี่ย a[n//2-1:n//2+1]. [9,1,3]→3,[1,9]→5; [] ต้อง reject หรือรายงาน missing อย่างชัดเจน. บั…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>เรียงค่าตัวเลขเป็น a; n คี่ใช้ a[n//2], n คู่เฉลี่ย a[n//2-1:n//2+1]. [9,1,3]→3,[1,9]→5; [] ต้อง reject หรือรายงาน missing อย่างชัดเจน. บันทึกจำนวนค่าที่ parse ไม่ได้แยกจากจำนวนค่าที่ใช้คำนวณ.</p><p>อ้างอิง: <a href="#chapter-1/section/topic-18">Performance</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch01-exercise-14"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-15" class="exercise-item"><h3>ข้อ 15</h3><p>เพิ่ม flag <code>--limit</code> เพื่ออ่านเพียง N rows</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Control Flow: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): เพิ่ม argparse argument <code>--limit</code> แบบ int ตรวจว่า ≥0 แล้วหยุดเมื่ออ่าน data rows ครบ N หล…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: เพิ่ม argparse argument <code>--limit</code> แบบ int ตรวจว่า ≥0 แล้วหยุดเมื่ออ่าน data rows ครบ N หลัง header. ไฟล์สามแถวกับ limit=2 ต้องรายงานสองแถว; limit=0 ไม่อ่าน data…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>เพิ่ม argparse argument <code>--limit</code> แบบ int ตรวจว่า ≥0 แล้วหยุดเมื่ออ่าน data rows ครบ N หลัง header. ไฟล์สามแถวกับ limit=2 ต้องรายงานสองแถว; limit=0 ไม่อ่าน data, ไม่มี flag อ่านครบ; อย่า off-by-one โดยนับ header เป็นแถวแรก.</p><p>อ้างอิง: <a href="#chapter-1/section/topic-8">Control Flow</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch01-exercise-15"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-16" class="exercise-item"><h3>ข้อ 16</h3><p>หา bug ใน:</p>
+<pre><code class="language-python">def append_score(score, scores=[]):
+    scores.append(score)
+    return scores
+</code></pre><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Functions, Debugging: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): Bug คือ scores=[] ถูกใช้ซ้ำข้าม calls. เปลี่ยน signature เป็น <code>def append_score(score,scores=None)</code> และสร้าง…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: Bug คือ scores=[] ถูกใช้ซ้ำข้าม calls. เปลี่ยน signature เป็น <code>def append_score(score,scores=None)</code> และสร้าง list ใหม่เมื่อ scores is None. Regression test ต้องเรียกสองครั้งโดยไม่ส่ง scores และตร…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>Bug คือ scores=[] ถูกใช้ซ้ำข้าม calls. เปลี่ยน signature เป็น <code>def append_score(score,scores=None)</code> และสร้าง list ใหม่เมื่อ scores is None. Regression test ต้องเรียกสองครั้งโดยไม่ส่ง scores และตรวจว่า object ไม่ใช่ตัวเดียวกัน พร้อมกรณี caller ส่ง list ที่ตั้งใจให้ mutate.</p><p>อ้างอิง: <a href="#chapter-1/section/topic-9">Functions</a>, <a href="#chapter-1/section/topic-17">Debugging</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch01-exercise-16"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-17" class="exercise-item"><h3>ข้อ 17</h3><p>ทำไม <code>python -m pip</code> มักปลอดภัยกว่าเรียก <code>pip</code> ตรง ๆ เมื่อมีหลาย interpreter?</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Modules and Packages, Linux/Bash: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): <code>python -m pip</code> ใช้ pip module ของ interpreter ตัวที่เรียก จึงลดความเสี่ยงติดตั้งไปอีก Pyth…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: <code>python -m pip</code> ใช้ pip module ของ interpreter ตัวที่เรียก จึงลดความเสี่ยงติดตั้งไปอีก Python เมื่อ executable pip ใน PATH ต่างกัน. ยืนยันจาก sys.executable และ pip…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p><code>python -m pip</code> ใช้ pip module ของ interpreter ตัวที่เรียก จึงลดความเสี่ยงติดตั้งไปอีก Python เมื่อ executable pip ใน PATH ต่างกัน. ยืนยันจาก sys.executable และ pip --version; ไม่ควรแก้ด้วย sudo pip เพื่อกลบ environment mismatch.</p><p>อ้างอิง: <a href="#chapter-1/section/topic-13">Modules and Packages</a>, <a href="#chapter-1/section/topic-14">Linux/Bash</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch01-exercise-17"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-18" class="exercise-item"><h3>ข้อ 18</h3><p>โปรแกรมอ่านไฟล์ได้ใน terminal A แต่ไม่ได้ใน terminal B — ระบุ state อย่างน้อย 4 อย่างที่ต้องตรวจ</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Debugging: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ตรวจ current directory, resolved absolute path, environment/PATH, interpreter/venv, file permissio…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ตรวจ current directory, resolved absolute path, environment/PATH, interpreter/venv, file permissions/user และตัวแปร config ที่กำหนด data root. บันทึกค่าจากทั้ง terminal A/B แล้…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ตรวจ current directory, resolved absolute path, environment/PATH, interpreter/venv, file permissions/user และตัวแปร config ที่กำหนด data root. บันทึกค่าจากทั้ง terminal A/B แล้วเปลี่ยนทีละปัจจัย; ข้อความ 'ไฟล์หาไม่เจอ' อย่างเดียวไม่พอระบุสาเหตุ.</p><p>อ้างอิง: <a href="#chapter-1/section/topic-17">Debugging</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch01-exercise-18"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-19" class="exercise-item"><h3>ข้อ 19</h3><p>เปลี่ยน inspector ให้ stream CSV แล้วคำนวณ row count/missing count โดยไม่เก็บทุก row</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Production Perspective: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ใช้ csv.DictReader อ่านทีละ row เพิ่ม row_count และ missing_count ต่อ column ด้วยกฎ missing ที่ระบุ. สำหรับ…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ใช้ csv.DictReader อ่านทีละ row เพิ่ม row_count และ missing_count ต่อ column ด้วยกฎ missing ที่ระบุ. สำหรับ <code>a,b\n1,\n,2\n</code> ได้สองแถวและ missing(a)=missing(b)=1; peak state ขึ้นกับจำนวน column…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ใช้ csv.DictReader อ่านทีละ row เพิ่ม row_count และ missing_count ต่อ column ด้วยกฎ missing ที่ระบุ. สำหรับ <code>a,b\n1,\n,2\n</code> ได้สองแถวและ missing(a)=missing(b)=1; peak state ขึ้นกับจำนวน columns ไม่ใช่จำนวน rows. ทดสอบ blank string, whitespace และ malformed row แยกกัน.</p><p>อ้างอิง: <a href="#chapter-1/section/topic-19">Production Perspective</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch01-exercise-19"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-20" class="exercise-item"><h3>ข้อ 20</h3><p>เพิ่ม type inference สำหรับ boolean และเขียน tests ป้องกัน regression</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Production Perspective: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ใช้ token set ที่ประกาศ เช่น true/false หลัง strip/lower; ตัดสิน bool ก่อน numeric เพราะ bool เป็น subcl…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ใช้ token set ที่ประกาศ เช่น true/false หลัง strip/lower; ตัดสิน bool ก่อน numeric เพราะ bool เป็น subclass ของ int ใน Python. ['true','False']→boolean, ['true','1']→mixed ถ้าไม่รองรับ 1/…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ใช้ token set ที่ประกาศ เช่น true/false หลัง strip/lower; ตัดสิน bool ก่อน numeric เพราะ bool เป็น subclass ของ int ใน Python. ['true','False']→boolean, ['true','1']→mixed ถ้าไม่รองรับ 1/0; ทดสอบ missing,unknown token และบันทึกจำนวน invalid แทนบังคับแปลงทุกค่า.</p><p>อ้างอิง: <a href="#chapter-1/section/topic-19">Production Perspective</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch01-exercise-20"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section></div><div id="local-lab-content"><section id="local-lab"><h2>Local lab: Python 3.12 บน CPU</h2><p>รันจาก repository root; ใช้ Python 3.12 แยก environment สำหรับ framework ตาม requirements ของชุดบท</p><pre><code>python3.12 -m venv .venv-course
+source .venv-course/bin/activate
+python -m pip install -r requirements-batch01.txt pytest
+(cd 01-programming &amp;&amp; python -m pytest tests -q -rs)</code></pre><p>ผลที่คาดหวัง: required tests ผ่านและไม่มี required test ถูก skip; GPU/integrations ที่ยังไม่รันต้องระบุแยก Python 3.15 ที่มากับเครื่องอาจใช้กับ framework wheels เหล่านี้ไม่ได้</p><h2>Mini Project — CLI Dataset Inspector</h2>
+<h3>Goal</h3>
+<p>สร้าง CLI ที่มอง CSV ครั้งแรกแล้วตอบได้ว่า:</p>
+<ul>
+<li>มีกี่ rows/columns</li>
+<li>column ชื่ออะไร</li>
+<li>type คร่าว ๆ คืออะไร</li>
+<li>missing เท่าไร</li>
+<li>unique values เท่าไร</li>
+<li>numeric min/max/mean เท่าไร</li>
+</ul>
+<p>Starter implementation อยู่ที่ <a href="../01-programming/mini-project/../src/dataset_inspector.py">../src/dataset_inspector.py</a></p>
+<h3>Run</h3>
+<pre><code class="language-bash">python 01-programming/src/dataset_inspector.py 03-scientific-python/data/sample_students.csv
+</code></pre>
+<h3>Required extension</h3>
+<p>เพิ่มอย่างน้อย 3 อย่าง:</p>
+<ol>
+<li><code>--limit N</code></li>
+<li>median สำหรับ numeric columns</li>
+<li>JSON output file ผ่าน <code>--output report.json</code></li>
+</ol>
+<h3>Engineering constraints</h3>
+<ul>
+<li>standard library only</li>
+<li>ห้าม pandas ใน project นี้</li>
+<li>ใช้ <code>pathlib</code></li>
+<li>error message ต้องอ่านรู้เรื่อง</li>
+<li>core logic ต้องแยกจาก CLI</li>
+<li>tests ต้องครอบคลุม happy path + invalid path + missing values</li>
+</ul>
+<h3>Stretch</h3>
+<p>ทำ streaming version ที่ memory usage ไม่โตตามจำนวน rows ทั้งไฟล์</p><h2>Batch 01 Integration Project — Mini Data Science Engine</h2>
+<p>โปรเจกต์นี้บังคับใช้ความรู้จากทั้ง 3 บทพร้อมกัน</p>
+<pre><code class="language-text">CLI / pathlib                 Chapter 01
+      ↓
+CSV input
+      ↓
+validation + cleaning         Chapters 01 + 03
+      ↓
+manual statistics            Chapter 02
+      ↓
+NumPy verification           Chapters 02 + 03
+      ↓
+Pandas analysis              Chapter 03
+      ↓
+Matplotlib plots             Chapter 03
+      ↓
+JSON + Markdown report
+</code></pre>
+<h3>Goal</h3>
+<p>สร้าง pipeline ที่รับ CSV แล้วสร้าง:</p>
+<ul>
+<li>schema/shape</li>
+<li>missing report</li>
+<li>duplicate count</li>
+<li>numeric statistics</li>
+<li>manual-vs-NumPy consistency checks</li>
+<li>correlation matrix</li>
+<li>histograms</li>
+<li>Markdown report</li>
+<li>JSON machine-readable report</li>
+</ul>
+<h3>Run</h3>
+<p>จาก repository root:</p>
+<pre><code class="language-bash">source .venv/bin/activate
+
+python integration-project/src/mini_data_science_engine.py \
+  03-scientific-python/data/sample_students.csv \
+  --output-dir reports/integration
+</code></pre>
+<p>ผลลัพธ์:</p>
+<pre><code class="language-text">reports/integration/
+├── report.json
+├── report.md
+└── plots/
+    ├── ...
+</code></pre>
+<h3>What you must understand</h3>
+<h4>Chapter 01</h4>
+<ul>
+<li><code>argparse</code></li>
+<li><code>pathlib</code></li>
+<li>functions</li>
+<li>exceptions</li>
+<li>JSON I/O</li>
+<li>testable architecture</li>
+</ul>
+<h4>Chapter 02</h4>
+<ul>
+<li>mean</li>
+<li>population variance</li>
+<li>covariance/correlation interpretation</li>
+<li>floating-point approximate equality</li>
+</ul>
+<h4>Chapter 03</h4>
+<ul>
+<li>ndarray</li>
+<li>vectorized statistics</li>
+<li>DataFrame</li>
+<li>missing values</li>
+<li>correlation</li>
+<li>plotting</li>
+</ul>
+<h3>Required extension before mastery</h3>
+<p>เพิ่มเอง:</p>
+<ol>
+<li>CLI <code>--drop-duplicates</code></li>
+<li>CLI <code>--columns a b c</code></li>
+<li>detect constant columns</li>
+<li>scatter plot สำหรับ numeric pairs ที่เลือก</li>
+<li>Markdown section อธิบาย data-quality warnings</li>
+<li>test dataset ที่มี column numeric ทั้งหมดเป็น missing</li>
+</ol>
+<h3>Rules</h3>
+<ul>
+<li>ห้ามแก้ raw input file</li>
+<li>cleaning rules ต้อง explicit</li>
+<li>report ต้องบอก input ที่ใช้</li>
+<li>observation ต้องแยกจาก causal claim</li>
+<li>ทุก bug fix ต้องเพิ่ม regression test ถ้าเหมาะสม</li>
+</ul>
+<h3>Mastery challenge</h3>
+<p>หา CSV ใหม่ที่ไม่ใช่ sample file แล้วตอบ:</p>
+<ol>
+<li>ข้อมูลมีปัญหาคุณภาพอะไร?</li>
+<li>numeric distributions เป็นอย่างไร?</li>
+<li>มี relationships อะไรที่น่าสำรวจต่อ?</li>
+<li>อะไร “ยังสรุปไม่ได้” จากข้อมูลนี้?</li>
+<li>ถ้าจะใช้สร้าง ML model ต้องเตรียมอะไรต่อ?</li>
+</ol>
+<p>เมื่อทำได้ คุณพร้อมเข้าสู่ Chapter 04 — Data Fundamentals</p></section></div><label class="local-confirm"><input type="checkbox" id="local-lab-confirm"> ฉันรัน local lab และตรวจผลตาม rubric ด้วยตัวเองแล้ว</label><p class="local-note">สถานะนี้เป็นคำยืนยันของผู้เรียน เว็บไม่ได้รันหรือตรวจ Python บนเครื่องแทนคุณ</p></section>
+<section id="mastery-review" class="practice-section"><h2>หลักฐานตามเกณฑ์การเรียนรู้</h2><p>ทุก objective ต้องแสดงหลักฐานอธิบาย ทำนาย คำนวณ อ่าน shape/state debug และประยุกต์ พร้อมกรณีใหม่ ผลรัน source ผู้เรียนจริง และการประเมินซ้ำ เกณฑ์นี้ไม่รับประกันความเข้าใจทุกสถานการณ์ เปิด JavaScript เพื่อดูรายการที่ยังขาดและนำเข้ารายงานผู้ตรวจ</p></section><section class="coverage-section"><h2>แผนที่สิ่งที่เรียน → สิ่งที่ต้องแสดงให้ได้</h2><div id="coverage-table"></div></section><footer><span>ZERO TO ELITE AI ENGINEER · LEARNING STUDIO</span><span>อ่าน · derive · implement · debug · experiment · build</span></footer></div></main><noscript><style>.workbench,.sidebar,.reading-route,.lesson-toc,.mastery-status,#web-checks{display:none}main{margin-left:0}</style>อ่านเนื้อหา HTML ได้ตามปกติ เปิด JavaScript เพื่อใช้ห้องทดลองและตรวจคำตอบ</noscript></body></html>

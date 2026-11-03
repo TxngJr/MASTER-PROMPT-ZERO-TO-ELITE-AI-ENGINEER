@@ -1,0 +1,1293 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="บทเรียน AI Engineer ภาษาไทย พร้อมคณิตศาสตร์ทีละขั้นและห้องทดลองที่คำนวณจริง"><title>SVM: margin, hinge และ kernel เป็นคนละบทบาท · AI Engineer Studio</title><link rel="stylesheet" href="../visual-lab/assets/styles.css"><link rel="stylesheet" href="../visual-lab/assets/course.css"><script defer src="../visual-lab/assets/lessons.js"></script><script defer src="../visual-lab/assets/chapter-meta.js"></script><script defer src="../visual-lab/assets/course-math.js"></script><script defer src="../visual-lab/assets/course-models.js"></script><script defer src="../visual-lab/assets/course-models-v3.js"></script><script defer src="../visual-lab/assets/course-assessment.js"></script><script defer src="../visual-lab/assets/course-mastery.js"></script><script defer src="../visual-lab/assets/course-catalog.js"></script><script defer src="../visual-lab/assets/book-content.js"></script><script defer src="../visual-lab/assets/course-render.js"></script><script defer src="../visual-lab/assets/course-mastery-panel.js"></script><script defer src="../visual-lab/assets/quality-report.js"></script><script defer src="../visual-lab/assets/course-app.js"></script></head>
+<body data-chapter="13" data-root="../"><a class="skip-link" href="#main">ข้ามไปบทเรียน</a>
+<aside class="sidebar" id="sidebar" aria-label="เลือกบทเรียน"><a class="brand" href="../visual-lab/index.html"><span class="brand-mark">ai</span><span>AI ENGINEER<small>LEARN · DERIVE · BUILD</small></span></a><div class="sidebar-intro">อ่านให้เข้าใจ · คำนวณให้เห็น · เขียนให้เป็น</div><label class="search-box"><input id="search" type="search" placeholder="ค้นหาบท / attention" aria-label="ค้นหาบทเรียน"></label><label class="filter-label" for="phase-filter">เส้นทางการเรียน <span id="nav-count"></span></label><select id="phase-filter"><option value="">ทุก Phase</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option></select><nav id="chapter-list" class="chapter-list" aria-label="รายชื่อบท"></nav><div class="course-progress"><div><span>ผ่านโจทย์ในเว็บ</span><strong id="progress-count">0 / 80</strong></div><progress id="course-progress" max="80" value="0" aria-label="บทที่ผ่านโจทย์"></progress><a id="resume-link" href="#chapter-1">อ่านต่อจากเดิม →</a></div></aside>
+<button class="nav-backdrop" id="nav-backdrop" aria-label="ปิดเมนู" hidden></button>
+<main id="main" tabindex="-1"><header class="topbar"><div><button id="nav-toggle" class="icon-button mobile-menu" aria-label="เปิดเมนูบทเรียน" aria-expanded="false" aria-controls="sidebar">☰</button><span id="breadcrumb"></span></div><span class="local-badge"><i></i> คำนวณในเครื่อง · ไม่มี API</span></header><div class="content">
+<div class="chapter-navigation"><label for="chapter-select" class="sr-only">เลือกบทเรียน</label><select id="chapter-select"></select><div class="chapter-arrows"><button id="prev-chapter" class="icon-button" aria-label="บทก่อนหน้า">←</button><button id="next-chapter" class="icon-button" aria-label="บทถัดไป">→</button></div></div>
+<section class="chapter-hero"><div><p id="chapter-kicker" class="eyebrow"></p><h1 id="chapter-title">SVM: margin, hinge และ kernel เป็นคนละบทบาท</h1><p class="english-title" id="chapter-english"></p></div><span class="hero-symbol">f(x) ↗</span></section>
+<p id="quality-status" class="quality-status"></p><div id="mastery-status" class="mastery-status"></div><div class="reading-route"><a href="#chapter-13/section/overview">01 อ่านบทเรียน</a><a href="#workbench">02 ทดลองสมการ</a><a href="#practice">03 ฝึกและตรวจงาน</a><a href="#mastery-review">04 หลักฐานตามเกณฑ์</a></div>
+<nav id="lesson-toc" class="lesson-toc" aria-label="สารบัญบท"></nav>
+<section id="overview" class="course-overview"><span class="eyebrow">THE LEARNING CONTRACT</span><h2>เรียนบทนี้แล้วต้องทำอะไรได้</h2><p id="chapter-purpose"></p><div id="chapter-objectives"></div><div class="learning-hint">ทำนาย → เปลี่ยนทีละค่า → ตรวจตัวเลข → อธิบายเหตุผล → เขียนด้วย Python เอง</div></section>
+<section class="workbench lab-card" id="workbench" aria-label="ห้องทดลองคำนวณจริง"><div class="card-header"><div><span class="live-dot"></span><span class="eyebrow">COMPUTATION WORKBENCH</span></div><span class="simulation-label">ทุกภาพใช้ผลคำนวณชุดเดียวกัน</span></div><div class="lab-top"><label for="lab-select">เลือกกลไกที่ต้องการทดลอง</label><select id="lab-select"></select><p id="lab-question"></p></div><div class="workbench-grid"><div class="viz-column"><div class="compare-labels"><span>เส้นทึบ: ปัจจุบัน</span><span>เส้นประ: baseline ที่ตรึงไว้</span></div><div id="simulation" class="simulation"></div><div id="metrics" class="metrics"></div><div id="baseline-diff" class="baseline-diff"></div><div class="playback"><div class="playback-buttons"><button class="primary-button" id="update-once">อัปเดตหนึ่งก้าว</button><button class="secondary-button" id="train-many">▶ ฝึก 30 ก้าว</button><button class="icon-button" id="back-state" aria-label="ย้อนประวัติ">↶</button><button class="icon-button" id="forward-state" aria-label="ประวัติถัดไป">↷</button></div></div><div class="lab-secondary-actions"><button id="pin-baseline" class="text-button">ตรึง baseline ปัจจุบัน</button><button id="reset-lab" class="text-button">คืนค่าเริ่มต้น</button><button id="download-state" class="text-button">บันทึกผล JSON</button><span id="history-status"></span></div><p id="simulation-note" class="simulation-note"></p><p class="lab-error" id="lab-error" role="alert" hidden></p></div><div class="controls-column"><h3>เปลี่ยนทีละตัว แล้วสังเกตผล</h3><div id="lab-controls"></div><p class="control-note">แก้ weight ด้วยมือจะคำนวณ forward ใหม่; optimizer เปลี่ยน weights เมื่อกดอัปเดตเท่านั้น</p></div></div>
+<div class="trace-section"><div class="trace-toolbar"><h3>เดินสมการทีละ operation</h3><div><button id="trace-prev" class="icon-button" aria-label="operation ก่อนหน้า">←</button><button id="play-trace" class="secondary-button" aria-pressed="false">▶ เล่น flow</button><button id="trace-next" class="icon-button" aria-label="operation ถัดไป">→</button><span id="stage-counter"></span></div></div><label class="motion-control"><input id="reduce-motion" type="checkbox"> ลดภาพเคลื่อนไหว (หยุดการเล่นที่ค้างอยู่)</label><div id="operation-steps" class="operation-steps"></div><div id="flow-diagram" class="flow-diagram"></div><div id="active-operation" class="active-operation" aria-live="polite"></div><p class="control-note">ตัวเลขบนภาพปัดเศษเพื่อให้อ่านง่าย; บันทึก JSON เพื่อดูค่าที่ใช้คำนวณเต็ม precision</p><details open><summary>ตารางค่าระหว่างทาง — ตรวจด้วยมือได้</summary><div id="result-table"></div></details><div id="tensor-tables" class="tensor-tables"></div><details id="surface-details"><summary>ดู loss surface และเส้นทางของ w₁,b (ตรึง controls อื่น)</summary><div id="surface-chart"></div><p>surface คำนวณ objective ปัจจุบันโดยตรึง degree, penalty, ข้อมูล และ weights อื่น เส้นทางแสดงเฉพาะ snapshots ที่ค่าเหล่านี้ตรงกัน; นอกช่วง w=[−1,5], b=[−2,4] ให้ตรวจค่าจริงใน history</p></details><details><summary>ประวัติการเปลี่ยนค่า</summary><div id="history-table"></div></details></div></section>
+<article id="chapter-article" class="chapter-article"><section id="mechanism-1" class="teaching-section"><span class="section-kicker">CHAPTER 13 · ภาพ → สมการ → โค้ด</span><h2>1. score ต้องอ่านคู่กับ label</h2><h3>โจทย์และเหตุผล</h3><p>จุดที่ y(w·x+b) มากกว่า 1 ไม่มี hinge loss แม้จะอยู่ class ถูกเหมือนจุดที่ยังอยู่ใน margin ค่า 0/1 accuracy จึงไม่แสดง geometry ของ margin ครบ</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Define margin.</p><p>margin เชิงเรขาคณิตของจุดคือ y(wᵀx+b)/‖w‖; w=(2,0), b=0, x=(1,3), y=1 ได้ 1 หน่วย ไม่ใช่ raw score 2</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>w: weight norm (positive),initial=1; b: bias,initial=0; C: hinge penalty C,initial=1; gamma: RBF gamma,initial=1</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = [-2, -1, 0.4, 1, 2]; ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</li><li>J=½w²+CΣmax(0,1−yz); margin=2/|w| = 1.9; margin 幾何ใช้ score ±1; C ถ่วง violations ส่วน gamma ของ RBF เป็นอีกกลไก ไม่เปลี่ยน linear scores นี้</li><li>finite / normalized / bounded = 1.9; เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="svm-norm-ของ-w-ก-บ-geometric">เปิดการทดลองนี้</a><p class="failure-box">RBF ระยะ²อาจติดลบเล็กน้อยจาก cancellation ให้ clip ≥0; standardize ก่อน และไม่ invert Gram matrix โดยตรงเมื่อจุดซ้ำ; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>margin เชิงเรขาคณิตของจุดคือ y(wᵀx+b)/‖w‖; w=(2,0), b=0, x=(1,3), y=1 ได้ 1 หน่วย ไม่ใช่ raw score 2</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-1-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = [-2, -1, 0.4, 1, 2]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>J=½w²+CΣmax(0,1−yz); margin=2/|w|</code> = 1.9<p>margin 幾何ใช้ score ±1; C ถ่วง violations ส่วน gamma ของ RBF เป็นอีกกลไก ไม่เปลี่ยน linear scores นี้</p></li><li><code>finite / normalized / bounded</code> = 1.9<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-1-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>shape / range</code> = [-2, -1, 0.4, 1, 2]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>J=½w²+CΣmax(0,1−yz); margin=2/|w|</code> = 1.9<p>margin 幾何ใช้ score ±1; C ถ่วง violations ส่วน gamma ของ RBF เป็นอีกกลไก ไม่เปลี่ยน linear scores นี้</p></li><li><code>finite / normalized / bounded</code> = 1.9<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-1-code"><summary>โค้ด</summary><p>margin เชิงเรขาคณิตของจุดคือ y(wᵀx+b)/‖w‖; w=(2,0), b=0, x=(1,3), y=1 ได้ 1 หน่วย ไม่ใช่ raw score 2</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-1-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = [-2, -1, 0.4, 1, 2]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>J=½w²+CΣmax(0,1−yz); margin=2/|w|</code> = 1.9<p>margin 幾何ใช้ score ±1; C ถ่วง violations ส่วน gamma ของ RBF เป็นอีกกลไก ไม่เปลี่ยน linear scores นี้</p></li><li><code>finite / normalized / bounded</code> = 1.9<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-1"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-2" class="teaching-section"><span class="section-kicker">CHAPTER 13 · ภาพ → สมการ → โค้ด</span><h2>2. soft margin ถ่วงสองความต้องการ</h2><h3>โจทย์และเหตุผล</h3><p>term ½||w||² ชอบ norm เล็กเพื่อ margin กว้าง ส่วน CΣhinge ลงโทษ violations เพิ่ม C เปลี่ยน trade-off ไม่ใช่รับประกัน test accuracy สูงขึ้น</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Implement the main computation behind hinge loss.</p><p><code>loss=np.maximum(0,1-y*(X@w+b)).mean()</code>; f=[.3,2], y=[1,1] ให้ .35; gradient active mask y*f&lt;1 เท่านั้น จุด kink ต้องระบุนิยาม subgradient</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>w: weight norm (positive),initial=1; b: bias,initial=0; C: hinge penalty C,initial=2; gamma: RBF gamma,initial=1</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = [-2, -1, 0.4, 1, 2]; ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</li><li>J=½w²+CΣmax(0,1−yz); margin=2/|w| = 3.3; margin 幾何ใช้ score ±1; C ถ่วง violations ส่วน gamma ของ RBF เป็นอีกกลไก ไม่เปลี่ยน linear scores นี้</li><li>finite / normalized / bounded = 3.3; เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="svm-c-ถ-วง-hinge-violations">เปิดการทดลองนี้</a><p class="failure-box">RBF ระยะ²อาจติดลบเล็กน้อยจาก cancellation ให้ clip ≥0; standardize ก่อน และไม่ invert Gram matrix โดยตรงเมื่อจุดซ้ำ; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p><code>loss=np.maximum(0,1-y*(X@w+b)).mean()</code>; f=[.3,2], y=[1,1] ให้ .35; gradient active mask y*f&lt;1 เท่านั้น จุด kink ต้องระบุนิยาม subgradient</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-2-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = [-2, -1, 0.4, 1, 2]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>J=½w²+CΣmax(0,1−yz); margin=2/|w|</code> = 3.3<p>margin 幾何ใช้ score ±1; C ถ่วง violations ส่วน gamma ของ RBF เป็นอีกกลไก ไม่เปลี่ยน linear scores นี้</p></li><li><code>finite / normalized / bounded</code> = 3.3<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-2-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>shape / range</code> = [-2, -1, 0.4, 1, 2]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>J=½w²+CΣmax(0,1−yz); margin=2/|w|</code> = 3.3<p>margin 幾何ใช้ score ±1; C ถ่วง violations ส่วน gamma ของ RBF เป็นอีกกลไก ไม่เปลี่ยน linear scores นี้</p></li><li><code>finite / normalized / bounded</code> = 3.3<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-2-code"><summary>โค้ด</summary><p><code>loss=np.maximum(0,1-y*(X@w+b)).mean()</code>; f=[.3,2], y=[1,1] ให้ .35; gradient active mask y*f&lt;1 เท่านั้น จุด kink ต้องระบุนิยาม subgradient</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-2-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = [-2, -1, 0.4, 1, 2]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>J=½w²+CΣmax(0,1−yz); margin=2/|w|</code> = 3.3<p>margin 幾何ใช้ score ±1; C ถ่วง violations ส่วน gamma ของ RBF เป็นอีกกลไก ไม่เปลี่ยน linear scores นี้</p></li><li><code>finite / normalized / bounded</code> = 3.3<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-2"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-3" class="teaching-section"><span class="section-kicker">CHAPTER 13 · ภาพ → สมการ → โค้ด</span><h2>3. kernel เปลี่ยน similarity แทนสร้าง features ใหญ่ตรง ๆ</h2><h3>โจทย์และเหตุผล</h3><p>RBF exp(-γ||x-x′||²) ลดเร็วเมื่อ γ สูง ต้อง scale inputs และแยกการทดลอง gamma ของ kernel ออกจากการขยับ linear hyperplane ในภาพ</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Explain the tradeoff introduced by RBF kernel.</p><p>RBF exp(−γ‖x−z‖²): ระยะ²=4, γ=.5 ได้ exp(−2)=.135335; γ สูงทำให้ locality แคบและเสี่ยงจำ noise ต้องเลือกพร้อม C บน validation</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>w: weight norm (positive),initial=1; b: bias,initial=0; C: hinge penalty C,initial=1; gamma: RBF gamma,initial=0.2</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = [-2, -1, 0.4, 1, 2]; ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</li><li>J=½w²+CΣmax(0,1−yz); margin=2/|w| = 1.9; margin 幾何ใช้ score ±1; C ถ่วง violations ส่วน gamma ของ RBF เป็นอีกกลไก ไม่เปลี่ยน linear scores นี้</li><li>finite / normalized / bounded = 1.9; เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="svm-gamma-ค-ม-rbf-similarity">เปิดการทดลองนี้</a><p class="failure-box">RBF ระยะ²อาจติดลบเล็กน้อยจาก cancellation ให้ clip ≥0; standardize ก่อน และไม่ invert Gram matrix โดยตรงเมื่อจุดซ้ำ; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>RBF exp(−γ‖x−z‖²): ระยะ²=4, γ=.5 ได้ exp(−2)=.135335; γ สูงทำให้ locality แคบและเสี่ยงจำ noise ต้องเลือกพร้อม C บน validation</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-3-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = [-2, -1, 0.4, 1, 2]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>J=½w²+CΣmax(0,1−yz); margin=2/|w|</code> = 1.9<p>margin 幾何ใช้ score ±1; C ถ่วง violations ส่วน gamma ของ RBF เป็นอีกกลไก ไม่เปลี่ยน linear scores นี้</p></li><li><code>finite / normalized / bounded</code> = 1.9<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-3-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>shape / range</code> = [-2, -1, 0.4, 1, 2]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>J=½w²+CΣmax(0,1−yz); margin=2/|w|</code> = 1.9<p>margin 幾何ใช้ score ±1; C ถ่วง violations ส่วน gamma ของ RBF เป็นอีกกลไก ไม่เปลี่ยน linear scores นี้</p></li><li><code>finite / normalized / bounded</code> = 1.9<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-3-code"><summary>โค้ด</summary><p>RBF exp(−γ‖x−z‖²): ระยะ²=4, γ=.5 ได้ exp(−2)=.135335; γ สูงทำให้ locality แคบและเสี่ยงจำ noise ต้องเลือกพร้อม C บน validation</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-3-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = [-2, -1, 0.4, 1, 2]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>J=½w²+CΣmax(0,1−yz); margin=2/|w|</code> = 1.9<p>margin 幾何ใช้ score ±1; C ถ่วง violations ส่วน gamma ของ RBF เป็นอีกกลไก ไม่เปลี่ยน linear scores นี้</p></li><li><code>finite / normalized / bounded</code> = 1.9<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-3"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="reference" class="canonical-section"><h2>เนื้อหาครบทุกหัวข้อ พร้อมแผนที่ objective</h2><nav class="source-toc"><a href="#chapter-13/section/topic-1">1. Why This Matters</a> <a href="#chapter-13/section/topic-2">2. Prerequisites</a> <a href="#chapter-13/section/topic-3">3. Learning Objectives</a> <a href="#chapter-13/section/topic-4">4. Hyperplane</a> <a href="#chapter-13/section/topic-5">5. Distance to Hyperplane</a> <a href="#chapter-13/section/topic-6">6. Margin</a> <a href="#chapter-13/section/topic-7">7. Hard-Margin Objective</a> <a href="#chapter-13/section/topic-8">8. Soft Margin</a> <a href="#chapter-13/section/topic-9">9. Hinge Loss</a> <a href="#chapter-13/section/topic-10">10. Primal Objective</a> <a href="#chapter-13/section/topic-11">11. Subgradient</a> <a href="#chapter-13/section/topic-12">12. Support Vectors</a> <a href="#chapter-13/section/topic-13">13. Why Scaling Matters</a> <a href="#chapter-13/section/topic-14">14. Kernel Trick</a> <a href="#chapter-13/section/topic-15">15. Linear Kernel</a> <a href="#chapter-13/section/topic-16">16. Polynomial Kernel</a> <a href="#chapter-13/section/topic-17">17. RBF Kernel</a> <a href="#chapter-13/section/topic-18">18. LinearSVC vs SVC</a> <a href="#chapter-13/section/topic-19">19. Multiclass</a> <a href="#chapter-13/section/topic-20">20. Probability Estimates</a> <a href="#chapter-13/section/topic-21">21. From Scratch</a> <a href="#chapter-13/section/topic-22">22. scikit-learn</a> <a href="#chapter-13/section/topic-23">23. Complexity</a> <a href="#chapter-13/section/topic-24">24. Failure Cases</a> <a href="#chapter-13/section/topic-25">25. Debugging</a> <a href="#chapter-13/section/topic-26">26. Common Mistakes</a> <a href="#chapter-13/section/topic-27">27. Exercises / Project</a> <a href="#chapter-13/section/topic-28">28. Checklist</a> <a href="#chapter-13/section/topic-29">29. What&#x27;s Next</a> </nav><section id="topic-1" class="source-topic"><span id="source-13-svm-canonical-chapter-13-support-vector-machines-svm" class="legacy-anchor"></span><span id="source-13-svm-canonical-1-why-this-matters" class="legacy-anchor"></span><h3>1. Why This Matters</h3>
+<p>SVM ทำให้ geometry ของ classification ชัดมาก:</p>
+<pre><code class="language-text">data points
+   ↓
+separating hyperplane
+   ↓
+maximize margin
+   ↓
+support vectors define boundary
+</code></pre>
+<p>SVM เชื่อม Linear Algebra, Geometry, Optimization และ Kernel Methods เข้าด้วยกัน</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>1. Why This Matters</h3>
+<p>SVM ทำให้ geometry ของ classification ชัดมาก:</p>
+<pre><code class="language-text">data points
+   ↓
+separating hyperplane
+   ↓
+maximize margin
+   ↓
+support vectors define boundary
+</code></pre>
+<p>SVM เชื่อม Linear Algebra, Geometry, Optimization และ Kernel Methods เข้าด้วยกัน</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-1-equation"><summary>สมการ</summary><h3>1. Why This Matters</h3>
+<p>SVM ทำให้ geometry ของ classification ชัดมาก:</p>
+<pre><code class="language-text">data points
+   ↓
+separating hyperplane
+   ↓
+maximize margin
+   ↓
+support vectors define boundary
+</code></pre>
+<p>SVM เชื่อม Linear Algebra, Geometry, Optimization และ Kernel Methods เข้าด้วยกัน</p></details><details id="help-topic-1-visual"><summary>ภาพและ shape</summary><h3>1. Why This Matters</h3>
+<p>SVM ทำให้ geometry ของ classification ชัดมาก:</p>
+<pre><code class="language-text">data points
+   ↓
+separating hyperplane
+   ↓
+maximize margin
+   ↓
+support vectors define boundary
+</code></pre>
+<p>SVM เชื่อม Linear Algebra, Geometry, Optimization และ Kernel Methods เข้าด้วยกัน</p></details><details id="help-topic-1-code"><summary>โค้ด</summary><h3>1. Why This Matters</h3>
+<p>SVM ทำให้ geometry ของ classification ชัดมาก:</p>
+<pre><code class="language-text">data points
+   ↓
+separating hyperplane
+   ↓
+maximize margin
+   ↓
+support vectors define boundary
+</code></pre>
+<p>SVM เชื่อม Linear Algebra, Geometry, Optimization และ Kernel Methods เข้าด้วยกัน</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-1-result"><summary>ผลการทดลอง</summary><h3>1. Why This Matters</h3>
+<p>SVM ทำให้ geometry ของ classification ชัดมาก:</p>
+<pre><code class="language-text">data points
+   ↓
+separating hyperplane
+   ↓
+maximize margin
+   ↓
+support vectors define boundary
+</code></pre>
+<p>SVM เชื่อม Linear Algebra, Geometry, Optimization และ Kernel Methods เข้าด้วยกัน</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-1"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-2" class="source-topic"><span id="source-13-svm-canonical-2-prerequisites" class="legacy-anchor"></span><h3>2. Prerequisites</h3>
+<ul>
+<li>vectors / dot products</li>
+<li>linear decision boundaries</li>
+<li>optimization / regularization</li>
+<li>classification metrics</li>
+<li>scaling</li>
+<li>train / validation / test</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>2. Prerequisites</h3>
+<ul>
+<li>vectors / dot products</li>
+<li>linear decision boundaries</li>
+<li>optimization / regularization</li>
+<li>classification metrics</li>
+<li>scaling</li>
+<li>train / validation / test</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-2-equation"><summary>สมการ</summary><h3>2. Prerequisites</h3>
+<ul>
+<li>vectors / dot products</li>
+<li>linear decision boundaries</li>
+<li>optimization / regularization</li>
+<li>classification metrics</li>
+<li>scaling</li>
+<li>train / validation / test</li>
+</ul></details><details id="help-topic-2-visual"><summary>ภาพและ shape</summary><h3>2. Prerequisites</h3>
+<ul>
+<li>vectors / dot products</li>
+<li>linear decision boundaries</li>
+<li>optimization / regularization</li>
+<li>classification metrics</li>
+<li>scaling</li>
+<li>train / validation / test</li>
+</ul></details><details id="help-topic-2-code"><summary>โค้ด</summary><h3>2. Prerequisites</h3>
+<ul>
+<li>vectors / dot products</li>
+<li>linear decision boundaries</li>
+<li>optimization / regularization</li>
+<li>classification metrics</li>
+<li>scaling</li>
+<li>train / validation / test</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-2-result"><summary>ผลการทดลอง</summary><h3>2. Prerequisites</h3>
+<ul>
+<li>vectors / dot products</li>
+<li>linear decision boundaries</li>
+<li>optimization / regularization</li>
+<li>classification metrics</li>
+<li>scaling</li>
+<li>train / validation / test</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-2"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-3" class="source-topic"><span id="source-13-svm-canonical-3-learning-objectives" class="legacy-anchor"></span><h3>3. Learning Objectives</h3>
+<p>เมื่อจบบทนี้คุณควร:</p>
+<ul>
+<li>อธิบาย hyperplane และ signed distance</li>
+<li>อธิบาย margin</li>
+<li>derive hard-margin intuition</li>
+<li>อธิบาย soft margin และ slack</li>
+<li>เข้าใจ hinge loss</li>
+<li>implement linear SVM ด้วย subgradient descent</li>
+<li>อธิบาย role ของ C</li>
+<li>อธิบาย support vectors</li>
+<li>เข้าใจ kernel trick</li>
+<li>อธิบาย linear / polynomial / RBF kernels</li>
+<li>tune C และ gamma บน validation/CV</li>
+<li>อธิบาย scaling importance</li>
+<li>compare LinearSVC vs SVC conceptually</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>3. Learning Objectives</h3>
+<p>เมื่อจบบทนี้คุณควร:</p>
+<ul>
+<li>อธิบาย hyperplane และ signed distance</li>
+<li>อธิบาย margin</li>
+<li>derive hard-margin intuition</li>
+<li>อธิบาย soft margin และ slack</li>
+<li>เข้าใจ hinge loss</li>
+<li>implement linear SVM ด้วย subgradient descent</li>
+<li>อธิบาย role ของ C</li>
+<li>อธิบาย support vectors</li>
+<li>เข้าใจ kernel trick</li>
+<li>อธิบาย linear / polynomial / RBF kernels</li>
+<li>tune C และ gamma บน validation/CV</li>
+<li>อธิบาย scaling importance</li>
+<li>compare LinearSVC vs SVC conceptually</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-3-equation"><summary>สมการ</summary><h3>3. Learning Objectives</h3>
+<p>เมื่อจบบทนี้คุณควร:</p>
+<ul>
+<li>อธิบาย hyperplane และ signed distance</li>
+<li>อธิบาย margin</li>
+<li>derive hard-margin intuition</li>
+<li>อธิบาย soft margin และ slack</li>
+<li>เข้าใจ hinge loss</li>
+<li>implement linear SVM ด้วย subgradient descent</li>
+<li>อธิบาย role ของ C</li>
+<li>อธิบาย support vectors</li>
+<li>เข้าใจ kernel trick</li>
+<li>อธิบาย linear / polynomial / RBF kernels</li>
+<li>tune C และ gamma บน validation/CV</li>
+<li>อธิบาย scaling importance</li>
+<li>compare LinearSVC vs SVC conceptually</li>
+</ul></details><details id="help-topic-3-visual"><summary>ภาพและ shape</summary><h3>3. Learning Objectives</h3>
+<p>เมื่อจบบทนี้คุณควร:</p>
+<ul>
+<li>อธิบาย hyperplane และ signed distance</li>
+<li>อธิบาย margin</li>
+<li>derive hard-margin intuition</li>
+<li>อธิบาย soft margin และ slack</li>
+<li>เข้าใจ hinge loss</li>
+<li>implement linear SVM ด้วย subgradient descent</li>
+<li>อธิบาย role ของ C</li>
+<li>อธิบาย support vectors</li>
+<li>เข้าใจ kernel trick</li>
+<li>อธิบาย linear / polynomial / RBF kernels</li>
+<li>tune C และ gamma บน validation/CV</li>
+<li>อธิบาย scaling importance</li>
+<li>compare LinearSVC vs SVC conceptually</li>
+</ul></details><details id="help-topic-3-code"><summary>โค้ด</summary><h3>3. Learning Objectives</h3>
+<p>เมื่อจบบทนี้คุณควร:</p>
+<ul>
+<li>อธิบาย hyperplane และ signed distance</li>
+<li>อธิบาย margin</li>
+<li>derive hard-margin intuition</li>
+<li>อธิบาย soft margin และ slack</li>
+<li>เข้าใจ hinge loss</li>
+<li>implement linear SVM ด้วย subgradient descent</li>
+<li>อธิบาย role ของ C</li>
+<li>อธิบาย support vectors</li>
+<li>เข้าใจ kernel trick</li>
+<li>อธิบาย linear / polynomial / RBF kernels</li>
+<li>tune C และ gamma บน validation/CV</li>
+<li>อธิบาย scaling importance</li>
+<li>compare LinearSVC vs SVC conceptually</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-3-result"><summary>ผลการทดลอง</summary><h3>3. Learning Objectives</h3>
+<p>เมื่อจบบทนี้คุณควร:</p>
+<ul>
+<li>อธิบาย hyperplane และ signed distance</li>
+<li>อธิบาย margin</li>
+<li>derive hard-margin intuition</li>
+<li>อธิบาย soft margin และ slack</li>
+<li>เข้าใจ hinge loss</li>
+<li>implement linear SVM ด้วย subgradient descent</li>
+<li>อธิบาย role ของ C</li>
+<li>อธิบาย support vectors</li>
+<li>เข้าใจ kernel trick</li>
+<li>อธิบาย linear / polynomial / RBF kernels</li>
+<li>tune C และ gamma บน validation/CV</li>
+<li>อธิบาย scaling importance</li>
+<li>compare LinearSVC vs SVC conceptually</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-3"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-4" class="source-topic"><span id="source-13-svm-canonical-4-hyperplane" class="legacy-anchor"></span><h3>4. Hyperplane</h3>
+<p>binary linear classifier:</p>
+<pre><code class="language-text">f(x)=wᵀx+b
+</code></pre>
+<p>prediction:</p>
+<pre><code class="language-text">sign(f(x))
+</code></pre>
+<p>decision boundary:</p>
+<pre><code class="language-text">wᵀx+b=0
+</code></pre>
+<p>vector <code>w</code> ตั้งฉากกับ hyperplane</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>hyperplane คือ {x:wᵀx+b=0}; w=(1,1), b=−2 ให้เส้น x₁+x₂=2 ในสองมิติ จุด (1,1) อยู่บนเส้น</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-4-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>hyperplane คือ {x:wᵀx+b=0}; w=(1,1), b=−2 ให้เส้น x₁+x₂=2 ในสองมิติ จุด (1,1) อยู่บนเส้น</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-4-equation"><summary>สมการ</summary><p>hyperplane คือ {x:wᵀx+b=0}; w=(1,1), b=−2 ให้เส้น x₁+x₂=2 ในสองมิติ จุด (1,1) อยู่บนเส้น</p></details><details id="help-topic-4-visual"><summary>ภาพและ shape</summary><p>hyperplane คือ {x:wᵀx+b=0}; w=(1,1), b=−2 ให้เส้น x₁+x₂=2 ในสองมิติ จุด (1,1) อยู่บนเส้น</p></details><details id="help-topic-4-code"><summary>โค้ด</summary><p>hyperplane คือ {x:wᵀx+b=0}; w=(1,1), b=−2 ให้เส้น x₁+x₂=2 ในสองมิติ จุด (1,1) อยู่บนเส้น</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-4-result"><summary>ผลการทดลอง</summary><p>hyperplane คือ {x:wᵀx+b=0}; w=(1,1), b=−2 ให้เส้น x₁+x₂=2 ในสองมิติ จุด (1,1) อยู่บนเส้น</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-4"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-5" class="source-topic"><span id="source-13-svm-canonical-5-distance-to-hyperplane" class="legacy-anchor"></span><h3>5. Distance to Hyperplane</h3>
+<p>signed distance:</p>
+<pre><code class="language-text">(wᵀx+b) / ||w||
+</code></pre>
+<p>absolute distance:</p>
+<pre><code class="language-text">|wᵀx+b| / ||w||
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>hyperplane คือ {x:wᵀx+b=0}; w=(1,1), b=−2 ให้เส้น x₁+x₂=2 ในสองมิติ จุด (1,1) อยู่บนเส้น</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-5-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>hyperplane คือ {x:wᵀx+b=0}; w=(1,1), b=−2 ให้เส้น x₁+x₂=2 ในสองมิติ จุด (1,1) อยู่บนเส้น</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-5-equation"><summary>สมการ</summary><p>hyperplane คือ {x:wᵀx+b=0}; w=(1,1), b=−2 ให้เส้น x₁+x₂=2 ในสองมิติ จุด (1,1) อยู่บนเส้น</p></details><details id="help-topic-5-visual"><summary>ภาพและ shape</summary><p>hyperplane คือ {x:wᵀx+b=0}; w=(1,1), b=−2 ให้เส้น x₁+x₂=2 ในสองมิติ จุด (1,1) อยู่บนเส้น</p></details><details id="help-topic-5-code"><summary>โค้ด</summary><p>hyperplane คือ {x:wᵀx+b=0}; w=(1,1), b=−2 ให้เส้น x₁+x₂=2 ในสองมิติ จุด (1,1) อยู่บนเส้น</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-5-result"><summary>ผลการทดลอง</summary><p>hyperplane คือ {x:wᵀx+b=0}; w=(1,1), b=−2 ให้เส้น x₁+x₂=2 ในสองมิติ จุด (1,1) อยู่บนเส้น</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-5"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-6" class="source-topic"><span id="source-13-svm-canonical-6-margin" class="legacy-anchor"></span><h3>6. Margin</h3>
+<p>ใช้ labels:</p>
+<pre><code class="language-text">y∈{-1,+1}
+</code></pre>
+<p>constraint สำหรับ separable case:</p>
+<pre><code class="language-text">y_i(wᵀx_i+b) &gt;= 1
+</code></pre>
+<p>support hyperplanes:</p>
+<pre><code class="language-text">wᵀx+b=+1
+wᵀx+b=-1
+</code></pre>
+<p>ระยะระหว่างสองเส้น:</p>
+<pre><code class="language-text">2 / ||w||
+</code></pre>
+<p>maximize margin = minimize <code>||w||</code></p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>margin เชิงเรขาคณิตของจุดคือ y(wᵀx+b)/‖w‖; w=(2,0), b=0, x=(1,3), y=1 ได้ 1 หน่วย ไม่ใช่ raw score 2</p><p>hyperplane ระบุตำแหน่ง boundary ส่วน margin วัดระยะจาก boundary; คูณ w,b ด้วย 2 ไม่เปลี่ยนทั้ง boundary และ geometric margin</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-6-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>margin เชิงเรขาคณิตของจุดคือ y(wᵀx+b)/‖w‖; w=(2,0), b=0, x=(1,3), y=1 ได้ 1 หน่วย ไม่ใช่ raw score 2</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-6-equation"><summary>สมการ</summary><p>margin เชิงเรขาคณิตของจุดคือ y(wᵀx+b)/‖w‖; w=(2,0), b=0, x=(1,3), y=1 ได้ 1 หน่วย ไม่ใช่ raw score 2</p></details><details id="help-topic-6-visual"><summary>ภาพและ shape</summary><p>margin เชิงเรขาคณิตของจุดคือ y(wᵀx+b)/‖w‖; w=(2,0), b=0, x=(1,3), y=1 ได้ 1 หน่วย ไม่ใช่ raw score 2</p></details><details id="help-topic-6-code"><summary>โค้ด</summary><p>margin เชิงเรขาคณิตของจุดคือ y(wᵀx+b)/‖w‖; w=(2,0), b=0, x=(1,3), y=1 ได้ 1 หน่วย ไม่ใช่ raw score 2</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-6-result"><summary>ผลการทดลอง</summary><p>margin เชิงเรขาคณิตของจุดคือ y(wᵀx+b)/‖w‖; w=(2,0), b=0, x=(1,3), y=1 ได้ 1 หน่วย ไม่ใช่ raw score 2</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-6"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-7" class="source-topic"><span id="source-13-svm-canonical-7-hard-margin-objective" class="legacy-anchor"></span><h3>7. Hard-Margin Objective</h3>
+<pre><code class="language-text">min 1/2 ||w||²
+
+subject to
+y_i(wᵀx_i+b) &gt;= 1
+</code></pre>
+<p>ใช้ได้เมื่อข้อมูล separable แบบเหมาะสม</p>
+<p>ในโลกจริงมักมี noise/outliers จึงต้อง soft margin</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-7-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>7. Hard-Margin Objective</h3>
+<pre><code class="language-text">min 1/2 ||w||²
+
+subject to
+y_i(wᵀx_i+b) &gt;= 1
+</code></pre>
+<p>ใช้ได้เมื่อข้อมูล separable แบบเหมาะสม</p>
+<p>ในโลกจริงมักมี noise/outliers จึงต้อง soft margin</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-7-equation"><summary>สมการ</summary><h3>7. Hard-Margin Objective</h3>
+<pre><code class="language-text">min 1/2 ||w||²
+
+subject to
+y_i(wᵀx_i+b) &gt;= 1
+</code></pre>
+<p>ใช้ได้เมื่อข้อมูล separable แบบเหมาะสม</p>
+<p>ในโลกจริงมักมี noise/outliers จึงต้อง soft margin</p></details><details id="help-topic-7-visual"><summary>ภาพและ shape</summary><h3>7. Hard-Margin Objective</h3>
+<pre><code class="language-text">min 1/2 ||w||²
+
+subject to
+y_i(wᵀx_i+b) &gt;= 1
+</code></pre>
+<p>ใช้ได้เมื่อข้อมูล separable แบบเหมาะสม</p>
+<p>ในโลกจริงมักมี noise/outliers จึงต้อง soft margin</p></details><details id="help-topic-7-code"><summary>โค้ด</summary><h3>7. Hard-Margin Objective</h3>
+<pre><code class="language-text">min 1/2 ||w||²
+
+subject to
+y_i(wᵀx_i+b) &gt;= 1
+</code></pre>
+<p>ใช้ได้เมื่อข้อมูล separable แบบเหมาะสม</p>
+<p>ในโลกจริงมักมี noise/outliers จึงต้อง soft margin</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-7-result"><summary>ผลการทดลอง</summary><h3>7. Hard-Margin Objective</h3>
+<pre><code class="language-text">min 1/2 ||w||²
+
+subject to
+y_i(wᵀx_i+b) &gt;= 1
+</code></pre>
+<p>ใช้ได้เมื่อข้อมูล separable แบบเหมาะสม</p>
+<p>ในโลกจริงมักมี noise/outliers จึงต้อง soft margin</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-7"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-8" class="source-topic"><span id="source-13-svm-canonical-8-soft-margin" class="legacy-anchor"></span><h3>8. Soft Margin</h3>
+<p>เพิ่ม slack variables:</p>
+<pre><code class="language-text">ξ_i &gt;= 0
+</code></pre>
+<p>constraint:</p>
+<pre><code class="language-text">y_i(wᵀx_i+b) &gt;= 1-ξ_i
+</code></pre>
+<p>objective:</p>
+<pre><code class="language-text">min 1/2||w||² + C Σ ξ_i
+</code></pre>
+<p>C ใหญ่:
+- penalize violations มาก
+- fit training เข้มขึ้น
+- regularization อ่อนลงใน common SVM formulation</p>
+<p>C เล็ก:
+- ยอม margin violations มากขึ้น
+- regularization แรงขึ้น</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>soft margin ยอม slack ξ≥0 โดยแก้ ½‖w‖²+CΣξ ภายใต้ yf≥1−ξ; จุดผิดไม่ทำให้ปัญหา infeasible เหมือน hard margin</p><p>C สูงเพิ่มต้นทุนของการละเมิด margin จึงอาจตาม outlier มากขึ้น; C ต่ำยอม training errors เพื่อให้ ‖w‖ เล็ก ห้ามสรุปว่า accuracy test เพิ่มเสมอ</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-8-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>soft margin ยอม slack ξ≥0 โดยแก้ ½‖w‖²+CΣξ ภายใต้ yf≥1−ξ; จุดผิดไม่ทำให้ปัญหา infeasible เหมือน hard margin</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-8-equation"><summary>สมการ</summary><p>soft margin ยอม slack ξ≥0 โดยแก้ ½‖w‖²+CΣξ ภายใต้ yf≥1−ξ; จุดผิดไม่ทำให้ปัญหา infeasible เหมือน hard margin</p></details><details id="help-topic-8-visual"><summary>ภาพและ shape</summary><p>soft margin ยอม slack ξ≥0 โดยแก้ ½‖w‖²+CΣξ ภายใต้ yf≥1−ξ; จุดผิดไม่ทำให้ปัญหา infeasible เหมือน hard margin</p></details><details id="help-topic-8-code"><summary>โค้ด</summary><p>soft margin ยอม slack ξ≥0 โดยแก้ ½‖w‖²+CΣξ ภายใต้ yf≥1−ξ; จุดผิดไม่ทำให้ปัญหา infeasible เหมือน hard margin</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-8-result"><summary>ผลการทดลอง</summary><p>soft margin ยอม slack ξ≥0 โดยแก้ ½‖w‖²+CΣξ ภายใต้ yf≥1−ξ; จุดผิดไม่ทำให้ปัญหา infeasible เหมือน hard margin</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-8"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-9" class="source-topic"><span id="source-13-svm-canonical-9-hinge-loss" class="legacy-anchor"></span><h3>9. Hinge Loss</h3>
+<pre><code class="language-text">L_i = max(0, 1-y_i f(x_i))
+</code></pre>
+<p>ถ้า:</p>
+<pre><code class="language-text">y_i f(x_i) &gt;= 1
+</code></pre>
+<p>sample อยู่นอก/บน margin ถูกด้าน → hinge loss 0</p>
+<p>ถ้าอยู่ใน marginหรือผิดด้าน → positive loss</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>hinge ℓ=max(0,1−yf); y=1,f=.3 ได้ .7; f=2 ได้ 0 จึงไม่เพิ่มแรงผลักเมื่อ functional margin ถึง 1</p><p><code>loss=np.maximum(0,1-y*(X@w+b)).mean()</code>; f=[.3,2], y=[1,1] ให้ .35; gradient active mask y*f&lt;1 เท่านั้น จุด kink ต้องระบุนิยาม subgradient</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-9-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>hinge ℓ=max(0,1−yf); y=1,f=.3 ได้ .7; f=2 ได้ 0 จึงไม่เพิ่มแรงผลักเมื่อ functional margin ถึง 1</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-9-equation"><summary>สมการ</summary><p>hinge ℓ=max(0,1−yf); y=1,f=.3 ได้ .7; f=2 ได้ 0 จึงไม่เพิ่มแรงผลักเมื่อ functional margin ถึง 1</p></details><details id="help-topic-9-visual"><summary>ภาพและ shape</summary><p>hinge ℓ=max(0,1−yf); y=1,f=.3 ได้ .7; f=2 ได้ 0 จึงไม่เพิ่มแรงผลักเมื่อ functional margin ถึง 1</p></details><details id="help-topic-9-code"><summary>โค้ด</summary><p>hinge ℓ=max(0,1−yf); y=1,f=.3 ได้ .7; f=2 ได้ 0 จึงไม่เพิ่มแรงผลักเมื่อ functional margin ถึง 1</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-9-result"><summary>ผลการทดลอง</summary><p>hinge ℓ=max(0,1−yf); y=1,f=.3 ได้ .7; f=2 ได้ 0 จึงไม่เพิ่มแรงผลักเมื่อ functional margin ถึง 1</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-9"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-10" class="source-topic"><span id="source-13-svm-canonical-10-primal-objective" class="legacy-anchor"></span><h3>10. Primal Objective</h3>
+<p>educational linear objective:</p>
+<pre><code class="language-text">J(w,b)
+=
+1/2 ||w||²
++
+C/n Σ max(0,1-y_i(wᵀx_i+b))
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p><code>loss=np.maximum(0,1-y*(X@w+b)).mean()</code>; f=[.3,2], y=[1,1] ให้ .35; gradient active mask y*f&lt;1 เท่านั้น จุด kink ต้องระบุนิยาม subgradient</p><p>X→scale→f=Xw+b→active=max(0,1−yf)→objective→subgradient→update; binary predict sign(f); kernel score ΣαᵢyᵢK(xᵢ,x)+b ใช้เฉพาะ SV</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-10-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p><code>loss=np.maximum(0,1-y*(X@w+b)).mean()</code>; f=[.3,2], y=[1,1] ให้ .35; gradient active mask y*f&lt;1 เท่านั้น จุด kink ต้องระบุนิยาม subgradient</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-10-equation"><summary>สมการ</summary><p><code>loss=np.maximum(0,1-y*(X@w+b)).mean()</code>; f=[.3,2], y=[1,1] ให้ .35; gradient active mask y*f&lt;1 เท่านั้น จุด kink ต้องระบุนิยาม subgradient</p></details><details id="help-topic-10-visual"><summary>ภาพและ shape</summary><p><code>loss=np.maximum(0,1-y*(X@w+b)).mean()</code>; f=[.3,2], y=[1,1] ให้ .35; gradient active mask y*f&lt;1 เท่านั้น จุด kink ต้องระบุนิยาม subgradient</p></details><details id="help-topic-10-code"><summary>โค้ด</summary><p><code>loss=np.maximum(0,1-y*(X@w+b)).mean()</code>; f=[.3,2], y=[1,1] ให้ .35; gradient active mask y*f&lt;1 เท่านั้น จุด kink ต้องระบุนิยาม subgradient</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-10-result"><summary>ผลการทดลอง</summary><p><code>loss=np.maximum(0,1-y*(X@w+b)).mean()</code>; f=[.3,2], y=[1,1] ให้ .35; gradient active mask y*f&lt;1 เท่านั้น จุด kink ต้องระบุนิยาม subgradient</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-10"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-11" class="source-topic"><span id="source-13-svm-canonical-11-subgradient" class="legacy-anchor"></span><h3>11. Subgradient</h3>
+<p>สำหรับ sample ที่:</p>
+<pre><code class="language-text">y_i f(x_i) &lt; 1
+</code></pre>
+<p>contribution ต่อ gradient ของ hinge term:</p>
+<pre><code class="language-text">-w.r.t. w: -y_i x_i
+-w.r.t. b: -y_i
+</code></pre>
+<p>ถ้า margin satisfied:</p>
+<pre><code class="language-text">0
+</code></pre>
+<p>รวม regularization gradient:</p>
+<pre><code class="language-text">∇w = w + C/n Σ_active (-y_i x_i)
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>ตรวจ [1,1] ด้วย assert_allclose; พลิก y ตัวแรกแล้ว margin เป็น −1; rescale w,b ด้วยค่าบวก margin ต้องเท่าเดิม และ w=0 ต้อง raise ValueError</p><p><code>loss=np.maximum(0,1-y*(X@w+b)).mean()</code>; f=[.3,2], y=[1,1] ให้ .35; gradient active mask y*f&lt;1 เท่านั้น จุด kink ต้องระบุนิยาม subgradient</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-11-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>ตรวจ [1,1] ด้วย assert_allclose; พลิก y ตัวแรกแล้ว margin เป็น −1; rescale w,b ด้วยค่าบวก margin ต้องเท่าเดิม และ w=0 ต้อง raise ValueError</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-11-equation"><summary>สมการ</summary><p>ตรวจ [1,1] ด้วย assert_allclose; พลิก y ตัวแรกแล้ว margin เป็น −1; rescale w,b ด้วยค่าบวก margin ต้องเท่าเดิม และ w=0 ต้อง raise ValueError</p></details><details id="help-topic-11-visual"><summary>ภาพและ shape</summary><p>ตรวจ [1,1] ด้วย assert_allclose; พลิก y ตัวแรกแล้ว margin เป็น −1; rescale w,b ด้วยค่าบวก margin ต้องเท่าเดิม และ w=0 ต้อง raise ValueError</p></details><details id="help-topic-11-code"><summary>โค้ด</summary><p>ตรวจ [1,1] ด้วย assert_allclose; พลิก y ตัวแรกแล้ว margin เป็น −1; rescale w,b ด้วยค่าบวก margin ต้องเท่าเดิม และ w=0 ต้อง raise ValueError</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-11-result"><summary>ผลการทดลอง</summary><p>ตรวจ [1,1] ด้วย assert_allclose; พลิก y ตัวแรกแล้ว margin เป็น −1; rescale w,b ด้วยค่าบวก margin ต้องเท่าเดิม และ w=0 ต้อง raise ValueError</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-11"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-12" class="source-topic"><span id="source-13-svm-canonical-12-support-vectors" class="legacy-anchor"></span><h3>12. Support Vectors</h3>
+<p>support vectors คือ points ที่กำหนด margin/boundary</p>
+<p>ใน kernel SVM final decision function พึ่ง subset ของ training points ผ่าน dual coefficients</p>
+<p>points ไกล boundary จำนวนมากไม่มีผลโดยตรงต่อ optimum แบบเดียวกับ support vectors</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-12-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>12. Support Vectors</h3>
+<p>support vectors คือ points ที่กำหนด margin/boundary</p>
+<p>ใน kernel SVM final decision function พึ่ง subset ของ training points ผ่าน dual coefficients</p>
+<p>points ไกล boundary จำนวนมากไม่มีผลโดยตรงต่อ optimum แบบเดียวกับ support vectors</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-12-equation"><summary>สมการ</summary><h3>12. Support Vectors</h3>
+<p>support vectors คือ points ที่กำหนด margin/boundary</p>
+<p>ใน kernel SVM final decision function พึ่ง subset ของ training points ผ่าน dual coefficients</p>
+<p>points ไกล boundary จำนวนมากไม่มีผลโดยตรงต่อ optimum แบบเดียวกับ support vectors</p></details><details id="help-topic-12-visual"><summary>ภาพและ shape</summary><h3>12. Support Vectors</h3>
+<p>support vectors คือ points ที่กำหนด margin/boundary</p>
+<p>ใน kernel SVM final decision function พึ่ง subset ของ training points ผ่าน dual coefficients</p>
+<p>points ไกล boundary จำนวนมากไม่มีผลโดยตรงต่อ optimum แบบเดียวกับ support vectors</p></details><details id="help-topic-12-code"><summary>โค้ด</summary><h3>12. Support Vectors</h3>
+<p>support vectors คือ points ที่กำหนด margin/boundary</p>
+<p>ใน kernel SVM final decision function พึ่ง subset ของ training points ผ่าน dual coefficients</p>
+<p>points ไกล boundary จำนวนมากไม่มีผลโดยตรงต่อ optimum แบบเดียวกับ support vectors</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-12-result"><summary>ผลการทดลอง</summary><h3>12. Support Vectors</h3>
+<p>support vectors คือ points ที่กำหนด margin/boundary</p>
+<p>ใน kernel SVM final decision function พึ่ง subset ของ training points ผ่าน dual coefficients</p>
+<p>points ไกล boundary จำนวนมากไม่มีผลโดยตรงต่อ optimum แบบเดียวกับ support vectors</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-12"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-13" class="source-topic"><span id="source-13-svm-canonical-13-why-scaling-matters" class="legacy-anchor"></span><h3>13. Why Scaling Matters</h3>
+<p>SVM ใช้ dot products / distances ใน feature space</p>
+<p>ถ้า feature scales ต่างกันมาก:
+- geometry ถูก feature scale ใหญ่ dominate
+- C/gamma tuning แปลก
+- optimization แย่ลง</p>
+<p>ดังนั้น:</p>
+<pre><code class="language-text">StandardScaler → SVM
+</code></pre>
+<p>ควรอยู่ใน Pipeline เพื่อป้องกัน leakage</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>สร้าง make_circles seed=7 แบ่ง train/val ก่อน StandardScaler เปรียบเทียบ linear SVC กับ RBF C=1,γ=.1/1; บันทึก margin violations, balanced accuracy และ #SV ผลต้องวัดจาก run ไม่แต่งคะแนน</p><p>เลือก scaler,C,γ จาก train/validation หรือ inner CV เท่านั้น; test เปิดหลัง freeze; กลุ่มผู้ป่วย/เวลาเดียวกันต้องไม่ข้าม split</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-13-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>สร้าง make_circles seed=7 แบ่ง train/val ก่อน StandardScaler เปรียบเทียบ linear SVC กับ RBF C=1,γ=.1/1; บันทึก margin violations, balanced accuracy และ #SV ผลต้องวัดจาก run ไม่แต่งคะแนน</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-13-equation"><summary>สมการ</summary><p>สร้าง make_circles seed=7 แบ่ง train/val ก่อน StandardScaler เปรียบเทียบ linear SVC กับ RBF C=1,γ=.1/1; บันทึก margin violations, balanced accuracy และ #SV ผลต้องวัดจาก run ไม่แต่งคะแนน</p></details><details id="help-topic-13-visual"><summary>ภาพและ shape</summary><p>สร้าง make_circles seed=7 แบ่ง train/val ก่อน StandardScaler เปรียบเทียบ linear SVC กับ RBF C=1,γ=.1/1; บันทึก margin violations, balanced accuracy และ #SV ผลต้องวัดจาก run ไม่แต่งคะแนน</p></details><details id="help-topic-13-code"><summary>โค้ด</summary><p>สร้าง make_circles seed=7 แบ่ง train/val ก่อน StandardScaler เปรียบเทียบ linear SVC กับ RBF C=1,γ=.1/1; บันทึก margin violations, balanced accuracy และ #SV ผลต้องวัดจาก run ไม่แต่งคะแนน</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-13-result"><summary>ผลการทดลอง</summary><p>สร้าง make_circles seed=7 แบ่ง train/val ก่อน StandardScaler เปรียบเทียบ linear SVC กับ RBF C=1,γ=.1/1; บันทึก margin violations, balanced accuracy และ #SV ผลต้องวัดจาก run ไม่แต่งคะแนน</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-13"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-14" class="source-topic"><span id="source-13-svm-canonical-14-kernel-trick" class="legacy-anchor"></span><h3>14. Kernel Trick</h3>
+<p>linear model ใน transformed feature space:</p>
+<pre><code class="language-text">φ(x)
+</code></pre>
+<p>แต่แทนคำนวณ <code>φ(x)ᵀφ(z)</code> ตรง ๆ ใช้:</p>
+<pre><code class="language-text">K(x,z)
+</code></pre>
+<p>ถ้า kernel สอดคล้องกับ inner product ใน feature space ที่เหมาะสม เราสามารถสร้าง nonlinear boundary โดยไม่ explicit feature expansion</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>kernel trick แทน inner product ด้วย K แต่ Gram matrix ยังขนาด n×n; n=100000 แบบ float64 ใช้ 80 GB เฉพาะ matrix จึงอาจต้อง LinearSVC/approximation</p><p>เปรียบเทียบ linear/RBF บน circles โดยคง split,scale,C; รายงาน val balanced accuracy,#SV,เวลา พร้อม seed หลายค่า; ยอมรับผลไม่ดีขึ้นหากมีหลักฐาน</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-14-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>kernel trick แทน inner product ด้วย K แต่ Gram matrix ยังขนาด n×n; n=100000 แบบ float64 ใช้ 80 GB เฉพาะ matrix จึงอาจต้อง LinearSVC/approximation</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-14-equation"><summary>สมการ</summary><p>kernel trick แทน inner product ด้วย K แต่ Gram matrix ยังขนาด n×n; n=100000 แบบ float64 ใช้ 80 GB เฉพาะ matrix จึงอาจต้อง LinearSVC/approximation</p></details><details id="help-topic-14-visual"><summary>ภาพและ shape</summary><p>kernel trick แทน inner product ด้วย K แต่ Gram matrix ยังขนาด n×n; n=100000 แบบ float64 ใช้ 80 GB เฉพาะ matrix จึงอาจต้อง LinearSVC/approximation</p></details><details id="help-topic-14-code"><summary>โค้ด</summary><p>kernel trick แทน inner product ด้วย K แต่ Gram matrix ยังขนาด n×n; n=100000 แบบ float64 ใช้ 80 GB เฉพาะ matrix จึงอาจต้อง LinearSVC/approximation</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-14-result"><summary>ผลการทดลอง</summary><p>kernel trick แทน inner product ด้วย K แต่ Gram matrix ยังขนาด n×n; n=100000 แบบ float64 ใช้ 80 GB เฉพาะ matrix จึงอาจต้อง LinearSVC/approximation</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-14"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-15" class="source-topic"><span id="source-13-svm-canonical-15-linear-kernel" class="legacy-anchor"></span><h3>15. Linear Kernel</h3>
+<pre><code class="language-text">K(x,z)=xᵀz
+</code></pre>
+<p>เหมาะเมื่อ boundary approximately linear หรือ feature dimension สูง</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>RBF exp(−γ‖x−z‖²): ระยะ²=4, γ=.5 ได้ exp(−2)=.135335; γ สูงทำให้ locality แคบและเสี่ยงจำ noise ต้องเลือกพร้อม C บน validation</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-15-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>RBF exp(−γ‖x−z‖²): ระยะ²=4, γ=.5 ได้ exp(−2)=.135335; γ สูงทำให้ locality แคบและเสี่ยงจำ noise ต้องเลือกพร้อม C บน validation</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-15-equation"><summary>สมการ</summary><p>RBF exp(−γ‖x−z‖²): ระยะ²=4, γ=.5 ได้ exp(−2)=.135335; γ สูงทำให้ locality แคบและเสี่ยงจำ noise ต้องเลือกพร้อม C บน validation</p></details><details id="help-topic-15-visual"><summary>ภาพและ shape</summary><p>RBF exp(−γ‖x−z‖²): ระยะ²=4, γ=.5 ได้ exp(−2)=.135335; γ สูงทำให้ locality แคบและเสี่ยงจำ noise ต้องเลือกพร้อม C บน validation</p></details><details id="help-topic-15-code"><summary>โค้ด</summary><p>RBF exp(−γ‖x−z‖²): ระยะ²=4, γ=.5 ได้ exp(−2)=.135335; γ สูงทำให้ locality แคบและเสี่ยงจำ noise ต้องเลือกพร้อม C บน validation</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-15-result"><summary>ผลการทดลอง</summary><p>RBF exp(−γ‖x−z‖²): ระยะ²=4, γ=.5 ได้ exp(−2)=.135335; γ สูงทำให้ locality แคบและเสี่ยงจำ noise ต้องเลือกพร้อม C บน validation</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-15"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-16" class="source-topic"><span id="source-13-svm-canonical-16-polynomial-kernel" class="legacy-anchor"></span><h3>16. Polynomial Kernel</h3>
+<pre><code class="language-text">K(x,z)=(γxᵀz+r)^d
+</code></pre>
+<p>สร้าง interaction nonlinear ตาม degree</p>
+<p>degree สูงอาจ overfit และ scale sensitive</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>RBF exp(−γ‖x−z‖²): ระยะ²=4, γ=.5 ได้ exp(−2)=.135335; γ สูงทำให้ locality แคบและเสี่ยงจำ noise ต้องเลือกพร้อม C บน validation</p><p>RBF ระยะ²อาจติดลบเล็กน้อยจาก cancellation ให้ clip ≥0; standardize ก่อน และไม่ invert Gram matrix โดยตรงเมื่อจุดซ้ำ</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-16-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>RBF exp(−γ‖x−z‖²): ระยะ²=4, γ=.5 ได้ exp(−2)=.135335; γ สูงทำให้ locality แคบและเสี่ยงจำ noise ต้องเลือกพร้อม C บน validation</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-16-equation"><summary>สมการ</summary><p>RBF exp(−γ‖x−z‖²): ระยะ²=4, γ=.5 ได้ exp(−2)=.135335; γ สูงทำให้ locality แคบและเสี่ยงจำ noise ต้องเลือกพร้อม C บน validation</p></details><details id="help-topic-16-visual"><summary>ภาพและ shape</summary><p>RBF exp(−γ‖x−z‖²): ระยะ²=4, γ=.5 ได้ exp(−2)=.135335; γ สูงทำให้ locality แคบและเสี่ยงจำ noise ต้องเลือกพร้อม C บน validation</p></details><details id="help-topic-16-code"><summary>โค้ด</summary><p>RBF exp(−γ‖x−z‖²): ระยะ²=4, γ=.5 ได้ exp(−2)=.135335; γ สูงทำให้ locality แคบและเสี่ยงจำ noise ต้องเลือกพร้อม C บน validation</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-16-result"><summary>ผลการทดลอง</summary><p>RBF exp(−γ‖x−z‖²): ระยะ²=4, γ=.5 ได้ exp(−2)=.135335; γ สูงทำให้ locality แคบและเสี่ยงจำ noise ต้องเลือกพร้อม C บน validation</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-16"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-17" class="source-topic"><span id="source-13-svm-canonical-17-rbf-kernel" class="legacy-anchor"></span><h3>17. RBF Kernel</h3>
+<pre><code class="language-text">K(x,z)=exp(-γ||x-z||²)
+</code></pre>
+<p>gamma:
+- สูง → influence local มาก → boundary ซับซ้อน
+- ต่ำ → influence กว้าง → smoother boundary</p>
+<p>interaction:</p>
+<pre><code class="language-text">C ↔ gamma
+</code></pre>
+<p>ต้อง tune ร่วมกัน</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>RBF exp(−γ‖x−z‖²): ระยะ²=4, γ=.5 ได้ exp(−2)=.135335; γ สูงทำให้ locality แคบและเสี่ยงจำ noise ต้องเลือกพร้อม C บน validation</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-17-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>RBF exp(−γ‖x−z‖²): ระยะ²=4, γ=.5 ได้ exp(−2)=.135335; γ สูงทำให้ locality แคบและเสี่ยงจำ noise ต้องเลือกพร้อม C บน validation</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-17-equation"><summary>สมการ</summary><p>RBF exp(−γ‖x−z‖²): ระยะ²=4, γ=.5 ได้ exp(−2)=.135335; γ สูงทำให้ locality แคบและเสี่ยงจำ noise ต้องเลือกพร้อม C บน validation</p></details><details id="help-topic-17-visual"><summary>ภาพและ shape</summary><p>RBF exp(−γ‖x−z‖²): ระยะ²=4, γ=.5 ได้ exp(−2)=.135335; γ สูงทำให้ locality แคบและเสี่ยงจำ noise ต้องเลือกพร้อม C บน validation</p></details><details id="help-topic-17-code"><summary>โค้ด</summary><p>RBF exp(−γ‖x−z‖²): ระยะ²=4, γ=.5 ได้ exp(−2)=.135335; γ สูงทำให้ locality แคบและเสี่ยงจำ noise ต้องเลือกพร้อม C บน validation</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-17-result"><summary>ผลการทดลอง</summary><p>RBF exp(−γ‖x−z‖²): ระยะ²=4, γ=.5 ได้ exp(−2)=.135335; γ สูงทำให้ locality แคบและเสี่ยงจำ noise ต้องเลือกพร้อม C บน validation</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-17"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-18" class="source-topic"><span id="source-13-svm-canonical-18-linearsvc-vs-svc" class="legacy-anchor"></span><span id="source-13-svm-canonical-linearsvc" class="legacy-anchor"></span><span id="source-13-svm-canonical-svc" class="legacy-anchor"></span><h3>18. LinearSVC vs SVC</h3>
+<h4>LinearSVC</h4>
+<ul>
+<li>linear only</li>
+<li>optimized สำหรับ linear SVM</li>
+<li>scale ได้ดีกว่า kernel SVC บน large/high-dimensional data</li>
+<li>API/solver formulation ต่างจาก SVC(kernel="linear") บางส่วน</li>
+</ul>
+<h4>SVC</h4>
+<ul>
+<li>kernelized</li>
+<li>linear/poly/RBF/custom kernels</li>
+<li>training cost โตเร็วกับ sample count</li>
+</ul><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>วัด <code>perf_counter</code> และ peak memory ตาม n=100,200,400; linear score O(nd), kernel storage O(n²), training solver ขึ้นกับการลู่เข้า จึงไม่อ้าง cubic เป็นเวลาตายตัว</p><p>ใช้ X,y,C,loss reduction เดียวกัน; <code>SVC(kernel='linear')</code> กับ scratch ต้องเทียบ decision scores หลังลู่เข้าและ tolerance ไม่เทียบกับ squared-hinge LinearSVC โดยไม่ปรับ objective</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-18-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>วัด <code>perf_counter</code> และ peak memory ตาม n=100,200,400; linear score O(nd), kernel storage O(n²), training solver ขึ้นกับการลู่เข้า จึงไม่อ้าง cubic เป็นเวลาตายตัว</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-18-equation"><summary>สมการ</summary><p>วัด <code>perf_counter</code> และ peak memory ตาม n=100,200,400; linear score O(nd), kernel storage O(n²), training solver ขึ้นกับการลู่เข้า จึงไม่อ้าง cubic เป็นเวลาตายตัว</p></details><details id="help-topic-18-visual"><summary>ภาพและ shape</summary><p>วัด <code>perf_counter</code> และ peak memory ตาม n=100,200,400; linear score O(nd), kernel storage O(n²), training solver ขึ้นกับการลู่เข้า จึงไม่อ้าง cubic เป็นเวลาตายตัว</p></details><details id="help-topic-18-code"><summary>โค้ด</summary><p>วัด <code>perf_counter</code> และ peak memory ตาม n=100,200,400; linear score O(nd), kernel storage O(n²), training solver ขึ้นกับการลู่เข้า จึงไม่อ้าง cubic เป็นเวลาตายตัว</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-18-result"><summary>ผลการทดลอง</summary><p>วัด <code>perf_counter</code> และ peak memory ตาม n=100,200,400; linear score O(nd), kernel storage O(n²), training solver ขึ้นกับการลู่เข้า จึงไม่อ้าง cubic เป็นเวลาตายตัว</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-18"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-19" class="source-topic"><span id="source-13-svm-canonical-19-multiclass" class="legacy-anchor"></span><h3>19. Multiclass</h3>
+<p>SVM binary โดยธรรมชาติ แต่ libraries ใช้ decomposition strategies เช่น:
+- one-vs-rest
+- one-vs-one</p>
+<p>scikit-learn SVC ใช้ one-vs-one internally</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-19-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>19. Multiclass</h3>
+<p>SVM binary โดยธรรมชาติ แต่ libraries ใช้ decomposition strategies เช่น:
+- one-vs-rest
+- one-vs-one</p>
+<p>scikit-learn SVC ใช้ one-vs-one internally</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-19-equation"><summary>สมการ</summary><h3>19. Multiclass</h3>
+<p>SVM binary โดยธรรมชาติ แต่ libraries ใช้ decomposition strategies เช่น:
+- one-vs-rest
+- one-vs-one</p>
+<p>scikit-learn SVC ใช้ one-vs-one internally</p></details><details id="help-topic-19-visual"><summary>ภาพและ shape</summary><h3>19. Multiclass</h3>
+<p>SVM binary โดยธรรมชาติ แต่ libraries ใช้ decomposition strategies เช่น:
+- one-vs-rest
+- one-vs-one</p>
+<p>scikit-learn SVC ใช้ one-vs-one internally</p></details><details id="help-topic-19-code"><summary>โค้ด</summary><h3>19. Multiclass</h3>
+<p>SVM binary โดยธรรมชาติ แต่ libraries ใช้ decomposition strategies เช่น:
+- one-vs-rest
+- one-vs-one</p>
+<p>scikit-learn SVC ใช้ one-vs-one internally</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-19-result"><summary>ผลการทดลอง</summary><h3>19. Multiclass</h3>
+<p>SVM binary โดยธรรมชาติ แต่ libraries ใช้ decomposition strategies เช่น:
+- one-vs-rest
+- one-vs-one</p>
+<p>scikit-learn SVC ใช้ one-vs-one internally</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-19"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-20" class="source-topic"><span id="source-13-svm-canonical-20-probability-estimates" class="legacy-anchor"></span><h3>20. Probability Estimates</h3>
+<p>SVC <code>probability=True</code> ต้องทำ calibration-like additional fitting และทำให้ fit ช้าลง</p>
+<p>อย่าเปิดเพียงเพราะอยากได้เลข probability โดยไม่รู้ว่าใช้ทำอะไร</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-20-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>20. Probability Estimates</h3>
+<p>SVC <code>probability=True</code> ต้องทำ calibration-like additional fitting และทำให้ fit ช้าลง</p>
+<p>อย่าเปิดเพียงเพราะอยากได้เลข probability โดยไม่รู้ว่าใช้ทำอะไร</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-20-equation"><summary>สมการ</summary><h3>20. Probability Estimates</h3>
+<p>SVC <code>probability=True</code> ต้องทำ calibration-like additional fitting และทำให้ fit ช้าลง</p>
+<p>อย่าเปิดเพียงเพราะอยากได้เลข probability โดยไม่รู้ว่าใช้ทำอะไร</p></details><details id="help-topic-20-visual"><summary>ภาพและ shape</summary><h3>20. Probability Estimates</h3>
+<p>SVC <code>probability=True</code> ต้องทำ calibration-like additional fitting และทำให้ fit ช้าลง</p>
+<p>อย่าเปิดเพียงเพราะอยากได้เลข probability โดยไม่รู้ว่าใช้ทำอะไร</p></details><details id="help-topic-20-code"><summary>โค้ด</summary><h3>20. Probability Estimates</h3>
+<p>SVC <code>probability=True</code> ต้องทำ calibration-like additional fitting และทำให้ fit ช้าลง</p>
+<p>อย่าเปิดเพียงเพราะอยากได้เลข probability โดยไม่รู้ว่าใช้ทำอะไร</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-20-result"><summary>ผลการทดลอง</summary><h3>20. Probability Estimates</h3>
+<p>SVC <code>probability=True</code> ต้องทำ calibration-like additional fitting และทำให้ fit ช้าลง</p>
+<p>อย่าเปิดเพียงเพราะอยากได้เลข probability โดยไม่รู้ว่าใช้ทำอะไร</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-20"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-21" class="source-topic"><span id="source-13-svm-canonical-21-from-scratch" class="legacy-anchor"></span><h3>21. From Scratch</h3>
+<p><a href="../13-svm/src/linear_svm.py">src/linear_svm.py</a></p>
+<p>มี:</p>
+<ul>
+<li>hinge loss</li>
+<li>linear SVM subgradient training</li>
+<li>decision function</li>
+<li>binary prediction</li>
+</ul>
+<p>เป้าหมายคือเข้าใจ primal geometry ไม่ใช่เขียน SMO production solver</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-21-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>21. From Scratch</h3>
+<p><a href="src/linear_svm.py">src/linear_svm.py</a></p>
+<p>มี:</p>
+<ul>
+<li>hinge loss</li>
+<li>linear SVM subgradient training</li>
+<li>decision function</li>
+<li>binary prediction</li>
+</ul>
+<p>เป้าหมายคือเข้าใจ primal geometry ไม่ใช่เขียน SMO production solver</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-21-equation"><summary>สมการ</summary><h3>21. From Scratch</h3>
+<p><a href="src/linear_svm.py">src/linear_svm.py</a></p>
+<p>มี:</p>
+<ul>
+<li>hinge loss</li>
+<li>linear SVM subgradient training</li>
+<li>decision function</li>
+<li>binary prediction</li>
+</ul>
+<p>เป้าหมายคือเข้าใจ primal geometry ไม่ใช่เขียน SMO production solver</p></details><details id="help-topic-21-visual"><summary>ภาพและ shape</summary><h3>21. From Scratch</h3>
+<p><a href="src/linear_svm.py">src/linear_svm.py</a></p>
+<p>มี:</p>
+<ul>
+<li>hinge loss</li>
+<li>linear SVM subgradient training</li>
+<li>decision function</li>
+<li>binary prediction</li>
+</ul>
+<p>เป้าหมายคือเข้าใจ primal geometry ไม่ใช่เขียน SMO production solver</p></details><details id="help-topic-21-code"><summary>โค้ด</summary><h3>21. From Scratch</h3>
+<p><a href="src/linear_svm.py">src/linear_svm.py</a></p>
+<p>มี:</p>
+<ul>
+<li>hinge loss</li>
+<li>linear SVM subgradient training</li>
+<li>decision function</li>
+<li>binary prediction</li>
+</ul>
+<p>เป้าหมายคือเข้าใจ primal geometry ไม่ใช่เขียน SMO production solver</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-21-result"><summary>ผลการทดลอง</summary><h3>21. From Scratch</h3>
+<p><a href="src/linear_svm.py">src/linear_svm.py</a></p>
+<p>มี:</p>
+<ul>
+<li>hinge loss</li>
+<li>linear SVM subgradient training</li>
+<li>decision function</li>
+<li>binary prediction</li>
+</ul>
+<p>เป้าหมายคือเข้าใจ primal geometry ไม่ใช่เขียน SMO production solver</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-21"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-22" class="source-topic"><span id="source-13-svm-canonical-22-scikit-learn" class="legacy-anchor"></span><h3>22. scikit-learn</h3>
+<p>linear:</p>
+<pre><code class="language-python">Pipeline([
+    (&quot;scale&quot;, StandardScaler()),
+    (&quot;model&quot;, LinearSVC(C=1.0))
+])
+</code></pre>
+<p>RBF:</p>
+<pre><code class="language-python">Pipeline([
+    (&quot;scale&quot;, StandardScaler()),
+    (&quot;model&quot;, SVC(C=1.0, gamma=&quot;scale&quot;, kernel=&quot;rbf&quot;))
+])
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>สร้าง make_circles seed=7 แบ่ง train/val ก่อน StandardScaler เปรียบเทียบ linear SVC กับ RBF C=1,γ=.1/1; บันทึก margin violations, balanced accuracy และ #SV ผลต้องวัดจาก run ไม่แต่งคะแนน</p><p>บันทึก seed/split/scaler/C/γ/package/commit; monitor score margin และ class drift; สมมติฐาน “RBF เพิ่ม recall บน nonlinear holdout ≥.05 ที่ latency≤2×” ต้องทดสอบกับ linear baseline</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-22-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>สร้าง make_circles seed=7 แบ่ง train/val ก่อน StandardScaler เปรียบเทียบ linear SVC กับ RBF C=1,γ=.1/1; บันทึก margin violations, balanced accuracy และ #SV ผลต้องวัดจาก run ไม่แต่งคะแนน</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-22-equation"><summary>สมการ</summary><p>สร้าง make_circles seed=7 แบ่ง train/val ก่อน StandardScaler เปรียบเทียบ linear SVC กับ RBF C=1,γ=.1/1; บันทึก margin violations, balanced accuracy และ #SV ผลต้องวัดจาก run ไม่แต่งคะแนน</p></details><details id="help-topic-22-visual"><summary>ภาพและ shape</summary><p>สร้าง make_circles seed=7 แบ่ง train/val ก่อน StandardScaler เปรียบเทียบ linear SVC กับ RBF C=1,γ=.1/1; บันทึก margin violations, balanced accuracy และ #SV ผลต้องวัดจาก run ไม่แต่งคะแนน</p></details><details id="help-topic-22-code"><summary>โค้ด</summary><p>สร้าง make_circles seed=7 แบ่ง train/val ก่อน StandardScaler เปรียบเทียบ linear SVC กับ RBF C=1,γ=.1/1; บันทึก margin violations, balanced accuracy และ #SV ผลต้องวัดจาก run ไม่แต่งคะแนน</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-22-result"><summary>ผลการทดลอง</summary><p>สร้าง make_circles seed=7 แบ่ง train/val ก่อน StandardScaler เปรียบเทียบ linear SVC กับ RBF C=1,γ=.1/1; บันทึก margin violations, balanced accuracy และ #SV ผลต้องวัดจาก run ไม่แต่งคะแนน</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-22"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-23" class="source-topic"><span id="source-13-svm-canonical-23-complexity" class="legacy-anchor"></span><h3>23. Complexity</h3>
+<p>Kernel SVC:
+- memory/time สามารถโตเร็วกับ n_samples
+- prediction cost พึ่งจำนวน support vectors</p>
+<p>LinearSVC:
+- เหมาะ large sparse/high-dimensional problems มากกว่าในหลายกรณี</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-23-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>23. Complexity</h3>
+<p>Kernel SVC:
+- memory/time สามารถโตเร็วกับ n_samples
+- prediction cost พึ่งจำนวน support vectors</p>
+<p>LinearSVC:
+- เหมาะ large sparse/high-dimensional problems มากกว่าในหลายกรณี</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-23-equation"><summary>สมการ</summary><h3>23. Complexity</h3>
+<p>Kernel SVC:
+- memory/time สามารถโตเร็วกับ n_samples
+- prediction cost พึ่งจำนวน support vectors</p>
+<p>LinearSVC:
+- เหมาะ large sparse/high-dimensional problems มากกว่าในหลายกรณี</p></details><details id="help-topic-23-visual"><summary>ภาพและ shape</summary><h3>23. Complexity</h3>
+<p>Kernel SVC:
+- memory/time สามารถโตเร็วกับ n_samples
+- prediction cost พึ่งจำนวน support vectors</p>
+<p>LinearSVC:
+- เหมาะ large sparse/high-dimensional problems มากกว่าในหลายกรณี</p></details><details id="help-topic-23-code"><summary>โค้ด</summary><h3>23. Complexity</h3>
+<p>Kernel SVC:
+- memory/time สามารถโตเร็วกับ n_samples
+- prediction cost พึ่งจำนวน support vectors</p>
+<p>LinearSVC:
+- เหมาะ large sparse/high-dimensional problems มากกว่าในหลายกรณี</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-23-result"><summary>ผลการทดลอง</summary><h3>23. Complexity</h3>
+<p>Kernel SVC:
+- memory/time สามารถโตเร็วกับ n_samples
+- prediction cost พึ่งจำนวน support vectors</p>
+<p>LinearSVC:
+- เหมาะ large sparse/high-dimensional problems มากกว่าในหลายกรณี</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-23"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-24" class="source-topic"><span id="source-13-svm-canonical-24-failure-cases" class="legacy-anchor"></span><h3>24. Failure Cases</h3>
+<ul>
+<li>unscaled features</li>
+<li>huge dataset + kernel SVC</li>
+<li>noisy labels + C สูงมาก</li>
+<li>wrong gamma</li>
+<li>class imbalance</li>
+<li>leakage</li>
+<li>overlapping classes</li>
+<li>probability misuse</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-24-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>24. Failure Cases</h3>
+<ul>
+<li>unscaled features</li>
+<li>huge dataset + kernel SVC</li>
+<li>noisy labels + C สูงมาก</li>
+<li>wrong gamma</li>
+<li>class imbalance</li>
+<li>leakage</li>
+<li>overlapping classes</li>
+<li>probability misuse</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-24-equation"><summary>สมการ</summary><h3>24. Failure Cases</h3>
+<ul>
+<li>unscaled features</li>
+<li>huge dataset + kernel SVC</li>
+<li>noisy labels + C สูงมาก</li>
+<li>wrong gamma</li>
+<li>class imbalance</li>
+<li>leakage</li>
+<li>overlapping classes</li>
+<li>probability misuse</li>
+</ul></details><details id="help-topic-24-visual"><summary>ภาพและ shape</summary><h3>24. Failure Cases</h3>
+<ul>
+<li>unscaled features</li>
+<li>huge dataset + kernel SVC</li>
+<li>noisy labels + C สูงมาก</li>
+<li>wrong gamma</li>
+<li>class imbalance</li>
+<li>leakage</li>
+<li>overlapping classes</li>
+<li>probability misuse</li>
+</ul></details><details id="help-topic-24-code"><summary>โค้ด</summary><h3>24. Failure Cases</h3>
+<ul>
+<li>unscaled features</li>
+<li>huge dataset + kernel SVC</li>
+<li>noisy labels + C สูงมาก</li>
+<li>wrong gamma</li>
+<li>class imbalance</li>
+<li>leakage</li>
+<li>overlapping classes</li>
+<li>probability misuse</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-24-result"><summary>ผลการทดลอง</summary><h3>24. Failure Cases</h3>
+<ul>
+<li>unscaled features</li>
+<li>huge dataset + kernel SVC</li>
+<li>noisy labels + C สูงมาก</li>
+<li>wrong gamma</li>
+<li>class imbalance</li>
+<li>leakage</li>
+<li>overlapping classes</li>
+<li>probability misuse</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-24"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-25" class="source-topic"><span id="source-13-svm-canonical-25-debugging" class="legacy-anchor"></span><h3>25. Debugging</h3>
+<p>ถ้า model ทาย class เดียว:
+- check labels
+- scaling
+- C
+- imbalance</p>
+<p>ถ้า RBF overfit:
+- lower gamma
+- lower C
+- inspect CV</p>
+<p>ถ้า fit ช้ามาก:
+- sample count?
+- kernel?
+- switch LinearSVC / approximate kernels</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-25-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>25. Debugging</h3>
+<p>ถ้า model ทาย class เดียว:
+- check labels
+- scaling
+- C
+- imbalance</p>
+<p>ถ้า RBF overfit:
+- lower gamma
+- lower C
+- inspect CV</p>
+<p>ถ้า fit ช้ามาก:
+- sample count?
+- kernel?
+- switch LinearSVC / approximate kernels</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-25-equation"><summary>สมการ</summary><h3>25. Debugging</h3>
+<p>ถ้า model ทาย class เดียว:
+- check labels
+- scaling
+- C
+- imbalance</p>
+<p>ถ้า RBF overfit:
+- lower gamma
+- lower C
+- inspect CV</p>
+<p>ถ้า fit ช้ามาก:
+- sample count?
+- kernel?
+- switch LinearSVC / approximate kernels</p></details><details id="help-topic-25-visual"><summary>ภาพและ shape</summary><h3>25. Debugging</h3>
+<p>ถ้า model ทาย class เดียว:
+- check labels
+- scaling
+- C
+- imbalance</p>
+<p>ถ้า RBF overfit:
+- lower gamma
+- lower C
+- inspect CV</p>
+<p>ถ้า fit ช้ามาก:
+- sample count?
+- kernel?
+- switch LinearSVC / approximate kernels</p></details><details id="help-topic-25-code"><summary>โค้ด</summary><h3>25. Debugging</h3>
+<p>ถ้า model ทาย class เดียว:
+- check labels
+- scaling
+- C
+- imbalance</p>
+<p>ถ้า RBF overfit:
+- lower gamma
+- lower C
+- inspect CV</p>
+<p>ถ้า fit ช้ามาก:
+- sample count?
+- kernel?
+- switch LinearSVC / approximate kernels</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-25-result"><summary>ผลการทดลอง</summary><h3>25. Debugging</h3>
+<p>ถ้า model ทาย class เดียว:
+- check labels
+- scaling
+- C
+- imbalance</p>
+<p>ถ้า RBF overfit:
+- lower gamma
+- lower C
+- inspect CV</p>
+<p>ถ้า fit ช้ามาก:
+- sample count?
+- kernel?
+- switch LinearSVC / approximate kernels</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-25"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-26" class="source-topic"><span id="source-13-svm-canonical-26-common-mistakes" class="legacy-anchor"></span><h3>26. Common Mistakes</h3>
+<ol>
+<li>ไม่ scale</li>
+<li>C สูง = regularization สูง — ผิดสำหรับ common SVM C interpretation</li>
+<li>tune C/gamma บน test</li>
+<li>kernel SVC กับ dataset ใหญ่มากโดยไม่ benchmark</li>
+<li>probability=True โดยไม่จำเป็น</li>
+<li>support vector = outlier เสมอ</li>
+<li>coefficient = causality</li>
+<li>compare models คนละ split</li>
+<li>ignore imbalance</li>
+<li>kernel trick = free unlimited complexity โดยไม่มี computational cost</li>
+</ol><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-26-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>26. Common Mistakes</h3>
+<ol>
+<li>ไม่ scale</li>
+<li>C สูง = regularization สูง — ผิดสำหรับ common SVM C interpretation</li>
+<li>tune C/gamma บน test</li>
+<li>kernel SVC กับ dataset ใหญ่มากโดยไม่ benchmark</li>
+<li>probability=True โดยไม่จำเป็น</li>
+<li>support vector = outlier เสมอ</li>
+<li>coefficient = causality</li>
+<li>compare models คนละ split</li>
+<li>ignore imbalance</li>
+<li>kernel trick = free unlimited complexity โดยไม่มี computational cost</li>
+</ol><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-26-equation"><summary>สมการ</summary><h3>26. Common Mistakes</h3>
+<ol>
+<li>ไม่ scale</li>
+<li>C สูง = regularization สูง — ผิดสำหรับ common SVM C interpretation</li>
+<li>tune C/gamma บน test</li>
+<li>kernel SVC กับ dataset ใหญ่มากโดยไม่ benchmark</li>
+<li>probability=True โดยไม่จำเป็น</li>
+<li>support vector = outlier เสมอ</li>
+<li>coefficient = causality</li>
+<li>compare models คนละ split</li>
+<li>ignore imbalance</li>
+<li>kernel trick = free unlimited complexity โดยไม่มี computational cost</li>
+</ol></details><details id="help-topic-26-visual"><summary>ภาพและ shape</summary><h3>26. Common Mistakes</h3>
+<ol>
+<li>ไม่ scale</li>
+<li>C สูง = regularization สูง — ผิดสำหรับ common SVM C interpretation</li>
+<li>tune C/gamma บน test</li>
+<li>kernel SVC กับ dataset ใหญ่มากโดยไม่ benchmark</li>
+<li>probability=True โดยไม่จำเป็น</li>
+<li>support vector = outlier เสมอ</li>
+<li>coefficient = causality</li>
+<li>compare models คนละ split</li>
+<li>ignore imbalance</li>
+<li>kernel trick = free unlimited complexity โดยไม่มี computational cost</li>
+</ol></details><details id="help-topic-26-code"><summary>โค้ด</summary><h3>26. Common Mistakes</h3>
+<ol>
+<li>ไม่ scale</li>
+<li>C สูง = regularization สูง — ผิดสำหรับ common SVM C interpretation</li>
+<li>tune C/gamma บน test</li>
+<li>kernel SVC กับ dataset ใหญ่มากโดยไม่ benchmark</li>
+<li>probability=True โดยไม่จำเป็น</li>
+<li>support vector = outlier เสมอ</li>
+<li>coefficient = causality</li>
+<li>compare models คนละ split</li>
+<li>ignore imbalance</li>
+<li>kernel trick = free unlimited complexity โดยไม่มี computational cost</li>
+</ol><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-26-result"><summary>ผลการทดลอง</summary><h3>26. Common Mistakes</h3>
+<ol>
+<li>ไม่ scale</li>
+<li>C สูง = regularization สูง — ผิดสำหรับ common SVM C interpretation</li>
+<li>tune C/gamma บน test</li>
+<li>kernel SVC กับ dataset ใหญ่มากโดยไม่ benchmark</li>
+<li>probability=True โดยไม่จำเป็น</li>
+<li>support vector = outlier เสมอ</li>
+<li>coefficient = causality</li>
+<li>compare models คนละ split</li>
+<li>ignore imbalance</li>
+<li>kernel trick = free unlimited complexity โดยไม่มี computational cost</li>
+</ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-26"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-27" class="source-topic"><span id="source-13-svm-canonical-27-exercises-project" class="legacy-anchor"></span><h3>27. Exercises / Project</h3>
+<ul>
+<li><a href="../13-svm/exercises/README.md">Exercises</a></li>
+<li><a href="../13-svm/solutions/README.md">Solutions</a></li>
+<li><a href="../13-svm/mini-project/README.md">Mini Project</a></li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-27-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>27. Exercises / Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-27-equation"><summary>สมการ</summary><h3>27. Exercises / Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-27-visual"><summary>ภาพและ shape</summary><h3>27. Exercises / Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-27-code"><summary>โค้ด</summary><h3>27. Exercises / Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-27-result"><summary>ผลการทดลอง</summary><h3>27. Exercises / Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-27"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-28" class="source-topic"><span id="source-13-svm-canonical-28-checklist" class="legacy-anchor"></span><h3>28. Checklist</h3>
+<ul>
+<li>[ ] hyperplane</li>
+<li>[ ] margin</li>
+<li>[ ] hard vs soft margin</li>
+<li>[ ] hinge loss</li>
+<li>[ ] C</li>
+<li>[ ] subgradient</li>
+<li>[ ] support vectors</li>
+<li>[ ] kernels</li>
+<li>[ ] RBF gamma</li>
+<li>[ ] scaling</li>
+<li>[ ] LinearSVC vs SVC</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-28-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>28. Checklist</h3>
+<ul>
+<li>[ ] hyperplane</li>
+<li>[ ] margin</li>
+<li>[ ] hard vs soft margin</li>
+<li>[ ] hinge loss</li>
+<li>[ ] C</li>
+<li>[ ] subgradient</li>
+<li>[ ] support vectors</li>
+<li>[ ] kernels</li>
+<li>[ ] RBF gamma</li>
+<li>[ ] scaling</li>
+<li>[ ] LinearSVC vs SVC</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-28-equation"><summary>สมการ</summary><h3>28. Checklist</h3>
+<ul>
+<li>[ ] hyperplane</li>
+<li>[ ] margin</li>
+<li>[ ] hard vs soft margin</li>
+<li>[ ] hinge loss</li>
+<li>[ ] C</li>
+<li>[ ] subgradient</li>
+<li>[ ] support vectors</li>
+<li>[ ] kernels</li>
+<li>[ ] RBF gamma</li>
+<li>[ ] scaling</li>
+<li>[ ] LinearSVC vs SVC</li>
+</ul></details><details id="help-topic-28-visual"><summary>ภาพและ shape</summary><h3>28. Checklist</h3>
+<ul>
+<li>[ ] hyperplane</li>
+<li>[ ] margin</li>
+<li>[ ] hard vs soft margin</li>
+<li>[ ] hinge loss</li>
+<li>[ ] C</li>
+<li>[ ] subgradient</li>
+<li>[ ] support vectors</li>
+<li>[ ] kernels</li>
+<li>[ ] RBF gamma</li>
+<li>[ ] scaling</li>
+<li>[ ] LinearSVC vs SVC</li>
+</ul></details><details id="help-topic-28-code"><summary>โค้ด</summary><h3>28. Checklist</h3>
+<ul>
+<li>[ ] hyperplane</li>
+<li>[ ] margin</li>
+<li>[ ] hard vs soft margin</li>
+<li>[ ] hinge loss</li>
+<li>[ ] C</li>
+<li>[ ] subgradient</li>
+<li>[ ] support vectors</li>
+<li>[ ] kernels</li>
+<li>[ ] RBF gamma</li>
+<li>[ ] scaling</li>
+<li>[ ] LinearSVC vs SVC</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-28-result"><summary>ผลการทดลอง</summary><h3>28. Checklist</h3>
+<ul>
+<li>[ ] hyperplane</li>
+<li>[ ] margin</li>
+<li>[ ] hard vs soft margin</li>
+<li>[ ] hinge loss</li>
+<li>[ ] C</li>
+<li>[ ] subgradient</li>
+<li>[ ] support vectors</li>
+<li>[ ] kernels</li>
+<li>[ ] RBF gamma</li>
+<li>[ ] scaling</li>
+<li>[ ] LinearSVC vs SVC</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-28"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-29" class="source-topic"><span id="source-13-svm-canonical-29-whats-next" class="legacy-anchor"></span><span id="source-13-svm-canonical-13-svm-support-vector-machines" class="legacy-anchor"></span><h3>29. What's Next</h3>
+<p>Chapter 14 เปลี่ยนจาก supervised classification ไปเป็น unsupervised learning: <strong>Clustering</strong></p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-29-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>29. What's Next</h3>
+<p>Chapter 14 เปลี่ยนจาก supervised classification ไปเป็น unsupervised learning: <strong>Clustering</strong></p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-29-equation"><summary>สมการ</summary><h3>29. What's Next</h3>
+<p>Chapter 14 เปลี่ยนจาก supervised classification ไปเป็น unsupervised learning: <strong>Clustering</strong></p></details><details id="help-topic-29-visual"><summary>ภาพและ shape</summary><h3>29. What's Next</h3>
+<p>Chapter 14 เปลี่ยนจาก supervised classification ไปเป็น unsupervised learning: <strong>Clustering</strong></p></details><details id="help-topic-29-code"><summary>โค้ด</summary><h3>29. What's Next</h3>
+<p>Chapter 14 เปลี่ยนจาก supervised classification ไปเป็น unsupervised learning: <strong>Clustering</strong></p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-29-result"><summary>ผลการทดลอง</summary><h3>29. What's Next</h3>
+<p>Chapter 14 เปลี่ยนจาก supervised classification ไปเป็น unsupervised learning: <strong>Clustering</strong></p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-29"> อ่านหัวข้อนี้แล้ว</label></section><details><summary>รายละเอียดเพิ่มเติมและข้อกำหนดของ local lab</summary><h3>13-svm — Support Vector Machines</h3>
+<p><strong>Prerequisites:</strong> Complete Chapters 01–12 foundations; be able to trace array/tensor shapes, separate train/validation/test data, and explain the core objective of the current chapter.</p>
+<p><strong>Mental model:</strong> Treat Support Vector Machines as a pipeline: input representation → central mechanism → objective/state update → observable output. At every boundary, state shape/state, allowed information flow, and the invariant that should remain true.</p>
+<p><strong>Code walkthrough:</strong> Read public API first, then input checks, state/shape transformations, numerical core, returned values and tests. Connect each important code block to the equation or algorithm in the chapter README.</p>
+<p><strong>Visualization / inspection:</strong> Use a tiny case. Inspect intermediate values, distributions, norms, scores, states or trajectories appropriate to Support Vector Machines; do not rely only on the final metric.</p>
+<p><strong>Experiment:</strong> Run a baseline, one controlled parameter change, one edge case and one repeated seeded comparison. Record seed, environment, data version, configuration and metric.</p>
+<p><strong>Limitations:</strong> List at least one assumption, one data-related limitation, one numerical/optimization limitation and one scaling limitation for Support Vector Machines.</p>
+<p><strong>Analysis workflow:</strong> Check inputs → preprocessing → shapes/state → finite numerical values → objective/update → evaluation protocol. The earliest unexpected state is more informative than a downstream metric.</p>
+<p><strong>Performance:</strong> Identify the dominant time and memory terms and measure them on the local learning run before attempting optimization.</p>
+<p><strong>Production perspective:</strong> Define input validation, artifact/configuration versioning, quality and resource measurements, staged release criteria and a way to return to the previous known-good artifact.</p>
+<p><strong>Research perspective:</strong> State a falsifiable hypothesis, baseline, one-factor change, metric, repeated-run plan when stochastic, and how negative results will be recorded.</p>
+<p><strong>Interview questions:</strong>
+1. Explain Support Vector Machines from first principles without naming a library API.
+2. Trace one input through the central mechanism and give the important intermediate shapes/state.
+3. Name the strongest assumption and a case where it fails.
+4. State the dominant compute/memory cost.
+5. Describe how you would validate a new implementation against a trusted baseline.</p>
+<p><strong>Summary / exit condition:</strong> You may move on when you can explain, derive or trace, implement, test, analyze, measure and evaluate Support Vector Machines, and when the chapter mini-project plus twenty total exercises are complete.</p></details></section><section id="objective-evidence" class="canonical-section"><h2>พิสูจน์ความสามารถทีละ objective</h2><p>ทำกรณีใหม่ก่อนเปิด reference แล้วบันทึกงานด้านล่าง ให้ผู้ตรวจใช้ rubric ตรวจคำอธิบาย ผลคำนวณ โค้ด และข้อจำกัด บันทึกเก็บในเบราว์เซอร์เครื่องนี้ กดส่งออกเพื่อสำรองหรือส่งให้ผู้ตรวจ เว็บไม่ได้รันโค้ดหรือตัดสินผลงานแทนผู้ตรวจ</p><button type="button" class="secondary-button" data-export-evidence>ส่งออกหลักฐานบทนี้เป็น JSON</button><p role="status" id="evidence-export-status"></p><details id="ch13-objective-01" class="objective-proof"><summary>อธิบาย hyperplane และ signed distance</summary><p>อธิบาย hyperplane และ signed distance: ใช้กรณีในหัวข้อ Hyperplane, Distance to Hyperplane เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch13-evidence-01"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch13-evidence-01-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch13-evidence-01-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch13-evidence-01-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch13-evidence-01-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch13-evidence-01-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch13-evidence-01-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch13-evidence-01-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch13-evidence-01-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>hyperplane คือ {x:wᵀx+b=0}; w=(1,1), b=−2 ให้เส้น x₁+x₂=2 ในสองมิติ จุด (1,1) อยู่บนเส้น</p><h3>4. Hyperplane</h3>
+<p>binary linear classifier:</p>
+<pre><code class="language-text">f(x)=wᵀx+b
+</code></pre>
+<p>prediction:</p>
+<pre><code class="language-text">sign(f(x))
+</code></pre>
+<p>decision boundary:</p>
+<pre><code class="language-text">wᵀx+b=0
+</code></pre>
+<p>vector <code>w</code> ตั้งฉากกับ hyperplane</p>
+<h3>5. Distance to Hyperplane</h3>
+<p>signed distance:</p>
+<pre><code class="language-text">(wᵀx+b) / ||w||
+</code></pre>
+<p>absolute distance:</p>
+<pre><code class="language-text">|wᵀx+b| / ||w||
+</code></pre></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch13-objective-02" class="objective-proof"><summary>อธิบาย margin</summary><p>อธิบาย margin: ใช้กรณีในหัวข้อ Margin เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch13-evidence-02"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch13-evidence-02-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch13-evidence-02-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch13-evidence-02-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch13-evidence-02-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch13-evidence-02-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch13-evidence-02-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch13-evidence-02-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch13-evidence-02-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>margin เชิงเรขาคณิตของจุดคือ y(wᵀx+b)/‖w‖; w=(2,0), b=0, x=(1,3), y=1 ได้ 1 หน่วย ไม่ใช่ raw score 2</p><h3>6. Margin</h3>
+<p>ใช้ labels:</p>
+<pre><code class="language-text">y∈{-1,+1}
+</code></pre>
+<p>constraint สำหรับ separable case:</p>
+<pre><code class="language-text">y_i(wᵀx_i+b) &gt;= 1
+</code></pre>
+<p>support hyperplanes:</p>
+<pre><code class="language-text">wᵀx+b=+1
+wᵀx+b=-1
+</code></pre>
+<p>ระยะระหว่างสองเส้น:</p>
+<pre><code class="language-text">2 / ||w||
+</code></pre>
+<p>maximize margin = minimize <code>||w||</code></p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch13-objective-03" class="objective-proof"><summary>derive hard-margin intuition</summary><p>derive hard-margin intuition: ใช้กรณีในหัวข้อ Hard-Margin Objective เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch13-evidence-03"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch13-evidence-03-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch13-evidence-03-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch13-evidence-03-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch13-evidence-03-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch13-evidence-03-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch13-evidence-03-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch13-evidence-03-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch13-evidence-03-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>7. Hard-Margin Objective</h3>
+<pre><code class="language-text">min 1/2 ||w||²
+
+subject to
+y_i(wᵀx_i+b) &gt;= 1
+</code></pre>
+<p>ใช้ได้เมื่อข้อมูล separable แบบเหมาะสม</p>
+<p>ในโลกจริงมักมี noise/outliers จึงต้อง soft margin</p><h3>7. Hard-Margin Objective</h3>
+<pre><code class="language-text">min 1/2 ||w||²
+
+subject to
+y_i(wᵀx_i+b) &gt;= 1
+</code></pre>
+<p>ใช้ได้เมื่อข้อมูล separable แบบเหมาะสม</p>
+<p>ในโลกจริงมักมี noise/outliers จึงต้อง soft margin</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch13-objective-04" class="objective-proof"><summary>อธิบาย soft margin และ slack</summary><p>อธิบาย soft margin และ slack: ใช้กรณีในหัวข้อ Soft Margin เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch13-evidence-04"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch13-evidence-04-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch13-evidence-04-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch13-evidence-04-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch13-evidence-04-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch13-evidence-04-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch13-evidence-04-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch13-evidence-04-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch13-evidence-04-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>soft margin ยอม slack ξ≥0 โดยแก้ ½‖w‖²+CΣξ ภายใต้ yf≥1−ξ; จุดผิดไม่ทำให้ปัญหา infeasible เหมือน hard margin</p><h3>8. Soft Margin</h3>
+<p>เพิ่ม slack variables:</p>
+<pre><code class="language-text">ξ_i &gt;= 0
+</code></pre>
+<p>constraint:</p>
+<pre><code class="language-text">y_i(wᵀx_i+b) &gt;= 1-ξ_i
+</code></pre>
+<p>objective:</p>
+<pre><code class="language-text">min 1/2||w||² + C Σ ξ_i
+</code></pre>
+<p>C ใหญ่:
+- penalize violations มาก
+- fit training เข้มขึ้น
+- regularization อ่อนลงใน common SVM formulation</p>
+<p>C เล็ก:
+- ยอม margin violations มากขึ้น
+- regularization แรงขึ้น</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch13-objective-05" class="objective-proof"><summary>เข้าใจ hinge loss</summary><p>เข้าใจ hinge loss: ใช้กรณีในหัวข้อ Hinge Loss เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch13-evidence-05"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch13-evidence-05-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch13-evidence-05-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch13-evidence-05-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch13-evidence-05-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch13-evidence-05-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch13-evidence-05-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch13-evidence-05-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch13-evidence-05-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>hinge ℓ=max(0,1−yf); y=1,f=.3 ได้ .7; f=2 ได้ 0 จึงไม่เพิ่มแรงผลักเมื่อ functional margin ถึง 1</p><h3>9. Hinge Loss</h3>
+<pre><code class="language-text">L_i = max(0, 1-y_i f(x_i))
+</code></pre>
+<p>ถ้า:</p>
+<pre><code class="language-text">y_i f(x_i) &gt;= 1
+</code></pre>
+<p>sample อยู่นอก/บน margin ถูกด้าน → hinge loss 0</p>
+<p>ถ้าอยู่ใน marginหรือผิดด้าน → positive loss</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch13-objective-06" class="objective-proof"><summary>implement linear SVM ด้วย subgradient descent</summary><p>implement linear SVM ด้วย subgradient descent: ใช้กรณีในหัวข้อ Primal Objective, Subgradient เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch13-evidence-06"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch13-evidence-06-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch13-evidence-06-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch13-evidence-06-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch13-evidence-06-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch13-evidence-06-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch13-evidence-06-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch13-evidence-06-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch13-evidence-06-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>ตรวจ [1,1] ด้วย assert_allclose; พลิก y ตัวแรกแล้ว margin เป็น −1; rescale w,b ด้วยค่าบวก margin ต้องเท่าเดิม และ w=0 ต้อง raise ValueError</p><h3>10. Primal Objective</h3>
+<p>educational linear objective:</p>
+<pre><code class="language-text">J(w,b)
+=
+1/2 ||w||²
++
+C/n Σ max(0,1-y_i(wᵀx_i+b))
+</code></pre>
+<h3>11. Subgradient</h3>
+<p>สำหรับ sample ที่:</p>
+<pre><code class="language-text">y_i f(x_i) &lt; 1
+</code></pre>
+<p>contribution ต่อ gradient ของ hinge term:</p>
+<pre><code class="language-text">-w.r.t. w: -y_i x_i
+-w.r.t. b: -y_i
+</code></pre>
+<p>ถ้า margin satisfied:</p>
+<pre><code class="language-text">0
+</code></pre>
+<p>รวม regularization gradient:</p>
+<pre><code class="language-text">∇w = w + C/n Σ_active (-y_i x_i)
+</code></pre></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch13-objective-07" class="objective-proof"><summary>อธิบาย role ของ C</summary><p>อธิบาย role ของ C: ใช้กรณีในหัวข้อ Soft Margin เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch13-evidence-07"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch13-evidence-07-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch13-evidence-07-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch13-evidence-07-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch13-evidence-07-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch13-evidence-07-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch13-evidence-07-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch13-evidence-07-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch13-evidence-07-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>soft margin ยอม slack ξ≥0 โดยแก้ ½‖w‖²+CΣξ ภายใต้ yf≥1−ξ; จุดผิดไม่ทำให้ปัญหา infeasible เหมือน hard margin</p><h3>8. Soft Margin</h3>
+<p>เพิ่ม slack variables:</p>
+<pre><code class="language-text">ξ_i &gt;= 0
+</code></pre>
+<p>constraint:</p>
+<pre><code class="language-text">y_i(wᵀx_i+b) &gt;= 1-ξ_i
+</code></pre>
+<p>objective:</p>
+<pre><code class="language-text">min 1/2||w||² + C Σ ξ_i
+</code></pre>
+<p>C ใหญ่:
+- penalize violations มาก
+- fit training เข้มขึ้น
+- regularization อ่อนลงใน common SVM formulation</p>
+<p>C เล็ก:
+- ยอม margin violations มากขึ้น
+- regularization แรงขึ้น</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch13-objective-08" class="objective-proof"><summary>อธิบาย support vectors</summary><p>อธิบาย support vectors: ใช้กรณีในหัวข้อ Support Vectors เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch13-evidence-08"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch13-evidence-08-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch13-evidence-08-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch13-evidence-08-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch13-evidence-08-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch13-evidence-08-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch13-evidence-08-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch13-evidence-08-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch13-evidence-08-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>12. Support Vectors</h3>
+<p>support vectors คือ points ที่กำหนด margin/boundary</p>
+<p>ใน kernel SVM final decision function พึ่ง subset ของ training points ผ่าน dual coefficients</p>
+<p>points ไกล boundary จำนวนมากไม่มีผลโดยตรงต่อ optimum แบบเดียวกับ support vectors</p><h3>12. Support Vectors</h3>
+<p>support vectors คือ points ที่กำหนด margin/boundary</p>
+<p>ใน kernel SVM final decision function พึ่ง subset ของ training points ผ่าน dual coefficients</p>
+<p>points ไกล boundary จำนวนมากไม่มีผลโดยตรงต่อ optimum แบบเดียวกับ support vectors</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch13-objective-09" class="objective-proof"><summary>เข้าใจ kernel trick</summary><p>เข้าใจ kernel trick: ใช้กรณีในหัวข้อ Kernel Trick เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch13-evidence-09"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch13-evidence-09-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch13-evidence-09-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch13-evidence-09-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch13-evidence-09-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch13-evidence-09-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch13-evidence-09-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch13-evidence-09-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch13-evidence-09-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>kernel trick แทน inner product ด้วย K แต่ Gram matrix ยังขนาด n×n; n=100000 แบบ float64 ใช้ 80 GB เฉพาะ matrix จึงอาจต้อง LinearSVC/approximation</p><h3>14. Kernel Trick</h3>
+<p>linear model ใน transformed feature space:</p>
+<pre><code class="language-text">φ(x)
+</code></pre>
+<p>แต่แทนคำนวณ <code>φ(x)ᵀφ(z)</code> ตรง ๆ ใช้:</p>
+<pre><code class="language-text">K(x,z)
+</code></pre>
+<p>ถ้า kernel สอดคล้องกับ inner product ใน feature space ที่เหมาะสม เราสามารถสร้าง nonlinear boundary โดยไม่ explicit feature expansion</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch13-objective-10" class="objective-proof"><summary>อธิบาย linear / polynomial / RBF kernels</summary><p>อธิบาย linear / polynomial / RBF kernels: ใช้กรณีในหัวข้อ Linear Kernel, Polynomial Kernel, RBF Kernel เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch13-evidence-10"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch13-evidence-10-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch13-evidence-10-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch13-evidence-10-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch13-evidence-10-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch13-evidence-10-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch13-evidence-10-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch13-evidence-10-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch13-evidence-10-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>RBF exp(−γ‖x−z‖²): ระยะ²=4, γ=.5 ได้ exp(−2)=.135335; γ สูงทำให้ locality แคบและเสี่ยงจำ noise ต้องเลือกพร้อม C บน validation</p><h3>15. Linear Kernel</h3>
+<pre><code class="language-text">K(x,z)=xᵀz
+</code></pre>
+<p>เหมาะเมื่อ boundary approximately linear หรือ feature dimension สูง</p>
+<h3>16. Polynomial Kernel</h3>
+<pre><code class="language-text">K(x,z)=(γxᵀz+r)^d
+</code></pre>
+<p>สร้าง interaction nonlinear ตาม degree</p>
+<p>degree สูงอาจ overfit และ scale sensitive</p>
+<h3>17. RBF Kernel</h3>
+<pre><code class="language-text">K(x,z)=exp(-γ||x-z||²)
+</code></pre>
+<p>gamma:
+- สูง → influence local มาก → boundary ซับซ้อน
+- ต่ำ → influence กว้าง → smoother boundary</p>
+<p>interaction:</p>
+<pre><code class="language-text">C ↔ gamma
+</code></pre>
+<p>ต้อง tune ร่วมกัน</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch13-objective-11" class="objective-proof"><summary>tune C และ gamma บน validation/CV</summary><p>tune C และ gamma บน validation/CV: ใช้กรณีในหัวข้อ Why Scaling Matters, scikit-learn เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch13-evidence-11"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch13-evidence-11-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch13-evidence-11-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch13-evidence-11-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch13-evidence-11-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch13-evidence-11-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch13-evidence-11-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch13-evidence-11-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch13-evidence-11-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>สร้าง make_circles seed=7 แบ่ง train/val ก่อน StandardScaler เปรียบเทียบ linear SVC กับ RBF C=1,γ=.1/1; บันทึก margin violations, balanced accuracy และ #SV ผลต้องวัดจาก run ไม่แต่งคะแนน</p><h3>13. Why Scaling Matters</h3>
+<p>SVM ใช้ dot products / distances ใน feature space</p>
+<p>ถ้า feature scales ต่างกันมาก:
+- geometry ถูก feature scale ใหญ่ dominate
+- C/gamma tuning แปลก
+- optimization แย่ลง</p>
+<p>ดังนั้น:</p>
+<pre><code class="language-text">StandardScaler → SVM
+</code></pre>
+<p>ควรอยู่ใน Pipeline เพื่อป้องกัน leakage</p>
+<h3>22. scikit-learn</h3>
+<p>linear:</p>
+<pre><code class="language-python">Pipeline([
+    (&quot;scale&quot;, StandardScaler()),
+    (&quot;model&quot;, LinearSVC(C=1.0))
+])
+</code></pre>
+<p>RBF:</p>
+<pre><code class="language-python">Pipeline([
+    (&quot;scale&quot;, StandardScaler()),
+    (&quot;model&quot;, SVC(C=1.0, gamma=&quot;scale&quot;, kernel=&quot;rbf&quot;))
+])
+</code></pre></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch13-objective-12" class="objective-proof"><summary>อธิบาย scaling importance</summary><p>อธิบาย scaling importance: ใช้กรณีในหัวข้อ Why Scaling Matters เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch13-evidence-12"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch13-evidence-12-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch13-evidence-12-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch13-evidence-12-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch13-evidence-12-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch13-evidence-12-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch13-evidence-12-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch13-evidence-12-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch13-evidence-12-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>สร้าง make_circles seed=7 แบ่ง train/val ก่อน StandardScaler เปรียบเทียบ linear SVC กับ RBF C=1,γ=.1/1; บันทึก margin violations, balanced accuracy และ #SV ผลต้องวัดจาก run ไม่แต่งคะแนน</p><h3>13. Why Scaling Matters</h3>
+<p>SVM ใช้ dot products / distances ใน feature space</p>
+<p>ถ้า feature scales ต่างกันมาก:
+- geometry ถูก feature scale ใหญ่ dominate
+- C/gamma tuning แปลก
+- optimization แย่ลง</p>
+<p>ดังนั้น:</p>
+<pre><code class="language-text">StandardScaler → SVM
+</code></pre>
+<p>ควรอยู่ใน Pipeline เพื่อป้องกัน leakage</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch13-objective-13" class="objective-proof"><summary>compare LinearSVC vs SVC conceptually</summary><p>compare LinearSVC vs SVC conceptually: ใช้กรณีในหัวข้อ LinearSVC vs SVC เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch13-evidence-13"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch13-evidence-13-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch13-evidence-13-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch13-evidence-13-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch13-evidence-13-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch13-evidence-13-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch13-evidence-13-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch13-evidence-13-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch13-evidence-13-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>วัด <code>perf_counter</code> และ peak memory ตาม n=100,200,400; linear score O(nd), kernel storage O(n²), training solver ขึ้นกับการลู่เข้า จึงไม่อ้าง cubic เป็นเวลาตายตัว</p><h3>18. LinearSVC vs SVC</h3>
+<h4>LinearSVC</h4>
+<ul>
+<li>linear only</li>
+<li>optimized สำหรับ linear SVM</li>
+<li>scale ได้ดีกว่า kernel SVC บน large/high-dimensional data</li>
+<li>API/solver formulation ต่างจาก SVC(kernel="linear") บางส่วน</li>
+</ul>
+<h4>SVC</h4>
+<ul>
+<li>kernelized</li>
+<li>linear/poly/RBF/custom kernels</li>
+<li>training cost โตเร็วกับ sample count</li>
+</ul></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details></section><section id="implementation" class="canonical-section"><h2>Implementation และ tests ที่รันบนเครื่องได้</h2><details><summary>13-svm/src/linear_svm.py</summary><pre><code>&quot;&quot;&quot;Educational binary linear SVM using primal subgradient descent.&quot;&quot;&quot;
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+
+import numpy as np
+
+
+def hinge_loss(
+    y_signed: np.ndarray,
+    scores: np.ndarray,
+) -&gt; float:
+    y = np.asarray(y_signed, dtype=float).reshape(-1)
+    s = np.asarray(scores, dtype=float).reshape(-1)
+    if y.shape != s.shape or y.size == 0:
+        raise ValueError(&quot;inputs must have equal non-empty shape&quot;)
+    if not np.all(np.isin(y, [-1.0, 1.0])):
+        raise ValueError(&quot;labels must be -1/+1&quot;)
+    return float(np.mean(np.maximum(0.0, 1.0 - y * s)))
+
+
+@dataclass
+class LinearSVMFromScratch:
+    C: float = 1.0
+    learning_rate: float = 0.02
+    steps: int = 3_000
+    coef_: np.ndarray | None = None
+    intercept_: float | None = None
+    classes_: np.ndarray | None = None
+    objective_history_: list[float] = field(default_factory=list)
+
+    def fit(self, X: np.ndarray, y: np.ndarray) -&gt; &quot;LinearSVMFromScratch&quot;:
+        X_array = np.asarray(X, dtype=float)
+        y_array = np.asarray(y).reshape(-1)
+
+        if X_array.ndim != 2 or X_array.shape[0] == 0:
+            raise ValueError(&quot;X must be non-empty 2D&quot;)
+        if X_array.shape[0] != y_array.shape[0]:
+            raise ValueError(&quot;X/y sample counts differ&quot;)
+        if not np.all(np.isfinite(X_array)):
+            raise ValueError(&quot;X must be finite&quot;)
+        if self.C &lt;= 0 or self.learning_rate &lt;= 0 or self.steps &lt;= 0:
+            raise ValueError(&quot;C, learning_rate and steps must be positive&quot;)
+
+        classes = np.unique(y_array)
+        if classes.size != 2:
+            raise ValueError(&quot;educational implementation supports binary labels&quot;)
+
+        self.classes_ = classes
+        signed = np.where(y_array == classes[0], -1.0, 1.0)
+
+        n_samples, n_features = X_array.shape
+        w = np.zeros(n_features, dtype=float)
+        b = 0.0
+        self.objective_history_ = []
+
+        for step in range(self.steps):
+            scores = X_array @ w + b
+            margins = signed * scores
+            active = margins &lt; 1.0
+
+            grad_w = w.copy()
+            grad_b = 0.0
+
+            if np.any(active):
+                grad_w -= (
+                    self.C / n_samples
+                ) * (X_array[active].T @ signed[active])
+                grad_b -= (
+                    self.C / n_samples
+                ) * float(np.sum(signed[active]))
+
+            # Mild inverse-time decay stabilizes the simple subgradient solver.
+            eta = self.learning_rate / (1.0 + 0.0005 * step)
+            w -= eta * grad_w
+            b -= eta * grad_b
+
+            hinge = hinge_loss(signed, X_array @ w + b)
+            objective = 0.5 * float(w @ w) + self.C * hinge
+            self.objective_history_.append(objective)
+
+        self.coef_ = w
+        self.intercept_ = b
+        return self
+
+    def decision_function(self, X: np.ndarray) -&gt; np.ndarray:
+        if self.coef_ is None or self.intercept_ is None:
+            raise RuntimeError(&quot;model must be fit before prediction&quot;)
+        X_array = np.asarray(X, dtype=float)
+        if X_array.ndim != 2 or X_array.shape[1] != self.coef_.shape[0]:
+            raise ValueError(&quot;feature shape differs from fitted model&quot;)
+        return X_array @ self.coef_ + self.intercept_
+
+    def predict(self, X: np.ndarray) -&gt; np.ndarray:
+        if self.classes_ is None:
+            raise RuntimeError(&quot;model must be fit before prediction&quot;)
+        signed = np.where(self.decision_function(X) &gt;= 0.0, 1, -1)
+        return np.where(signed == -1, self.classes_[0], self.classes_[1])
+</code></pre></details><details><summary>13-svm/tests/test_linear_svm.py</summary><pre><code>from pathlib import Path
+import importlib.util
+import sys
+
+import numpy as np
+from sklearn.datasets import make_classification
+from sklearn.preprocessing import StandardScaler
+from sklearn.svm import LinearSVC
+
+
+MODULE_PATH = Path(__file__).parents[1] / &quot;src&quot; / &quot;linear_svm.py&quot;
+SPEC = importlib.util.spec_from_file_location(&quot;linear_svm_course&quot;, MODULE_PATH)
+assert SPEC and SPEC.loader
+mod = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = mod
+SPEC.loader.exec_module(mod)
+
+
+def test_hinge_loss_zero_for_large_correct_margin() -&gt; None:
+    y = np.array([-1, 1])
+    scores = np.array([-2.0, 3.0])
+    assert mod.hinge_loss(y, scores) == 0.0
+
+
+def test_linear_svm_learns_separable_problem() -&gt; None:
+    rng = np.random.default_rng(5)
+    X0 = rng.normal(loc=-2.0, scale=0.5, size=(100, 2))
+    X1 = rng.normal(loc=2.0, scale=0.5, size=(100, 2))
+    X = np.vstack([X0, X1])
+    y = np.array([0] * 100 + [1] * 100)
+
+    Xs = StandardScaler().fit_transform(X)
+    model = mod.LinearSVMFromScratch(
+        C=2.0,
+        learning_rate=0.03,
+        steps=2500,
+    ).fit(Xs, y)
+
+    assert np.mean(model.predict(Xs) == y) &gt; 0.98
+    assert model.objective_history_[-1] &lt; model.objective_history_[0]
+
+
+def test_from_scratch_agrees_with_linear_svc_on_clear_data() -&gt; None:
+    X, y = make_classification(
+        n_samples=350,
+        n_features=5,
+        n_informative=4,
+        n_redundant=0,
+        class_sep=1.5,
+        random_state=19,
+    )
+    Xs = StandardScaler().fit_transform(X)
+
+    ours = mod.LinearSVMFromScratch(
+        C=1.0,
+        learning_rate=0.02,
+        steps=3500,
+    ).fit(Xs, y)
+
+    ref = LinearSVC(C=1.0, max_iter=10000, random_state=19).fit(Xs, y)
+
+    agreement = np.mean(ours.predict(Xs) == ref.predict(Xs))
+    assert agreement &gt; 0.90
+</code></pre></details></section><section id="glossary" class="canonical-section"><h2>อภิธานศัพท์ — คำไทย ความหมาย และข้อควรตรวจ</h2><dl><dt>tensor</dt><dd>เทนเซอร์: ชุดตัวเลขที่มีแกน เช่น scalar ไม่มีแกน, vector หนึ่งแกน, matrix สองแกน; shape บอกขนาดแต่ละแกน ไม่บอกความหมายของแกนจนกว่าจะระบุ</dd><dt>shape</dt><dd>รูปทรงข้อมูล: (B,T,d) หมายถึง batch × เวลา/ตำแหน่ง × features; ใช้ชื่อแกนกำกับเสมอ การ transpose เปลี่ยนแกนแต่ไม่ใช่แค่เปลี่ยนชื่อ</dd><dt>batch</dt><dd>กลุ่มตัวอย่างที่คำนวณร่วมกันหนึ่งครั้ง; B คือจำนวนตัวอย่าง ไม่ใช่จำนวน features หรือจำนวน optimizer updates</dd><dt>weight w / θ</dt><dd>น้ำหนักหรือพารามิเตอร์ที่โมเดลใช้คำนวณ; แก้ด้วยมือทำ forward ใหม่ ส่วน optimizer ต้องรับ gradient แล้วกด update จึงแก้ state</dd><dt>bias b</dt><dd>ค่าคงที่ที่บวกกับผลเชิงเส้น; regression scalar bias เพิ่ม Δ ทำให้ prediction ทุกจุดเพิ่ม Δ เท่ากัน</dd><dt>prediction ŷ</dt><dd>ค่าที่โมเดลทำนายจาก input และพารามิเตอร์ปัจจุบัน; เครื่องหมายหมวกแยกจาก target y ที่มาจากข้อมูล</dd><dt>residual e</dt><dd>ความคลาดเคลื่อน ในเว็บนี้นิยาม prediction − target; บางตำราใช้เครื่องหมายกลับกัน จึงต้องตรวจนิยามก่อนเทียบสูตร gradient</dd><dt>MSE</dt><dd>mean squared error = ผลรวม residual กำลังสองหารจำนวนรายการที่ระบุ; มีหน่วยเป็น target ยกกำลังสอง และการใช้ sum แทน mean เปลี่ยน scale gradient</dd><dt>loss L / objective J</dt><dd>จำนวนที่ optimizer ต้องการลด; objective อาจรวม data loss และ regularization จึงต้องดูองค์ประกอบและ reduction ให้ตรง implementation</dd><dt>gradient ∇ / ∂</dt><dd>เวกเตอร์ของ partial derivatives บอกอัตราเปลี่ยน loss ต่อพารามิเตอร์แต่ละตัว; ∂ ใช้เมื่อเปลี่ยนตัวหนึ่งโดยตรึงตัวอื่น</dd><dt>chain rule</dt><dd>กฎลูกโซ่: คูณอนุพันธ์ตามเส้นทาง และบวก contribution จากทุกเส้นทางที่มารวมกัน ใช้ย้อนจาก loss ถึง weights</dd><dt>learning rate η</dt><dd>ขนาดตัวคูณ gradient ใน update θnew=θ−ηg; η≥0, ศูนย์หมายถึงไม่มีการขยับพารามิเตอร์ ก้าวใหญ่เกินอาจ diverge</dd><dt>regularization λ</dt><dd>ตัวคูณค่าลงโทษ ต้อง λ≥0 ตามนิยามการลงโทษ; Ridge λΣw² เพิ่ม gradient 2λw โดยบท Regression นี้ไม่ลงโทษ bias</dd><dt>baseline</dt><dd>สถานะอ้างอิงที่ตรึงไว้สำหรับเทียบ; ต้องเก็บ snapshot ไม่อ้าง object ปัจจุบันที่แก้ตามไปด้วย</dd><dt>invariant</dt><dd>คุณสมบัติที่กลไกต้องรักษา เช่น probability รวม1, shape สอดคล้อง, queue ไม่เกิน capacity; ใช้ tests ตรวจได้มากกว่าดูภาพสวย</dd><dt>optimizer state</dt><dd>ความจำของอัลกอริทึม เช่น velocity, moments และ completed updates; คืนเฉพาะ weights ยังไม่เท่ากับเริ่มการฝึกใหม่ทั้งหมด</dd><dt>finite difference</dt><dd>ประมาณ derivative ด้วย [f(x+h)−f(x−h)]/(2h); h&gt;0, ใช้ smooth point และลองหลาย h เพื่อแยก truncation error จาก roundoff</dd><dt>softmax</dt><dd>แปลง logits เป็นความน่าจะเป็นตามแกนที่กำหนด; ลบ max ก่อน exp เพื่อความเสถียร และ fully masked row ต้องมีนโยบายชัดเจน</dd><dt>logit</dt><dd>คะแนนก่อน sigmoid/softmax ไม่ใช่ probability; อาจเป็นจำนวนจริงติดลบหรือเกิน1ได้ จึงห้ามส่งให้ loss ที่คาด probability โดยไม่แปลง</dd><dt>temperature τ / T</dt><dd>ตัวหาร logits ก่อน softmax; ต้องเป็นบวก ค่าเล็กทำ distribution แหลมขึ้น โดยไม่เท่ากับ retrain weights</dd><dt>mask</dt><dd>ตัวกำหนดตำแหน่งที่อ่านหรือคิด loss ได้; causal mask ปิดอนาคต, padding mask ปิดข้อมูลเติม, loss mask เลือก target แต่ละอย่างคนละหน้าที่</dd><dt>Q / K / V</dt><dd>query ใช้ค้นข้อมูล, key ใช้จับคู่ query, value เป็นข้อมูลที่ถูกถัวเฉลี่ย; เป็น learned projections ของ representation ไม่ใช่ป้ายความหมายตายตัว</dd><dt>head</dt><dd>ส่วนของ feature representation ที่ทำ attention แยกกัน แล้ว concat/project กลับ; ต้องตรวจ d_model หารจำนวน heads ลงตัว</dd><dt>ε-neighborhood</dt><dd>เพื่อนบ้านทั้งหมดที่มีระยะไม่เกิน ε รวมจุดตัวเองใน DBSCAN นี้; ε มีหน่วยเดียวกับพิกัด ไม่ใช่จำนวน k ที่ใช้โหวต</dd><dt>core / border / noise</dt><dd>DBSCAN core มีเพื่อนบ้านรวมตัวเองถึง min_samples; border อยู่ใกล้ core แต่เพื่อนบ้านไม่ถึง; noise ไม่ถูกเชื่อมกับ core cluster ใด</dd><dt>bootstrap</dt><dd>สุ่ม observations แบบ replacement ขนาดเท่าเดิมซ้ำหลายครั้งแล้วคำนวณ statistic ใหม่; seed ทำให้ตรวจซ้ำได้ แต่ไม่แก้สมมติฐาน IID ที่ผิด</dd><dt>confidence interval</dt><dd>ช่วงที่สร้างด้วย procedure ที่มี coverage ตามสมมติฐาน; ช่วงหนึ่งที่ได้แล้วไม่ใช่ posterior probability ของ parameter และ sample เล็กยังไม่แน่นอนมาก</dd><dt>validation / test</dt><dd>validation ใช้เลือกโมเดล/ค่าตั้ง ส่วน test ใช้ประเมินหลัง freeze การตัดสินใจ; fit preprocessing/tokenizer จาก test เป็น leakage</dd><dt>leakage</dt><dd>ข้อมูลที่ควรยังไม่รู้ไหลเข้า training/การเลือกโมเดล เช่น future feature หรือเอกสารซ้ำข้าม split ทำให้ metric ดูดีเกินการใช้งานจริง</dd><dt>queue / capacity</dt><dd>queue คือรายการรอ, capacity การให้บริการรวม = workers × service rate ตามแบบจำลอง; เพิ่ม timeout ไม่เพิ่มกำลังประมวลผล</dd><dt>state transition</dt><dd>การเปลี่ยนสถานะเมื่อเกิดเหตุการณ์ที่อนุญาต เช่น queued→active→done; ต้องระบุ guard, side effect และเหตุผลเมื่อ transition ถูกปฏิเสธ</dd><dt>latency / throughput</dt><dd>latency คือเวลาต่อคำขอ, throughput คือปริมาณงานต่อหน่วยเวลา; batching อาจเพิ่ม throughput แต่เพิ่มเวลารอ จึงต้องวัดทั้งคู่</dd><dt>idempotency</dt><dd>ทำคำขอ business operation เดิมซ้ำแล้ว side effect เกิดครั้งเดียวตาม key และ transaction protocol; ไม่ได้รับประกันจากการใช้ UUID ใหม่ทุก attempt</dd><dt>local lab</dt><dd>โปรแกรม Python และ tests ที่ผู้เรียนรันบนเครื่อง; เว็บเก็บเพียงคำยืนยันของผู้เรียน การผ่าน tests ของโค้ดต้นแบบไม่ใช่ผลตรวจโค้ดผู้เรียน</dd></dl></section></article>
+<section id="practice" class="practice-section"><span class="eyebrow">PRACTICE · DEBUG · BUILD</span><h2>พิสูจน์ด้วยการลงมือทำ</h2><div id="web-checks"></div><div class="retry-actions"><button class="secondary-button" id="retry-checks">เริ่มทำโจทย์ในเว็บใหม่</button><button class="text-button" id="undo-retry" hidden>คืนผลก่อนเริ่มใหม่</button></div><div id="exercise-content"><h2>แบบฝึก 20 ข้อ — เฉลยเฉพาะข้อ</h2><p>ทำคำตอบก่อนเปิด hints; โจทย์ปลายเปิดให้ใช้ตัวอย่างคำตอบและหลักฐานราย objective ตรวจงานจริง</p><section id="exercise-1" class="exercise-item"><h3>ข้อ 1</h3><p>Define margin.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Margin: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): margin เชิงเรขาคณิตของจุดคือ y(wᵀx+b)/‖w…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: margin เชิงเรขาคณิตของจุดคือ y(wᵀx+b)/‖w‖; w=(2,0), b=0, x=(1,3), y=1 ได…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>margin เชิงเรขาคณิตของจุดคือ y(wᵀx+b)/‖w‖; w=(2,0), b=0, x=(1,3), y=1 ได้ 1 หน่วย ไม่ใช่ raw score 2</p><p>อ้างอิง: <a href="#chapter-13/section/topic-6">Margin</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch13-exercise-01"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-2" class="exercise-item"><h3>ข้อ 2</h3><p>Define hyperplane with a small example.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Hyperplane, Distance to Hyperplane: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): hyperplane คือ {x:wᵀx+b=0}; w=(1,1)…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: hyperplane คือ {x:wᵀx+b=0}; w=(1,1), b=−2 ให้เส้น x₁+x₂=2 ในสอง…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>hyperplane คือ {x:wᵀx+b=0}; w=(1,1), b=−2 ให้เส้น x₁+x₂=2 ในสองมิติ จุด (1,1) อยู่บนเส้น</p><p>อ้างอิง: <a href="#chapter-13/section/topic-4">Hyperplane</a>, <a href="#chapter-13/section/topic-5">Distance to Hyperplane</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch13-exercise-02"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-3" class="exercise-item"><h3>ข้อ 3</h3><p>Explain hinge loss.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Hinge Loss: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): hinge ℓ=max(0,1−yf); y=1,f=.3 ได้ .7; …</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: hinge ℓ=max(0,1−yf); y=1,f=.3 ได้ .7; f=2 ได้ 0 จึงไม่เพิ่มแรงผลักเม…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>hinge ℓ=max(0,1−yf); y=1,f=.3 ได้ .7; f=2 ได้ 0 จึงไม่เพิ่มแรงผลักเมื่อ functional margin ถึง 1</p><p>อ้างอิง: <a href="#chapter-13/section/topic-9">Hinge Loss</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch13-exercise-03"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-4" class="exercise-item"><h3>ข้อ 4</h3><p>Explain soft margin.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Soft Margin: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): soft margin ยอม slack ξ≥0 โดยแก้ ½‖w‖²+CΣξ…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: soft margin ยอม slack ξ≥0 โดยแก้ ½‖w‖²+CΣξ ภายใต้ yf≥1−ξ; จุดผิดไม่ทำให้ปัญหา…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>soft margin ยอม slack ξ≥0 โดยแก้ ½‖w‖²+CΣξ ภายใต้ yf≥1−ξ; จุดผิดไม่ทำให้ปัญหา infeasible เหมือน hard margin</p><p>อ้างอิง: <a href="#chapter-13/section/topic-8">Soft Margin</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch13-exercise-04"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-5" class="exercise-item"><h3>ข้อ 5</h3><p>Compare margin and hyperplane.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Margin: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): hyperplane ระบุตำแหน่ง boundary ส่วน margin วัดระ…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: hyperplane ระบุตำแหน่ง boundary ส่วน margin วัดระยะจาก boundary; คูณ w,b ด้วย 2 ไม่เปลี่ย…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>hyperplane ระบุตำแหน่ง boundary ส่วน margin วัดระยะจาก boundary; คูณ w,b ด้วย 2 ไม่เปลี่ยนทั้ง boundary และ geometric margin</p><p>อ้างอิง: <a href="#chapter-13/section/topic-6">Margin</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch13-exercise-05"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-6" class="exercise-item"><h3>ข้อ 6</h3><p>Explain how soft margin changes model behavior.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Soft Margin: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): C สูงเพิ่มต้นทุนของการละเมิด margin จึงอาจตาม outlier มา…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: C สูงเพิ่มต้นทุนของการละเมิด margin จึงอาจตาม outlier มากขึ้น; C ต่ำยอม training errors เพื่อให้ ‖w‖ …</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>C สูงเพิ่มต้นทุนของการละเมิด margin จึงอาจตาม outlier มากขึ้น; C ต่ำยอม training errors เพื่อให้ ‖w‖ เล็ก ห้ามสรุปว่า accuracy test เพิ่มเสมอ</p><p>อ้างอิง: <a href="#chapter-13/section/topic-8">Soft Margin</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch13-exercise-06"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-7" class="exercise-item"><h3>ข้อ 7</h3><p>Explain a common limitation involving kernel trick.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Kernel Trick: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): kernel trick แทน inner product ด้วย K แต่ Gram matrix ยังข…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: kernel trick แทน inner product ด้วย K แต่ Gram matrix ยังขนาด n×n; n=100000 แบบ float64 ใช้ 80 GB เฉพาะ …</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>kernel trick แทน inner product ด้วย K แต่ Gram matrix ยังขนาด n×n; n=100000 แบบ float64 ใช้ 80 GB เฉพาะ matrix จึงอาจต้อง LinearSVC/approximation</p><p>อ้างอิง: <a href="#chapter-13/section/topic-14">Kernel Trick</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch13-exercise-07"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-8" class="exercise-item"><h3>ข้อ 8</h3><p>Explain the tradeoff introduced by RBF kernel.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Linear Kernel, Polynomial Kernel, RBF Kernel: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): RBF exp(−γ‖x−z‖²): ระยะ²=4, γ=.5 ได้ exp(−2)=.1353…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: RBF exp(−γ‖x−z‖²): ระยะ²=4, γ=.5 ได้ exp(−2)=.135335; γ สูงทำให้ locality แคบและเสี่ยงจำ n…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>RBF exp(−γ‖x−z‖²): ระยะ²=4, γ=.5 ได้ exp(−2)=.135335; γ สูงทำให้ locality แคบและเสี่ยงจำ noise ต้องเลือกพร้อม C บน validation</p><p>อ้างอิง: <a href="#chapter-13/section/topic-15">Linear Kernel</a>, <a href="#chapter-13/section/topic-16">Polynomial Kernel</a>, <a href="#chapter-13/section/topic-17">RBF Kernel</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch13-exercise-08"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-9" class="exercise-item"><h3>ข้อ 9</h3><p>Implement a small from-scratch example of margin.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Margin: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ใช้ <code>f=X@w+b; margins=y*f/np.linalg.norm(w)</code>;…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ใช้ <code>f=X@w+b; margins=y*f/np.linalg.norm(w)</code>; X=[[1,0],[-1,0]], y=[1,-1], w=[2,0]…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ใช้ <code>f=X@w+b; margins=y*f/np.linalg.norm(w)</code>; X=[[1,0],[-1,0]], y=[1,-1], w=[2,0], b=0 ได้ [1,1]; w=0 ต้อง reject</p><p>อ้างอิง: <a href="#chapter-13/section/topic-6">Margin</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch13-exercise-09"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-10" class="exercise-item"><h3>ข้อ 10</h3><p>Add deterministic tests for Exercise 9.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Subgradient: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ตรวจ [1,1] ด้วย assert_allclose; พลิก y ตัวแรกแล้ว marg…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ตรวจ [1,1] ด้วย assert_allclose; พลิก y ตัวแรกแล้ว margin เป็น −1; rescale w,b ด้วยค่าบวก margin ต้อ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ตรวจ [1,1] ด้วย assert_allclose; พลิก y ตัวแรกแล้ว margin เป็น −1; rescale w,b ด้วยค่าบวก margin ต้องเท่าเดิม และ w=0 ต้อง raise ValueError</p><p>อ้างอิง: <a href="#chapter-13/section/topic-11">Subgradient</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch13-exercise-10"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-11" class="exercise-item"><h3>ข้อ 11</h3><p>Implement the main computation behind hinge loss.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Hinge Loss, Primal Objective, Subgradient: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): <code>loss=np.maximum(0,1-y*(X@w+b)).mean()</code>; f=[.3,2], y=[1…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: <code>loss=np.maximum(0,1-y*(X@w+b)).mean()</code>; f=[.3,2], y=[1,1] ให้ .35; gradient active mask y*f&lt;1 เท่า…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p><code>loss=np.maximum(0,1-y*(X@w+b)).mean()</code>; f=[.3,2], y=[1,1] ให้ .35; gradient active mask y*f&lt;1 เท่านั้น จุด kink ต้องระบุนิยาม subgradient</p><p>อ้างอิง: <a href="#chapter-13/section/topic-9">Hinge Loss</a>, <a href="#chapter-13/section/topic-10">Primal Objective</a>, <a href="#chapter-13/section/topic-11">Subgradient</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch13-exercise-11"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-12" class="exercise-item"><h3>ข้อ 12</h3><p>Run a small seeded experiment using hyperplane, soft margin, and RBF kernel.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Why Scaling Matters, scikit-learn: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): สร้าง make_circles seed=7 แบ่ง train/val ก่อน StandardScaler เปรียบเทียบ l…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: สร้าง make_circles seed=7 แบ่ง train/val ก่อน StandardScaler เปรียบเทียบ linear SVC กับ RBF C=1,γ=.1/1; บันทึก margin violations, bal…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>สร้าง make_circles seed=7 แบ่ง train/val ก่อน StandardScaler เปรียบเทียบ linear SVC กับ RBF C=1,γ=.1/1; บันทึก margin violations, balanced accuracy และ #SV ผลต้องวัดจาก run ไม่แต่งคะแนน</p><p>อ้างอิง: <a href="#chapter-13/section/topic-13">Why Scaling Matters</a>, <a href="#chapter-13/section/topic-22">scikit-learn</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch13-exercise-12"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-13" class="exercise-item"><h3>ข้อ 13</h3><p>Explain a common shape or data mismatch for this topic.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Subgradient: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): X เป็น (n,d), w เป็น (d,), y เป็น (n,) มีค่า ±1; y(n,…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: X เป็น (n,d), w เป็น (d,), y เป็น (n,) มีค่า ±1; y(n,1) คูณ f(n,) จะ broadcast เป็น (n,n) ผิด ต้…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>X เป็น (n,d), w เป็น (d,), y เป็น (n,) มีค่า ±1; y(n,1) คูณ f(n,) จะ broadcast เป็น (n,n) ผิด ต้อง reshape และ assert loss vector (n,)</p><p>อ้างอิง: <a href="#chapter-13/section/topic-11">Subgradient</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch13-exercise-13"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-14" class="exercise-item"><h3>ข้อ 14</h3><p>Explain one numerical-stability concern.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Polynomial Kernel: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): RBF ระยะ²อาจติดลบเล็กน้อยจาก cancellation ให้ …</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: RBF ระยะ²อาจติดลบเล็กน้อยจาก cancellation ให้ clip ≥0; standardize ก่อน และไม่ inv…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>RBF ระยะ²อาจติดลบเล็กน้อยจาก cancellation ให้ clip ≥0; standardize ก่อน และไม่ invert Gram matrix โดยตรงเมื่อจุดซ้ำ</p><p>อ้างอิง: <a href="#chapter-13/section/topic-16">Polynomial Kernel</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch13-exercise-14"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-15" class="exercise-item"><h3>ข้อ 15</h3><p>Explain the correct train, validation, and test workflow.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Why Scaling Matters: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): เลือก scaler,C,γ จาก train/validation หรือ inner C…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: เลือก scaler,C,γ จาก train/validation หรือ inner CV เท่านั้น; test เปิดหลัง freeze; กลุ่มผ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>เลือก scaler,C,γ จาก train/validation หรือ inner CV เท่านั้น; test เปิดหลัง freeze; กลุ่มผู้ป่วย/เวลาเดียวกันต้องไม่ข้าม split</p><p>อ้างอิง: <a href="#chapter-13/section/topic-13">Why Scaling Matters</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch13-exercise-15"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-16" class="exercise-item"><h3>ข้อ 16</h3><p>Measure runtime and memory of the main computation.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ LinearSVC vs SVC: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): วัด <code>perf_counter</code> และ peak memory ตาม n=100,200,400; linear sco…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: วัด <code>perf_counter</code> และ peak memory ตาม n=100,200,400; linear score O(nd), kernel storage O(n²), training solver ขึ้…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>วัด <code>perf_counter</code> และ peak memory ตาม n=100,200,400; linear score O(nd), kernel storage O(n²), training solver ขึ้นกับการลู่เข้า จึงไม่อ้าง cubic เป็นเวลาตายตัว</p><p>อ้างอิง: <a href="#chapter-13/section/topic-18">LinearSVC vs SVC</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch13-exercise-16"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-17" class="exercise-item"><h3>ข้อ 17</h3><p>Derive the main input-to-output algorithm for Support Vector Machines.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Primal Objective, Subgradient: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): X→scale→f=Xw+b→active=max(0,1−yf)→objective→subgra…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: X→scale→f=Xw+b→active=max(0,1−yf)→objective→subgradient→update; binary predict sign(f); ker…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>X→scale→f=Xw+b→active=max(0,1−yf)→objective→subgradient→update; binary predict sign(f); kernel score ΣαᵢyᵢK(xᵢ,x)+b ใช้เฉพาะ SV</p><p>อ้างอิง: <a href="#chapter-13/section/topic-10">Primal Objective</a>, <a href="#chapter-13/section/topic-11">Subgradient</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch13-exercise-17"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-18" class="exercise-item"><h3>ข้อ 18</h3><p>Compare a scratch implementation with a trusted library on identical data.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ LinearSVC vs SVC: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ใช้ X,y,C,loss reduction เดียวกัน; <code>SVC(kernel='linear')</code> กับ scratch …</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ใช้ X,y,C,loss reduction เดียวกัน; <code>SVC(kernel='linear')</code> กับ scratch ต้องเทียบ decision scores หลังลู่เข้าและ tolerance ไม่เที…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ใช้ X,y,C,loss reduction เดียวกัน; <code>SVC(kernel='linear')</code> กับ scratch ต้องเทียบ decision scores หลังลู่เข้าและ tolerance ไม่เทียบกับ squared-hinge LinearSVC โดยไม่ปรับ objective</p><p>อ้างอิง: <a href="#chapter-13/section/topic-18">LinearSVC vs SVC</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch13-exercise-18"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-19" class="exercise-item"><h3>ข้อ 19</h3><p>Compare a baseline with a controlled change involving kernel trick.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Kernel Trick: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): เปรียบเทียบ linear/RBF บน circles โดยคง split,scale,C; ร…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: เปรียบเทียบ linear/RBF บน circles โดยคง split,scale,C; รายงาน val balanced accuracy,#SV,เวลา พร้อม see…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>เปรียบเทียบ linear/RBF บน circles โดยคง split,scale,C; รายงาน val balanced accuracy,#SV,เวลา พร้อม seed หลายค่า; ยอมรับผลไม่ดีขึ้นหากมีหลักฐาน</p><p>อ้างอิง: <a href="#chapter-13/section/topic-14">Kernel Trick</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch13-exercise-19"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-20" class="exercise-item"><h3>ข้อ 20</h3><p>Summarize validation, reproducibility, monitoring, and one open research question.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ scikit-learn: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): บันทึก seed/split/scaler/C/γ/package/commit; monitor score margin และ cl…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: บันทึก seed/split/scaler/C/γ/package/commit; monitor score margin และ class drift; สมมติฐาน “RBF เพิ่ม recall บน nonlinear holdou…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>บันทึก seed/split/scaler/C/γ/package/commit; monitor score margin และ class drift; สมมติฐาน “RBF เพิ่ม recall บน nonlinear holdout ≥.05 ที่ latency≤2×” ต้องทดสอบกับ linear baseline</p><p>อ้างอิง: <a href="#chapter-13/section/topic-22">scikit-learn</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch13-exercise-20"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section></div><div id="local-lab-content"><section id="local-lab"><h2>Local lab: Python 3.12 บน CPU</h2><p>รันจาก repository root; ใช้ Python 3.12 แยก environment สำหรับ framework ตาม requirements ของชุดบท</p><pre><code>python3.12 -m venv .venv-course
+source .venv-course/bin/activate
+python -m pip install -r requirements-batch05.txt pytest
+(cd 13-svm &amp;&amp; python -m pytest tests -q -rs)</code></pre><p>ผลที่คาดหวัง: required tests ผ่านและไม่มี required test ถูก skip; GPU/integrations ที่ยังไม่รันต้องระบุแยก Python 3.15 ที่มากับเครื่องอาจใช้กับ framework wheels เหล่านี้ไม่ได้</p><h2>Mini Project — Margin &amp; Kernel Lab</h2>
+<p>Compare:
+- Logistic Regression
+- LinearSVC
+- SVC linear
+- SVC RBF</p>
+<p>Required:
+1. same split
+2. StandardScaler in Pipeline
+3. C sweep
+4. gamma sweep for RBF
+5. accuracy/F1/ROC-AUC
+6. support-vector count for SVC
+7. fit/predict runtime
+8. 2D decision boundary on synthetic subset
+9. noisy-label experiment
+10. class-imbalance experiment</p>
+<p>Explain when linear SVM is preferable to kernel SVM.</p><h2>Batch 05 Integration Project — Geometry &amp; Representation Lab</h2>
+<p>รวม Chapters 13–15:</p>
+<pre><code class="language-text">high-dimensional data
+      ↓
+StandardScaler
+      ├────────────→ SVM classification
+      │
+      └→ PCA
+          ├────────→ SVM classification
+          ├────────→ K-Means clustering
+          └────────→ DBSCAN clustering
+</code></pre>
+<h3>Goal</h3>
+<p>ตอบคำถาม 3 แบบโดยไม่สับสนกัน:</p>
+<ol>
+<li><strong>Supervised:</strong> margin classifier แยก labels ได้ดีแค่ไหน?</li>
+<li><strong>Unsupervised:</strong> geometry มี cluster structure แบบใด?</li>
+<li><strong>Representation:</strong> PCA ลด dimensions แล้วเก็บข้อมูลที่มีประโยชน์แค่ไหน?</li>
+</ol>
+<h3>Run</h3>
+<pre><code class="language-bash">source .venv/bin/activate
+python -m pip install -r requirements-batch05.txt
+
+python integration-project-batch05/src/geometry_lab.py \
+  --output-dir reports/batch05 \
+  --seed 42
+</code></pre>
+<h3>Outputs</h3>
+<p>JSON report:</p>
+<ul>
+<li>raw feature count</li>
+<li>PCA feature count</li>
+<li>PCA explained variance</li>
+<li>SVM validation/test metrics</li>
+<li>K-Means silhouette</li>
+<li>K-Means ARI diagnostic</li>
+<li>DBSCAN cluster/noise counts</li>
+</ul>
+<h3>Critical interpretation rule</h3>
+<p>ARI ใช้ true labels เป็น <strong>diagnostic หลัง clustering</strong> เท่านั้นใน synthetic lab นี้</p>
+<p>ห้ามใช้ labels เพื่อ tune clustering แล้วอ้างว่าเป็น unsupervised discovery</p>
+<h3>Required Extensions</h3>
+<ol>
+<li>RBF SVC</li>
+<li>PCA k sweep</li>
+<li>K-Means K sweep</li>
+<li>DBSCAN eps sweep</li>
+<li>t-SNE visualization</li>
+<li>optional UMAP visualization</li>
+<li>repeated seeds</li>
+<li>runtime comparison</li>
+<li>neighborhood preservation metric</li>
+<li>real-world dataset</li>
+</ol>
+<h3>Mastery Questions</h3>
+<ul>
+<li>PCA fit จาก train หรือ full data?</li>
+<li>ทำไม SVM ต้อง scale แต่ tree ไม่จำเป็นแบบเดียวกัน?</li>
+<li>silhouette สูงแปลว่ามี real-world classes จริงไหม?</li>
+<li>PCA 95% variance แปลว่าเก็บ 95% class informationไหม?</li>
+<li>t-SNE/UMAP islands พิสูจน์ cluster จริงหรือไม่?</li>
+</ul></section></div><label class="local-confirm"><input type="checkbox" id="local-lab-confirm"> ฉันรัน local lab และตรวจผลตาม rubric ด้วยตัวเองแล้ว</label><p class="local-note">สถานะนี้เป็นคำยืนยันของผู้เรียน เว็บไม่ได้รันหรือตรวจ Python บนเครื่องแทนคุณ</p></section>
+<section id="mastery-review" class="practice-section"><h2>หลักฐานตามเกณฑ์การเรียนรู้</h2><p>ทุก objective ต้องแสดงหลักฐานอธิบาย ทำนาย คำนวณ อ่าน shape/state debug และประยุกต์ พร้อมกรณีใหม่ ผลรัน source ผู้เรียนจริง และการประเมินซ้ำ เกณฑ์นี้ไม่รับประกันความเข้าใจทุกสถานการณ์ เปิด JavaScript เพื่อดูรายการที่ยังขาดและนำเข้ารายงานผู้ตรวจ</p></section><section class="coverage-section"><h2>แผนที่สิ่งที่เรียน → สิ่งที่ต้องแสดงให้ได้</h2><div id="coverage-table"></div></section><footer><span>ZERO TO ELITE AI ENGINEER · LEARNING STUDIO</span><span>อ่าน · derive · implement · debug · experiment · build</span></footer></div></main><noscript><style>.workbench,.sidebar,.reading-route,.lesson-toc,.mastery-status,#web-checks{display:none}main{margin-left:0}</style>อ่านเนื้อหา HTML ได้ตามปกติ เปิด JavaScript เพื่อใช้ห้องทดลองและตรวจคำตอบ</noscript></body></html>

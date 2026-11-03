@@ -1,0 +1,1130 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="บทเรียน AI Engineer ภาษาไทย พร้อมคณิตศาสตร์ทีละขั้นและห้องทดลองที่คำนวณจริง"><title>World Models: ทำนายเพื่อวางแผน และรู้ว่าโมเดลผิดได้ · AI Engineer Studio</title><link rel="stylesheet" href="../visual-lab/assets/styles.css"><link rel="stylesheet" href="../visual-lab/assets/course.css"><script defer src="../visual-lab/assets/lessons.js"></script><script defer src="../visual-lab/assets/chapter-meta.js"></script><script defer src="../visual-lab/assets/course-math.js"></script><script defer src="../visual-lab/assets/course-models.js"></script><script defer src="../visual-lab/assets/course-models-v3.js"></script><script defer src="../visual-lab/assets/course-assessment.js"></script><script defer src="../visual-lab/assets/course-mastery.js"></script><script defer src="../visual-lab/assets/course-catalog.js"></script><script defer src="../visual-lab/assets/book-content.js"></script><script defer src="../visual-lab/assets/course-render.js"></script><script defer src="../visual-lab/assets/course-mastery-panel.js"></script><script defer src="../visual-lab/assets/quality-report.js"></script><script defer src="../visual-lab/assets/course-app.js"></script></head>
+<body data-chapter="76" data-root="../"><a class="skip-link" href="#main">ข้ามไปบทเรียน</a>
+<aside class="sidebar" id="sidebar" aria-label="เลือกบทเรียน"><a class="brand" href="../visual-lab/index.html"><span class="brand-mark">ai</span><span>AI ENGINEER<small>LEARN · DERIVE · BUILD</small></span></a><div class="sidebar-intro">อ่านให้เข้าใจ · คำนวณให้เห็น · เขียนให้เป็น</div><label class="search-box"><input id="search" type="search" placeholder="ค้นหาบท / attention" aria-label="ค้นหาบทเรียน"></label><label class="filter-label" for="phase-filter">เส้นทางการเรียน <span id="nav-count"></span></label><select id="phase-filter"><option value="">ทุก Phase</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option></select><nav id="chapter-list" class="chapter-list" aria-label="รายชื่อบท"></nav><div class="course-progress"><div><span>ผ่านโจทย์ในเว็บ</span><strong id="progress-count">0 / 80</strong></div><progress id="course-progress" max="80" value="0" aria-label="บทที่ผ่านโจทย์"></progress><a id="resume-link" href="#chapter-1">อ่านต่อจากเดิม →</a></div></aside>
+<button class="nav-backdrop" id="nav-backdrop" aria-label="ปิดเมนู" hidden></button>
+<main id="main" tabindex="-1"><header class="topbar"><div><button id="nav-toggle" class="icon-button mobile-menu" aria-label="เปิดเมนูบทเรียน" aria-expanded="false" aria-controls="sidebar">☰</button><span id="breadcrumb"></span></div><span class="local-badge"><i></i> คำนวณในเครื่อง · ไม่มี API</span></header><div class="content">
+<div class="chapter-navigation"><label for="chapter-select" class="sr-only">เลือกบทเรียน</label><select id="chapter-select"></select><div class="chapter-arrows"><button id="prev-chapter" class="icon-button" aria-label="บทก่อนหน้า">←</button><button id="next-chapter" class="icon-button" aria-label="บทถัดไป">→</button></div></div>
+<section class="chapter-hero"><div><p id="chapter-kicker" class="eyebrow"></p><h1 id="chapter-title">World Models: ทำนายเพื่อวางแผน และรู้ว่าโมเดลผิดได้</h1><p class="english-title" id="chapter-english"></p></div><span class="hero-symbol">f(x) ↗</span></section>
+<p id="quality-status" class="quality-status"></p><div id="mastery-status" class="mastery-status"></div><div class="reading-route"><a href="#chapter-76/section/overview">01 อ่านบทเรียน</a><a href="#workbench">02 ทดลองสมการ</a><a href="#practice">03 ฝึกและตรวจงาน</a><a href="#mastery-review">04 หลักฐานตามเกณฑ์</a></div>
+<nav id="lesson-toc" class="lesson-toc" aria-label="สารบัญบท"></nav>
+<section id="overview" class="course-overview"><span class="eyebrow">THE LEARNING CONTRACT</span><h2>เรียนบทนี้แล้วต้องทำอะไรได้</h2><p id="chapter-purpose"></p><div id="chapter-objectives"></div><div class="learning-hint">ทำนาย → เปลี่ยนทีละค่า → ตรวจตัวเลข → อธิบายเหตุผล → เขียนด้วย Python เอง</div></section>
+<section class="workbench lab-card" id="workbench" aria-label="ห้องทดลองคำนวณจริง"><div class="card-header"><div><span class="live-dot"></span><span class="eyebrow">COMPUTATION WORKBENCH</span></div><span class="simulation-label">ทุกภาพใช้ผลคำนวณชุดเดียวกัน</span></div><div class="lab-top"><label for="lab-select">เลือกกลไกที่ต้องการทดลอง</label><select id="lab-select"></select><p id="lab-question"></p></div><div class="workbench-grid"><div class="viz-column"><div class="compare-labels"><span>เส้นทึบ: ปัจจุบัน</span><span>เส้นประ: baseline ที่ตรึงไว้</span></div><div id="simulation" class="simulation"></div><div id="metrics" class="metrics"></div><div id="baseline-diff" class="baseline-diff"></div><div class="playback"><div class="playback-buttons"><button class="primary-button" id="update-once">อัปเดตหนึ่งก้าว</button><button class="secondary-button" id="train-many">▶ ฝึก 30 ก้าว</button><button class="icon-button" id="back-state" aria-label="ย้อนประวัติ">↶</button><button class="icon-button" id="forward-state" aria-label="ประวัติถัดไป">↷</button></div></div><div class="lab-secondary-actions"><button id="pin-baseline" class="text-button">ตรึง baseline ปัจจุบัน</button><button id="reset-lab" class="text-button">คืนค่าเริ่มต้น</button><button id="download-state" class="text-button">บันทึกผล JSON</button><span id="history-status"></span></div><p id="simulation-note" class="simulation-note"></p><p class="lab-error" id="lab-error" role="alert" hidden></p></div><div class="controls-column"><h3>เปลี่ยนทีละตัว แล้วสังเกตผล</h3><div id="lab-controls"></div><p class="control-note">แก้ weight ด้วยมือจะคำนวณ forward ใหม่; optimizer เปลี่ยน weights เมื่อกดอัปเดตเท่านั้น</p></div></div>
+<div class="trace-section"><div class="trace-toolbar"><h3>เดินสมการทีละ operation</h3><div><button id="trace-prev" class="icon-button" aria-label="operation ก่อนหน้า">←</button><button id="play-trace" class="secondary-button" aria-pressed="false">▶ เล่น flow</button><button id="trace-next" class="icon-button" aria-label="operation ถัดไป">→</button><span id="stage-counter"></span></div></div><label class="motion-control"><input id="reduce-motion" type="checkbox"> ลดภาพเคลื่อนไหว (หยุดการเล่นที่ค้างอยู่)</label><div id="operation-steps" class="operation-steps"></div><div id="flow-diagram" class="flow-diagram"></div><div id="active-operation" class="active-operation" aria-live="polite"></div><p class="control-note">ตัวเลขบนภาพปัดเศษเพื่อให้อ่านง่าย; บันทึก JSON เพื่อดูค่าที่ใช้คำนวณเต็ม precision</p><details open><summary>ตารางค่าระหว่างทาง — ตรวจด้วยมือได้</summary><div id="result-table"></div></details><div id="tensor-tables" class="tensor-tables"></div><details id="surface-details"><summary>ดู loss surface และเส้นทางของ w₁,b (ตรึง controls อื่น)</summary><div id="surface-chart"></div><p>surface คำนวณ objective ปัจจุบันโดยตรึง degree, penalty, ข้อมูล และ weights อื่น เส้นทางแสดงเฉพาะ snapshots ที่ค่าเหล่านี้ตรงกัน; นอกช่วง w=[−1,5], b=[−2,4] ให้ตรวจค่าจริงใน history</p></details><details><summary>ประวัติการเปลี่ยนค่า</summary><div id="history-table"></div></details></div></section>
+<article id="chapter-article" class="chapter-article"><section id="mechanism-1" class="teaching-section"><span class="section-kicker">CHAPTER 76 · ภาพ → สมการ → โค้ด</span><h2>1. world model เรียน dynamics ที่มีประโยชน์ต่อการตัดสินใจ</h2><h3>โจทย์และเหตุผล</h3><p>observation ถูก encode เป็น state/latent แล้วใช้ action ทำนาย next state/reward อาจไม่ต้อง reconstruct pixels ทุกครั้ง หาก representation พอสำหรับวางแผน</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Roll out several action sequences toward a goal.</p><p>x0=0,xnext=x+u,goal2,actions[1,1]ถึง2cost0,[0,1]ถึง1terminalcost1; rolloutทุกcandidateจากsameinitialstate</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>gain: controller / dynamics coefficient,initial=0.5; horizon: rollout steps,initial=8; bias: model dynamics bias,initial=0.1; limit: action magnitude limit,initial=1; mode: closed-loop / model,initial=world</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = 0; กำหนดความหมายและหน่วยของ input ก่อนทดลอง</li><li>true_next=x+a; model_next=x_hat+a+bias = [8, 0.5, 4, 4.8, 0.7999999999999998]; robot ใช้ observation ใหม่ทุกรอบ; world mode ใช้ prediction เดิมจึงสะสม model error</li><li>normal / boundary / comparison = [8, 0.5, 4, 4.8, 0.7999999999999998]; ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="control-action-conditioned-rollo">เปิดการทดลองนี้</a><p class="failure-box">fitmodelด้วยtesttrajectoryหรือevaluateonlytrainingactionsทำgeneralizationดูดี; splittrajectories/timeและOODaction/state-slices; unit-step scalar dynamics; ไม่อ้างว่าเป็น robot physics เต็มหรือ learned world model ที่ฝึกจากภาพ</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>x0=0,xnext=x+u,goal2,actions[1,1]ถึง2cost0,[0,1]ถึง1terminalcost1; rolloutทุกcandidateจากsameinitialstate</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-1-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = 0<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>true_next=x+a; model_next=x_hat+a+bias</code> = [8, 0.5, 4, 4.8, 0.7999999999999998]<p>robot ใช้ observation ใหม่ทุกรอบ; world mode ใช้ prediction เดิมจึงสะสม model error</p></li><li><code>normal / boundary / comparison</code> = [8, 0.5, 4, 4.8, 0.7999999999999998]<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-1-visual"><summary>ภาพและ shape</summary><p>unit-step scalar dynamics; ไม่อ้างว่าเป็น robot physics เต็มหรือ learned world model ที่ฝึกจากภาพ</p><ol><li><code>shape / range</code> = 0<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>true_next=x+a; model_next=x_hat+a+bias</code> = [8, 0.5, 4, 4.8, 0.7999999999999998]<p>robot ใช้ observation ใหม่ทุกรอบ; world mode ใช้ prediction เดิมจึงสะสม model error</p></li><li><code>normal / boundary / comparison</code> = [8, 0.5, 4, 4.8, 0.7999999999999998]<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-1-code"><summary>โค้ด</summary><p>x0=0,xnext=x+u,goal2,actions[1,1]ถึง2cost0,[0,1]ถึง1terminalcost1; rolloutทุกcandidateจากsameinitialstate</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-1-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = 0<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>true_next=x+a; model_next=x_hat+a+bias</code> = [8, 0.5, 4, 4.8, 0.7999999999999998]<p>robot ใช้ observation ใหม่ทุกรอบ; world mode ใช้ prediction เดิมจึงสะสม model error</p></li><li><code>normal / boundary / comparison</code> = [8, 0.5, 4, 4.8, 0.7999999999999998]<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-1"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-2" class="teaching-section"><span class="section-kicker">CHAPTER 76 · ภาพ → สมการ → โค้ด</span><h2>2. ใช้ prediction ผิดเป็น input ทำ error ทบกัน</h2><h3>โจทย์และเหตุผล</h3><p>ตัวอย่าง true_next=x+a แต่ model_next=x_hat+a+bias จึงสะสม bias ตาม horizon เมื่อวางแผนยาวต้องนำ uncertainty และ distribution shift มาพิจารณา</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Add action penalties to a planner.</p><p>J=Σ(x−goal)²+λΣu²; λสูงลดactionแรงแต่อาจถึงgoalช้า; λ≥0และunitsของstate/actionต้องnormalizeหรืออธิบาย</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>gain: controller / dynamics coefficient,initial=0.5; horizon: rollout steps,initial=15; bias: model dynamics bias,initial=0.1; limit: action magnitude limit,initial=1; mode: closed-loop / model,initial=world</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = 0; กำหนดความหมายและหน่วยของ input ก่อนทดลอง</li><li>true_next=x+a; model_next=x_hat+a+bias = [15, 0.5, 7.5, 8.999999999999996, 1.4999999999999964]; robot ใช้ observation ใหม่ทุกรอบ; world mode ใช้ prediction เดิมจึงสะสม model error</li><li>normal / boundary / comparison = [15, 0.5, 7.5, 8.999999999999996, 1.4999999999999964]; ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="control-planning-horizon-ยาวทำ-e">เปิดการทดลองนี้</a><p class="failure-box">fitmodelด้วยtesttrajectoryหรือevaluateonlytrainingactionsทำgeneralizationดูดี; splittrajectories/timeและOODaction/state-slices; unit-step scalar dynamics; ไม่อ้างว่าเป็น robot physics เต็มหรือ learned world model ที่ฝึกจากภาพ</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>J=Σ(x−goal)²+λΣu²; λสูงลดactionแรงแต่อาจถึงgoalช้า; λ≥0และunitsของstate/actionต้องnormalizeหรืออธิบาย</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-2-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = 0<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>true_next=x+a; model_next=x_hat+a+bias</code> = [15, 0.5, 7.5, 8.999999999999996, 1.4999999999999964]<p>robot ใช้ observation ใหม่ทุกรอบ; world mode ใช้ prediction เดิมจึงสะสม model error</p></li><li><code>normal / boundary / comparison</code> = [15, 0.5, 7.5, 8.999999999999996, 1.4999999999999964]<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-2-visual"><summary>ภาพและ shape</summary><p>unit-step scalar dynamics; ไม่อ้างว่าเป็น robot physics เต็มหรือ learned world model ที่ฝึกจากภาพ</p><ol><li><code>shape / range</code> = 0<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>true_next=x+a; model_next=x_hat+a+bias</code> = [15, 0.5, 7.5, 8.999999999999996, 1.4999999999999964]<p>robot ใช้ observation ใหม่ทุกรอบ; world mode ใช้ prediction เดิมจึงสะสม model error</p></li><li><code>normal / boundary / comparison</code> = [15, 0.5, 7.5, 8.999999999999996, 1.4999999999999964]<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-2-code"><summary>โค้ด</summary><p>J=Σ(x−goal)²+λΣu²; λสูงลดactionแรงแต่อาจถึงgoalช้า; λ≥0และunitsของstate/actionต้องnormalizeหรืออธิบาย</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-2-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = 0<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>true_next=x+a; model_next=x_hat+a+bias</code> = [15, 0.5, 7.5, 8.999999999999996, 1.4999999999999964]<p>robot ใช้ observation ใหม่ทุกรอบ; world mode ใช้ prediction เดิมจึงสะสม model error</p></li><li><code>normal / boundary / comparison</code> = [15, 0.5, 7.5, 8.999999999999996, 1.4999999999999964]<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-2"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-3" class="teaching-section"><span class="section-kicker">CHAPTER 76 · ภาพ → สมการ → โค้ด</span><h2>3. planner อาจ exploit ช่องโหว่ของ model</h2><h3>โจทย์และเหตุผล</h3><p>แผนที่ดูให้ reward สูงในจินตนาการอาจล้มใน environment จริง จึงใช้ receding-horizon feedback, held-out rollout tests และเปรียบเทียบผลการควบคุมจริง ไม่วัดแค่ภาพดูสมจริง</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Demonstrate model exploitation with an intentionally biased model.</p><p>biasedmodelxnext=x+2uแทนtruex+uทำplannerเลือกu1เพื่อgoal2แต่realถึง1; comparepredicted/actualreturnจับmodelexploitation</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>q: Q(s,a),initial=0; reward: reward r,initial=1; nextQ: max Q(next,a),initial=2; gamma: discount γ,initial=0.9; alpha: step size α,initial=0.2; terminal: terminal (1 yes),initial=0</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = 0; ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</li><li>target=r+γ(1−terminal)max Q_next; Q′=Q+α(target−Q) = 0.5599999999999999; terminal state ไม่ bootstrap; Q-learning ใช้ greedy nextQ ต่างจาก SARSA ที่ใช้ action ที่ policy เลือกจริง</li><li>finite / normalized / bounded = 0.5599999999999999; เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="reinforcement-return-value-ท--ใช-ประเม">เปิดการทดลองนี้</a><p class="failure-box">fitmodelด้วยtesttrajectoryหรือevaluateonlytrainingactionsทำgeneralizationดูดี; splittrajectories/timeและOODaction/state-slices; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>biasedmodelxnext=x+2uแทนtruex+uทำplannerเลือกu1เพื่อgoal2แต่realถึง1; comparepredicted/actualreturnจับmodelexploitation</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-3-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = 0<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>target=r+γ(1−terminal)max Q_next; Q′=Q+α(target−Q)</code> = 0.5599999999999999<p>terminal state ไม่ bootstrap; Q-learning ใช้ greedy nextQ ต่างจาก SARSA ที่ใช้ action ที่ policy เลือกจริง</p></li><li><code>finite / normalized / bounded</code> = 0.5599999999999999<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-3-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>shape / range</code> = 0<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>target=r+γ(1−terminal)max Q_next; Q′=Q+α(target−Q)</code> = 0.5599999999999999<p>terminal state ไม่ bootstrap; Q-learning ใช้ greedy nextQ ต่างจาก SARSA ที่ใช้ action ที่ policy เลือกจริง</p></li><li><code>finite / normalized / bounded</code> = 0.5599999999999999<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-3-code"><summary>โค้ด</summary><p>biasedmodelxnext=x+2uแทนtruex+uทำplannerเลือกu1เพื่อgoal2แต่realถึง1; comparepredicted/actualreturnจับmodelexploitation</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-3-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = 0<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>target=r+γ(1−terminal)max Q_next; Q′=Q+α(target−Q)</code> = 0.5599999999999999<p>terminal state ไม่ bootstrap; Q-learning ใช้ greedy nextQ ต่างจาก SARSA ที่ใช้ action ที่ policy เลือกจริง</p></li><li><code>finite / normalized / bounded</code> = 0.5599999999999999<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-3"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="reference" class="canonical-section"><h2>เนื้อหาครบทุกหัวข้อ พร้อมแผนที่ objective</h2><nav class="source-toc"><a href="#chapter-76/section/topic-1">1. What Is a World Model?</a> <a href="#chapter-76/section/topic-2">2. Learning Objectives</a> <a href="#chapter-76/section/topic-3">3. Markov State</a> <a href="#chapter-76/section/topic-4">4. Latent Dynamics</a> <a href="#chapter-76/section/topic-5">5. Multi-Step Rollout</a> <a href="#chapter-76/section/topic-6">6. Model-Based Planning</a> <a href="#chapter-76/section/topic-7">7. Discounted Return</a> <a href="#chapter-76/section/topic-8">8. Pixel Prediction</a> <a href="#chapter-76/section/topic-9">9. Latent Prediction</a> <a href="#chapter-76/section/topic-10">10. JEPA-Style Prediction</a> <a href="#chapter-76/section/topic-11">11. Video World Models</a> <a href="#chapter-76/section/topic-12">12. Action-Conditioned Models</a> <a href="#chapter-76/section/topic-13">13. Dreamer-Style Concepts</a> <a href="#chapter-76/section/topic-14">14. Uncertainty</a> <a href="#chapter-76/section/topic-15">15. Compounding Error</a> <a href="#chapter-76/section/topic-16">16. Model Exploitation</a> <a href="#chapter-76/section/topic-17">17. World Model vs Simulator</a> <a href="#chapter-76/section/topic-18">18. Evaluation</a> <a href="#chapter-76/section/topic-19">19. From Scratch</a> <a href="#chapter-76/section/topic-20">20. Common Mistakes</a> <a href="#chapter-76/section/topic-21">21. Exercises / Mini Project</a> <a href="#chapter-76/section/topic-22">22. Checklist</a> <a href="#chapter-76/section/topic-23">23. What&#x27;s Next</a> </nav><section id="topic-1" class="source-topic"><span id="source-76-world-models-canonical-chapter-76-world-models" class="legacy-anchor"></span><span id="source-76-world-models-canonical-1-what-is-a-world-model" class="legacy-anchor"></span><h3>1. What Is a World Model?</h3>
+<p>A world model learns enough structure about environment dynamics to predict useful future representations/outcomes and support planning or control.</p>
+<pre><code class="language-text">observation
+↓ encoder
+latent state
++ action
+↓ dynamics model
+predicted future latent
+↓ reward/value/decoder/planner
+decision
+</code></pre>
+<p>Not every world model must reconstruct pixels.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>1. What Is a World Model?</h3>
+<p>A world model learns enough structure about environment dynamics to predict useful future representations/outcomes and support planning or control.</p>
+<pre><code class="language-text">observation
+↓ encoder
+latent state
++ action
+↓ dynamics model
+predicted future latent
+↓ reward/value/decoder/planner
+decision
+</code></pre>
+<p>Not every world model must reconstruct pixels.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-1-equation"><summary>สมการ</summary><h3>1. What Is a World Model?</h3>
+<p>A world model learns enough structure about environment dynamics to predict useful future representations/outcomes and support planning or control.</p>
+<pre><code class="language-text">observation
+↓ encoder
+latent state
++ action
+↓ dynamics model
+predicted future latent
+↓ reward/value/decoder/planner
+decision
+</code></pre>
+<p>Not every world model must reconstruct pixels.</p></details><details id="help-topic-1-visual"><summary>ภาพและ shape</summary><h3>1. What Is a World Model?</h3>
+<p>A world model learns enough structure about environment dynamics to predict useful future representations/outcomes and support planning or control.</p>
+<pre><code class="language-text">observation
+↓ encoder
+latent state
++ action
+↓ dynamics model
+predicted future latent
+↓ reward/value/decoder/planner
+decision
+</code></pre>
+<p>Not every world model must reconstruct pixels.</p></details><details id="help-topic-1-code"><summary>โค้ด</summary><h3>1. What Is a World Model?</h3>
+<p>A world model learns enough structure about environment dynamics to predict useful future representations/outcomes and support planning or control.</p>
+<pre><code class="language-text">observation
+↓ encoder
+latent state
++ action
+↓ dynamics model
+predicted future latent
+↓ reward/value/decoder/planner
+decision
+</code></pre>
+<p>Not every world model must reconstruct pixels.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-1-result"><summary>ผลการทดลอง</summary><h3>1. What Is a World Model?</h3>
+<p>A world model learns enough structure about environment dynamics to predict useful future representations/outcomes and support planning or control.</p>
+<pre><code class="language-text">observation
+↓ encoder
+latent state
++ action
+↓ dynamics model
+predicted future latent
+↓ reward/value/decoder/planner
+decision
+</code></pre>
+<p>Not every world model must reconstruct pixels.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-1"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-2" class="source-topic"><span id="source-76-world-models-canonical-2-learning-objectives" class="legacy-anchor"></span><h3>2. Learning Objectives</h3>
+<ul>
+<li>distinguish observation, state, latent state and belief state</li>
+<li>implement a simple learned dynamics model</li>
+<li>roll out imagined trajectories</li>
+<li>plan over model-predicted futures</li>
+<li>calculate model error across rollout horizons</li>
+<li>distinguish pixel prediction vs latent prediction</li>
+<li>understand model-based RL</li>
+<li>understand Dreamer-style latent imagination</li>
+<li>understand JEPA-style predictive representations</li>
+<li>reason about compounding model error</li>
+<li>evaluate world models beyond reconstruction quality</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>2. Learning Objectives</h3>
+<ul>
+<li>distinguish observation, state, latent state and belief state</li>
+<li>implement a simple learned dynamics model</li>
+<li>roll out imagined trajectories</li>
+<li>plan over model-predicted futures</li>
+<li>calculate model error across rollout horizons</li>
+<li>distinguish pixel prediction vs latent prediction</li>
+<li>understand model-based RL</li>
+<li>understand Dreamer-style latent imagination</li>
+<li>understand JEPA-style predictive representations</li>
+<li>reason about compounding model error</li>
+<li>evaluate world models beyond reconstruction quality</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-2-equation"><summary>สมการ</summary><h3>2. Learning Objectives</h3>
+<ul>
+<li>distinguish observation, state, latent state and belief state</li>
+<li>implement a simple learned dynamics model</li>
+<li>roll out imagined trajectories</li>
+<li>plan over model-predicted futures</li>
+<li>calculate model error across rollout horizons</li>
+<li>distinguish pixel prediction vs latent prediction</li>
+<li>understand model-based RL</li>
+<li>understand Dreamer-style latent imagination</li>
+<li>understand JEPA-style predictive representations</li>
+<li>reason about compounding model error</li>
+<li>evaluate world models beyond reconstruction quality</li>
+</ul></details><details id="help-topic-2-visual"><summary>ภาพและ shape</summary><h3>2. Learning Objectives</h3>
+<ul>
+<li>distinguish observation, state, latent state and belief state</li>
+<li>implement a simple learned dynamics model</li>
+<li>roll out imagined trajectories</li>
+<li>plan over model-predicted futures</li>
+<li>calculate model error across rollout horizons</li>
+<li>distinguish pixel prediction vs latent prediction</li>
+<li>understand model-based RL</li>
+<li>understand Dreamer-style latent imagination</li>
+<li>understand JEPA-style predictive representations</li>
+<li>reason about compounding model error</li>
+<li>evaluate world models beyond reconstruction quality</li>
+</ul></details><details id="help-topic-2-code"><summary>โค้ด</summary><h3>2. Learning Objectives</h3>
+<ul>
+<li>distinguish observation, state, latent state and belief state</li>
+<li>implement a simple learned dynamics model</li>
+<li>roll out imagined trajectories</li>
+<li>plan over model-predicted futures</li>
+<li>calculate model error across rollout horizons</li>
+<li>distinguish pixel prediction vs latent prediction</li>
+<li>understand model-based RL</li>
+<li>understand Dreamer-style latent imagination</li>
+<li>understand JEPA-style predictive representations</li>
+<li>reason about compounding model error</li>
+<li>evaluate world models beyond reconstruction quality</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-2-result"><summary>ผลการทดลอง</summary><h3>2. Learning Objectives</h3>
+<ul>
+<li>distinguish observation, state, latent state and belief state</li>
+<li>implement a simple learned dynamics model</li>
+<li>roll out imagined trajectories</li>
+<li>plan over model-predicted futures</li>
+<li>calculate model error across rollout horizons</li>
+<li>distinguish pixel prediction vs latent prediction</li>
+<li>understand model-based RL</li>
+<li>understand Dreamer-style latent imagination</li>
+<li>understand JEPA-style predictive representations</li>
+<li>reason about compounding model error</li>
+<li>evaluate world models beyond reconstruction quality</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-2"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-3" class="source-topic"><span id="source-76-world-models-canonical-3-markov-state" class="legacy-anchor"></span><h3>3. Markov State</h3>
+<p>In an ideal Markov state:</p>
+<pre><code class="language-text">P(s_{t+1} | history, a_t)
+=
+P(s_{t+1} | s_t, a_t)
+</code></pre>
+<p>Raw observations are often partially observable, so the model may need memory/belief state.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>3. Markov State</h3>
+<p>In an ideal Markov state:</p>
+<pre><code class="language-text">P(s_{t+1} | history, a_t)
+=
+P(s_{t+1} | s_t, a_t)
+</code></pre>
+<p>Raw observations are often partially observable, so the model may need memory/belief state.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-3-equation"><summary>สมการ</summary><h3>3. Markov State</h3>
+<p>In an ideal Markov state:</p>
+<pre><code class="language-text">P(s_{t+1} | history, a_t)
+=
+P(s_{t+1} | s_t, a_t)
+</code></pre>
+<p>Raw observations are often partially observable, so the model may need memory/belief state.</p></details><details id="help-topic-3-visual"><summary>ภาพและ shape</summary><h3>3. Markov State</h3>
+<p>In an ideal Markov state:</p>
+<pre><code class="language-text">P(s_{t+1} | history, a_t)
+=
+P(s_{t+1} | s_t, a_t)
+</code></pre>
+<p>Raw observations are often partially observable, so the model may need memory/belief state.</p></details><details id="help-topic-3-code"><summary>โค้ด</summary><h3>3. Markov State</h3>
+<p>In an ideal Markov state:</p>
+<pre><code class="language-text">P(s_{t+1} | history, a_t)
+=
+P(s_{t+1} | s_t, a_t)
+</code></pre>
+<p>Raw observations are often partially observable, so the model may need memory/belief state.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-3-result"><summary>ผลการทดลอง</summary><h3>3. Markov State</h3>
+<p>In an ideal Markov state:</p>
+<pre><code class="language-text">P(s_{t+1} | history, a_t)
+=
+P(s_{t+1} | s_t, a_t)
+</code></pre>
+<p>Raw observations are often partially observable, so the model may need memory/belief state.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-3"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-4" class="source-topic"><span id="source-76-world-models-canonical-4-latent-dynamics" class="legacy-anchor"></span><h3>4. Latent Dynamics</h3>
+<p>Encode observation o_t:</p>
+<pre><code class="language-text">z_t = encoder(o_t)
+</code></pre>
+<p>Predict:</p>
+<pre><code class="language-text">z_hat_{t+1} = f(z_t, a_t)
+</code></pre>
+<p>A simple linear educational model:</p>
+<pre><code class="language-text">z_{t+1} = A z_t + B a_t
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>lineartransitionxnext=Ax+Bu; stackZ=[X,U],solveleast_squaresZΘ≈Xnextแล้วsplitΘ; xnext=.8x+.2u,tinyindependentinputsต้องrecoverA.8,B.2</p><p>trueA.8,B.2,x1,u−1ให้xnext.6; rolloutu0ต่อได้.48; tableต้องแสดงทั้งpredicted/trueที่แต่ละt</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-4-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>lineartransitionxnext=Ax+Bu; stackZ=[X,U],solveleast_squaresZΘ≈Xnextแล้วsplitΘ; xnext=.8x+.2u,tinyindependentinputsต้องrecoverA.8,B.2</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-4-equation"><summary>สมการ</summary><p>lineartransitionxnext=Ax+Bu; stackZ=[X,U],solveleast_squaresZΘ≈Xnextแล้วsplitΘ; xnext=.8x+.2u,tinyindependentinputsต้องrecoverA.8,B.2</p></details><details id="help-topic-4-visual"><summary>ภาพและ shape</summary><p>lineartransitionxnext=Ax+Bu; stackZ=[X,U],solveleast_squaresZΘ≈Xnextแล้วsplitΘ; xnext=.8x+.2u,tinyindependentinputsต้องrecoverA.8,B.2</p></details><details id="help-topic-4-code"><summary>โค้ด</summary><p>lineartransitionxnext=Ax+Bu; stackZ=[X,U],solveleast_squaresZΘ≈Xnextแล้วsplitΘ; xnext=.8x+.2u,tinyindependentinputsต้องrecoverA.8,B.2</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-4-result"><summary>ผลการทดลอง</summary><p>lineartransitionxnext=Ax+Bu; stackZ=[X,U],solveleast_squaresZΘ≈Xnextแล้วsplitΘ; xnext=.8x+.2u,tinyindependentinputsต้องrecoverA.8,B.2</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-4"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-5" class="source-topic"><span id="source-76-world-models-canonical-5-multi-step-rollout" class="legacy-anchor"></span><h3>5. Multi-Step Rollout</h3>
+<pre><code class="language-text">z_t
++ a_t → z_hat_{t+1}
++ a_{t+1} → z_hat_{t+2}
+...
+</code></pre>
+<p>Errors compound because later predictions consume earlier predictions.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>one-stepใช้truecurrentstateทุกครั้ง ส่วนmulti-stepป้อนpredictionกลับ; errorอาจสะสม แม้one-stepMSEเล็ก ต้องploterrorbyhorizon</p><p>trueA.8,B.2,x1,u−1ให้xnext.6; rolloutu0ต่อได้.48; tableต้องแสดงทั้งpredicted/trueที่แต่ละt</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-5-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>one-stepใช้truecurrentstateทุกครั้ง ส่วนmulti-stepป้อนpredictionกลับ; errorอาจสะสม แม้one-stepMSEเล็ก ต้องploterrorbyhorizon</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-5-equation"><summary>สมการ</summary><p>one-stepใช้truecurrentstateทุกครั้ง ส่วนmulti-stepป้อนpredictionกลับ; errorอาจสะสม แม้one-stepMSEเล็ก ต้องploterrorbyhorizon</p></details><details id="help-topic-5-visual"><summary>ภาพและ shape</summary><p>one-stepใช้truecurrentstateทุกครั้ง ส่วนmulti-stepป้อนpredictionกลับ; errorอาจสะสม แม้one-stepMSEเล็ก ต้องploterrorbyhorizon</p></details><details id="help-topic-5-code"><summary>โค้ด</summary><p>one-stepใช้truecurrentstateทุกครั้ง ส่วนmulti-stepป้อนpredictionกลับ; errorอาจสะสม แม้one-stepMSEเล็ก ต้องploterrorbyhorizon</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-5-result"><summary>ผลการทดลอง</summary><p>one-stepใช้truecurrentstateทุกครั้ง ส่วนmulti-stepป้อนpredictionกลับ; errorอาจสะสม แม้one-stepMSEเล็ก ต้องploterrorbyhorizon</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-5"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-6" class="source-topic"><span id="source-76-world-models-canonical-6-model-based-planning" class="legacy-anchor"></span><h3>6. Model-Based Planning</h3>
+<p>Given candidate action sequences:</p>
+<ol>
+<li>imagine trajectory under each plan</li>
+<li>compute predicted reward/cost</li>
+<li>choose highest predicted return</li>
+<li>execute only the first action</li>
+<li>observe real environment</li>
+<li>replan</li>
+</ol>
+<p>This receding-horizon idea reduces reliance on long open-loop prediction.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>x0=0,xnext=x+u,goal2,actions[1,1]ถึง2cost0,[0,1]ถึง1terminalcost1; rolloutทุกcandidateจากsameinitialstate</p><p>MPC: observecurrent→planhorizonH→executeactionแรก→observeใหม่→replan; ไม่executeopenloopทั้งsequenceแล้วเรียกว่าrecedinghorizon</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-6-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>x0=0,xnext=x+u,goal2,actions[1,1]ถึง2cost0,[0,1]ถึง1terminalcost1; rolloutทุกcandidateจากsameinitialstate</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-6-equation"><summary>สมการ</summary><p>x0=0,xnext=x+u,goal2,actions[1,1]ถึง2cost0,[0,1]ถึง1terminalcost1; rolloutทุกcandidateจากsameinitialstate</p></details><details id="help-topic-6-visual"><summary>ภาพและ shape</summary><p>x0=0,xnext=x+u,goal2,actions[1,1]ถึง2cost0,[0,1]ถึง1terminalcost1; rolloutทุกcandidateจากsameinitialstate</p></details><details id="help-topic-6-code"><summary>โค้ด</summary><p>x0=0,xnext=x+u,goal2,actions[1,1]ถึง2cost0,[0,1]ถึง1terminalcost1; rolloutทุกcandidateจากsameinitialstate</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-6-result"><summary>ผลการทดลอง</summary><p>x0=0,xnext=x+u,goal2,actions[1,1]ถึง2cost0,[0,1]ถึง1terminalcost1; rolloutทุกcandidateจากsameinitialstate</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-6"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-7" class="source-topic"><span id="source-76-world-models-canonical-7-discounted-return" class="legacy-anchor"></span><h3>7. Discounted Return</h3>
+<pre><code class="language-text">G = sum_t gamma^t r_t
+</code></pre>
+<p>World-model planning is only as good as dynamics plus reward/value estimates.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>J=Σ(x−goal)²+λΣu²; λสูงลดactionแรงแต่อาจถึงgoalช้า; λ≥0และunitsของstate/actionต้องnormalizeหรืออธิบาย</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-7-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>J=Σ(x−goal)²+λΣu²; λสูงลดactionแรงแต่อาจถึงgoalช้า; λ≥0และunitsของstate/actionต้องnormalizeหรืออธิบาย</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-7-equation"><summary>สมการ</summary><p>J=Σ(x−goal)²+λΣu²; λสูงลดactionแรงแต่อาจถึงgoalช้า; λ≥0และunitsของstate/actionต้องnormalizeหรืออธิบาย</p></details><details id="help-topic-7-visual"><summary>ภาพและ shape</summary><p>J=Σ(x−goal)²+λΣu²; λสูงลดactionแรงแต่อาจถึงgoalช้า; λ≥0และunitsของstate/actionต้องnormalizeหรืออธิบาย</p></details><details id="help-topic-7-code"><summary>โค้ด</summary><p>J=Σ(x−goal)²+λΣu²; λสูงลดactionแรงแต่อาจถึงgoalช้า; λ≥0และunitsของstate/actionต้องnormalizeหรืออธิบาย</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-7-result"><summary>ผลการทดลอง</summary><p>J=Σ(x−goal)²+λΣu²; λสูงลดactionแรงแต่อาจถึงgoalช้า; λ≥0และunitsของstate/actionต้องnormalizeหรืออธิบาย</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-7"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-8" class="source-topic"><span id="source-76-world-models-canonical-8-pixel-prediction" class="legacy-anchor"></span><h3>8. Pixel Prediction</h3>
+<p>Predict future pixels directly.</p>
+<p>Advantages:
+- easy to visualize</p>
+<p>Challenges:
+- expensive high-dimensional outputs
+- many pixel details irrelevant to control
+- blurry/uncertain futures</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>pixelMSEเน้นtexture/backgroundแม้dynamicsสำคัญผิด; latentobjectiveลดdimensionแต่ต้องpreserveaction-relevantstateและevaluatecontroltask</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-8-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>pixelMSEเน้นtexture/backgroundแม้dynamicsสำคัญผิด; latentobjectiveลดdimensionแต่ต้องpreserveaction-relevantstateและevaluatecontroltask</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-8-equation"><summary>สมการ</summary><p>pixelMSEเน้นtexture/backgroundแม้dynamicsสำคัญผิด; latentobjectiveลดdimensionแต่ต้องpreserveaction-relevantstateและevaluatecontroltask</p></details><details id="help-topic-8-visual"><summary>ภาพและ shape</summary><p>pixelMSEเน้นtexture/backgroundแม้dynamicsสำคัญผิด; latentobjectiveลดdimensionแต่ต้องpreserveaction-relevantstateและevaluatecontroltask</p></details><details id="help-topic-8-code"><summary>โค้ด</summary><p>pixelMSEเน้นtexture/backgroundแม้dynamicsสำคัญผิด; latentobjectiveลดdimensionแต่ต้องpreserveaction-relevantstateและevaluatecontroltask</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-8-result"><summary>ผลการทดลอง</summary><p>pixelMSEเน้นtexture/backgroundแม้dynamicsสำคัญผิด; latentobjectiveลดdimensionแต่ต้องpreserveaction-relevantstateและevaluatecontroltask</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-8"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-9" class="source-topic"><span id="source-76-world-models-canonical-9-latent-prediction" class="legacy-anchor"></span><h3>9. Latent Prediction</h3>
+<p>Predict task-relevant representations rather than exact pixels.</p>
+<p>This can discard unpredictable nuisance detail while preserving useful structure.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>pixelMSEเน้นtexture/backgroundแม้dynamicsสำคัญผิด; latentobjectiveลดdimensionแต่ต้องpreserveaction-relevantstateและevaluatecontroltask</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-9-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>pixelMSEเน้นtexture/backgroundแม้dynamicsสำคัญผิด; latentobjectiveลดdimensionแต่ต้องpreserveaction-relevantstateและevaluatecontroltask</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-9-equation"><summary>สมการ</summary><p>pixelMSEเน้นtexture/backgroundแม้dynamicsสำคัญผิด; latentobjectiveลดdimensionแต่ต้องpreserveaction-relevantstateและevaluatecontroltask</p></details><details id="help-topic-9-visual"><summary>ภาพและ shape</summary><p>pixelMSEเน้นtexture/backgroundแม้dynamicsสำคัญผิด; latentobjectiveลดdimensionแต่ต้องpreserveaction-relevantstateและevaluatecontroltask</p></details><details id="help-topic-9-code"><summary>โค้ด</summary><p>pixelMSEเน้นtexture/backgroundแม้dynamicsสำคัญผิด; latentobjectiveลดdimensionแต่ต้องpreserveaction-relevantstateและevaluatecontroltask</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-9-result"><summary>ผลการทดลอง</summary><p>pixelMSEเน้นtexture/backgroundแม้dynamicsสำคัญผิด; latentobjectiveลดdimensionแต่ต้องpreserveaction-relevantstateและevaluatecontroltask</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-9"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-10" class="source-topic"><span id="source-76-world-models-canonical-10-jepa-style-prediction" class="legacy-anchor"></span><h3>10. JEPA-Style Prediction</h3>
+<p>Joint-Embedding Predictive Architectures predict representations of unseen/target content rather than reconstructing raw input exactly.</p>
+<p>Meta's current V-JEPA 2 release explicitly frames this direction as world-model research and highlights robotics/physical-world applications. (see references.md)</p>
+<p>An educational objective:</p>
+<pre><code class="language-text">L = || predictor(context, action) - target_embedding ||^2
+</code></pre>
+<p>Real JEPA systems include richer masking/encoder/target-encoder designs.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-10-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>10. JEPA-Style Prediction</h3>
+<p>Joint-Embedding Predictive Architectures predict representations of unseen/target content rather than reconstructing raw input exactly.</p>
+<p>Meta's current V-JEPA 2 release explicitly frames this direction as world-model research and highlights robotics/physical-world applications. (see references.md)</p>
+<p>An educational objective:</p>
+<pre><code class="language-text">L = || predictor(context, action) - target_embedding ||^2
+</code></pre>
+<p>Real JEPA systems include richer masking/encoder/target-encoder designs.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-10-equation"><summary>สมการ</summary><h3>10. JEPA-Style Prediction</h3>
+<p>Joint-Embedding Predictive Architectures predict representations of unseen/target content rather than reconstructing raw input exactly.</p>
+<p>Meta's current V-JEPA 2 release explicitly frames this direction as world-model research and highlights robotics/physical-world applications. (see references.md)</p>
+<p>An educational objective:</p>
+<pre><code class="language-text">L = || predictor(context, action) - target_embedding ||^2
+</code></pre>
+<p>Real JEPA systems include richer masking/encoder/target-encoder designs.</p></details><details id="help-topic-10-visual"><summary>ภาพและ shape</summary><h3>10. JEPA-Style Prediction</h3>
+<p>Joint-Embedding Predictive Architectures predict representations of unseen/target content rather than reconstructing raw input exactly.</p>
+<p>Meta's current V-JEPA 2 release explicitly frames this direction as world-model research and highlights robotics/physical-world applications. (see references.md)</p>
+<p>An educational objective:</p>
+<pre><code class="language-text">L = || predictor(context, action) - target_embedding ||^2
+</code></pre>
+<p>Real JEPA systems include richer masking/encoder/target-encoder designs.</p></details><details id="help-topic-10-code"><summary>โค้ด</summary><h3>10. JEPA-Style Prediction</h3>
+<p>Joint-Embedding Predictive Architectures predict representations of unseen/target content rather than reconstructing raw input exactly.</p>
+<p>Meta's current V-JEPA 2 release explicitly frames this direction as world-model research and highlights robotics/physical-world applications. (see references.md)</p>
+<p>An educational objective:</p>
+<pre><code class="language-text">L = || predictor(context, action) - target_embedding ||^2
+</code></pre>
+<p>Real JEPA systems include richer masking/encoder/target-encoder designs.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-10-result"><summary>ผลการทดลอง</summary><h3>10. JEPA-Style Prediction</h3>
+<p>Joint-Embedding Predictive Architectures predict representations of unseen/target content rather than reconstructing raw input exactly.</p>
+<p>Meta's current V-JEPA 2 release explicitly frames this direction as world-model research and highlights robotics/physical-world applications. (see references.md)</p>
+<p>An educational objective:</p>
+<pre><code class="language-text">L = || predictor(context, action) - target_embedding ||^2
+</code></pre>
+<p>Real JEPA systems include richer masking/encoder/target-encoder designs.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-10"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-11" class="source-topic"><span id="source-76-world-models-canonical-11-video-world-models" class="legacy-anchor"></span><h3>11. Video World Models</h3>
+<p>Video supplies temporal supervision:
+- object permanence
+- motion
+- interactions
+- scene dynamics</p>
+<p>But passive video alone may not reveal action-conditioned controllability.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-11-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>11. Video World Models</h3>
+<p>Video supplies temporal supervision:
+- object permanence
+- motion
+- interactions
+- scene dynamics</p>
+<p>But passive video alone may not reveal action-conditioned controllability.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-11-equation"><summary>สมการ</summary><h3>11. Video World Models</h3>
+<p>Video supplies temporal supervision:
+- object permanence
+- motion
+- interactions
+- scene dynamics</p>
+<p>But passive video alone may not reveal action-conditioned controllability.</p></details><details id="help-topic-11-visual"><summary>ภาพและ shape</summary><h3>11. Video World Models</h3>
+<p>Video supplies temporal supervision:
+- object permanence
+- motion
+- interactions
+- scene dynamics</p>
+<p>But passive video alone may not reveal action-conditioned controllability.</p></details><details id="help-topic-11-code"><summary>โค้ด</summary><h3>11. Video World Models</h3>
+<p>Video supplies temporal supervision:
+- object permanence
+- motion
+- interactions
+- scene dynamics</p>
+<p>But passive video alone may not reveal action-conditioned controllability.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-11-result"><summary>ผลการทดลอง</summary><h3>11. Video World Models</h3>
+<p>Video supplies temporal supervision:
+- object permanence
+- motion
+- interactions
+- scene dynamics</p>
+<p>But passive video alone may not reveal action-conditioned controllability.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-11"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-12" class="source-topic"><span id="source-76-world-models-canonical-12-action-conditioned-models" class="legacy-anchor"></span><h3>12. Action-Conditioned Models</h3>
+<p>For robotics/control:</p>
+<pre><code class="language-text">future = f(current_state, action)
+</code></pre>
+<p>Actions let the model distinguish what the agent can cause from what merely happens.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>knownlinearsystemrecoverytolerance,zeroactiondynamics,MPCexecuteoneactionthenreplanและuncertaintyvariance≥0; λnegativeinputreject</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-12-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>knownlinearsystemrecoverytolerance,zeroactiondynamics,MPCexecuteoneactionthenreplanและuncertaintyvariance≥0; λnegativeinputreject</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-12-equation"><summary>สมการ</summary><p>knownlinearsystemrecoverytolerance,zeroactiondynamics,MPCexecuteoneactionthenreplanและuncertaintyvariance≥0; λnegativeinputreject</p></details><details id="help-topic-12-visual"><summary>ภาพและ shape</summary><p>knownlinearsystemrecoverytolerance,zeroactiondynamics,MPCexecuteoneactionthenreplanและuncertaintyvariance≥0; λnegativeinputreject</p></details><details id="help-topic-12-code"><summary>โค้ด</summary><p>knownlinearsystemrecoverytolerance,zeroactiondynamics,MPCexecuteoneactionthenreplanและuncertaintyvariance≥0; λnegativeinputreject</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-12-result"><summary>ผลการทดลอง</summary><p>knownlinearsystemrecoverytolerance,zeroactiondynamics,MPCexecuteoneactionthenreplanและuncertaintyvariance≥0; λnegativeinputreject</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-12"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-13" class="source-topic"><span id="source-76-world-models-canonical-13-dreamer-style-concepts" class="legacy-anchor"></span><h3>13. Dreamer-Style Concepts</h3>
+<p>Dreamer-family approaches learn a compact latent dynamics model and improve behavior using imagined trajectories inside that learned latent space.</p>
+<p>Key concepts:
+- representation model
+- transition/dynamics model
+- reward/value prediction
+- imagination rollouts
+- actor/value learning</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-13-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>13. Dreamer-Style Concepts</h3>
+<p>Dreamer-family approaches learn a compact latent dynamics model and improve behavior using imagined trajectories inside that learned latent space.</p>
+<p>Key concepts:
+- representation model
+- transition/dynamics model
+- reward/value prediction
+- imagination rollouts
+- actor/value learning</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-13-equation"><summary>สมการ</summary><h3>13. Dreamer-Style Concepts</h3>
+<p>Dreamer-family approaches learn a compact latent dynamics model and improve behavior using imagined trajectories inside that learned latent space.</p>
+<p>Key concepts:
+- representation model
+- transition/dynamics model
+- reward/value prediction
+- imagination rollouts
+- actor/value learning</p></details><details id="help-topic-13-visual"><summary>ภาพและ shape</summary><h3>13. Dreamer-Style Concepts</h3>
+<p>Dreamer-family approaches learn a compact latent dynamics model and improve behavior using imagined trajectories inside that learned latent space.</p>
+<p>Key concepts:
+- representation model
+- transition/dynamics model
+- reward/value prediction
+- imagination rollouts
+- actor/value learning</p></details><details id="help-topic-13-code"><summary>โค้ด</summary><h3>13. Dreamer-Style Concepts</h3>
+<p>Dreamer-family approaches learn a compact latent dynamics model and improve behavior using imagined trajectories inside that learned latent space.</p>
+<p>Key concepts:
+- representation model
+- transition/dynamics model
+- reward/value prediction
+- imagination rollouts
+- actor/value learning</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-13-result"><summary>ผลการทดลอง</summary><h3>13. Dreamer-Style Concepts</h3>
+<p>Dreamer-family approaches learn a compact latent dynamics model and improve behavior using imagined trajectories inside that learned latent space.</p>
+<p>Key concepts:
+- representation model
+- transition/dynamics model
+- reward/value prediction
+- imagination rollouts
+- actor/value learning</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-13"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-14" class="source-topic"><span id="source-76-world-models-canonical-14-uncertainty" class="legacy-anchor"></span><h3>14. Uncertainty</h3>
+<p>A deterministic model can be overconfident when multiple futures are plausible.</p>
+<p>Approaches include:
+- stochastic latent variables
+- ensembles
+- distributions over next states</p>
+<p>Planning should account for model uncertainty in safety-critical domains.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>ensemblepredictions[1,2,3]mean2,popvariance2/3เป็นuncertaintyproxy; sharedbiasทุกmodelอาจvarianceต่ำแต่ผิดทั้งหมด</p><p>recordstates/actions/transitionpredictions/ensemblevariance/candidatecosts/chosenaction/actualnextstateและrollouterrorbyhorizon</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-14-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>ensemblepredictions[1,2,3]mean2,popvariance2/3เป็นuncertaintyproxy; sharedbiasทุกmodelอาจvarianceต่ำแต่ผิดทั้งหมด</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-14-equation"><summary>สมการ</summary><p>ensemblepredictions[1,2,3]mean2,popvariance2/3เป็นuncertaintyproxy; sharedbiasทุกmodelอาจvarianceต่ำแต่ผิดทั้งหมด</p></details><details id="help-topic-14-visual"><summary>ภาพและ shape</summary><p>ensemblepredictions[1,2,3]mean2,popvariance2/3เป็นuncertaintyproxy; sharedbiasทุกmodelอาจvarianceต่ำแต่ผิดทั้งหมด</p></details><details id="help-topic-14-code"><summary>โค้ด</summary><p>ensemblepredictions[1,2,3]mean2,popvariance2/3เป็นuncertaintyproxy; sharedbiasทุกmodelอาจvarianceต่ำแต่ผิดทั้งหมด</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-14-result"><summary>ผลการทดลอง</summary><p>ensemblepredictions[1,2,3]mean2,popvariance2/3เป็นuncertaintyproxy; sharedbiasทุกmodelอาจvarianceต่ำแต่ผิดทั้งหมด</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-14"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-15" class="source-topic"><span id="source-76-world-models-canonical-15-compounding-error" class="legacy-anchor"></span><h3>15. Compounding Error</h3>
+<p>One-step MSE can be low while 50-step rollouts drift badly.</p>
+<p>Evaluate prediction error versus horizon:</p>
+<pre><code class="language-text">horizon 1, 2, 4, 8, 16, ...
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>one-stepใช้truecurrentstateทุกครั้ง ส่วนmulti-stepป้อนpredictionกลับ; errorอาจสะสม แม้one-stepMSEเล็ก ต้องploterrorbyhorizon</p><p>horizons1/2/4/8เริ่มsameheldoutstates/actions; recordMSE/uncertaintybyhorizonและไม่resetpredictionsด้วยtrueobsกลางopenloopโดยไม่บอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-15-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>one-stepใช้truecurrentstateทุกครั้ง ส่วนmulti-stepป้อนpredictionกลับ; errorอาจสะสม แม้one-stepMSEเล็ก ต้องploterrorbyhorizon</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-15-equation"><summary>สมการ</summary><p>one-stepใช้truecurrentstateทุกครั้ง ส่วนmulti-stepป้อนpredictionกลับ; errorอาจสะสม แม้one-stepMSEเล็ก ต้องploterrorbyhorizon</p></details><details id="help-topic-15-visual"><summary>ภาพและ shape</summary><p>one-stepใช้truecurrentstateทุกครั้ง ส่วนmulti-stepป้อนpredictionกลับ; errorอาจสะสม แม้one-stepMSEเล็ก ต้องploterrorbyhorizon</p></details><details id="help-topic-15-code"><summary>โค้ด</summary><p>one-stepใช้truecurrentstateทุกครั้ง ส่วนmulti-stepป้อนpredictionกลับ; errorอาจสะสม แม้one-stepMSEเล็ก ต้องploterrorbyhorizon</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-15-result"><summary>ผลการทดลอง</summary><p>one-stepใช้truecurrentstateทุกครั้ง ส่วนmulti-stepป้อนpredictionกลับ; errorอาจสะสม แม้one-stepMSEเล็ก ต้องploterrorbyhorizon</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-15"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-16" class="source-topic"><span id="source-76-world-models-canonical-16-model-exploitation" class="legacy-anchor"></span><h3>16. Model Exploitation</h3>
+<p>A planner can discover action sequences that exploit inaccuracies in the learned model and look excellent only in imagination.</p>
+<p>Mitigations:
+- short-horizon replanning
+- uncertainty penalties
+- real-environment validation
+- conservative constraints</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>biasedmodelxnext=x+2uแทนtruex+uทำplannerเลือกu1เพื่อgoal2แต่realถึง1; comparepredicted/actualreturnจับmodelexploitation</p><p>ทดลอง“ensembleuncertaintypenaltyลดOODmodel-exploitation≥30%โดยnominalsuccessลด≤5จุด”; fixedtruesimulatorและholdoutstates</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-16-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>biasedmodelxnext=x+2uแทนtruex+uทำplannerเลือกu1เพื่อgoal2แต่realถึง1; comparepredicted/actualreturnจับmodelexploitation</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-16-equation"><summary>สมการ</summary><p>biasedmodelxnext=x+2uแทนtruex+uทำplannerเลือกu1เพื่อgoal2แต่realถึง1; comparepredicted/actualreturnจับmodelexploitation</p></details><details id="help-topic-16-visual"><summary>ภาพและ shape</summary><p>biasedmodelxnext=x+2uแทนtruex+uทำplannerเลือกu1เพื่อgoal2แต่realถึง1; comparepredicted/actualreturnจับmodelexploitation</p></details><details id="help-topic-16-code"><summary>โค้ด</summary><p>biasedmodelxnext=x+2uแทนtruex+uทำplannerเลือกu1เพื่อgoal2แต่realถึง1; comparepredicted/actualreturnจับmodelexploitation</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-16-result"><summary>ผลการทดลอง</summary><p>biasedmodelxnext=x+2uแทนtruex+uทำplannerเลือกu1เพื่อgoal2แต่realถึง1; comparepredicted/actualreturnจับmodelexploitation</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-16"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-17" class="source-topic"><span id="source-76-world-models-canonical-17-world-model-vs-simulator" class="legacy-anchor"></span><h3>17. World Model vs Simulator</h3>
+<p>A simulator is usually hand-engineered/physics-based.</p>
+<p>A learned world model is estimated from data.</p>
+<p>Hybrid systems can combine both.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>manifest มีsimulatorversion/state/actionunits/transitiondataset/split/modelensemble/plannerhorizon/candidategenerator/costλ/seed/constraints</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-17-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>manifest มีsimulatorversion/state/actionunits/transitiondataset/split/modelensemble/plannerhorizon/candidategenerator/costλ/seed/constraints</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-17-equation"><summary>สมการ</summary><p>manifest มีsimulatorversion/state/actionunits/transitiondataset/split/modelensemble/plannerhorizon/candidategenerator/costλ/seed/constraints</p></details><details id="help-topic-17-visual"><summary>ภาพและ shape</summary><p>manifest มีsimulatorversion/state/actionunits/transitiondataset/split/modelensemble/plannerhorizon/candidategenerator/costλ/seed/constraints</p></details><details id="help-topic-17-code"><summary>โค้ด</summary><p>manifest มีsimulatorversion/state/actionunits/transitiondataset/split/modelensemble/plannerhorizon/candidategenerator/costλ/seed/constraints</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-17-result"><summary>ผลการทดลอง</summary><p>manifest มีsimulatorversion/state/actionunits/transitiondataset/split/modelensemble/plannerhorizon/candidategenerator/costλ/seed/constraints</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-17"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-18" class="source-topic"><span id="source-76-world-models-canonical-18-evaluation" class="legacy-anchor"></span><h3>18. Evaluation</h3>
+<p>Measure:
+- one-step prediction
+- multi-step rollout error
+- representation quality
+- planning/control success
+- uncertainty calibration
+- robustness under distribution shift</p>
+<p>Pixel realism alone is insufficient.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>evalรวมone/multistep,dynamicscalibration,controlsuccess/constraintviolations,distribution-shift/actionsunseen ไม่reconstructionอย่างเดียว</p><p>fitmodelด้วยtesttrajectoryหรือevaluateonlytrainingactionsทำgeneralizationดูดี; splittrajectories/timeและOODaction/state-slices</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-18-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>evalรวมone/multistep,dynamicscalibration,controlsuccess/constraintviolations,distribution-shift/actionsunseen ไม่reconstructionอย่างเดียว</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-18-equation"><summary>สมการ</summary><p>evalรวมone/multistep,dynamicscalibration,controlsuccess/constraintviolations,distribution-shift/actionsunseen ไม่reconstructionอย่างเดียว</p></details><details id="help-topic-18-visual"><summary>ภาพและ shape</summary><p>evalรวมone/multistep,dynamicscalibration,controlsuccess/constraintviolations,distribution-shift/actionsunseen ไม่reconstructionอย่างเดียว</p></details><details id="help-topic-18-code"><summary>โค้ด</summary><p>evalรวมone/multistep,dynamicscalibration,controlsuccess/constraintviolations,distribution-shift/actionsunseen ไม่reconstructionอย่างเดียว</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-18-result"><summary>ผลการทดลอง</summary><p>evalรวมone/multistep,dynamicscalibration,controlsuccess/constraintviolations,distribution-shift/actionsunseen ไม่reconstructionอย่างเดียว</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-18"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-19" class="source-topic"><span id="source-76-world-models-canonical-19-from-scratch" class="legacy-anchor"></span><h3>19. From Scratch</h3>
+<p><code>src/world_model.py</code> implements:
+- one_step_mse
+- fit_linear_dynamics
+- linear_step
+- rollout_linear_dynamics
+- discounted_return
+- goal_reward
+- enumerate_action_plans
+- plan_by_model
+- jepa_prediction_loss</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>least-squaresเทียบnp.linalg.lstsqfixtureและmanualrollout; simulatorcontrolperformanceแยกจากphysicalworldtransferซึ่งยังnot_run</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-19-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>least-squaresเทียบnp.linalg.lstsqfixtureและmanualrollout; simulatorcontrolperformanceแยกจากphysicalworldtransferซึ่งยังnot_run</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-19-equation"><summary>สมการ</summary><p>least-squaresเทียบnp.linalg.lstsqfixtureและmanualrollout; simulatorcontrolperformanceแยกจากphysicalworldtransferซึ่งยังnot_run</p></details><details id="help-topic-19-visual"><summary>ภาพและ shape</summary><p>least-squaresเทียบnp.linalg.lstsqfixtureและmanualrollout; simulatorcontrolperformanceแยกจากphysicalworldtransferซึ่งยังnot_run</p></details><details id="help-topic-19-code"><summary>โค้ด</summary><p>least-squaresเทียบnp.linalg.lstsqfixtureและmanualrollout; simulatorcontrolperformanceแยกจากphysicalworldtransferซึ่งยังnot_run</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-19-result"><summary>ผลการทดลอง</summary><p>least-squaresเทียบnp.linalg.lstsqfixtureและmanualrollout; simulatorcontrolperformanceแยกจากphysicalworldtransferซึ่งยังnot_run</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-19"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-20" class="source-topic"><span id="source-76-world-models-canonical-20-common-mistakes" class="legacy-anchor"></span><h3>20. Common Mistakes</h3>
+<ol>
+<li>one-step accuracy treated as long-horizon accuracy</li>
+<li>pixel reconstruction treated as complete world understanding</li>
+<li>action conditioning omitted for controllable environments</li>
+<li>planner allowed to exploit model errors</li>
+<li>uncertainty ignored</li>
+<li>imagined return treated as real return</li>
+<li>open-loop long rollout used without replanning</li>
+<li>latent representation never evaluated</li>
+<li>train/test trajectories leak</li>
+<li>simulation success assumed to transfer to reality</li>
+</ol><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-20-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>20. Common Mistakes</h3>
+<ol>
+<li>one-step accuracy treated as long-horizon accuracy</li>
+<li>pixel reconstruction treated as complete world understanding</li>
+<li>action conditioning omitted for controllable environments</li>
+<li>planner allowed to exploit model errors</li>
+<li>uncertainty ignored</li>
+<li>imagined return treated as real return</li>
+<li>open-loop long rollout used without replanning</li>
+<li>latent representation never evaluated</li>
+<li>train/test trajectories leak</li>
+<li>simulation success assumed to transfer to reality</li>
+</ol><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-20-equation"><summary>สมการ</summary><h3>20. Common Mistakes</h3>
+<ol>
+<li>one-step accuracy treated as long-horizon accuracy</li>
+<li>pixel reconstruction treated as complete world understanding</li>
+<li>action conditioning omitted for controllable environments</li>
+<li>planner allowed to exploit model errors</li>
+<li>uncertainty ignored</li>
+<li>imagined return treated as real return</li>
+<li>open-loop long rollout used without replanning</li>
+<li>latent representation never evaluated</li>
+<li>train/test trajectories leak</li>
+<li>simulation success assumed to transfer to reality</li>
+</ol></details><details id="help-topic-20-visual"><summary>ภาพและ shape</summary><h3>20. Common Mistakes</h3>
+<ol>
+<li>one-step accuracy treated as long-horizon accuracy</li>
+<li>pixel reconstruction treated as complete world understanding</li>
+<li>action conditioning omitted for controllable environments</li>
+<li>planner allowed to exploit model errors</li>
+<li>uncertainty ignored</li>
+<li>imagined return treated as real return</li>
+<li>open-loop long rollout used without replanning</li>
+<li>latent representation never evaluated</li>
+<li>train/test trajectories leak</li>
+<li>simulation success assumed to transfer to reality</li>
+</ol></details><details id="help-topic-20-code"><summary>โค้ด</summary><h3>20. Common Mistakes</h3>
+<ol>
+<li>one-step accuracy treated as long-horizon accuracy</li>
+<li>pixel reconstruction treated as complete world understanding</li>
+<li>action conditioning omitted for controllable environments</li>
+<li>planner allowed to exploit model errors</li>
+<li>uncertainty ignored</li>
+<li>imagined return treated as real return</li>
+<li>open-loop long rollout used without replanning</li>
+<li>latent representation never evaluated</li>
+<li>train/test trajectories leak</li>
+<li>simulation success assumed to transfer to reality</li>
+</ol><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-20-result"><summary>ผลการทดลอง</summary><h3>20. Common Mistakes</h3>
+<ol>
+<li>one-step accuracy treated as long-horizon accuracy</li>
+<li>pixel reconstruction treated as complete world understanding</li>
+<li>action conditioning omitted for controllable environments</li>
+<li>planner allowed to exploit model errors</li>
+<li>uncertainty ignored</li>
+<li>imagined return treated as real return</li>
+<li>open-loop long rollout used without replanning</li>
+<li>latent representation never evaluated</li>
+<li>train/test trajectories leak</li>
+<li>simulation success assumed to transfer to reality</li>
+</ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-20"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-21" class="source-topic"><span id="source-76-world-models-canonical-21-exercises-mini-project" class="legacy-anchor"></span><h3>21. Exercises / Mini Project</h3>
+<ul>
+<li><a href="../76-world-models/exercises/README.md">Exercises</a></li>
+<li><a href="../76-world-models/solutions/README.md">Solutions</a></li>
+<li><a href="../76-world-models/mini-project/README.md">Mini Project</a></li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-21-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>21. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-21-equation"><summary>สมการ</summary><h3>21. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-21-visual"><summary>ภาพและ shape</summary><h3>21. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-21-code"><summary>โค้ด</summary><h3>21. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-21-result"><summary>ผลการทดลอง</summary><h3>21. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-21"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-22" class="source-topic"><span id="source-76-world-models-canonical-22-checklist" class="legacy-anchor"></span><h3>22. Checklist</h3>
+<ul>
+<li>[ ] latent state</li>
+<li>[ ] transition model</li>
+<li>[ ] action conditioning</li>
+<li>[ ] rollout</li>
+<li>[ ] planning</li>
+<li>[ ] compounding error</li>
+<li>[ ] uncertainty</li>
+<li>[ ] JEPA concepts</li>
+<li>[ ] Dreamer concepts</li>
+<li>[ ] world-model evaluation</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-22-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>22. Checklist</h3>
+<ul>
+<li>[ ] latent state</li>
+<li>[ ] transition model</li>
+<li>[ ] action conditioning</li>
+<li>[ ] rollout</li>
+<li>[ ] planning</li>
+<li>[ ] compounding error</li>
+<li>[ ] uncertainty</li>
+<li>[ ] JEPA concepts</li>
+<li>[ ] Dreamer concepts</li>
+<li>[ ] world-model evaluation</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-22-equation"><summary>สมการ</summary><h3>22. Checklist</h3>
+<ul>
+<li>[ ] latent state</li>
+<li>[ ] transition model</li>
+<li>[ ] action conditioning</li>
+<li>[ ] rollout</li>
+<li>[ ] planning</li>
+<li>[ ] compounding error</li>
+<li>[ ] uncertainty</li>
+<li>[ ] JEPA concepts</li>
+<li>[ ] Dreamer concepts</li>
+<li>[ ] world-model evaluation</li>
+</ul></details><details id="help-topic-22-visual"><summary>ภาพและ shape</summary><h3>22. Checklist</h3>
+<ul>
+<li>[ ] latent state</li>
+<li>[ ] transition model</li>
+<li>[ ] action conditioning</li>
+<li>[ ] rollout</li>
+<li>[ ] planning</li>
+<li>[ ] compounding error</li>
+<li>[ ] uncertainty</li>
+<li>[ ] JEPA concepts</li>
+<li>[ ] Dreamer concepts</li>
+<li>[ ] world-model evaluation</li>
+</ul></details><details id="help-topic-22-code"><summary>โค้ด</summary><h3>22. Checklist</h3>
+<ul>
+<li>[ ] latent state</li>
+<li>[ ] transition model</li>
+<li>[ ] action conditioning</li>
+<li>[ ] rollout</li>
+<li>[ ] planning</li>
+<li>[ ] compounding error</li>
+<li>[ ] uncertainty</li>
+<li>[ ] JEPA concepts</li>
+<li>[ ] Dreamer concepts</li>
+<li>[ ] world-model evaluation</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-22-result"><summary>ผลการทดลอง</summary><h3>22. Checklist</h3>
+<ul>
+<li>[ ] latent state</li>
+<li>[ ] transition model</li>
+<li>[ ] action conditioning</li>
+<li>[ ] rollout</li>
+<li>[ ] planning</li>
+<li>[ ] compounding error</li>
+<li>[ ] uncertainty</li>
+<li>[ ] JEPA concepts</li>
+<li>[ ] Dreamer concepts</li>
+<li>[ ] world-model evaluation</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-22"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-23" class="source-topic"><span id="source-76-world-models-canonical-23-whats-next" class="legacy-anchor"></span><span id="source-76-world-models-canonical-76-world-models-world-models" class="legacy-anchor"></span><h3>23. What's Next</h3>
+<p>Chapter 77 turns learned perception/world representations into safe robot actions, primarily in simulation for this course.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-23-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>23. What's Next</h3>
+<p>Chapter 77 turns learned perception/world representations into safe robot actions, primarily in simulation for this course.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-23-equation"><summary>สมการ</summary><h3>23. What's Next</h3>
+<p>Chapter 77 turns learned perception/world representations into safe robot actions, primarily in simulation for this course.</p></details><details id="help-topic-23-visual"><summary>ภาพและ shape</summary><h3>23. What's Next</h3>
+<p>Chapter 77 turns learned perception/world representations into safe robot actions, primarily in simulation for this course.</p></details><details id="help-topic-23-code"><summary>โค้ด</summary><h3>23. What's Next</h3>
+<p>Chapter 77 turns learned perception/world representations into safe robot actions, primarily in simulation for this course.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-23-result"><summary>ผลการทดลอง</summary><h3>23. What's Next</h3>
+<p>Chapter 77 turns learned perception/world representations into safe robot actions, primarily in simulation for this course.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-23"> อ่านหัวข้อนี้แล้ว</label></section><details><summary>รายละเอียดเพิ่มเติมและข้อกำหนดของ local lab</summary><h3>76-world-models — World Models</h3>
+<p><strong>Prerequisites:</strong> Complete 75-audio-voice-models; be able to trace array/tensor shapes, separate train/validation/test data, and explain the core objective of the current chapter.</p>
+<p><strong>Mental model:</strong> Treat World Models as a pipeline: input representation → central mechanism → objective/state update → observable output. At every boundary, state shape/state, allowed information flow, and the invariant that should remain true.</p>
+<p><strong>Code walkthrough:</strong> Read public API first, then input checks, state/shape transformations, numerical core, returned values and tests. Connect each important code block to the equation or algorithm in the chapter README.</p>
+<p><strong>Visualization / inspection:</strong> Use a tiny case. Inspect intermediate values, distributions, norms, scores, states or trajectories appropriate to World Models; do not rely only on the final metric.</p>
+<p><strong>Experiment:</strong> Run a baseline, one controlled parameter change, one edge case and one repeated seeded comparison. Record seed, environment, data version, configuration and metric.</p>
+<p><strong>Limitations:</strong> List at least one assumption, one data-related limitation, one numerical/optimization limitation and one scaling limitation for World Models.</p>
+<p><strong>Analysis workflow:</strong> Check inputs → preprocessing → shapes/state → finite numerical values → objective/update → evaluation protocol. The earliest unexpected state is more informative than a downstream metric.</p>
+<p><strong>Performance:</strong> Identify the dominant time and memory terms and measure them on the local learning run before attempting optimization.</p>
+<p><strong>Production perspective:</strong> Define input validation, artifact/configuration versioning, quality and resource measurements, staged release criteria and a way to return to the previous known-good artifact.</p>
+<p><strong>Research perspective:</strong> State a falsifiable hypothesis, baseline, one-factor change, metric, repeated-run plan when stochastic, and how negative results will be recorded.</p>
+<p><strong>Interview questions:</strong>
+1. Explain World Models from first principles without naming a library API.
+2. Trace one input through the central mechanism and give the important intermediate shapes/state.
+3. Name the strongest assumption and a case where it fails.
+4. State the dominant compute/memory cost.
+5. Describe how you would validate a new implementation against a trusted baseline.</p>
+<p><strong>Summary / exit condition:</strong> You may move on when you can explain, derive or trace, implement, test, analyze, measure and evaluate World Models, and when the chapter mini-project plus twenty total exercises are complete.</p></details></section><section id="objective-evidence" class="canonical-section"><h2>พิสูจน์ความสามารถทีละ objective</h2><p>ทำกรณีใหม่ก่อนเปิด reference แล้วบันทึกงานด้านล่าง ให้ผู้ตรวจใช้ rubric ตรวจคำอธิบาย ผลคำนวณ โค้ด และข้อจำกัด บันทึกเก็บในเบราว์เซอร์เครื่องนี้ กดส่งออกเพื่อสำรองหรือส่งให้ผู้ตรวจ เว็บไม่ได้รันโค้ดหรือตัดสินผลงานแทนผู้ตรวจ</p><button type="button" class="secondary-button" data-export-evidence>ส่งออกหลักฐานบทนี้เป็น JSON</button><p role="status" id="evidence-export-status"></p><details id="ch76-objective-01" class="objective-proof"><summary>distinguish observation, state, latent state and belief state</summary><p>distinguish observation, state, latent state and belief state: ใช้กรณีในหัวข้อ Markov State, Latent Dynamics เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch76-evidence-01"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch76-evidence-01-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch76-evidence-01-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch76-evidence-01-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch76-evidence-01-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch76-evidence-01-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch76-evidence-01-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch76-evidence-01-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch76-evidence-01-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>lineartransitionxnext=Ax+Bu; stackZ=[X,U],solveleast_squaresZΘ≈Xnextแล้วsplitΘ; xnext=.8x+.2u,tinyindependentinputsต้องrecoverA.8,B.2</p><h3>3. Markov State</h3>
+<p>In an ideal Markov state:</p>
+<pre><code class="language-text">P(s_{t+1} | history, a_t)
+=
+P(s_{t+1} | s_t, a_t)
+</code></pre>
+<p>Raw observations are often partially observable, so the model may need memory/belief state.</p>
+<h3>4. Latent Dynamics</h3>
+<p>Encode observation o_t:</p>
+<pre><code class="language-text">z_t = encoder(o_t)
+</code></pre>
+<p>Predict:</p>
+<pre><code class="language-text">z_hat_{t+1} = f(z_t, a_t)
+</code></pre>
+<p>A simple linear educational model:</p>
+<pre><code class="language-text">z_{t+1} = A z_t + B a_t
+</code></pre></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch76-objective-02" class="objective-proof"><summary>implement a simple learned dynamics model</summary><p>implement a simple learned dynamics model: ใช้กรณีในหัวข้อ Latent Dynamics เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch76-evidence-02"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch76-evidence-02-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch76-evidence-02-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch76-evidence-02-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch76-evidence-02-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch76-evidence-02-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch76-evidence-02-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch76-evidence-02-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch76-evidence-02-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>lineartransitionxnext=Ax+Bu; stackZ=[X,U],solveleast_squaresZΘ≈Xnextแล้วsplitΘ; xnext=.8x+.2u,tinyindependentinputsต้องrecoverA.8,B.2</p><h3>4. Latent Dynamics</h3>
+<p>Encode observation o_t:</p>
+<pre><code class="language-text">z_t = encoder(o_t)
+</code></pre>
+<p>Predict:</p>
+<pre><code class="language-text">z_hat_{t+1} = f(z_t, a_t)
+</code></pre>
+<p>A simple linear educational model:</p>
+<pre><code class="language-text">z_{t+1} = A z_t + B a_t
+</code></pre></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch76-objective-03" class="objective-proof"><summary>roll out imagined trajectories</summary><p>roll out imagined trajectories: ใช้กรณีในหัวข้อ Multi-Step Rollout เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch76-evidence-03"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch76-evidence-03-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch76-evidence-03-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch76-evidence-03-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch76-evidence-03-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch76-evidence-03-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch76-evidence-03-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch76-evidence-03-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch76-evidence-03-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>one-stepใช้truecurrentstateทุกครั้ง ส่วนmulti-stepป้อนpredictionกลับ; errorอาจสะสม แม้one-stepMSEเล็ก ต้องploterrorbyhorizon</p><h3>5. Multi-Step Rollout</h3>
+<pre><code class="language-text">z_t
++ a_t → z_hat_{t+1}
++ a_{t+1} → z_hat_{t+2}
+...
+</code></pre>
+<p>Errors compound because later predictions consume earlier predictions.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch76-objective-04" class="objective-proof"><summary>plan over model-predicted futures</summary><p>plan over model-predicted futures: ใช้กรณีในหัวข้อ Model-Based Planning, Discounted Return เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch76-evidence-04"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch76-evidence-04-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch76-evidence-04-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch76-evidence-04-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch76-evidence-04-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch76-evidence-04-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch76-evidence-04-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch76-evidence-04-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch76-evidence-04-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>x0=0,xnext=x+u,goal2,actions[1,1]ถึง2cost0,[0,1]ถึง1terminalcost1; rolloutทุกcandidateจากsameinitialstate</p><h3>6. Model-Based Planning</h3>
+<p>Given candidate action sequences:</p>
+<ol>
+<li>imagine trajectory under each plan</li>
+<li>compute predicted reward/cost</li>
+<li>choose highest predicted return</li>
+<li>execute only the first action</li>
+<li>observe real environment</li>
+<li>replan</li>
+</ol>
+<p>This receding-horizon idea reduces reliance on long open-loop prediction.</p>
+<h3>7. Discounted Return</h3>
+<pre><code class="language-text">G = sum_t gamma^t r_t
+</code></pre>
+<p>World-model planning is only as good as dynamics plus reward/value estimates.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch76-objective-05" class="objective-proof"><summary>calculate model error across rollout horizons</summary><p>calculate model error across rollout horizons: ใช้กรณีในหัวข้อ Compounding Error เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch76-evidence-05"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch76-evidence-05-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch76-evidence-05-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch76-evidence-05-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch76-evidence-05-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch76-evidence-05-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch76-evidence-05-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch76-evidence-05-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch76-evidence-05-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>one-stepใช้truecurrentstateทุกครั้ง ส่วนmulti-stepป้อนpredictionกลับ; errorอาจสะสม แม้one-stepMSEเล็ก ต้องploterrorbyhorizon</p><h3>15. Compounding Error</h3>
+<p>One-step MSE can be low while 50-step rollouts drift badly.</p>
+<p>Evaluate prediction error versus horizon:</p>
+<pre><code class="language-text">horizon 1, 2, 4, 8, 16, ...
+</code></pre></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch76-objective-06" class="objective-proof"><summary>distinguish pixel prediction vs latent prediction</summary><p>distinguish pixel prediction vs latent prediction: ใช้กรณีในหัวข้อ Pixel Prediction, Latent Prediction เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch76-evidence-06"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch76-evidence-06-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch76-evidence-06-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch76-evidence-06-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch76-evidence-06-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch76-evidence-06-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch76-evidence-06-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch76-evidence-06-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch76-evidence-06-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>pixelMSEเน้นtexture/backgroundแม้dynamicsสำคัญผิด; latentobjectiveลดdimensionแต่ต้องpreserveaction-relevantstateและevaluatecontroltask</p><h3>8. Pixel Prediction</h3>
+<p>Predict future pixels directly.</p>
+<p>Advantages:
+- easy to visualize</p>
+<p>Challenges:
+- expensive high-dimensional outputs
+- many pixel details irrelevant to control
+- blurry/uncertain futures</p>
+<h3>9. Latent Prediction</h3>
+<p>Predict task-relevant representations rather than exact pixels.</p>
+<p>This can discard unpredictable nuisance detail while preserving useful structure.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch76-objective-07" class="objective-proof"><summary>understand model-based RL</summary><p>understand model-based RL: ใช้กรณีในหัวข้อ Model-Based Planning, Action-Conditioned Models เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch76-evidence-07"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch76-evidence-07-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch76-evidence-07-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch76-evidence-07-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch76-evidence-07-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch76-evidence-07-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch76-evidence-07-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch76-evidence-07-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch76-evidence-07-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>x0=0,xnext=x+u,goal2,actions[1,1]ถึง2cost0,[0,1]ถึง1terminalcost1; rolloutทุกcandidateจากsameinitialstate</p><h3>6. Model-Based Planning</h3>
+<p>Given candidate action sequences:</p>
+<ol>
+<li>imagine trajectory under each plan</li>
+<li>compute predicted reward/cost</li>
+<li>choose highest predicted return</li>
+<li>execute only the first action</li>
+<li>observe real environment</li>
+<li>replan</li>
+</ol>
+<p>This receding-horizon idea reduces reliance on long open-loop prediction.</p>
+<h3>12. Action-Conditioned Models</h3>
+<p>For robotics/control:</p>
+<pre><code class="language-text">future = f(current_state, action)
+</code></pre>
+<p>Actions let the model distinguish what the agent can cause from what merely happens.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch76-objective-08" class="objective-proof"><summary>understand Dreamer-style latent imagination</summary><p>understand Dreamer-style latent imagination: ใช้กรณีในหัวข้อ Dreamer-Style Concepts เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch76-evidence-08"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch76-evidence-08-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch76-evidence-08-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch76-evidence-08-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch76-evidence-08-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch76-evidence-08-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch76-evidence-08-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch76-evidence-08-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch76-evidence-08-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>13. Dreamer-Style Concepts</h3>
+<p>Dreamer-family approaches learn a compact latent dynamics model and improve behavior using imagined trajectories inside that learned latent space.</p>
+<p>Key concepts:
+- representation model
+- transition/dynamics model
+- reward/value prediction
+- imagination rollouts
+- actor/value learning</p><h3>13. Dreamer-Style Concepts</h3>
+<p>Dreamer-family approaches learn a compact latent dynamics model and improve behavior using imagined trajectories inside that learned latent space.</p>
+<p>Key concepts:
+- representation model
+- transition/dynamics model
+- reward/value prediction
+- imagination rollouts
+- actor/value learning</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch76-objective-09" class="objective-proof"><summary>understand JEPA-style predictive representations</summary><p>understand JEPA-style predictive representations: ใช้กรณีในหัวข้อ JEPA-Style Prediction, Video World Models เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch76-evidence-09"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch76-evidence-09-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch76-evidence-09-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch76-evidence-09-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch76-evidence-09-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch76-evidence-09-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch76-evidence-09-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch76-evidence-09-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch76-evidence-09-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>10. JEPA-Style Prediction</h3>
+<p>Joint-Embedding Predictive Architectures predict representations of unseen/target content rather than reconstructing raw input exactly.</p>
+<p>Meta's current V-JEPA 2 release explicitly frames this direction as world-model research and highlights robotics/physical-world applications. (see references.md)</p>
+<p>An educational objective:</p>
+<pre><code class="language-text">L = || predictor(context, action) - target_embedding ||^2
+</code></pre>
+<p>Real JEPA systems include richer masking/encoder/target-encoder designs.</p>
+<h3>11. Video World Models</h3>
+<p>Video supplies temporal supervision:
+- object permanence
+- motion
+- interactions
+- scene dynamics</p>
+<p>But passive video alone may not reveal action-conditioned controllability.</p><h3>10. JEPA-Style Prediction</h3>
+<p>Joint-Embedding Predictive Architectures predict representations of unseen/target content rather than reconstructing raw input exactly.</p>
+<p>Meta's current V-JEPA 2 release explicitly frames this direction as world-model research and highlights robotics/physical-world applications. (see references.md)</p>
+<p>An educational objective:</p>
+<pre><code class="language-text">L = || predictor(context, action) - target_embedding ||^2
+</code></pre>
+<p>Real JEPA systems include richer masking/encoder/target-encoder designs.</p>
+<h3>11. Video World Models</h3>
+<p>Video supplies temporal supervision:
+- object permanence
+- motion
+- interactions
+- scene dynamics</p>
+<p>But passive video alone may not reveal action-conditioned controllability.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch76-objective-10" class="objective-proof"><summary>reason about compounding model error</summary><p>reason about compounding model error: ใช้กรณีในหัวข้อ Uncertainty, Compounding Error, Model Exploitation เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch76-evidence-10"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch76-evidence-10-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch76-evidence-10-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch76-evidence-10-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch76-evidence-10-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch76-evidence-10-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch76-evidence-10-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch76-evidence-10-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch76-evidence-10-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>one-stepใช้truecurrentstateทุกครั้ง ส่วนmulti-stepป้อนpredictionกลับ; errorอาจสะสม แม้one-stepMSEเล็ก ต้องploterrorbyhorizon</p><h3>14. Uncertainty</h3>
+<p>A deterministic model can be overconfident when multiple futures are plausible.</p>
+<p>Approaches include:
+- stochastic latent variables
+- ensembles
+- distributions over next states</p>
+<p>Planning should account for model uncertainty in safety-critical domains.</p>
+<h3>15. Compounding Error</h3>
+<p>One-step MSE can be low while 50-step rollouts drift badly.</p>
+<p>Evaluate prediction error versus horizon:</p>
+<pre><code class="language-text">horizon 1, 2, 4, 8, 16, ...
+</code></pre>
+<h3>16. Model Exploitation</h3>
+<p>A planner can discover action sequences that exploit inaccuracies in the learned model and look excellent only in imagination.</p>
+<p>Mitigations:
+- short-horizon replanning
+- uncertainty penalties
+- real-environment validation
+- conservative constraints</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch76-objective-11" class="objective-proof"><summary>evaluate world models beyond reconstruction quality</summary><p>evaluate world models beyond reconstruction quality: ใช้กรณีในหัวข้อ World Model vs Simulator, Evaluation, From Scratch เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch76-evidence-11"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch76-evidence-11-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch76-evidence-11-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch76-evidence-11-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch76-evidence-11-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch76-evidence-11-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch76-evidence-11-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch76-evidence-11-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch76-evidence-11-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>evalรวมone/multistep,dynamicscalibration,controlsuccess/constraintviolations,distribution-shift/actionsunseen ไม่reconstructionอย่างเดียว</p><h3>17. World Model vs Simulator</h3>
+<p>A simulator is usually hand-engineered/physics-based.</p>
+<p>A learned world model is estimated from data.</p>
+<p>Hybrid systems can combine both.</p>
+<h3>18. Evaluation</h3>
+<p>Measure:
+- one-step prediction
+- multi-step rollout error
+- representation quality
+- planning/control success
+- uncertainty calibration
+- robustness under distribution shift</p>
+<p>Pixel realism alone is insufficient.</p>
+<h3>19. From Scratch</h3>
+<p><code>src/world_model.py</code> implements:
+- one_step_mse
+- fit_linear_dynamics
+- linear_step
+- rollout_linear_dynamics
+- discounted_return
+- goal_reward
+- enumerate_action_plans
+- plan_by_model
+- jepa_prediction_loss</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details></section><section id="implementation" class="canonical-section"><h2>Implementation และ tests ที่รันบนเครื่องได้</h2><details><summary>76-world-models/src/world_model.py</summary><pre><code>&quot;&quot;&quot;World-model prediction, rollout, planning and latent-objective utilities.&quot;&quot;&quot;
+
+from __future__ import annotations
+
+import itertools
+import numpy as np
+
+
+def one_step_mse(
+    predicted: np.ndarray,
+    target: np.ndarray,
+) -&gt; float:
+    pred = np.asarray(predicted, dtype=float)
+    tgt = np.asarray(target, dtype=float)
+
+    if pred.shape != tgt.shape or pred.size == 0:
+        raise ValueError(&quot;matching non-empty arrays required&quot;)
+
+    return float(np.mean((pred - tgt) ** 2))
+
+
+def fit_linear_dynamics(
+    states: np.ndarray,
+    actions: np.ndarray,
+    next_states: np.ndarray,
+    *,
+    l2: float = 1e-6,
+) -&gt; tuple[np.ndarray, np.ndarray]:
+    x = np.asarray(states, dtype=float)
+    u = np.asarray(actions, dtype=float)
+    y = np.asarray(next_states, dtype=float)
+
+    if x.ndim != 2 or u.ndim != 2 or y.ndim != 2:
+        raise ValueError(&quot;states/actions/next_states must be 2D&quot;)
+    if not (len(x) == len(u) == len(y)):
+        raise ValueError(&quot;batch length mismatch&quot;)
+    if len(x) == 0:
+        raise ValueError(&quot;at least one transition required&quot;)
+    if x.shape[1] != y.shape[1]:
+        raise ValueError(&quot;state dimension mismatch&quot;)
+    if l2 &lt; 0:
+        raise ValueError(&quot;l2 must be non-negative&quot;)
+
+    design = np.concatenate([x, u], axis=1)
+    eye = np.eye(design.shape[1], dtype=float)
+    gram = design.T @ design + l2 * eye
+    theta = np.linalg.solve(gram, design.T @ y)
+
+    state_dim = x.shape[1]
+    a = theta[:state_dim].T
+    b = theta[state_dim:].T
+    return a, b
+
+
+def linear_step(
+    state: np.ndarray,
+    action: np.ndarray,
+    *,
+    transition_matrix: np.ndarray,
+    action_matrix: np.ndarray,
+) -&gt; np.ndarray:
+    x = np.asarray(state, dtype=float)
+    u = np.asarray(action, dtype=float)
+    a = np.asarray(transition_matrix, dtype=float)
+    b = np.asarray(action_matrix, dtype=float)
+
+    if a.ndim != 2 or b.ndim != 2:
+        raise ValueError(&quot;matrices must be 2D&quot;)
+    if a.shape[0] != a.shape[1]:
+        raise ValueError(&quot;transition_matrix must be square&quot;)
+    if x.shape != (a.shape[1],):
+        raise ValueError(&quot;state shape mismatch&quot;)
+    if b.shape[0] != a.shape[0]:
+        raise ValueError(&quot;action matrix output mismatch&quot;)
+    if u.shape != (b.shape[1],):
+        raise ValueError(&quot;action shape mismatch&quot;)
+
+    return a @ x + b @ u
+
+
+def rollout_linear_dynamics(
+    initial_state: np.ndarray,
+    actions: np.ndarray,
+    *,
+    transition_matrix: np.ndarray,
+    action_matrix: np.ndarray,
+) -&gt; np.ndarray:
+    action_sequence = np.asarray(actions, dtype=float)
+    if action_sequence.ndim != 2:
+        raise ValueError(&quot;actions must be [horizon,action_dim]&quot;)
+
+    state = np.asarray(initial_state, dtype=float).copy()
+    trajectory = [state.copy()]
+
+    for action in action_sequence:
+        state = linear_step(
+            state,
+            action,
+            transition_matrix=transition_matrix,
+            action_matrix=action_matrix,
+        )
+        trajectory.append(state.copy())
+
+    return np.stack(trajectory)
+
+
+def discounted_return(
+    rewards: np.ndarray,
+    *,
+    gamma: float = 1.0,
+) -&gt; float:
+    values = np.asarray(rewards, dtype=float).reshape(-1)
+    if values.size == 0:
+        return 0.0
+    if not 0.0 &lt;= gamma &lt;= 1.0:
+        raise ValueError(&quot;gamma must lie in [0,1]&quot;)
+
+    discounts = gamma ** np.arange(len(values))
+    return float(np.sum(discounts * values))
+
+
+def goal_reward(
+    state: np.ndarray,
+    goal: np.ndarray,
+    *,
+    action: np.ndarray | None = None,
+    action_penalty: float = 0.0,
+) -&gt; float:
+    x = np.asarray(state, dtype=float)
+    g = np.asarray(goal, dtype=float)
+    if x.shape != g.shape:
+        raise ValueError(&quot;state/goal shape mismatch&quot;)
+    if action_penalty &lt; 0:
+        raise ValueError(&quot;action_penalty must be non-negative&quot;)
+
+    cost = float(np.sum((x - g) ** 2))
+    if action is not None:
+        u = np.asarray(action, dtype=float)
+        cost += action_penalty * float(np.sum(u**2))
+
+    return -cost
+
+
+def enumerate_action_plans(
+    action_values: list[float],
+    *,
+    horizon: int,
+    action_dim: int = 1,
+) -&gt; list[np.ndarray]:
+    if not action_values:
+        raise ValueError(&quot;action_values must be non-empty&quot;)
+    if horizon &lt;= 0 or action_dim &lt;= 0:
+        raise ValueError(&quot;horizon/action_dim must be positive&quot;)
+
+    atomic_actions = list(
+        itertools.product(action_values, repeat=action_dim)
+    )
+    plans = []
+
+    for plan in itertools.product(
+        atomic_actions,
+        repeat=horizon,
+    ):
+        plans.append(np.asarray(plan, dtype=float))
+
+    return plans
+
+
+def plan_by_model(
+    initial_state: np.ndarray,
+    candidate_plans: list[np.ndarray],
+    *,
+    transition_matrix: np.ndarray,
+    action_matrix: np.ndarray,
+    goal: np.ndarray,
+    gamma: float = 1.0,
+    action_penalty: float = 0.0,
+) -&gt; tuple[np.ndarray, float]:
+    if not candidate_plans:
+        raise ValueError(&quot;candidate_plans must be non-empty&quot;)
+
+    best_plan = None
+    best_return = float(&quot;-inf&quot;)
+
+    for plan in candidate_plans:
+        trajectory = rollout_linear_dynamics(
+            initial_state,
+            plan,
+            transition_matrix=transition_matrix,
+            action_matrix=action_matrix,
+        )
+
+        rewards = np.asarray(
+            [
+                goal_reward(
+                    trajectory[index + 1],
+                    goal,
+                    action=plan[index],
+                    action_penalty=action_penalty,
+                )
+                for index in range(len(plan))
+            ],
+            dtype=float,
+        )
+
+        score = discounted_return(
+            rewards,
+            gamma=gamma,
+        )
+
+        if score &gt; best_return:
+            best_return = score
+            best_plan = plan
+
+    assert best_plan is not None
+    return best_plan.copy(), float(best_return)
+
+
+def jepa_prediction_loss(
+    predicted_embeddings: np.ndarray,
+    target_embeddings: np.ndarray,
+) -&gt; float:
+    &quot;&quot;&quot;Simple educational JEPA-style representation prediction loss.&quot;&quot;&quot;
+    return one_step_mse(
+        predicted_embeddings,
+        target_embeddings,
+    )
+</code></pre></details><details><summary>76-world-models/tests/test_world_model.py</summary><pre><code>from pathlib import Path
+import importlib.util
+
+import numpy as np
+
+
+MODULE_PATH = Path(__file__).parents[1] / &quot;src&quot; / &quot;world_model.py&quot;
+SPEC = importlib.util.spec_from_file_location(&quot;world_model_course&quot;, MODULE_PATH)
+assert SPEC and SPEC.loader
+mod = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(mod)
+
+
+def test_fit_linear_dynamics_recovers_system() -&gt; None:
+    rng = np.random.default_rng(2)
+    a_true = np.array([[1.0, 0.1], [0.0, 0.95]])
+    b_true = np.array([[0.0], [0.2]])
+
+    states = rng.normal(size=(400, 2))
+    actions = rng.normal(size=(400, 1))
+    next_states = states @ a_true.T + actions @ b_true.T
+
+    a, b = mod.fit_linear_dynamics(
+        states,
+        actions,
+        next_states,
+        l2=1e-10,
+    )
+
+    np.testing.assert_allclose(a, a_true, atol=1e-8)
+    np.testing.assert_allclose(b, b_true, atol=1e-8)
+
+
+def test_rollout_linear_dynamics() -&gt; None:
+    a = np.eye(1)
+    b = np.ones((1, 1))
+    actions = np.array([[1.0], [2.0], [-1.0]])
+
+    trajectory = mod.rollout_linear_dynamics(
+        np.array([0.0]),
+        actions,
+        transition_matrix=a,
+        action_matrix=b,
+    )
+
+    np.testing.assert_allclose(
+        trajectory[:, 0],
+        [0.0, 1.0, 3.0, 2.0],
+    )
+
+
+def test_discounted_return() -&gt; None:
+    value = mod.discounted_return(
+        np.array([1.0, 1.0, 1.0]),
+        gamma=0.5,
+    )
+    np.testing.assert_allclose(value, 1.75)
+
+
+def test_planner_moves_toward_goal() -&gt; None:
+    plans = mod.enumerate_action_plans(
+        [-1.0, 0.0, 1.0],
+        horizon=2,
+    )
+    plan, score = mod.plan_by_model(
+        np.array([0.0]),
+        plans,
+        transition_matrix=np.eye(1),
+        action_matrix=np.ones((1, 1)),
+        goal=np.array([2.0]),
+        action_penalty=0.01,
+    )
+
+    np.testing.assert_allclose(
+        plan,
+        [[1.0], [1.0]],
+    )
+    assert np.isfinite(score)
+
+
+def test_jepa_loss_zero_when_embeddings_match() -&gt; None:
+    embeddings = np.arange(12, dtype=float).reshape(4, 3)
+    loss = mod.jepa_prediction_loss(
+        embeddings,
+        embeddings.copy(),
+    )
+    assert loss == 0.0
+</code></pre></details></section><section id="glossary" class="canonical-section"><h2>อภิธานศัพท์ — คำไทย ความหมาย และข้อควรตรวจ</h2><dl><dt>tensor</dt><dd>เทนเซอร์: ชุดตัวเลขที่มีแกน เช่น scalar ไม่มีแกน, vector หนึ่งแกน, matrix สองแกน; shape บอกขนาดแต่ละแกน ไม่บอกความหมายของแกนจนกว่าจะระบุ</dd><dt>shape</dt><dd>รูปทรงข้อมูล: (B,T,d) หมายถึง batch × เวลา/ตำแหน่ง × features; ใช้ชื่อแกนกำกับเสมอ การ transpose เปลี่ยนแกนแต่ไม่ใช่แค่เปลี่ยนชื่อ</dd><dt>batch</dt><dd>กลุ่มตัวอย่างที่คำนวณร่วมกันหนึ่งครั้ง; B คือจำนวนตัวอย่าง ไม่ใช่จำนวน features หรือจำนวน optimizer updates</dd><dt>weight w / θ</dt><dd>น้ำหนักหรือพารามิเตอร์ที่โมเดลใช้คำนวณ; แก้ด้วยมือทำ forward ใหม่ ส่วน optimizer ต้องรับ gradient แล้วกด update จึงแก้ state</dd><dt>bias b</dt><dd>ค่าคงที่ที่บวกกับผลเชิงเส้น; regression scalar bias เพิ่ม Δ ทำให้ prediction ทุกจุดเพิ่ม Δ เท่ากัน</dd><dt>prediction ŷ</dt><dd>ค่าที่โมเดลทำนายจาก input และพารามิเตอร์ปัจจุบัน; เครื่องหมายหมวกแยกจาก target y ที่มาจากข้อมูล</dd><dt>residual e</dt><dd>ความคลาดเคลื่อน ในเว็บนี้นิยาม prediction − target; บางตำราใช้เครื่องหมายกลับกัน จึงต้องตรวจนิยามก่อนเทียบสูตร gradient</dd><dt>MSE</dt><dd>mean squared error = ผลรวม residual กำลังสองหารจำนวนรายการที่ระบุ; มีหน่วยเป็น target ยกกำลังสอง และการใช้ sum แทน mean เปลี่ยน scale gradient</dd><dt>loss L / objective J</dt><dd>จำนวนที่ optimizer ต้องการลด; objective อาจรวม data loss และ regularization จึงต้องดูองค์ประกอบและ reduction ให้ตรง implementation</dd><dt>gradient ∇ / ∂</dt><dd>เวกเตอร์ของ partial derivatives บอกอัตราเปลี่ยน loss ต่อพารามิเตอร์แต่ละตัว; ∂ ใช้เมื่อเปลี่ยนตัวหนึ่งโดยตรึงตัวอื่น</dd><dt>chain rule</dt><dd>กฎลูกโซ่: คูณอนุพันธ์ตามเส้นทาง และบวก contribution จากทุกเส้นทางที่มารวมกัน ใช้ย้อนจาก loss ถึง weights</dd><dt>learning rate η</dt><dd>ขนาดตัวคูณ gradient ใน update θnew=θ−ηg; η≥0, ศูนย์หมายถึงไม่มีการขยับพารามิเตอร์ ก้าวใหญ่เกินอาจ diverge</dd><dt>regularization λ</dt><dd>ตัวคูณค่าลงโทษ ต้อง λ≥0 ตามนิยามการลงโทษ; Ridge λΣw² เพิ่ม gradient 2λw โดยบท Regression นี้ไม่ลงโทษ bias</dd><dt>baseline</dt><dd>สถานะอ้างอิงที่ตรึงไว้สำหรับเทียบ; ต้องเก็บ snapshot ไม่อ้าง object ปัจจุบันที่แก้ตามไปด้วย</dd><dt>invariant</dt><dd>คุณสมบัติที่กลไกต้องรักษา เช่น probability รวม1, shape สอดคล้อง, queue ไม่เกิน capacity; ใช้ tests ตรวจได้มากกว่าดูภาพสวย</dd><dt>optimizer state</dt><dd>ความจำของอัลกอริทึม เช่น velocity, moments และ completed updates; คืนเฉพาะ weights ยังไม่เท่ากับเริ่มการฝึกใหม่ทั้งหมด</dd><dt>finite difference</dt><dd>ประมาณ derivative ด้วย [f(x+h)−f(x−h)]/(2h); h&gt;0, ใช้ smooth point และลองหลาย h เพื่อแยก truncation error จาก roundoff</dd><dt>softmax</dt><dd>แปลง logits เป็นความน่าจะเป็นตามแกนที่กำหนด; ลบ max ก่อน exp เพื่อความเสถียร และ fully masked row ต้องมีนโยบายชัดเจน</dd><dt>logit</dt><dd>คะแนนก่อน sigmoid/softmax ไม่ใช่ probability; อาจเป็นจำนวนจริงติดลบหรือเกิน1ได้ จึงห้ามส่งให้ loss ที่คาด probability โดยไม่แปลง</dd><dt>temperature τ / T</dt><dd>ตัวหาร logits ก่อน softmax; ต้องเป็นบวก ค่าเล็กทำ distribution แหลมขึ้น โดยไม่เท่ากับ retrain weights</dd><dt>mask</dt><dd>ตัวกำหนดตำแหน่งที่อ่านหรือคิด loss ได้; causal mask ปิดอนาคต, padding mask ปิดข้อมูลเติม, loss mask เลือก target แต่ละอย่างคนละหน้าที่</dd><dt>Q / K / V</dt><dd>query ใช้ค้นข้อมูล, key ใช้จับคู่ query, value เป็นข้อมูลที่ถูกถัวเฉลี่ย; เป็น learned projections ของ representation ไม่ใช่ป้ายความหมายตายตัว</dd><dt>head</dt><dd>ส่วนของ feature representation ที่ทำ attention แยกกัน แล้ว concat/project กลับ; ต้องตรวจ d_model หารจำนวน heads ลงตัว</dd><dt>ε-neighborhood</dt><dd>เพื่อนบ้านทั้งหมดที่มีระยะไม่เกิน ε รวมจุดตัวเองใน DBSCAN นี้; ε มีหน่วยเดียวกับพิกัด ไม่ใช่จำนวน k ที่ใช้โหวต</dd><dt>core / border / noise</dt><dd>DBSCAN core มีเพื่อนบ้านรวมตัวเองถึง min_samples; border อยู่ใกล้ core แต่เพื่อนบ้านไม่ถึง; noise ไม่ถูกเชื่อมกับ core cluster ใด</dd><dt>bootstrap</dt><dd>สุ่ม observations แบบ replacement ขนาดเท่าเดิมซ้ำหลายครั้งแล้วคำนวณ statistic ใหม่; seed ทำให้ตรวจซ้ำได้ แต่ไม่แก้สมมติฐาน IID ที่ผิด</dd><dt>confidence interval</dt><dd>ช่วงที่สร้างด้วย procedure ที่มี coverage ตามสมมติฐาน; ช่วงหนึ่งที่ได้แล้วไม่ใช่ posterior probability ของ parameter และ sample เล็กยังไม่แน่นอนมาก</dd><dt>validation / test</dt><dd>validation ใช้เลือกโมเดล/ค่าตั้ง ส่วน test ใช้ประเมินหลัง freeze การตัดสินใจ; fit preprocessing/tokenizer จาก test เป็น leakage</dd><dt>leakage</dt><dd>ข้อมูลที่ควรยังไม่รู้ไหลเข้า training/การเลือกโมเดล เช่น future feature หรือเอกสารซ้ำข้าม split ทำให้ metric ดูดีเกินการใช้งานจริง</dd><dt>queue / capacity</dt><dd>queue คือรายการรอ, capacity การให้บริการรวม = workers × service rate ตามแบบจำลอง; เพิ่ม timeout ไม่เพิ่มกำลังประมวลผล</dd><dt>state transition</dt><dd>การเปลี่ยนสถานะเมื่อเกิดเหตุการณ์ที่อนุญาต เช่น queued→active→done; ต้องระบุ guard, side effect และเหตุผลเมื่อ transition ถูกปฏิเสธ</dd><dt>latency / throughput</dt><dd>latency คือเวลาต่อคำขอ, throughput คือปริมาณงานต่อหน่วยเวลา; batching อาจเพิ่ม throughput แต่เพิ่มเวลารอ จึงต้องวัดทั้งคู่</dd><dt>idempotency</dt><dd>ทำคำขอ business operation เดิมซ้ำแล้ว side effect เกิดครั้งเดียวตาม key และ transaction protocol; ไม่ได้รับประกันจากการใช้ UUID ใหม่ทุก attempt</dd><dt>local lab</dt><dd>โปรแกรม Python และ tests ที่ผู้เรียนรันบนเครื่อง; เว็บเก็บเพียงคำยืนยันของผู้เรียน การผ่าน tests ของโค้ดต้นแบบไม่ใช่ผลตรวจโค้ดผู้เรียน</dd></dl></section></article>
+<section id="practice" class="practice-section"><span class="eyebrow">PRACTICE · DEBUG · BUILD</span><h2>พิสูจน์ด้วยการลงมือทำ</h2><div id="web-checks"></div><div class="retry-actions"><button class="secondary-button" id="retry-checks">เริ่มทำโจทย์ในเว็บใหม่</button><button class="text-button" id="undo-retry" hidden>คืนผลก่อนเริ่มใหม่</button></div><div id="exercise-content"><h2>แบบฝึก 20 ข้อ — เฉลยเฉพาะข้อ</h2><p>ทำคำตอบก่อนเปิด hints; โจทย์ปลายเปิดให้ใช้ตัวอย่างคำตอบและหลักฐานราย objective ตรวจงานจริง</p><section id="exercise-1" class="exercise-item"><h3>ข้อ 1</h3><p>Fit A/B matrices for a known linear dynamical system.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Latent Dynamics: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): lineartransitionxnext=Ax+Bu; stackZ=[X,U],solveleast_…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: lineartransitionxnext=Ax+Bu; stackZ=[X,U],solveleast_squaresZΘ≈Xnextแล้วsplitΘ; xnext=.8x+.2u,t…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>lineartransitionxnext=Ax+Bu; stackZ=[X,U],solveleast_squaresZΘ≈Xnextแล้วsplitΘ; xnext=.8x+.2u,tinyindependentinputsต้องrecoverA.8,B.2</p><p>อ้างอิง: <a href="#chapter-76/section/topic-4">Latent Dynamics</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch76-exercise-01"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-2" class="exercise-item"><h3>ข้อ 2</h3><p>Compare one-step vs multi-step error.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Multi-Step Rollout, Compounding Error: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): one-stepใช้truecurrentstateทุกครั้ง ส่วนmulti-ste…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: one-stepใช้truecurrentstateทุกครั้ง ส่วนmulti-stepป้อนpredictionกลับ; errorอาจสะสม แม้one…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>one-stepใช้truecurrentstateทุกครั้ง ส่วนmulti-stepป้อนpredictionกลับ; errorอาจสะสม แม้one-stepMSEเล็ก ต้องploterrorbyhorizon</p><p>อ้างอิง: <a href="#chapter-76/section/topic-5">Multi-Step Rollout</a>, <a href="#chapter-76/section/topic-15">Compounding Error</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch76-exercise-02"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-3" class="exercise-item"><h3>ข้อ 3</h3><p>Roll out several action sequences toward a goal.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Model-Based Planning: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): x0=0,xnext=x+u,goal2,actions[1,1]ถึง2cost0…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: x0=0,xnext=x+u,goal2,actions[1,1]ถึง2cost0,[0,1]ถึง1terminalcost1; rolloutท…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>x0=0,xnext=x+u,goal2,actions[1,1]ถึง2cost0,[0,1]ถึง1terminalcost1; rolloutทุกcandidateจากsameinitialstate</p><p>อ้างอิง: <a href="#chapter-76/section/topic-6">Model-Based Planning</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch76-exercise-03"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-4" class="exercise-item"><h3>ข้อ 4</h3><p>Add action penalties to a planner.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Discounted Return: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): J=Σ(x−goal)²+λΣu²; λสูงลดactionแรงแต่อาจ…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: J=Σ(x−goal)²+λΣu²; λสูงลดactionแรงแต่อาจถึงgoalช้า; λ≥0และunitsของstate/…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>J=Σ(x−goal)²+λΣu²; λสูงลดactionแรงแต่อาจถึงgoalช้า; λ≥0และunitsของstate/actionต้องnormalizeหรืออธิบาย</p><p>อ้างอิง: <a href="#chapter-76/section/topic-7">Discounted Return</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch76-exercise-04"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-5" class="exercise-item"><h3>ข้อ 5</h3><p>Implement receding-horizon replanning in a toy simulator.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Model-Based Planning: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): MPC: observecurrent→planhorizonH→executeactionแรก→…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: MPC: observecurrent→planhorizonH→executeactionแรก→observeใหม่→replan; ไม่executeopenloopทั้…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>MPC: observecurrent→planhorizonH→executeactionแรก→observeใหม่→replan; ไม่executeopenloopทั้งsequenceแล้วเรียกว่าrecedinghorizon</p><p>อ้างอิง: <a href="#chapter-76/section/topic-6">Model-Based Planning</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch76-exercise-05"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-6" class="exercise-item"><h3>ข้อ 6</h3><p>Compare pixel-space vs latent-space prediction objectives conceptually.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Pixel Prediction, Latent Prediction: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): pixelMSEเน้นtexture/backgroundแม้dynamicsสำคัญผิด; la…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: pixelMSEเน้นtexture/backgroundแม้dynamicsสำคัญผิด; latentobjectiveลดdimensionแต่ต้องpreserveacti…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>pixelMSEเน้นtexture/backgroundแม้dynamicsสำคัญผิด; latentobjectiveลดdimensionแต่ต้องpreserveaction-relevantstateและevaluatecontroltask</p><p>อ้างอิง: <a href="#chapter-76/section/topic-8">Pixel Prediction</a>, <a href="#chapter-76/section/topic-9">Latent Prediction</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch76-exercise-06"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-7" class="exercise-item"><h3>ข้อ 7</h3><p>Add ensemble uncertainty to a toy transition model.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Uncertainty: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ensemblepredictions[1,2,3]mean2,popvariance2/…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ensemblepredictions[1,2,3]mean2,popvariance2/3เป็นuncertaintyproxy; sharedbiasทุก…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ensemblepredictions[1,2,3]mean2,popvariance2/3เป็นuncertaintyproxy; sharedbiasทุกmodelอาจvarianceต่ำแต่ผิดทั้งหมด</p><p>อ้างอิง: <a href="#chapter-76/section/topic-14">Uncertainty</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch76-exercise-07"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-8" class="exercise-item"><h3>ข้อ 8</h3><p>Demonstrate model exploitation with an intentionally biased model.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Model Exploitation: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): biasedmodelxnext=x+2uแทนtruex+uทำplannerเลือกu1…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: biasedmodelxnext=x+2uแทนtruex+uทำplannerเลือกu1เพื่อgoal2แต่realถึง1; comparepredicte…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>biasedmodelxnext=x+2uแทนtruex+uทำplannerเลือกu1เพื่อgoal2แต่realถึง1; comparepredicted/actualreturnจับmodelexploitation</p><p>อ้างอิง: <a href="#chapter-76/section/topic-16">Model Exploitation</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch76-exercise-08"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-9" class="exercise-item"><h3>ข้อ 9</h3><p>Plot rollout error versus horizon.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Compounding Error: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): horizons1/2/4/8เริ่มsameheldoutstates/actions; recor…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: horizons1/2/4/8เริ่มsameheldoutstates/actions; recordMSE/uncertaintybyhorizonและไม่resetpredic…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>horizons1/2/4/8เริ่มsameheldoutstates/actions; recordMSE/uncertaintybyhorizonและไม่resetpredictionsด้วยtrueobsกลางopenloopโดยไม่บอก</p><p>อ้างอิง: <a href="#chapter-76/section/topic-15">Compounding Error</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch76-exercise-09"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-10" class="exercise-item"><h3>ข้อ 10</h3><p>Design a world-model evaluation beyond reconstruction quality.</p>
+<p>Challenge:
+- train a tiny PyTorch latent dynamics model on synthetic trajectories
+- compare random control vs model-predictive control in simulation only</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Evaluation: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): evalรวมone/multistep,dynamicscalibration,controlsucces…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: evalรวมone/multistep,dynamicscalibration,controlsuccess/constraintviolations,distribution-shift/ac…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>evalรวมone/multistep,dynamicscalibration,controlsuccess/constraintviolations,distribution-shift/actionsunseen ไม่reconstructionอย่างเดียว</p><p>อ้างอิง: <a href="#chapter-76/section/topic-18">Evaluation</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch76-exercise-10"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-11" class="exercise-item"><h3>ข้อ 11</h3><p>Reproduce one central calculation from World Models using a tiny hand-checkable input.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Latent Dynamics, Multi-Step Rollout: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): trueA.8,B.2,x1,u−1ให้xnext.6; rollou…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: trueA.8,B.2,x1,u−1ให้xnext.6; rolloutu0ต่อได้.48; tableต้องแสดงท…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>trueA.8,B.2,x1,u−1ให้xnext.6; rolloutu0ต่อได้.48; tableต้องแสดงทั้งpredicted/trueที่แต่ละt</p><p>อ้างอิง: <a href="#chapter-76/section/topic-4">Latent Dynamics</a>, <a href="#chapter-76/section/topic-5">Multi-Step Rollout</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch76-exercise-11"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-12" class="exercise-item"><h3>ข้อ 12</h3><p>Write a deterministic test that verifies the most important invariant in World Models.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Action-Conditioned Models: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): knownlinearsystemrecoverytolerance,zeroactiondynami…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: knownlinearsystemrecoverytolerance,zeroactiondynamics,MPCexecuteoneactionthenreplanและuncert…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>knownlinearsystemrecoverytolerance,zeroactiondynamics,MPCexecuteoneactionthenreplanและuncertaintyvariance≥0; λnegativeinputreject</p><p>อ้างอิง: <a href="#chapter-76/section/topic-12">Action-Conditioned Models</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch76-exercise-12"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-13" class="exercise-item"><h3>ข้อ 13</h3><p>Compare two meaningful configurations while keeping data and seed fixed.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Model-Based Planning: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): horizon2/8คงmodel/state/candidatebudget; reportact…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: horizon2/8คงmodel/state/candidatebudget; reportactualgoalerror/compute/constraintviolation…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>horizon2/8คงmodel/state/candidatebudget; reportactualgoalerror/compute/constraintviolationsไม่ใช้predictedreturnเป็นsolemetric</p><p>อ้างอิง: <a href="#chapter-76/section/topic-6">Model-Based Planning</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch76-exercise-13"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-14" class="exercise-item"><h3>ข้อ 14</h3><p>Record intermediate shapes, ranges, and one quality metric for a tiny end-to-end run.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Uncertainty: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): recordstates/actions/transitionpredictions/ensembl…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: recordstates/actions/transitionpredictions/ensemblevariance/candidatecosts/chosenaction/act…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>recordstates/actions/transitionpredictions/ensemblevariance/candidatecosts/chosenaction/actualnextstateและrollouterrorbyhorizon</p><p>อ้างอิง: <a href="#chapter-76/section/topic-14">Uncertainty</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch76-exercise-14"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-15" class="exercise-item"><h3>ข้อ 15</h3><p>Explain one evaluation mistake that could make a World Models result look better than it really is.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Evaluation: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): fitmodelด้วยtesttrajectoryหรือevaluateonlytraining…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: fitmodelด้วยtesttrajectoryหรือevaluateonlytrainingactionsทำgeneralizationดูดี; splittrajec…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>fitmodelด้วยtesttrajectoryหรือevaluateonlytrainingactionsทำgeneralizationดูดี; splittrajectories/timeและOODaction/state-slices</p><p>อ้างอิง: <a href="#chapter-76/section/topic-18">Evaluation</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch76-exercise-15"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-16" class="exercise-item"><h3>ข้อ 16</h3><p>State the dominant time and memory complexity for the main operation in World Models.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Model-Based Planning: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): planningcostO(candidates·horizon·model_forward),ensemble…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: planningcostO(candidates·horizon·model_forward),ensembleเพิ่มmodelsfactor; cachedlatentช่วยแต่mustme…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>planningcostO(candidates·horizon·model_forward),ensembleเพิ่มmodelsfactor; cachedlatentช่วยแต่mustmeasureและretainedtrajectoriesmemoryO(CHd)</p><p>อ้างอิง: <a href="#chapter-76/section/topic-6">Model-Based Planning</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch76-exercise-16"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-17" class="exercise-item"><h3>ข้อ 17</h3><p>Compare a from-scratch result with a trusted implementation using identical inputs and settings.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ From Scratch: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): least-squaresเทียบnp.linalg.lstsqfixtureและmanualr…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: least-squaresเทียบnp.linalg.lstsqfixtureและmanualrollout; simulatorcontrolperformanceแยกจา…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>least-squaresเทียบnp.linalg.lstsqfixtureและmanualrollout; simulatorcontrolperformanceแยกจากphysicalworldtransferซึ่งยังnot_run</p><p>อ้างอิง: <a href="#chapter-76/section/topic-19">From Scratch</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch76-exercise-17"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-18" class="exercise-item"><h3>ข้อ 18</h3><p>Run a one-factor ablation and report the measured change over repeated runs when randomness matters.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Uncertainty: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): uncertainty-penalty0→.1คงensemble/candidates/seed;…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: uncertainty-penalty0→.1คงensemble/candidates/seed; reportactualreturn/model-exploitation/c…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>uncertainty-penalty0→.1คงensemble/candidates/seed; reportactualreturn/model-exploitation/constraintviolationsหลายinitialstates</p><p>อ้างอิง: <a href="#chapter-76/section/topic-14">Uncertainty</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch76-exercise-18"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-19" class="exercise-item"><h3>ข้อ 19</h3><p>Design a small reproducibility record containing seed, code version, data version, configuration, and metric.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ World Model vs Simulator: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): manifest มีsimulatorversion/state/actionunits/transition…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: manifest มีsimulatorversion/state/actionunits/transitiondataset/split/modelensemble/plannerhorizon/c…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>manifest มีsimulatorversion/state/actionunits/transitiondataset/split/modelensemble/plannerhorizon/candidategenerator/costλ/seed/constraints</p><p>อ้างอิง: <a href="#chapter-76/section/topic-17">World Model vs Simulator</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch76-exercise-19"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-20" class="exercise-item"><h3>ข้อ 20</h3><p>Propose one falsifiable research question for World Models and specify the baseline, changed factor, and acceptance metric.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Model Exploitation: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ทดลอง“ensembleuncertaintypenaltyลดOODmodel-explo…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ทดลอง“ensembleuncertaintypenaltyลดOODmodel-exploitation≥30%โดยnominalsuccessลด≤5จุด”; …</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ทดลอง“ensembleuncertaintypenaltyลดOODmodel-exploitation≥30%โดยnominalsuccessลด≤5จุด”; fixedtruesimulatorและholdoutstates</p><p>อ้างอิง: <a href="#chapter-76/section/topic-16">Model Exploitation</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch76-exercise-20"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section></div><div id="local-lab-content"><section id="local-lab"><h2>Local lab: Python 3.12 บน CPU</h2><p>รันจาก repository root; ใช้ Python 3.12 แยก environment สำหรับ framework ตาม requirements ของชุดบท</p><pre><code>python3.12 -m venv .venv-course
+source .venv-course/bin/activate
+python -m pip install -r requirements-batch26.txt pytest
+(cd 76-world-models &amp;&amp; python -m pytest tests -q -rs)</code></pre><p>ผลที่คาดหวัง: required tests ผ่านและไม่มี required test ถูก skip; GPU/integrations ที่ยังไม่รันต้องระบุแยก Python 3.15 ที่มากับเครื่องอาจใช้กับ framework wheels เหล่านี้ไม่ได้</p><h2>Mini Project — Latent MPC in a Safe Toy Simulator</h2>
+<p>Use a 1D/2D numerical simulator only.</p>
+<p>Build:
+- trajectory dataset
+- learned dynamics model
+- multi-step rollout
+- candidate action-plan search
+- receding-horizon controller
+- rollout-error diagnostics</p>
+<p>Compare learned-model planning against random actions and a known simulator baseline. No physical robot is required.</p><h2>Batch 26 Integration Project — Imagine, Act Safely &amp; Deploy at the Edge</h2>
+<p>Batch 26 connects learned predictive models, simulation-first robotics control and edge deployment constraints.</p>
+<pre><code class="language-text">learn / use world model
+↓
+imagine candidate plans
+↓
+choose simulated action plan
+↓
+deterministic robot action limits
+↓
+control-loop latency gate
+↓
+edge memory/operator/quantization gate
+</code></pre>
+<h3>Part A — World Model</h3>
+<p>A simple 1D learned-model-style planner evaluates candidate action sequences and selects a plan reaching a target.</p>
+<p>Report:
+- chosen action sequence
+- imagined trajectory
+- predicted return
+- final state</p>
+<h3>Part B — Robotics</h3>
+<p>The robotics section is simulation-only.</p>
+<p>It checks:
+- proportional action proposal
+- deterministic action clipping
+- two-link forward kinematics
+- 50 Hz control-period budget</p>
+<h3>Part C — Edge Deployment</h3>
+<p>Estimate:
+- FP32 vs INT8 parameter bytes
+- peak runtime memory
+- 64 KiB memory-budget fit
+- operator coverage
+- INT8 round-trip error
+- energy per inference</p>
+<h3>Full Gate</h3>
+<p>The full system passes only when:
+- world-model plan reaches the simulated goal
+- actions remain inside deterministic bounds and timing budget
+- edge artifact fits memory and supported-operator constraints</p>
+<h3>Run</h3>
+<pre><code class="language-bash">python integration-project-batch26/src/world_robot_edge_lab.py --mode world
+python integration-project-batch26/src/world_robot_edge_lab.py --mode robotics
+python integration-project-batch26/src/world_robot_edge_lab.py --mode edge
+python integration-project-batch26/src/world_robot_edge_lab.py --mode full
+</code></pre>
+<h3>ONNX Runtime Smoke</h3>
+<p>A dedicated CI test creates a tiny ONNX MatMul graph in memory, validates it, runs it with CPUExecutionProvider and compares the result with NumPy.</p>
+<p>No external model checkpoint or physical device is needed.</p>
+<h3>Required Extensions</h3>
+<ol>
+<li>train a tiny latent dynamics model on synthetic trajectories</li>
+<li>compare one-step and multi-step rollout error</li>
+<li>implement receding-horizon planning in simulation</li>
+<li>train a small behavior-cloning policy in simulation</li>
+<li>add action bounds/timeouts to the simulated controller</li>
+<li>export a tiny trained model to ONNX</li>
+<li>audit operators before deployment</li>
+<li>compare FP32 and INT8 error/bytes</li>
+<li>benchmark warm latency/energy on a safe target device</li>
+<li>produce a final quality-memory-latency-energy report</li>
+</ol></section></div><label class="local-confirm"><input type="checkbox" id="local-lab-confirm"> ฉันรัน local lab และตรวจผลตาม rubric ด้วยตัวเองแล้ว</label><p class="local-note">สถานะนี้เป็นคำยืนยันของผู้เรียน เว็บไม่ได้รันหรือตรวจ Python บนเครื่องแทนคุณ</p></section>
+<section id="mastery-review" class="practice-section"><h2>หลักฐานตามเกณฑ์การเรียนรู้</h2><p>ทุก objective ต้องแสดงหลักฐานอธิบาย ทำนาย คำนวณ อ่าน shape/state debug และประยุกต์ พร้อมกรณีใหม่ ผลรัน source ผู้เรียนจริง และการประเมินซ้ำ เกณฑ์นี้ไม่รับประกันความเข้าใจทุกสถานการณ์ เปิด JavaScript เพื่อดูรายการที่ยังขาดและนำเข้ารายงานผู้ตรวจ</p></section><section class="coverage-section"><h2>แผนที่สิ่งที่เรียน → สิ่งที่ต้องแสดงให้ได้</h2><div id="coverage-table"></div></section><footer><span>ZERO TO ELITE AI ENGINEER · LEARNING STUDIO</span><span>อ่าน · derive · implement · debug · experiment · build</span></footer></div></main><noscript><style>.workbench,.sidebar,.reading-route,.lesson-toc,.mastery-status,#web-checks{display:none}main{margin-left:0}</style>อ่านเนื้อหา HTML ได้ตามปกติ เปิด JavaScript เพื่อใช้ห้องทดลองและตรวจคำตอบ</noscript></body></html>

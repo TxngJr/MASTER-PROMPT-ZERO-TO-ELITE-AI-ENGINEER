@@ -1,5 +1,11 @@
 # Chapter 75 — Audio & Voice Models
 
+## Interactive Animation Lab
+
+[เปิดภาพจำลองของบทนี้](animation.html) · [เลือกจากทั้ง 80 บท](../visual-lab/index.html)
+
+ดู flow ทีละขั้น → ทดลองเปลี่ยนค่า → อ่านสมการและโค้ด → ตอบคำถามเช็กความเข้าใจ แล้วกลับมาทำแบบฝึกหัดในบทนี้
+
 ## 1. From Speech Pipelines to Audio-Language Systems
 
 Traditional spoken assistant:

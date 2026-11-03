@@ -1,5 +1,11 @@
 # Chapter 67 — AI Distributed Systems
 
+## Interactive Animation Lab
+
+[เปิดภาพจำลองของบทนี้](animation.html) · [เลือกจากทั้ง 80 บท](../visual-lab/index.html)
+
+ดู flow ทีละขั้น → ทดลองเปลี่ยนค่า → อ่านสมการและโค้ด → ตอบคำถามเช็กความเข้าใจ แล้วกลับมาทำแบบฝึกหัดในบทนี้
+
 ## 1. Why Distributed AI Systems Fail Differently
 
 Once training, data processing or inference spans multiple processes/nodes, partial failure becomes normal rather than exceptional.

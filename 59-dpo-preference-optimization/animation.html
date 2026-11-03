@@ -1,0 +1,1337 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="บทเรียน AI Engineer ภาษาไทย พร้อมคณิตศาสตร์ทีละขั้นและห้องทดลองที่คำนวณจริง"><title>DPO: ปรับ preference margin แบบอิง reference · AI Engineer Studio</title><link rel="stylesheet" href="../visual-lab/assets/styles.css"><link rel="stylesheet" href="../visual-lab/assets/course.css"><script defer src="../visual-lab/assets/lessons.js"></script><script defer src="../visual-lab/assets/chapter-meta.js"></script><script defer src="../visual-lab/assets/course-math.js"></script><script defer src="../visual-lab/assets/course-models.js"></script><script defer src="../visual-lab/assets/course-models-v3.js"></script><script defer src="../visual-lab/assets/course-assessment.js"></script><script defer src="../visual-lab/assets/course-mastery.js"></script><script defer src="../visual-lab/assets/course-catalog.js"></script><script defer src="../visual-lab/assets/book-content.js"></script><script defer src="../visual-lab/assets/course-render.js"></script><script defer src="../visual-lab/assets/course-mastery-panel.js"></script><script defer src="../visual-lab/assets/quality-report.js"></script><script defer src="../visual-lab/assets/course-app.js"></script></head>
+<body data-chapter="59" data-root="../"><a class="skip-link" href="#main">ข้ามไปบทเรียน</a>
+<aside class="sidebar" id="sidebar" aria-label="เลือกบทเรียน"><a class="brand" href="../visual-lab/index.html"><span class="brand-mark">ai</span><span>AI ENGINEER<small>LEARN · DERIVE · BUILD</small></span></a><div class="sidebar-intro">อ่านให้เข้าใจ · คำนวณให้เห็น · เขียนให้เป็น</div><label class="search-box"><input id="search" type="search" placeholder="ค้นหาบท / attention" aria-label="ค้นหาบทเรียน"></label><label class="filter-label" for="phase-filter">เส้นทางการเรียน <span id="nav-count"></span></label><select id="phase-filter"><option value="">ทุก Phase</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option></select><nav id="chapter-list" class="chapter-list" aria-label="รายชื่อบท"></nav><div class="course-progress"><div><span>ผ่านโจทย์ในเว็บ</span><strong id="progress-count">0 / 80</strong></div><progress id="course-progress" max="80" value="0" aria-label="บทที่ผ่านโจทย์"></progress><a id="resume-link" href="#chapter-1">อ่านต่อจากเดิม →</a></div></aside>
+<button class="nav-backdrop" id="nav-backdrop" aria-label="ปิดเมนู" hidden></button>
+<main id="main" tabindex="-1"><header class="topbar"><div><button id="nav-toggle" class="icon-button mobile-menu" aria-label="เปิดเมนูบทเรียน" aria-expanded="false" aria-controls="sidebar">☰</button><span id="breadcrumb"></span></div><span class="local-badge"><i></i> คำนวณในเครื่อง · ไม่มี API</span></header><div class="content">
+<div class="chapter-navigation"><label for="chapter-select" class="sr-only">เลือกบทเรียน</label><select id="chapter-select"></select><div class="chapter-arrows"><button id="prev-chapter" class="icon-button" aria-label="บทก่อนหน้า">←</button><button id="next-chapter" class="icon-button" aria-label="บทถัดไป">→</button></div></div>
+<section class="chapter-hero"><div><p id="chapter-kicker" class="eyebrow"></p><h1 id="chapter-title">DPO: ปรับ preference margin แบบอิง reference</h1><p class="english-title" id="chapter-english"></p></div><span class="hero-symbol">f(x) ↗</span></section>
+<p id="quality-status" class="quality-status"></p><div id="mastery-status" class="mastery-status"></div><div class="reading-route"><a href="#chapter-59/section/overview">01 อ่านบทเรียน</a><a href="#workbench">02 ทดลองสมการ</a><a href="#practice">03 ฝึกและตรวจงาน</a><a href="#mastery-review">04 หลักฐานตามเกณฑ์</a></div>
+<nav id="lesson-toc" class="lesson-toc" aria-label="สารบัญบท"></nav>
+<section id="overview" class="course-overview"><span class="eyebrow">THE LEARNING CONTRACT</span><h2>เรียนบทนี้แล้วต้องทำอะไรได้</h2><p id="chapter-purpose"></p><div id="chapter-objectives"></div><div class="learning-hint">ทำนาย → เปลี่ยนทีละค่า → ตรวจตัวเลข → อธิบายเหตุผล → เขียนด้วย Python เอง</div></section>
+<section class="workbench lab-card" id="workbench" aria-label="ห้องทดลองคำนวณจริง"><div class="card-header"><div><span class="live-dot"></span><span class="eyebrow">COMPUTATION WORKBENCH</span></div><span class="simulation-label">ทุกภาพใช้ผลคำนวณชุดเดียวกัน</span></div><div class="lab-top"><label for="lab-select">เลือกกลไกที่ต้องการทดลอง</label><select id="lab-select"></select><p id="lab-question"></p></div><div class="workbench-grid"><div class="viz-column"><div class="compare-labels"><span>เส้นทึบ: ปัจจุบัน</span><span>เส้นประ: baseline ที่ตรึงไว้</span></div><div id="simulation" class="simulation"></div><div id="metrics" class="metrics"></div><div id="baseline-diff" class="baseline-diff"></div><div class="playback"><div class="playback-buttons"><button class="primary-button" id="update-once">อัปเดตหนึ่งก้าว</button><button class="secondary-button" id="train-many">▶ ฝึก 30 ก้าว</button><button class="icon-button" id="back-state" aria-label="ย้อนประวัติ">↶</button><button class="icon-button" id="forward-state" aria-label="ประวัติถัดไป">↷</button></div></div><div class="lab-secondary-actions"><button id="pin-baseline" class="text-button">ตรึง baseline ปัจจุบัน</button><button id="reset-lab" class="text-button">คืนค่าเริ่มต้น</button><button id="download-state" class="text-button">บันทึกผล JSON</button><span id="history-status"></span></div><p id="simulation-note" class="simulation-note"></p><p class="lab-error" id="lab-error" role="alert" hidden></p></div><div class="controls-column"><h3>เปลี่ยนทีละตัว แล้วสังเกตผล</h3><div id="lab-controls"></div><p class="control-note">แก้ weight ด้วยมือจะคำนวณ forward ใหม่; optimizer เปลี่ยน weights เมื่อกดอัปเดตเท่านั้น</p></div></div>
+<div class="trace-section"><div class="trace-toolbar"><h3>เดินสมการทีละ operation</h3><div><button id="trace-prev" class="icon-button" aria-label="operation ก่อนหน้า">←</button><button id="play-trace" class="secondary-button" aria-pressed="false">▶ เล่น flow</button><button id="trace-next" class="icon-button" aria-label="operation ถัดไป">→</button><span id="stage-counter"></span></div></div><label class="motion-control"><input id="reduce-motion" type="checkbox"> ลดภาพเคลื่อนไหว (หยุดการเล่นที่ค้างอยู่)</label><div id="operation-steps" class="operation-steps"></div><div id="flow-diagram" class="flow-diagram"></div><div id="active-operation" class="active-operation" aria-live="polite"></div><p class="control-note">ตัวเลขบนภาพปัดเศษเพื่อให้อ่านง่าย; บันทึก JSON เพื่อดูค่าที่ใช้คำนวณเต็ม precision</p><details open><summary>ตารางค่าระหว่างทาง — ตรวจด้วยมือได้</summary><div id="result-table"></div></details><div id="tensor-tables" class="tensor-tables"></div><details id="surface-details"><summary>ดู loss surface และเส้นทางของ w₁,b (ตรึง controls อื่น)</summary><div id="surface-chart"></div><p>surface คำนวณ objective ปัจจุบันโดยตรึง degree, penalty, ข้อมูล และ weights อื่น เส้นทางแสดงเฉพาะ snapshots ที่ค่าเหล่านี้ตรงกัน; นอกช่วง w=[−1,5], b=[−2,4] ให้ตรวจค่าจริงใน history</p></details><details><summary>ประวัติการเปลี่ยนค่า</summary><div id="history-table"></div></details></div></section>
+<article id="chapter-article" class="chapter-article"><section id="mechanism-1" class="teaching-section"><span class="section-kicker">CHAPTER 59 · ภาพ → สมการ → โค้ด</span><h2>1. chosen กับ rejected ต้องใช้ prompt เดียวกัน</h2><h3>โจทย์และเหตุผล</h3><p>คำนวณ log probability เฉพาะ response tokens แล้วเทียบ margin ของ policy กับ margin ของ frozen reference อย่ารวม prompt/padding เข้า sequence score โดยไม่ตั้งใจ</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Derive standard DPO logits and loss.</p><p>z=β(policy_margin−reference_margin); β.1,margins3/1ให้z.2,losssoftplus(−.2)=.5981389; ไม่ใช้βคูณlogsigmoidข้างนอก</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>p0: policy logit0,initial=1; p1: policy logit1,initial=0; reference: reference logit0,initial=0.5; beta: β,initial=0.5; reward0: reward answer0,initial=3; mode: objective,initial=dpo; eta: learning rate,initial=0.1</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = [0.7310585786300049, 0.2689414213699951]; กำหนดความหมายและหน่วยของ input ก่อนทดลอง</li><li>L=softplus(−β(relative logprob margin)) = 0.5759394198788436; DPO ใช้ chosen0/rejected1; RLHF toy optimize exact categorical objective ไม่ใช่ PPO implementation</li><li>normal / boundary / comparison = 0.5759394198788436; ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="preference-dpo-chosen0-rejected1-แล">เปิดการทดลองนี้</a><p class="failure-box">judgeชอบคำตอบยาวหรือpreferencepairsnear-duplicateข้ามsplitทำwinrateสูงปลอม; blindanswerorderและbalancedlength-eval; 2-response categorical policy คำนวณ loss/gradient จริง; β ใน DPO และ KL penalty มีความหมายตาม objective ที่ระบุ</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>z=β(policy_margin−reference_margin); β.1,margins3/1ให้z.2,losssoftplus(−.2)=.5981389; ไม่ใช้βคูณlogsigmoidข้างนอก</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-1-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = [0.7310585786300049, 0.2689414213699951]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>L=softplus(−β(relative logprob margin))</code> = 0.5759394198788436<p>DPO ใช้ chosen0/rejected1; RLHF toy optimize exact categorical objective ไม่ใช่ PPO implementation</p></li><li><code>normal / boundary / comparison</code> = 0.5759394198788436<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-1-visual"><summary>ภาพและ shape</summary><p>2-response categorical policy คำนวณ loss/gradient จริง; β ใน DPO และ KL penalty มีความหมายตาม objective ที่ระบุ</p><ol><li><code>shape / range</code> = [0.7310585786300049, 0.2689414213699951]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>L=softplus(−β(relative logprob margin))</code> = 0.5759394198788436<p>DPO ใช้ chosen0/rejected1; RLHF toy optimize exact categorical objective ไม่ใช่ PPO implementation</p></li><li><code>normal / boundary / comparison</code> = 0.5759394198788436<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-1-code"><summary>โค้ด</summary><p>z=β(policy_margin−reference_margin); β.1,margins3/1ให้z.2,losssoftplus(−.2)=.5981389; ไม่ใช้βคูณlogsigmoidข้างนอก</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-1-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = [0.7310585786300049, 0.2689414213699951]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>L=softplus(−β(relative logprob margin))</code> = 0.5759394198788436<p>DPO ใช้ chosen0/rejected1; RLHF toy optimize exact categorical objective ไม่ใช่ PPO implementation</p></li><li><code>normal / boundary / comparison</code> = 0.5759394198788436<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-1"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-2" class="teaching-section"><span class="section-kicker">CHAPTER 59 · ภาพ → สมการ → โค้ด</span><h2>2. DPO loss อ่านจาก logistic margin</h2><h3>โจทย์และเหตุผล</h3><p>z=β[(logπchosen-logπrejected)-(logπrefchosen-logπrefrejected)] และ loss=softplus(-z) เมื่อ relative margin เพิ่ม loss ลด แต่ต้องตรวจว่า pair label มีคุณภาพ</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Sweep beta and plot loss curves.</p><p>marginadvantage2,β.1/.5ให้loss.598139/.313262; negativeadvantageเพิ่มβทำlossเพิ่มและgradientscaleเปลี่ยน ไม่รับประกันtrainingqualityเพิ่ม</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>p0: policy logit0,initial=1; p1: policy logit1,initial=0; reference: reference logit0,initial=0.5; beta: β,initial=1.5; reward0: reward answer0,initial=3; mode: objective,initial=dpo; eta: learning rate,initial=0.1</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = [0.7310585786300049, 0.2689414213699951]; กำหนดความหมายและหน่วยของ input ก่อนทดลอง</li><li>L=softplus(−β(relative logprob margin)) = 0.38687100611489994; DPO ใช้ chosen0/rejected1; RLHF toy optimize exact categorical objective ไม่ใช่ PPO implementation</li><li>normal / boundary / comparison = 0.38687100611489994; ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="preference-β-เปล--ยนขนาด-logit-และ-">เปิดการทดลองนี้</a><p class="failure-box">judgeชอบคำตอบยาวหรือpreferencepairsnear-duplicateข้ามsplitทำwinrateสูงปลอม; blindanswerorderและbalancedlength-eval; 2-response categorical policy คำนวณ loss/gradient จริง; β ใน DPO และ KL penalty มีความหมายตาม objective ที่ระบุ</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>marginadvantage2,β.1/.5ให้loss.598139/.313262; negativeadvantageเพิ่มβทำlossเพิ่มและgradientscaleเปลี่ยน ไม่รับประกันtrainingqualityเพิ่ม</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-2-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = [0.7310585786300049, 0.2689414213699951]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>L=softplus(−β(relative logprob margin))</code> = 0.38687100611489994<p>DPO ใช้ chosen0/rejected1; RLHF toy optimize exact categorical objective ไม่ใช่ PPO implementation</p></li><li><code>normal / boundary / comparison</code> = 0.38687100611489994<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-2-visual"><summary>ภาพและ shape</summary><p>2-response categorical policy คำนวณ loss/gradient จริง; β ใน DPO และ KL penalty มีความหมายตาม objective ที่ระบุ</p><ol><li><code>shape / range</code> = [0.7310585786300049, 0.2689414213699951]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>L=softplus(−β(relative logprob margin))</code> = 0.38687100611489994<p>DPO ใช้ chosen0/rejected1; RLHF toy optimize exact categorical objective ไม่ใช่ PPO implementation</p></li><li><code>normal / boundary / comparison</code> = 0.38687100611489994<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-2-code"><summary>โค้ด</summary><p>marginadvantage2,β.1/.5ให้loss.598139/.313262; negativeadvantageเพิ่มβทำlossเพิ่มและgradientscaleเปลี่ยน ไม่รับประกันtrainingqualityเพิ่ม</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-2-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = [0.7310585786300049, 0.2689414213699951]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>L=softplus(−β(relative logprob margin))</code> = 0.38687100611489994<p>DPO ใช้ chosen0/rejected1; RLHF toy optimize exact categorical objective ไม่ใช่ PPO implementation</p></li><li><code>normal / boundary / comparison</code> = 0.38687100611489994<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-2"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-3" class="teaching-section"><span class="section-kicker">CHAPTER 59 · ภาพ → สมการ → โค้ด</span><h2>3. ความยาวและ truncation เปลี่ยนสิ่งที่ optimize</h2><h3>โจทย์และเหตุผล</h3><p>sequence log probabilities เป็นผลรวมจึงมี length effects ต้องกำหนด masks/formatting ให้สอดคล้อง และไม่ตีความ β ของ DPO ตรง ๆ เหมือนคูณ KL penalty ในทุกวิธี</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Cache reference log-probabilities and verify cache invalidation rules.</p><p>cachekeyhash(referenceweights/tokenizer/template/datasetcompletionIDs/maskpolicy/reduction); อันใดเปลี่ยนต้องinvalidate ไม่ใช้เพียงexampleID</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>corpus: corpus over a,b,c,initial=abacaba; eta: learning rate,initial=0.2; temperature: sampling temperature,initial=1; query: query token ID (a=0,b=1,c=2),initial=0; ignorePrefix: ignore first target positions,initial=0; l0: logit W[0,0],initial=0; l1: logit W[0,1],initial=0; l2: logit W[0,2],initial=0; l3: logit W[1,0],initial=0; l4: logit W[1,1],initial=0; l5: logit W[1,2],initial=0; l6: logit W[2,0],initial=0; l7: logit W[2,1],initial=0; l8: logit W[2,2],initial=0</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>inputs=tokens[:-1], targets=tokens[1:] = [0, 1, 0, 2, 0, 1, 0]; causal bigram model ใช้ current token ทำนาย next token</li><li>logits=W[current token] = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]; weights เริ่มจาก 0 จึง probability=1/3; ไม่มี pretrained weights</li><li>valid=t &gt;= ignorePrefix = 6; ignore label ไม่ได้ลบ input; ใช้สอน assistant-only loss</li><li>L=−mean log p(target) = 1.0986122886681098; normalize เฉพาะ valid targets</li><li>∂L/∂W[x,j] += (p_j−1[j=target])/N_valid = [[0.16666666666666666, -0.1666666666666667, -1.850371707708594e-17], [-0.22222222222222224, 0.1111111111111111, 0.1111111111111111], [-0.11111111111111112, 0.05555555555555555, 0.05555555555555555]]; accumulate เมื่อ context token เดียวถูกใช้หลายครั้ง</li><li>softmax(W[query]/temperature) = [0.3333333333333333, 0.3333333333333333, 0.3333333333333333]; temperature ใช้เฉพาะ distribution ตอน inference ไม่แก้ training CE</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="language-sequence-log-probabiliti">เปิดการทดลองนี้</a><p class="failure-box">judgeชอบคำตอบยาวหรือpreferencepairsnear-duplicateข้ามsplitทำwinrateสูงปลอม; blindanswerorderและbalancedlength-eval; tiny trainable bigram LM ใน browser ไม่ใช่ Transformer; full decoder-only implementation และ training loop อยู่ในบทเต็ม/local lab</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>cachekeyhash(referenceweights/tokenizer/template/datasetcompletionIDs/maskpolicy/reduction); อันใดเปลี่ยนต้องinvalidate ไม่ใช้เพียงexampleID</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-3-equation"><summary>สมการ</summary><ol><li><code>inputs=tokens[:-1], targets=tokens[1:]</code> = [0, 1, 0, 2, 0, 1, 0]<p>causal bigram model ใช้ current token ทำนาย next token</p></li><li><code>logits=W[current token]</code> = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]<p>weights เริ่มจาก 0 จึง probability=1/3; ไม่มี pretrained weights</p></li><li><code>valid=t &gt;= ignorePrefix</code> = 6<p>ignore label ไม่ได้ลบ input; ใช้สอน assistant-only loss</p></li><li><code>L=−mean log p(target)</code> = 1.0986122886681098<p>normalize เฉพาะ valid targets</p></li><li><code>∂L/∂W[x,j] += (p_j−1[j=target])/N_valid</code> = [[0.16666666666666666, -0.1666666666666667, -1.850371707708594e-17], [-0.22222222222222224, 0.1111111111111111, 0.1111111111111111], [-0.11111111111111112, 0.05555555555555555, 0.05555555555555555]]<p>accumulate เมื่อ context token เดียวถูกใช้หลายครั้ง</p></li><li><code>softmax(W[query]/temperature)</code> = [0.3333333333333333, 0.3333333333333333, 0.3333333333333333]<p>temperature ใช้เฉพาะ distribution ตอน inference ไม่แก้ training CE</p></li></ol></details><details id="help-mechanism-3-visual"><summary>ภาพและ shape</summary><p>tiny trainable bigram LM ใน browser ไม่ใช่ Transformer; full decoder-only implementation และ training loop อยู่ในบทเต็ม/local lab</p><ol><li><code>inputs=tokens[:-1], targets=tokens[1:]</code> = [0, 1, 0, 2, 0, 1, 0]<p>causal bigram model ใช้ current token ทำนาย next token</p></li><li><code>logits=W[current token]</code> = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]<p>weights เริ่มจาก 0 จึง probability=1/3; ไม่มี pretrained weights</p></li><li><code>valid=t &gt;= ignorePrefix</code> = 6<p>ignore label ไม่ได้ลบ input; ใช้สอน assistant-only loss</p></li><li><code>L=−mean log p(target)</code> = 1.0986122886681098<p>normalize เฉพาะ valid targets</p></li><li><code>∂L/∂W[x,j] += (p_j−1[j=target])/N_valid</code> = [[0.16666666666666666, -0.1666666666666667, -1.850371707708594e-17], [-0.22222222222222224, 0.1111111111111111, 0.1111111111111111], [-0.11111111111111112, 0.05555555555555555, 0.05555555555555555]]<p>accumulate เมื่อ context token เดียวถูกใช้หลายครั้ง</p></li><li><code>softmax(W[query]/temperature)</code> = [0.3333333333333333, 0.3333333333333333, 0.3333333333333333]<p>temperature ใช้เฉพาะ distribution ตอน inference ไม่แก้ training CE</p></li></ol></details><details id="help-mechanism-3-code"><summary>โค้ด</summary><p>cachekeyhash(referenceweights/tokenizer/template/datasetcompletionIDs/maskpolicy/reduction); อันใดเปลี่ยนต้องinvalidate ไม่ใช้เพียงexampleID</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-3-result"><summary>ผลการทดลอง</summary><ol><li><code>inputs=tokens[:-1], targets=tokens[1:]</code> = [0, 1, 0, 2, 0, 1, 0]<p>causal bigram model ใช้ current token ทำนาย next token</p></li><li><code>logits=W[current token]</code> = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]<p>weights เริ่มจาก 0 จึง probability=1/3; ไม่มี pretrained weights</p></li><li><code>valid=t &gt;= ignorePrefix</code> = 6<p>ignore label ไม่ได้ลบ input; ใช้สอน assistant-only loss</p></li><li><code>L=−mean log p(target)</code> = 1.0986122886681098<p>normalize เฉพาะ valid targets</p></li><li><code>∂L/∂W[x,j] += (p_j−1[j=target])/N_valid</code> = [[0.16666666666666666, -0.1666666666666667, -1.850371707708594e-17], [-0.22222222222222224, 0.1111111111111111, 0.1111111111111111], [-0.11111111111111112, 0.05555555555555555, 0.05555555555555555]]<p>accumulate เมื่อ context token เดียวถูกใช้หลายครั้ง</p></li><li><code>softmax(W[query]/temperature)</code> = [0.3333333333333333, 0.3333333333333333, 0.3333333333333333]<p>temperature ใช้เฉพาะ distribution ตอน inference ไม่แก้ training CE</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-3"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="reference" class="canonical-section"><h2>เนื้อหาครบทุกหัวข้อ พร้อมแผนที่ objective</h2><nav class="source-toc"><a href="#chapter-59/section/topic-1">1. Why DPO?</a> <a href="#chapter-59/section/topic-2">2. Learning Objectives</a> <a href="#chapter-59/section/topic-3">3. Pairwise Data</a> <a href="#chapter-59/section/topic-4">4. Sequence Log Probability</a> <a href="#chapter-59/section/topic-5">5. Policy Preference Margin</a> <a href="#chapter-59/section/topic-6">6. Reference Preference Margin</a> <a href="#chapter-59/section/topic-7">7. DPO Logit</a> <a href="#chapter-59/section/topic-8">8. DPO Loss</a> <a href="#chapter-59/section/topic-9">9. Beta</a> <a href="#chapter-59/section/topic-10">10. Preference Accuracy</a> <a href="#chapter-59/section/topic-11">11. Why Reference Policy?</a> <a href="#chapter-59/section/topic-12">12. DPO vs Reward Model + PPO</a> <a href="#chapter-59/section/topic-13">13. Length Effects</a> <a href="#chapter-59/section/topic-14">14. Token Masking</a> <a href="#chapter-59/section/topic-15">15. Truncation</a> <a href="#chapter-59/section/topic-16">16. Reference Log-Probability Caching</a> <a href="#chapter-59/section/topic-17">17. Reference-Free Concept</a> <a href="#chapter-59/section/topic-18">18. Label Smoothing / Robust Preference</a> <a href="#chapter-59/section/topic-19">19. IPO Concept</a> <a href="#chapter-59/section/topic-20">20. ORPO Concept</a> <a href="#chapter-59/section/topic-21">21. KTO Concept</a> <a href="#chapter-59/section/topic-22">22. Other Preference Objectives</a> <a href="#chapter-59/section/topic-23">23. Current TRL DPOTrainer</a> <a href="#chapter-59/section/topic-24">24. Preference Dataset Quality</a> <a href="#chapter-59/section/topic-25">25. Preference Strength</a> <a href="#chapter-59/section/topic-26">26. Evaluation</a> <a href="#chapter-59/section/topic-27">27. From Scratch</a> <a href="#chapter-59/section/topic-28">28. Common Mistakes</a> <a href="#chapter-59/section/topic-29">29. Exercises / Mini Project</a> <a href="#chapter-59/section/topic-30">30. Checklist</a> <a href="#chapter-59/section/topic-31">31. What&#x27;s Next</a> </nav><section id="topic-1" class="source-topic"><span id="source-59-dpo-preference-optimization-canonical-chapter-59-dpo-preference-optimization" class="legacy-anchor"></span><span id="source-59-dpo-preference-optimization-canonical-1-why-dpo" class="legacy-anchor"></span><h3>1. Why DPO?</h3>
+<p>Classic RLHF can require:
+- a reward model
+- online generation
+- a value model
+- PPO optimization
+- KL control</p>
+<p>Direct Preference Optimization (DPO) learns directly from chosen/rejected pairs using a policy and a reference policy.</p>
+<pre><code class="language-text">preference pairs
++
+reference model
+↓
+DPO objective
+↓
+optimized policy
+</code></pre><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>1. Why DPO?</h3>
+<p>Classic RLHF can require:
+- a reward model
+- online generation
+- a value model
+- PPO optimization
+- KL control</p>
+<p>Direct Preference Optimization (DPO) learns directly from chosen/rejected pairs using a policy and a reference policy.</p>
+<pre><code class="language-text">preference pairs
++
+reference model
+↓
+DPO objective
+↓
+optimized policy
+</code></pre><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-1-equation"><summary>สมการ</summary><h3>1. Why DPO?</h3>
+<p>Classic RLHF can require:
+- a reward model
+- online generation
+- a value model
+- PPO optimization
+- KL control</p>
+<p>Direct Preference Optimization (DPO) learns directly from chosen/rejected pairs using a policy and a reference policy.</p>
+<pre><code class="language-text">preference pairs
++
+reference model
+↓
+DPO objective
+↓
+optimized policy
+</code></pre></details><details id="help-topic-1-visual"><summary>ภาพและ shape</summary><h3>1. Why DPO?</h3>
+<p>Classic RLHF can require:
+- a reward model
+- online generation
+- a value model
+- PPO optimization
+- KL control</p>
+<p>Direct Preference Optimization (DPO) learns directly from chosen/rejected pairs using a policy and a reference policy.</p>
+<pre><code class="language-text">preference pairs
++
+reference model
+↓
+DPO objective
+↓
+optimized policy
+</code></pre></details><details id="help-topic-1-code"><summary>โค้ด</summary><h3>1. Why DPO?</h3>
+<p>Classic RLHF can require:
+- a reward model
+- online generation
+- a value model
+- PPO optimization
+- KL control</p>
+<p>Direct Preference Optimization (DPO) learns directly from chosen/rejected pairs using a policy and a reference policy.</p>
+<pre><code class="language-text">preference pairs
++
+reference model
+↓
+DPO objective
+↓
+optimized policy
+</code></pre><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-1-result"><summary>ผลการทดลอง</summary><h3>1. Why DPO?</h3>
+<p>Classic RLHF can require:
+- a reward model
+- online generation
+- a value model
+- PPO optimization
+- KL control</p>
+<p>Direct Preference Optimization (DPO) learns directly from chosen/rejected pairs using a policy and a reference policy.</p>
+<pre><code class="language-text">preference pairs
++
+reference model
+↓
+DPO objective
+↓
+optimized policy
+</code></pre><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-1"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-2" class="source-topic"><span id="source-59-dpo-preference-optimization-canonical-2-learning-objectives" class="legacy-anchor"></span><h3>2. Learning Objectives</h3>
+<p>You should be able to:</p>
+<ul>
+<li>represent chosen/rejected preference data</li>
+<li>compute sequence log probabilities</li>
+<li>distinguish policy and reference log-probabilities</li>
+<li>derive DPO log-ratio margins</li>
+<li>implement the standard sigmoid DPO loss</li>
+<li>explain beta</li>
+<li>calculate preference accuracy</li>
+<li>understand reference-free variants conceptually</li>
+<li>explain IPO / ORPO / KTO at a high level</li>
+<li>understand length/token masking</li>
+<li>evaluate preference-data quality</li>
+<li>compare DPO with PPO-based RLHF</li>
+<li>recognize overoptimization and distribution shift</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>2. Learning Objectives</h3>
+<p>You should be able to:</p>
+<ul>
+<li>represent chosen/rejected preference data</li>
+<li>compute sequence log probabilities</li>
+<li>distinguish policy and reference log-probabilities</li>
+<li>derive DPO log-ratio margins</li>
+<li>implement the standard sigmoid DPO loss</li>
+<li>explain beta</li>
+<li>calculate preference accuracy</li>
+<li>understand reference-free variants conceptually</li>
+<li>explain IPO / ORPO / KTO at a high level</li>
+<li>understand length/token masking</li>
+<li>evaluate preference-data quality</li>
+<li>compare DPO with PPO-based RLHF</li>
+<li>recognize overoptimization and distribution shift</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-2-equation"><summary>สมการ</summary><h3>2. Learning Objectives</h3>
+<p>You should be able to:</p>
+<ul>
+<li>represent chosen/rejected preference data</li>
+<li>compute sequence log probabilities</li>
+<li>distinguish policy and reference log-probabilities</li>
+<li>derive DPO log-ratio margins</li>
+<li>implement the standard sigmoid DPO loss</li>
+<li>explain beta</li>
+<li>calculate preference accuracy</li>
+<li>understand reference-free variants conceptually</li>
+<li>explain IPO / ORPO / KTO at a high level</li>
+<li>understand length/token masking</li>
+<li>evaluate preference-data quality</li>
+<li>compare DPO with PPO-based RLHF</li>
+<li>recognize overoptimization and distribution shift</li>
+</ul></details><details id="help-topic-2-visual"><summary>ภาพและ shape</summary><h3>2. Learning Objectives</h3>
+<p>You should be able to:</p>
+<ul>
+<li>represent chosen/rejected preference data</li>
+<li>compute sequence log probabilities</li>
+<li>distinguish policy and reference log-probabilities</li>
+<li>derive DPO log-ratio margins</li>
+<li>implement the standard sigmoid DPO loss</li>
+<li>explain beta</li>
+<li>calculate preference accuracy</li>
+<li>understand reference-free variants conceptually</li>
+<li>explain IPO / ORPO / KTO at a high level</li>
+<li>understand length/token masking</li>
+<li>evaluate preference-data quality</li>
+<li>compare DPO with PPO-based RLHF</li>
+<li>recognize overoptimization and distribution shift</li>
+</ul></details><details id="help-topic-2-code"><summary>โค้ด</summary><h3>2. Learning Objectives</h3>
+<p>You should be able to:</p>
+<ul>
+<li>represent chosen/rejected preference data</li>
+<li>compute sequence log probabilities</li>
+<li>distinguish policy and reference log-probabilities</li>
+<li>derive DPO log-ratio margins</li>
+<li>implement the standard sigmoid DPO loss</li>
+<li>explain beta</li>
+<li>calculate preference accuracy</li>
+<li>understand reference-free variants conceptually</li>
+<li>explain IPO / ORPO / KTO at a high level</li>
+<li>understand length/token masking</li>
+<li>evaluate preference-data quality</li>
+<li>compare DPO with PPO-based RLHF</li>
+<li>recognize overoptimization and distribution shift</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-2-result"><summary>ผลการทดลอง</summary><h3>2. Learning Objectives</h3>
+<p>You should be able to:</p>
+<ul>
+<li>represent chosen/rejected preference data</li>
+<li>compute sequence log probabilities</li>
+<li>distinguish policy and reference log-probabilities</li>
+<li>derive DPO log-ratio margins</li>
+<li>implement the standard sigmoid DPO loss</li>
+<li>explain beta</li>
+<li>calculate preference accuracy</li>
+<li>understand reference-free variants conceptually</li>
+<li>explain IPO / ORPO / KTO at a high level</li>
+<li>understand length/token masking</li>
+<li>evaluate preference-data quality</li>
+<li>compare DPO with PPO-based RLHF</li>
+<li>recognize overoptimization and distribution shift</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-2"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-3" class="source-topic"><span id="source-59-dpo-preference-optimization-canonical-3-pairwise-data" class="legacy-anchor"></span><h3>3. Pairwise Data</h3>
+<p>Each example contains:</p>
+<pre><code class="language-text">prompt x
+chosen y_w
+rejected y_l
+</code></pre>
+<p>The preference says:</p>
+<pre><code class="language-text">y_w ≻ y_l
+</code></pre>
+<p>Both responses should be judged under the same prompt/context.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>3. Pairwise Data</h3>
+<p>Each example contains:</p>
+<pre><code class="language-text">prompt x
+chosen y_w
+rejected y_l
+</code></pre>
+<p>The preference says:</p>
+<pre><code class="language-text">y_w ≻ y_l
+</code></pre>
+<p>Both responses should be judged under the same prompt/context.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-3-equation"><summary>สมการ</summary><h3>3. Pairwise Data</h3>
+<p>Each example contains:</p>
+<pre><code class="language-text">prompt x
+chosen y_w
+rejected y_l
+</code></pre>
+<p>The preference says:</p>
+<pre><code class="language-text">y_w ≻ y_l
+</code></pre>
+<p>Both responses should be judged under the same prompt/context.</p></details><details id="help-topic-3-visual"><summary>ภาพและ shape</summary><h3>3. Pairwise Data</h3>
+<p>Each example contains:</p>
+<pre><code class="language-text">prompt x
+chosen y_w
+rejected y_l
+</code></pre>
+<p>The preference says:</p>
+<pre><code class="language-text">y_w ≻ y_l
+</code></pre>
+<p>Both responses should be judged under the same prompt/context.</p></details><details id="help-topic-3-code"><summary>โค้ด</summary><h3>3. Pairwise Data</h3>
+<p>Each example contains:</p>
+<pre><code class="language-text">prompt x
+chosen y_w
+rejected y_l
+</code></pre>
+<p>The preference says:</p>
+<pre><code class="language-text">y_w ≻ y_l
+</code></pre>
+<p>Both responses should be judged under the same prompt/context.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-3-result"><summary>ผลการทดลอง</summary><h3>3. Pairwise Data</h3>
+<p>Each example contains:</p>
+<pre><code class="language-text">prompt x
+chosen y_w
+rejected y_l
+</code></pre>
+<p>The preference says:</p>
+<pre><code class="language-text">y_w ≻ y_l
+</code></pre>
+<p>Both responses should be judged under the same prompt/context.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-3"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-4" class="source-topic"><span id="source-59-dpo-preference-optimization-canonical-4-sequence-log-probability" class="legacy-anchor"></span><h3>4. Sequence Log Probability</h3>
+<p>For response tokens y_1...y_T:</p>
+<pre><code class="language-text">log pi(y|x)
+=
+Σ_t log pi(y_t | x, y_&lt;t)
+</code></pre>
+<p>Do not include prompt-only tokens in the completion log-probability comparison unless the formulation explicitly requires it.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>completionlogp=Σtmaskt·logp(yt|prefix); logps[−.1,−.2,−.3],mask[0,1,1]ได้−.5; padding/promptไม่รวมและstandardDPOใช้sumไม่mean</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-4-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>completionlogp=Σtmaskt·logp(yt|prefix); logps[−.1,−.2,−.3],mask[0,1,1]ได้−.5; padding/promptไม่รวมและstandardDPOใช้sumไม่mean</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-4-equation"><summary>สมการ</summary><p>completionlogp=Σtmaskt·logp(yt|prefix); logps[−.1,−.2,−.3],mask[0,1,1]ได้−.5; padding/promptไม่รวมและstandardDPOใช้sumไม่mean</p></details><details id="help-topic-4-visual"><summary>ภาพและ shape</summary><p>completionlogp=Σtmaskt·logp(yt|prefix); logps[−.1,−.2,−.3],mask[0,1,1]ได้−.5; padding/promptไม่รวมและstandardDPOใช้sumไม่mean</p></details><details id="help-topic-4-code"><summary>โค้ด</summary><p>completionlogp=Σtmaskt·logp(yt|prefix); logps[−.1,−.2,−.3],mask[0,1,1]ได้−.5; padding/promptไม่รวมและstandardDPOใช้sumไม่mean</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-4-result"><summary>ผลการทดลอง</summary><p>completionlogp=Σtmaskt·logp(yt|prefix); logps[−.1,−.2,−.3],mask[0,1,1]ได้−.5; padding/promptไม่รวมและstandardDPOใช้sumไม่mean</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-4"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-5" class="source-topic"><span id="source-59-dpo-preference-optimization-canonical-5-policy-preference-margin" class="legacy-anchor"></span><h3>5. Policy Preference Margin</h3>
+<p>For the trainable policy:</p>
+<pre><code class="language-text">m_policy
+=
+log pi_theta(y_w|x)
+-
+log pi_theta(y_l|x)
+</code></pre>
+<p>Positive means the policy assigns more probability to the chosen response.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>policymargin=logπ(chosen)−logπ(rejected); −2−(−5)=3 ใช้completionเดียวกันกับreferenceไม่รวมpromptscore</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-5-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>policymargin=logπ(chosen)−logπ(rejected); −2−(−5)=3 ใช้completionเดียวกันกับreferenceไม่รวมpromptscore</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-5-equation"><summary>สมการ</summary><p>policymargin=logπ(chosen)−logπ(rejected); −2−(−5)=3 ใช้completionเดียวกันกับreferenceไม่รวมpromptscore</p></details><details id="help-topic-5-visual"><summary>ภาพและ shape</summary><p>policymargin=logπ(chosen)−logπ(rejected); −2−(−5)=3 ใช้completionเดียวกันกับreferenceไม่รวมpromptscore</p></details><details id="help-topic-5-code"><summary>โค้ด</summary><p>policymargin=logπ(chosen)−logπ(rejected); −2−(−5)=3 ใช้completionเดียวกันกับreferenceไม่รวมpromptscore</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-5-result"><summary>ผลการทดลอง</summary><p>policymargin=logπ(chosen)−logπ(rejected); −2−(−5)=3 ใช้completionเดียวกันกับreferenceไม่รวมpromptscore</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-5"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-6" class="source-topic"><span id="source-59-dpo-preference-optimization-canonical-6-reference-preference-margin" class="legacy-anchor"></span><h3>6. Reference Preference Margin</h3>
+<p>For frozen reference policy:</p>
+<pre><code class="language-text">m_ref
+=
+log pi_ref(y_w|x)
+-
+log pi_ref(y_l|x)
+</code></pre>
+<p>The reference anchors how much the new policy changes preference relative to the starting model.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>referencemargin=logπref(chosen)−logπref(rejected); −3−(−4)=1; referencefreezeและtokenizer/templateต้องตรงpolicy</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-6-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>referencemargin=logπref(chosen)−logπref(rejected); −3−(−4)=1; referencefreezeและtokenizer/templateต้องตรงpolicy</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-6-equation"><summary>สมการ</summary><p>referencemargin=logπref(chosen)−logπref(rejected); −3−(−4)=1; referencefreezeและtokenizer/templateต้องตรงpolicy</p></details><details id="help-topic-6-visual"><summary>ภาพและ shape</summary><p>referencemargin=logπref(chosen)−logπref(rejected); −3−(−4)=1; referencefreezeและtokenizer/templateต้องตรงpolicy</p></details><details id="help-topic-6-code"><summary>โค้ด</summary><p>referencemargin=logπref(chosen)−logπref(rejected); −3−(−4)=1; referencefreezeและtokenizer/templateต้องตรงpolicy</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-6-result"><summary>ผลการทดลอง</summary><p>referencemargin=logπref(chosen)−logπref(rejected); −3−(−4)=1; referencefreezeและtokenizer/templateต้องตรงpolicy</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-6"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-7" class="source-topic"><span id="source-59-dpo-preference-optimization-canonical-7-dpo-logit" class="legacy-anchor"></span><h3>7. DPO Logit</h3>
+<p>Standard DPO preference logit:</p>
+<pre><code class="language-text">z
+=
+beta * (
+m_policy
+-
+m_ref
+)
+</code></pre>
+<p>Equivalent expanded form:</p>
+<pre><code class="language-text">z
+=
+beta * [
+(log pi_theta(y_w)-log pi_ref(y_w))
+-
+(log pi_theta(y_l)-log pi_ref(y_l))
+]
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>z=β(policy_margin−reference_margin); β.1,margins3/1ให้z.2,losssoftplus(−.2)=.5981389; ไม่ใช้βคูณlogsigmoidข้างนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-7-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>z=β(policy_margin−reference_margin); β.1,margins3/1ให้z.2,losssoftplus(−.2)=.5981389; ไม่ใช้βคูณlogsigmoidข้างนอก</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-7-equation"><summary>สมการ</summary><p>z=β(policy_margin−reference_margin); β.1,margins3/1ให้z.2,losssoftplus(−.2)=.5981389; ไม่ใช้βคูณlogsigmoidข้างนอก</p></details><details id="help-topic-7-visual"><summary>ภาพและ shape</summary><p>z=β(policy_margin−reference_margin); β.1,margins3/1ให้z.2,losssoftplus(−.2)=.5981389; ไม่ใช้βคูณlogsigmoidข้างนอก</p></details><details id="help-topic-7-code"><summary>โค้ด</summary><p>z=β(policy_margin−reference_margin); β.1,margins3/1ให้z.2,losssoftplus(−.2)=.5981389; ไม่ใช้βคูณlogsigmoidข้างนอก</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-7-result"><summary>ผลการทดลอง</summary><p>z=β(policy_margin−reference_margin); β.1,margins3/1ให้z.2,losssoftplus(−.2)=.5981389; ไม่ใช้βคูณlogsigmoidข้างนอก</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-7"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-8" class="source-topic"><span id="source-59-dpo-preference-optimization-canonical-8-dpo-loss" class="legacy-anchor"></span><h3>8. DPO Loss</h3>
+<pre><code class="language-text">L_DPO
+=
+-log sigmoid(z)
+</code></pre>
+<p>Stable implementation:</p>
+<pre><code class="language-text">softplus(-z)
+</code></pre>
+<p>A large positive z yields low loss.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>z=β(policy_margin−reference_margin); β.1,margins3/1ให้z.2,losssoftplus(−.2)=.5981389; ไม่ใช้βคูณlogsigmoidข้างนอก</p><p>β.1,advantage2ให้z.2,loss.598138869; derivativeต่อpolicymargin=−βσ(−z)≈−.0450166 จึงupdateเพิ่มchosen-relative-margin</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-8-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>z=β(policy_margin−reference_margin); β.1,margins3/1ให้z.2,losssoftplus(−.2)=.5981389; ไม่ใช้βคูณlogsigmoidข้างนอก</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-8-equation"><summary>สมการ</summary><p>z=β(policy_margin−reference_margin); β.1,margins3/1ให้z.2,losssoftplus(−.2)=.5981389; ไม่ใช้βคูณlogsigmoidข้างนอก</p></details><details id="help-topic-8-visual"><summary>ภาพและ shape</summary><p>z=β(policy_margin−reference_margin); β.1,margins3/1ให้z.2,losssoftplus(−.2)=.5981389; ไม่ใช้βคูณlogsigmoidข้างนอก</p></details><details id="help-topic-8-code"><summary>โค้ด</summary><p>z=β(policy_margin−reference_margin); β.1,margins3/1ให้z.2,losssoftplus(−.2)=.5981389; ไม่ใช้βคูณlogsigmoidข้างนอก</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-8-result"><summary>ผลการทดลอง</summary><p>z=β(policy_margin−reference_margin); β.1,margins3/1ให้z.2,losssoftplus(−.2)=.5981389; ไม่ใช้βคูณlogsigmoidข้างนอก</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-8"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-9" class="source-topic"><span id="source-59-dpo-preference-optimization-canonical-9-beta" class="legacy-anchor"></span><h3>9. Beta</h3>
+<p>Beta controls the strength/temperature of the preference-vs-reference trade-off.</p>
+<p>Current TRL documents beta as controlling deviation from the reference model.</p>
+<p>Interpretation depends on objective conventions, so compare equations rather than relying on a slogan.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>marginadvantage2,β.1/.5ให้loss.598139/.313262; negativeadvantageเพิ่มβทำlossเพิ่มและgradientscaleเปลี่ยน ไม่รับประกันtrainingqualityเพิ่ม</p><p>β.1/.3คงpairs/base/ref/seed/tokenbudget; reportheldoutpreferenceaccuracy/taskquality/KL/lengthbiasไม่เลือกจากtraininglossคนละβ</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-9-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>marginadvantage2,β.1/.5ให้loss.598139/.313262; negativeadvantageเพิ่มβทำlossเพิ่มและgradientscaleเปลี่ยน ไม่รับประกันtrainingqualityเพิ่ม</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-9-equation"><summary>สมการ</summary><p>marginadvantage2,β.1/.5ให้loss.598139/.313262; negativeadvantageเพิ่มβทำlossเพิ่มและgradientscaleเปลี่ยน ไม่รับประกันtrainingqualityเพิ่ม</p></details><details id="help-topic-9-visual"><summary>ภาพและ shape</summary><p>marginadvantage2,β.1/.5ให้loss.598139/.313262; negativeadvantageเพิ่มβทำlossเพิ่มและgradientscaleเปลี่ยน ไม่รับประกันtrainingqualityเพิ่ม</p></details><details id="help-topic-9-code"><summary>โค้ด</summary><p>marginadvantage2,β.1/.5ให้loss.598139/.313262; negativeadvantageเพิ่มβทำlossเพิ่มและgradientscaleเปลี่ยน ไม่รับประกันtrainingqualityเพิ่ม</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-9-result"><summary>ผลการทดลอง</summary><p>marginadvantage2,β.1/.5ให้loss.598139/.313262; negativeadvantageเพิ่มβทำlossเพิ่มและgradientscaleเปลี่ยน ไม่รับประกันtrainingqualityเพิ่ม</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-9"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-10" class="source-topic"><span id="source-59-dpo-preference-optimization-canonical-10-preference-accuracy" class="legacy-anchor"></span><h3>10. Preference Accuracy</h3>
+<p>A simple metric:</p>
+<pre><code class="language-text">accuracy =
+mean(z &gt; 0)
+</code></pre>
+<p>or equivalently whether the policy-reference preference shift favors chosen over rejected.</p>
+<p>Track:
+- mean chosen reward/log-ratio
+- mean rejected reward/log-ratio
+- margin
+- accuracy</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>implicitpreferenceaccuracy=mean(policy_margin−reference_margin&gt;0)ตามDPOmetricที่ประกาศ; chosenpolicyhigherprobaccuracyเป็นอีกmetricห้ามสลับ</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-10-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>implicitpreferenceaccuracy=mean(policy_margin−reference_margin&gt;0)ตามDPOmetricที่ประกาศ; chosenpolicyhigherprobaccuracyเป็นอีกmetricห้ามสลับ</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-10-equation"><summary>สมการ</summary><p>implicitpreferenceaccuracy=mean(policy_margin−reference_margin&gt;0)ตามDPOmetricที่ประกาศ; chosenpolicyhigherprobaccuracyเป็นอีกmetricห้ามสลับ</p></details><details id="help-topic-10-visual"><summary>ภาพและ shape</summary><p>implicitpreferenceaccuracy=mean(policy_margin−reference_margin&gt;0)ตามDPOmetricที่ประกาศ; chosenpolicyhigherprobaccuracyเป็นอีกmetricห้ามสลับ</p></details><details id="help-topic-10-code"><summary>โค้ด</summary><p>implicitpreferenceaccuracy=mean(policy_margin−reference_margin&gt;0)ตามDPOmetricที่ประกาศ; chosenpolicyhigherprobaccuracyเป็นอีกmetricห้ามสลับ</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-10-result"><summary>ผลการทดลอง</summary><p>implicitpreferenceaccuracy=mean(policy_margin−reference_margin&gt;0)ตามDPOmetricที่ประกาศ; chosenpolicyhigherprobaccuracyเป็นอีกmetricห้ามสลับ</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-10"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-11" class="source-topic"><span id="source-59-dpo-preference-optimization-canonical-11-why-reference-policy" class="legacy-anchor"></span><h3>11. Why Reference Policy?</h3>
+<p>Without the reference term, optimization can reward arbitrary probability changes unrelated to the starting policy.</p>
+<p>Reference comparison regularizes preference movement.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>policy=referenceให้losslog2,gradientfinite; swapchosen/rejectedเปลี่ยนsignz,maskedpromptlogpไม่กระทบlossและreferenceไม่มีgrad</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-11-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>policy=referenceให้losslog2,gradientfinite; swapchosen/rejectedเปลี่ยนsignz,maskedpromptlogpไม่กระทบlossและreferenceไม่มีgrad</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-11-equation"><summary>สมการ</summary><p>policy=referenceให้losslog2,gradientfinite; swapchosen/rejectedเปลี่ยนsignz,maskedpromptlogpไม่กระทบlossและreferenceไม่มีgrad</p></details><details id="help-topic-11-visual"><summary>ภาพและ shape</summary><p>policy=referenceให้losslog2,gradientfinite; swapchosen/rejectedเปลี่ยนsignz,maskedpromptlogpไม่กระทบlossและreferenceไม่มีgrad</p></details><details id="help-topic-11-code"><summary>โค้ด</summary><p>policy=referenceให้losslog2,gradientfinite; swapchosen/rejectedเปลี่ยนsignz,maskedpromptlogpไม่กระทบlossและreferenceไม่มีgrad</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-11-result"><summary>ผลการทดลอง</summary><p>policy=referenceให้losslog2,gradientfinite; swapchosen/rejectedเปลี่ยนsignz,maskedpromptlogpไม่กระทบlossและreferenceไม่มีgrad</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-11"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-12" class="source-topic"><span id="source-59-dpo-preference-optimization-canonical-12-dpo-vs-reward-model-ppo" class="legacy-anchor"></span><h3>12. DPO vs Reward Model + PPO</h3>
+<p>DPO:
+- offline chosen/rejected pairs
+- no separately trained scalar reward model required
+- no online PPO rollout loop required</p>
+<p>PPO RLHF:
+- explicit reward model
+- online policy samples
+- value/advantage estimation
+- policy-gradient optimization</p>
+<p>Neither is universally superior.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>DPOใช้preferencepairs+frozenreferenceฝึกpolicyตรง; RM/PPOต้องrewardmodelและonpolicyrollouts/value/oldpolicy เพิ่มcomponentsแต่สำรวจใหม่ได้</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-12-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>DPOใช้preferencepairs+frozenreferenceฝึกpolicyตรง; RM/PPOต้องrewardmodelและonpolicyrollouts/value/oldpolicy เพิ่มcomponentsแต่สำรวจใหม่ได้</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-12-equation"><summary>สมการ</summary><p>DPOใช้preferencepairs+frozenreferenceฝึกpolicyตรง; RM/PPOต้องrewardmodelและonpolicyrollouts/value/oldpolicy เพิ่มcomponentsแต่สำรวจใหม่ได้</p></details><details id="help-topic-12-visual"><summary>ภาพและ shape</summary><p>DPOใช้preferencepairs+frozenreferenceฝึกpolicyตรง; RM/PPOต้องrewardmodelและonpolicyrollouts/value/oldpolicy เพิ่มcomponentsแต่สำรวจใหม่ได้</p></details><details id="help-topic-12-code"><summary>โค้ด</summary><p>DPOใช้preferencepairs+frozenreferenceฝึกpolicyตรง; RM/PPOต้องrewardmodelและonpolicyrollouts/value/oldpolicy เพิ่มcomponentsแต่สำรวจใหม่ได้</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-12-result"><summary>ผลการทดลอง</summary><p>DPOใช้preferencepairs+frozenreferenceฝึกpolicyตรง; RM/PPOต้องrewardmodelและonpolicyrollouts/value/oldpolicy เพิ่มcomponentsแต่สำรวจใหม่ได้</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-12"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-13" class="source-topic"><span id="source-59-dpo-preference-optimization-canonical-13-length-effects" class="legacy-anchor"></span><h3>13. Length Effects</h3>
+<p>Sequence log-probability sums become more negative with more tokens.</p>
+<p>Potential issues:
+- response-length bias
+- dataset chosen/rejected length imbalance</p>
+<p>Audit:
+- chosen length distribution
+- rejected length distribution
+- margin vs length</p>
+<p>Do not automatically normalize unless the chosen algorithm specifies it.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>reportchosen/rejectedtokenlengthmeans/distributionsและlength-conditionedaccuracy; summedlogpมีlengthdependenceแต่ไม่แก้เป็นmeanเงียบๆเพราะเปลี่ยนobjective</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-13-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>reportchosen/rejectedtokenlengthmeans/distributionsและlength-conditionedaccuracy; summedlogpมีlengthdependenceแต่ไม่แก้เป็นmeanเงียบๆเพราะเปลี่ยนobjective</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-13-equation"><summary>สมการ</summary><p>reportchosen/rejectedtokenlengthmeans/distributionsและlength-conditionedaccuracy; summedlogpมีlengthdependenceแต่ไม่แก้เป็นmeanเงียบๆเพราะเปลี่ยนobjective</p></details><details id="help-topic-13-visual"><summary>ภาพและ shape</summary><p>reportchosen/rejectedtokenlengthmeans/distributionsและlength-conditionedaccuracy; summedlogpมีlengthdependenceแต่ไม่แก้เป็นmeanเงียบๆเพราะเปลี่ยนobjective</p></details><details id="help-topic-13-code"><summary>โค้ด</summary><p>reportchosen/rejectedtokenlengthmeans/distributionsและlength-conditionedaccuracy; summedlogpมีlengthdependenceแต่ไม่แก้เป็นmeanเงียบๆเพราะเปลี่ยนobjective</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-13-result"><summary>ผลการทดลอง</summary><p>reportchosen/rejectedtokenlengthmeans/distributionsและlength-conditionedaccuracy; summedlogpมีlengthdependenceแต่ไม่แก้เป็นmeanเงียบๆเพราะเปลี่ยนobjective</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-13"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-14" class="source-topic"><span id="source-59-dpo-preference-optimization-canonical-14-token-masking" class="legacy-anchor"></span><h3>14. Token Masking</h3>
+<p>Sequence score should cover the intended completion tokens only.</p>
+<p>Mask:
+- padding
+- prompt prefix when using completion-only likelihood
+- invalid/truncated targets</p>
+<p>A single off-by-one can invalidate DPO labels.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>completionlogp=Σtmaskt·logp(yt|prefix); logps[−.1,−.2,−.3],mask[0,1,1]ได้−.5; padding/promptไม่รวมและstandardDPOใช้sumไม่mean</p><p>policy=referenceให้losslog2,gradientfinite; swapchosen/rejectedเปลี่ยนsignz,maskedpromptlogpไม่กระทบlossและreferenceไม่มีgrad</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-14-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>completionlogp=Σtmaskt·logp(yt|prefix); logps[−.1,−.2,−.3],mask[0,1,1]ได้−.5; padding/promptไม่รวมและstandardDPOใช้sumไม่mean</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-14-equation"><summary>สมการ</summary><p>completionlogp=Σtmaskt·logp(yt|prefix); logps[−.1,−.2,−.3],mask[0,1,1]ได้−.5; padding/promptไม่รวมและstandardDPOใช้sumไม่mean</p></details><details id="help-topic-14-visual"><summary>ภาพและ shape</summary><p>completionlogp=Σtmaskt·logp(yt|prefix); logps[−.1,−.2,−.3],mask[0,1,1]ได้−.5; padding/promptไม่รวมและstandardDPOใช้sumไม่mean</p></details><details id="help-topic-14-code"><summary>โค้ด</summary><p>completionlogp=Σtmaskt·logp(yt|prefix); logps[−.1,−.2,−.3],mask[0,1,1]ได้−.5; padding/promptไม่รวมและstandardDPOใช้sumไม่mean</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-14-result"><summary>ผลการทดลอง</summary><p>completionlogp=Σtmaskt·logp(yt|prefix); logps[−.1,−.2,−.3],mask[0,1,1]ได้−.5; padding/promptไม่รวมและstandardDPOใช้sumไม่mean</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-14"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-15" class="source-topic"><span id="source-59-dpo-preference-optimization-canonical-15-truncation" class="legacy-anchor"></span><h3>15. Truncation</h3>
+<p>If chosen/rejected responses are truncated differently, the preference objective can change.</p>
+<p>Track:
+- prompt truncation
+- chosen token count
+- rejected token count</p>
+<p>Prefer deterministic preprocessing.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>recordchosen/rejectedlogps,completioncounts,margins,z/loss,gradnormและheldoutwinsแยกlengthslices</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-15-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>recordchosen/rejectedlogps,completioncounts,margins,z/loss,gradnormและheldoutwinsแยกlengthslices</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-15-equation"><summary>สมการ</summary><p>recordchosen/rejectedlogps,completioncounts,margins,z/loss,gradnormและheldoutwinsแยกlengthslices</p></details><details id="help-topic-15-visual"><summary>ภาพและ shape</summary><p>recordchosen/rejectedlogps,completioncounts,margins,z/loss,gradnormและheldoutwinsแยกlengthslices</p></details><details id="help-topic-15-code"><summary>โค้ด</summary><p>recordchosen/rejectedlogps,completioncounts,margins,z/loss,gradnormและheldoutwinsแยกlengthslices</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-15-result"><summary>ผลการทดลอง</summary><p>recordchosen/rejectedlogps,completioncounts,margins,z/loss,gradnormและheldoutwinsแยกlengthslices</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-15"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-16" class="source-topic"><span id="source-59-dpo-preference-optimization-canonical-16-reference-log-probability-caching" class="legacy-anchor"></span><h3>16. Reference Log-Probability Caching</h3>
+<p>Reference policy is frozen.</p>
+<p>Therefore reference log-probabilities can often be precomputed.</p>
+<p>Trade-off:
+- extra dataset storage
+- faster training
+- must invalidate cache when tokenizer/template/reference changes</p>
+<p>Current TRL exposes precompute_ref_log_probs in DPO configuration.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>cachekeyhash(referenceweights/tokenizer/template/datasetcompletionIDs/maskpolicy/reduction); อันใดเปลี่ยนต้องinvalidate ไม่ใช้เพียงexampleID</p><p>DPOforwardpolicy2responses+reference2responsesหากไม่cache; cacheลดreferencecomputeแต่storageO(numberpairs),trainingactivationตามcompletionlength</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-16-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>cachekeyhash(referenceweights/tokenizer/template/datasetcompletionIDs/maskpolicy/reduction); อันใดเปลี่ยนต้องinvalidate ไม่ใช้เพียงexampleID</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-16-equation"><summary>สมการ</summary><p>cachekeyhash(referenceweights/tokenizer/template/datasetcompletionIDs/maskpolicy/reduction); อันใดเปลี่ยนต้องinvalidate ไม่ใช้เพียงexampleID</p></details><details id="help-topic-16-visual"><summary>ภาพและ shape</summary><p>cachekeyhash(referenceweights/tokenizer/template/datasetcompletionIDs/maskpolicy/reduction); อันใดเปลี่ยนต้องinvalidate ไม่ใช้เพียงexampleID</p></details><details id="help-topic-16-code"><summary>โค้ด</summary><p>cachekeyhash(referenceweights/tokenizer/template/datasetcompletionIDs/maskpolicy/reduction); อันใดเปลี่ยนต้องinvalidate ไม่ใช้เพียงexampleID</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-16-result"><summary>ผลการทดลอง</summary><p>cachekeyhash(referenceweights/tokenizer/template/datasetcompletionIDs/maskpolicy/reduction); อันใดเปลี่ยนต้องinvalidate ไม่ใช้เพียงexampleID</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-16"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-17" class="source-topic"><span id="source-59-dpo-preference-optimization-canonical-17-reference-free-concept" class="legacy-anchor"></span><h3>17. Reference-Free Concept</h3>
+<p>Some implementations support reference-free modes or alternate objectives.</p>
+<p>These alter the regularization assumptions.</p>
+<p>Do not silently compare them as if they were standard DPO.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-17-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>17. Reference-Free Concept</h3>
+<p>Some implementations support reference-free modes or alternate objectives.</p>
+<p>These alter the regularization assumptions.</p>
+<p>Do not silently compare them as if they were standard DPO.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-17-equation"><summary>สมการ</summary><h3>17. Reference-Free Concept</h3>
+<p>Some implementations support reference-free modes or alternate objectives.</p>
+<p>These alter the regularization assumptions.</p>
+<p>Do not silently compare them as if they were standard DPO.</p></details><details id="help-topic-17-visual"><summary>ภาพและ shape</summary><h3>17. Reference-Free Concept</h3>
+<p>Some implementations support reference-free modes or alternate objectives.</p>
+<p>These alter the regularization assumptions.</p>
+<p>Do not silently compare them as if they were standard DPO.</p></details><details id="help-topic-17-code"><summary>โค้ด</summary><h3>17. Reference-Free Concept</h3>
+<p>Some implementations support reference-free modes or alternate objectives.</p>
+<p>These alter the regularization assumptions.</p>
+<p>Do not silently compare them as if they were standard DPO.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-17-result"><summary>ผลการทดลอง</summary><h3>17. Reference-Free Concept</h3>
+<p>Some implementations support reference-free modes or alternate objectives.</p>
+<p>These alter the regularization assumptions.</p>
+<p>Do not silently compare them as if they were standard DPO.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-17"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-18" class="source-topic"><span id="source-59-dpo-preference-optimization-canonical-18-label-smoothing-robust-preference" class="legacy-anchor"></span><h3>18. Label Smoothing / Robust Preference</h3>
+<p>Preference labels can be noisy.</p>
+<p>Robust DPO-style methods may use label smoothing.</p>
+<p>Current TRL exposes label_smoothing for compatible DPO variants.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-18-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>18. Label Smoothing / Robust Preference</h3>
+<p>Preference labels can be noisy.</p>
+<p>Robust DPO-style methods may use label smoothing.</p>
+<p>Current TRL exposes label_smoothing for compatible DPO variants.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-18-equation"><summary>สมการ</summary><h3>18. Label Smoothing / Robust Preference</h3>
+<p>Preference labels can be noisy.</p>
+<p>Robust DPO-style methods may use label smoothing.</p>
+<p>Current TRL exposes label_smoothing for compatible DPO variants.</p></details><details id="help-topic-18-visual"><summary>ภาพและ shape</summary><h3>18. Label Smoothing / Robust Preference</h3>
+<p>Preference labels can be noisy.</p>
+<p>Robust DPO-style methods may use label smoothing.</p>
+<p>Current TRL exposes label_smoothing for compatible DPO variants.</p></details><details id="help-topic-18-code"><summary>โค้ด</summary><h3>18. Label Smoothing / Robust Preference</h3>
+<p>Preference labels can be noisy.</p>
+<p>Robust DPO-style methods may use label smoothing.</p>
+<p>Current TRL exposes label_smoothing for compatible DPO variants.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-18-result"><summary>ผลการทดลอง</summary><h3>18. Label Smoothing / Robust Preference</h3>
+<p>Preference labels can be noisy.</p>
+<p>Robust DPO-style methods may use label smoothing.</p>
+<p>Current TRL exposes label_smoothing for compatible DPO variants.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-18"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-19" class="source-topic"><span id="source-59-dpo-preference-optimization-canonical-19-ipo-concept" class="legacy-anchor"></span><h3>19. IPO Concept</h3>
+<p>Implicit Preference Optimization modifies the loss to avoid some behavior of the logistic DPO objective.</p>
+<p>Conceptually it targets a preferred log-ratio gap using a squared objective.</p>
+<p>Study the exact paper/objective before implementation.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>educationalIPO loss=(policy_margin−reference_margin−1/(2β))²; β.5,advantage2,target1ให้loss1; ระบุสูตรนี้แยกจากvariantsที่length-normalize</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-19-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>educationalIPO loss=(policy_margin−reference_margin−1/(2β))²; β.5,advantage2,target1ให้loss1; ระบุสูตรนี้แยกจากvariantsที่length-normalize</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-19-equation"><summary>สมการ</summary><p>educationalIPO loss=(policy_margin−reference_margin−1/(2β))²; β.5,advantage2,target1ให้loss1; ระบุสูตรนี้แยกจากvariantsที่length-normalize</p></details><details id="help-topic-19-visual"><summary>ภาพและ shape</summary><p>educationalIPO loss=(policy_margin−reference_margin−1/(2β))²; β.5,advantage2,target1ให้loss1; ระบุสูตรนี้แยกจากvariantsที่length-normalize</p></details><details id="help-topic-19-code"><summary>โค้ด</summary><p>educationalIPO loss=(policy_margin−reference_margin−1/(2β))²; β.5,advantage2,target1ให้loss1; ระบุสูตรนี้แยกจากvariantsที่length-normalize</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-19-result"><summary>ผลการทดลอง</summary><p>educationalIPO loss=(policy_margin−reference_margin−1/(2β))²; β.5,advantage2,target1ให้loss1; ระบุสูตรนี้แยกจากvariantsที่length-normalize</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-19"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-20" class="source-topic"><span id="source-59-dpo-preference-optimization-canonical-20-orpo-concept" class="legacy-anchor"></span><h3>20. ORPO Concept</h3>
+<p>Odds Ratio Preference Optimization combines:
+- supervised likelihood-style learning
+- preference odds-ratio optimization</p>
+<p>It can avoid a separate reference model in its formulation.</p>
+<p>This is not the same equation as standard DPO.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-20-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>20. ORPO Concept</h3>
+<p>Odds Ratio Preference Optimization combines:
+- supervised likelihood-style learning
+- preference odds-ratio optimization</p>
+<p>It can avoid a separate reference model in its formulation.</p>
+<p>This is not the same equation as standard DPO.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-20-equation"><summary>สมการ</summary><h3>20. ORPO Concept</h3>
+<p>Odds Ratio Preference Optimization combines:
+- supervised likelihood-style learning
+- preference odds-ratio optimization</p>
+<p>It can avoid a separate reference model in its formulation.</p>
+<p>This is not the same equation as standard DPO.</p></details><details id="help-topic-20-visual"><summary>ภาพและ shape</summary><h3>20. ORPO Concept</h3>
+<p>Odds Ratio Preference Optimization combines:
+- supervised likelihood-style learning
+- preference odds-ratio optimization</p>
+<p>It can avoid a separate reference model in its formulation.</p>
+<p>This is not the same equation as standard DPO.</p></details><details id="help-topic-20-code"><summary>โค้ด</summary><h3>20. ORPO Concept</h3>
+<p>Odds Ratio Preference Optimization combines:
+- supervised likelihood-style learning
+- preference odds-ratio optimization</p>
+<p>It can avoid a separate reference model in its formulation.</p>
+<p>This is not the same equation as standard DPO.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-20-result"><summary>ผลการทดลอง</summary><h3>20. ORPO Concept</h3>
+<p>Odds Ratio Preference Optimization combines:
+- supervised likelihood-style learning
+- preference odds-ratio optimization</p>
+<p>It can avoid a separate reference model in its formulation.</p>
+<p>This is not the same equation as standard DPO.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-20"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-21" class="source-topic"><span id="source-59-dpo-preference-optimization-canonical-21-kto-concept" class="legacy-anchor"></span><h3>21. KTO Concept</h3>
+<p>KTO can use desirable/undesirable examples without requiring every sample to be an explicit chosen/rejected pair.</p>
+<p>It derives from prospect-theory-inspired preference optimization.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-21-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>21. KTO Concept</h3>
+<p>KTO can use desirable/undesirable examples without requiring every sample to be an explicit chosen/rejected pair.</p>
+<p>It derives from prospect-theory-inspired preference optimization.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-21-equation"><summary>สมการ</summary><h3>21. KTO Concept</h3>
+<p>KTO can use desirable/undesirable examples without requiring every sample to be an explicit chosen/rejected pair.</p>
+<p>It derives from prospect-theory-inspired preference optimization.</p></details><details id="help-topic-21-visual"><summary>ภาพและ shape</summary><h3>21. KTO Concept</h3>
+<p>KTO can use desirable/undesirable examples without requiring every sample to be an explicit chosen/rejected pair.</p>
+<p>It derives from prospect-theory-inspired preference optimization.</p></details><details id="help-topic-21-code"><summary>โค้ด</summary><h3>21. KTO Concept</h3>
+<p>KTO can use desirable/undesirable examples without requiring every sample to be an explicit chosen/rejected pair.</p>
+<p>It derives from prospect-theory-inspired preference optimization.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-21-result"><summary>ผลการทดลอง</summary><h3>21. KTO Concept</h3>
+<p>KTO can use desirable/undesirable examples without requiring every sample to be an explicit chosen/rejected pair.</p>
+<p>It derives from prospect-theory-inspired preference optimization.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-21"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-22" class="source-topic"><span id="source-59-dpo-preference-optimization-canonical-22-other-preference-objectives" class="legacy-anchor"></span><h3>22. Other Preference Objectives</h3>
+<p>Modern libraries contain many objectives:
+- hinge
+- robust
+- IPO
+- EXO
+- NCA
+- BCO
+- AOT
+- APO
+- multi-loss combinations</p>
+<p>Do not treat "DPOTrainer" as meaning one fixed objective forever.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-22-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>22. Other Preference Objectives</h3>
+<p>Modern libraries contain many objectives:
+- hinge
+- robust
+- IPO
+- EXO
+- NCA
+- BCO
+- AOT
+- APO
+- multi-loss combinations</p>
+<p>Do not treat "DPOTrainer" as meaning one fixed objective forever.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-22-equation"><summary>สมการ</summary><h3>22. Other Preference Objectives</h3>
+<p>Modern libraries contain many objectives:
+- hinge
+- robust
+- IPO
+- EXO
+- NCA
+- BCO
+- AOT
+- APO
+- multi-loss combinations</p>
+<p>Do not treat "DPOTrainer" as meaning one fixed objective forever.</p></details><details id="help-topic-22-visual"><summary>ภาพและ shape</summary><h3>22. Other Preference Objectives</h3>
+<p>Modern libraries contain many objectives:
+- hinge
+- robust
+- IPO
+- EXO
+- NCA
+- BCO
+- AOT
+- APO
+- multi-loss combinations</p>
+<p>Do not treat "DPOTrainer" as meaning one fixed objective forever.</p></details><details id="help-topic-22-code"><summary>โค้ด</summary><h3>22. Other Preference Objectives</h3>
+<p>Modern libraries contain many objectives:
+- hinge
+- robust
+- IPO
+- EXO
+- NCA
+- BCO
+- AOT
+- APO
+- multi-loss combinations</p>
+<p>Do not treat "DPOTrainer" as meaning one fixed objective forever.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-22-result"><summary>ผลการทดลอง</summary><h3>22. Other Preference Objectives</h3>
+<p>Modern libraries contain many objectives:
+- hinge
+- robust
+- IPO
+- EXO
+- NCA
+- BCO
+- AOT
+- APO
+- multi-loss combinations</p>
+<p>Do not treat "DPOTrainer" as meaning one fixed objective forever.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-22"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-23" class="source-topic"><span id="source-59-dpo-preference-optimization-canonical-23-current-trl-dpotrainer" class="legacy-anchor"></span><h3>23. Current TRL DPOTrainer</h3>
+<p>Current TRL supports DPOConfig / DPOTrainer and multiple loss types.</p>
+<p>The standard/default preference loss remains sigmoid-style DPO, while modern options include IPO and many other variants.</p>
+<p>Always record:
+- library version
+- loss_type
+- beta
+- label_smoothing
+- reference configuration
+- chat template/tokenizer revision</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>manifest มีpolicy/refdigest/tokenizer/chattemplate/pairIDs/chosen-labelprovenance/β/logpreduction/mask/cachekey/seed/evalset</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-23-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>manifest มีpolicy/refdigest/tokenizer/chattemplate/pairIDs/chosen-labelprovenance/β/logpreduction/mask/cachekey/seed/evalset</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-23-equation"><summary>สมการ</summary><p>manifest มีpolicy/refdigest/tokenizer/chattemplate/pairIDs/chosen-labelprovenance/β/logpreduction/mask/cachekey/seed/evalset</p></details><details id="help-topic-23-visual"><summary>ภาพและ shape</summary><p>manifest มีpolicy/refdigest/tokenizer/chattemplate/pairIDs/chosen-labelprovenance/β/logpreduction/mask/cachekey/seed/evalset</p></details><details id="help-topic-23-code"><summary>โค้ด</summary><p>manifest มีpolicy/refdigest/tokenizer/chattemplate/pairIDs/chosen-labelprovenance/β/logpreduction/mask/cachekey/seed/evalset</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-23-result"><summary>ผลการทดลอง</summary><p>manifest มีpolicy/refdigest/tokenizer/chattemplate/pairIDs/chosen-labelprovenance/β/logpreduction/mask/cachekey/seed/evalset</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-23"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-24" class="source-topic"><span id="source-59-dpo-preference-optimization-canonical-24-preference-dataset-quality" class="legacy-anchor"></span><h3>24. Preference Dataset Quality</h3>
+<p>Bad pairs:
+- chosen/rejected identical
+- trivial formatting differences only
+- wrong preference labels
+- response lengths systematically biased
+- duplicated prompts
+- benchmark contamination</p>
+<p>Quality audits can outperform blind scaling.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>judgeชอบคำตอบยาวหรือpreferencepairsnear-duplicateข้ามsplitทำwinrateสูงปลอม; blindanswerorderและbalancedlength-eval</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-24-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>judgeชอบคำตอบยาวหรือpreferencepairsnear-duplicateข้ามsplitทำwinrateสูงปลอม; blindanswerorderและbalancedlength-eval</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-24-equation"><summary>สมการ</summary><p>judgeชอบคำตอบยาวหรือpreferencepairsnear-duplicateข้ามsplitทำwinrateสูงปลอม; blindanswerorderและbalancedlength-eval</p></details><details id="help-topic-24-visual"><summary>ภาพและ shape</summary><p>judgeชอบคำตอบยาวหรือpreferencepairsnear-duplicateข้ามsplitทำwinrateสูงปลอม; blindanswerorderและbalancedlength-eval</p></details><details id="help-topic-24-code"><summary>โค้ด</summary><p>judgeชอบคำตอบยาวหรือpreferencepairsnear-duplicateข้ามsplitทำwinrateสูงปลอม; blindanswerorderและbalancedlength-eval</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-24-result"><summary>ผลการทดลอง</summary><p>judgeชอบคำตอบยาวหรือpreferencepairsnear-duplicateข้ามsplitทำwinrateสูงปลอม; blindanswerorderและbalancedlength-eval</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-24"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-25" class="source-topic"><span id="source-59-dpo-preference-optimization-canonical-25-preference-strength" class="legacy-anchor"></span><h3>25. Preference Strength</h3>
+<p>Binary chosen/rejected labels hide certainty.</p>
+<p>Potential metadata:
+- annotator agreement
+- score gap
+- confidence
+- number of votes</p>
+<p>Use carefully; not every objective supports weighted preferences directly.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-25-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>25. Preference Strength</h3>
+<p>Binary chosen/rejected labels hide certainty.</p>
+<p>Potential metadata:
+- annotator agreement
+- score gap
+- confidence
+- number of votes</p>
+<p>Use carefully; not every objective supports weighted preferences directly.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-25-equation"><summary>สมการ</summary><h3>25. Preference Strength</h3>
+<p>Binary chosen/rejected labels hide certainty.</p>
+<p>Potential metadata:
+- annotator agreement
+- score gap
+- confidence
+- number of votes</p>
+<p>Use carefully; not every objective supports weighted preferences directly.</p></details><details id="help-topic-25-visual"><summary>ภาพและ shape</summary><h3>25. Preference Strength</h3>
+<p>Binary chosen/rejected labels hide certainty.</p>
+<p>Potential metadata:
+- annotator agreement
+- score gap
+- confidence
+- number of votes</p>
+<p>Use carefully; not every objective supports weighted preferences directly.</p></details><details id="help-topic-25-code"><summary>โค้ด</summary><h3>25. Preference Strength</h3>
+<p>Binary chosen/rejected labels hide certainty.</p>
+<p>Potential metadata:
+- annotator agreement
+- score gap
+- confidence
+- number of votes</p>
+<p>Use carefully; not every objective supports weighted preferences directly.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-25-result"><summary>ผลการทดลอง</summary><h3>25. Preference Strength</h3>
+<p>Binary chosen/rejected labels hide certainty.</p>
+<p>Potential metadata:
+- annotator agreement
+- score gap
+- confidence
+- number of votes</p>
+<p>Use carefully; not every objective supports weighted preferences directly.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-25"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-26" class="source-topic"><span id="source-59-dpo-preference-optimization-canonical-26-evaluation" class="legacy-anchor"></span><h3>26. Evaluation</h3>
+<p>Before and after DPO evaluate:
+- held-out preference accuracy
+- task correctness
+- instruction following
+- formatting
+- length
+- diversity
+- retained capability
+- independent human/judge win rates</p>
+<p>Do not report DPO training loss alone.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>ทดลอง“length-balancedpairsลดlong-answerbiasโดยheldoutaccuracyไม่ลด”; originalpairsbaselineและlength-controlledblindjudgingหลายseed</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-26-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>ทดลอง“length-balancedpairsลดlong-answerbiasโดยheldoutaccuracyไม่ลด”; originalpairsbaselineและlength-controlledblindjudgingหลายseed</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-26-equation"><summary>สมการ</summary><p>ทดลอง“length-balancedpairsลดlong-answerbiasโดยheldoutaccuracyไม่ลด”; originalpairsbaselineและlength-controlledblindjudgingหลายseed</p></details><details id="help-topic-26-visual"><summary>ภาพและ shape</summary><p>ทดลอง“length-balancedpairsลดlong-answerbiasโดยheldoutaccuracyไม่ลด”; originalpairsbaselineและlength-controlledblindjudgingหลายseed</p></details><details id="help-topic-26-code"><summary>โค้ด</summary><p>ทดลอง“length-balancedpairsลดlong-answerbiasโดยheldoutaccuracyไม่ลด”; originalpairsbaselineและlength-controlledblindjudgingหลายseed</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-26-result"><summary>ผลการทดลอง</summary><p>ทดลอง“length-balancedpairsลดlong-answerbiasโดยheldoutaccuracyไม่ลด”; originalpairsbaselineและlength-controlledblindjudgingหลายseed</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-26"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-27" class="source-topic"><span id="source-59-dpo-preference-optimization-canonical-27-from-scratch" class="legacy-anchor"></span><h3>27. From Scratch</h3>
+<p>src/dpo_numpy.py implements:</p>
+<ul>
+<li>preference_margin</li>
+<li>dpo_logits</li>
+<li>dpo_loss</li>
+<li>dpo_pair_accuracy</li>
+<li>chosen_rejected_rewards</li>
+<li>completion_logprob</li>
+<li>length_audit</li>
+<li>ipo_squared_loss</li>
+</ul><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>NumPysoftplusDPOเทียบTorchF.logsigmoidด้วยsamecompletionmask/sumreduction; finite-differencegradientกับβ/marginตรง</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-27-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>NumPysoftplusDPOเทียบTorchF.logsigmoidด้วยsamecompletionmask/sumreduction; finite-differencegradientกับβ/marginตรง</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-27-equation"><summary>สมการ</summary><p>NumPysoftplusDPOเทียบTorchF.logsigmoidด้วยsamecompletionmask/sumreduction; finite-differencegradientกับβ/marginตรง</p></details><details id="help-topic-27-visual"><summary>ภาพและ shape</summary><p>NumPysoftplusDPOเทียบTorchF.logsigmoidด้วยsamecompletionmask/sumreduction; finite-differencegradientกับβ/marginตรง</p></details><details id="help-topic-27-code"><summary>โค้ด</summary><p>NumPysoftplusDPOเทียบTorchF.logsigmoidด้วยsamecompletionmask/sumreduction; finite-differencegradientกับβ/marginตรง</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-27-result"><summary>ผลการทดลอง</summary><p>NumPysoftplusDPOเทียบTorchF.logsigmoidด้วยsamecompletionmask/sumreduction; finite-differencegradientกับβ/marginตรง</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-27"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-28" class="source-topic"><span id="source-59-dpo-preference-optimization-canonical-28-common-mistakes" class="legacy-anchor"></span><h3>28. Common Mistakes</h3>
+<ol>
+<li>policy/reference terms reversed</li>
+<li>chosen/rejected reversed</li>
+<li>beta omitted or applied twice</li>
+<li>prompt tokens accidentally included inconsistently</li>
+<li>padding contributes to sequence score</li>
+<li>reference log-prob cache is stale</li>
+<li>length bias not audited</li>
+<li>DPO training accuracy mistaken for true preference quality</li>
+<li>variants compared without reporting loss type</li>
+<li>held-out preference pairs leak into training</li>
+</ol><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-28-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>28. Common Mistakes</h3>
+<ol>
+<li>policy/reference terms reversed</li>
+<li>chosen/rejected reversed</li>
+<li>beta omitted or applied twice</li>
+<li>prompt tokens accidentally included inconsistently</li>
+<li>padding contributes to sequence score</li>
+<li>reference log-prob cache is stale</li>
+<li>length bias not audited</li>
+<li>DPO training accuracy mistaken for true preference quality</li>
+<li>variants compared without reporting loss type</li>
+<li>held-out preference pairs leak into training</li>
+</ol><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-28-equation"><summary>สมการ</summary><h3>28. Common Mistakes</h3>
+<ol>
+<li>policy/reference terms reversed</li>
+<li>chosen/rejected reversed</li>
+<li>beta omitted or applied twice</li>
+<li>prompt tokens accidentally included inconsistently</li>
+<li>padding contributes to sequence score</li>
+<li>reference log-prob cache is stale</li>
+<li>length bias not audited</li>
+<li>DPO training accuracy mistaken for true preference quality</li>
+<li>variants compared without reporting loss type</li>
+<li>held-out preference pairs leak into training</li>
+</ol></details><details id="help-topic-28-visual"><summary>ภาพและ shape</summary><h3>28. Common Mistakes</h3>
+<ol>
+<li>policy/reference terms reversed</li>
+<li>chosen/rejected reversed</li>
+<li>beta omitted or applied twice</li>
+<li>prompt tokens accidentally included inconsistently</li>
+<li>padding contributes to sequence score</li>
+<li>reference log-prob cache is stale</li>
+<li>length bias not audited</li>
+<li>DPO training accuracy mistaken for true preference quality</li>
+<li>variants compared without reporting loss type</li>
+<li>held-out preference pairs leak into training</li>
+</ol></details><details id="help-topic-28-code"><summary>โค้ด</summary><h3>28. Common Mistakes</h3>
+<ol>
+<li>policy/reference terms reversed</li>
+<li>chosen/rejected reversed</li>
+<li>beta omitted or applied twice</li>
+<li>prompt tokens accidentally included inconsistently</li>
+<li>padding contributes to sequence score</li>
+<li>reference log-prob cache is stale</li>
+<li>length bias not audited</li>
+<li>DPO training accuracy mistaken for true preference quality</li>
+<li>variants compared without reporting loss type</li>
+<li>held-out preference pairs leak into training</li>
+</ol><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-28-result"><summary>ผลการทดลอง</summary><h3>28. Common Mistakes</h3>
+<ol>
+<li>policy/reference terms reversed</li>
+<li>chosen/rejected reversed</li>
+<li>beta omitted or applied twice</li>
+<li>prompt tokens accidentally included inconsistently</li>
+<li>padding contributes to sequence score</li>
+<li>reference log-prob cache is stale</li>
+<li>length bias not audited</li>
+<li>DPO training accuracy mistaken for true preference quality</li>
+<li>variants compared without reporting loss type</li>
+<li>held-out preference pairs leak into training</li>
+</ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-28"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-29" class="source-topic"><span id="source-59-dpo-preference-optimization-canonical-29-exercises-mini-project" class="legacy-anchor"></span><h3>29. Exercises / Mini Project</h3>
+<ul>
+<li><a href="../59-dpo-preference-optimization/exercises/README.md">Exercises</a></li>
+<li><a href="../59-dpo-preference-optimization/solutions/README.md">Solutions</a></li>
+<li><a href="../59-dpo-preference-optimization/mini-project/README.md">Mini Project</a></li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-29-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>29. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-29-equation"><summary>สมการ</summary><h3>29. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-29-visual"><summary>ภาพและ shape</summary><h3>29. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-29-code"><summary>โค้ด</summary><h3>29. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-29-result"><summary>ผลการทดลอง</summary><h3>29. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-29"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-30" class="source-topic"><span id="source-59-dpo-preference-optimization-canonical-30-checklist" class="legacy-anchor"></span><h3>30. Checklist</h3>
+<ul>
+<li>[ ] completion log-prob</li>
+<li>[ ] policy margin</li>
+<li>[ ] reference margin</li>
+<li>[ ] DPO logit/loss</li>
+<li>[ ] beta</li>
+<li>[ ] pair accuracy</li>
+<li>[ ] masking</li>
+<li>[ ] length audit</li>
+<li>[ ] reference cache</li>
+<li>[ ] variants</li>
+<li>[ ] held-out evaluation</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-30-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>30. Checklist</h3>
+<ul>
+<li>[ ] completion log-prob</li>
+<li>[ ] policy margin</li>
+<li>[ ] reference margin</li>
+<li>[ ] DPO logit/loss</li>
+<li>[ ] beta</li>
+<li>[ ] pair accuracy</li>
+<li>[ ] masking</li>
+<li>[ ] length audit</li>
+<li>[ ] reference cache</li>
+<li>[ ] variants</li>
+<li>[ ] held-out evaluation</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-30-equation"><summary>สมการ</summary><h3>30. Checklist</h3>
+<ul>
+<li>[ ] completion log-prob</li>
+<li>[ ] policy margin</li>
+<li>[ ] reference margin</li>
+<li>[ ] DPO logit/loss</li>
+<li>[ ] beta</li>
+<li>[ ] pair accuracy</li>
+<li>[ ] masking</li>
+<li>[ ] length audit</li>
+<li>[ ] reference cache</li>
+<li>[ ] variants</li>
+<li>[ ] held-out evaluation</li>
+</ul></details><details id="help-topic-30-visual"><summary>ภาพและ shape</summary><h3>30. Checklist</h3>
+<ul>
+<li>[ ] completion log-prob</li>
+<li>[ ] policy margin</li>
+<li>[ ] reference margin</li>
+<li>[ ] DPO logit/loss</li>
+<li>[ ] beta</li>
+<li>[ ] pair accuracy</li>
+<li>[ ] masking</li>
+<li>[ ] length audit</li>
+<li>[ ] reference cache</li>
+<li>[ ] variants</li>
+<li>[ ] held-out evaluation</li>
+</ul></details><details id="help-topic-30-code"><summary>โค้ด</summary><h3>30. Checklist</h3>
+<ul>
+<li>[ ] completion log-prob</li>
+<li>[ ] policy margin</li>
+<li>[ ] reference margin</li>
+<li>[ ] DPO logit/loss</li>
+<li>[ ] beta</li>
+<li>[ ] pair accuracy</li>
+<li>[ ] masking</li>
+<li>[ ] length audit</li>
+<li>[ ] reference cache</li>
+<li>[ ] variants</li>
+<li>[ ] held-out evaluation</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-30-result"><summary>ผลการทดลอง</summary><h3>30. Checklist</h3>
+<ul>
+<li>[ ] completion log-prob</li>
+<li>[ ] policy margin</li>
+<li>[ ] reference margin</li>
+<li>[ ] DPO logit/loss</li>
+<li>[ ] beta</li>
+<li>[ ] pair accuracy</li>
+<li>[ ] masking</li>
+<li>[ ] length audit</li>
+<li>[ ] reference cache</li>
+<li>[ ] variants</li>
+<li>[ ] held-out evaluation</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-30"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-31" class="source-topic"><span id="source-59-dpo-preference-optimization-canonical-31-whats-next" class="legacy-anchor"></span><span id="source-59-dpo-preference-optimization-canonical-59-dpo-preference-optimization-dpo-and-preference-optimization" class="legacy-anchor"></span><h3>31. What's Next</h3>
+<p>Chapter 60 builds a rigorous evaluation harness so post-training improvements are measured rather than assumed.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-31-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>31. What's Next</h3>
+<p>Chapter 60 builds a rigorous evaluation harness so post-training improvements are measured rather than assumed.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-31-equation"><summary>สมการ</summary><h3>31. What's Next</h3>
+<p>Chapter 60 builds a rigorous evaluation harness so post-training improvements are measured rather than assumed.</p></details><details id="help-topic-31-visual"><summary>ภาพและ shape</summary><h3>31. What's Next</h3>
+<p>Chapter 60 builds a rigorous evaluation harness so post-training improvements are measured rather than assumed.</p></details><details id="help-topic-31-code"><summary>โค้ด</summary><h3>31. What's Next</h3>
+<p>Chapter 60 builds a rigorous evaluation harness so post-training improvements are measured rather than assumed.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-31-result"><summary>ผลการทดลอง</summary><h3>31. What's Next</h3>
+<p>Chapter 60 builds a rigorous evaluation harness so post-training improvements are measured rather than assumed.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-31"> อ่านหัวข้อนี้แล้ว</label></section><details><summary>รายละเอียดเพิ่มเติมและข้อกำหนดของ local lab</summary><h3>59-dpo-preference-optimization — DPO and Preference Optimization</h3>
+<p><strong>Prerequisites:</strong> Complete 58-rlhf; be able to trace array/tensor shapes, separate train/validation/test data, and explain the core objective of the current chapter.</p>
+<p><strong>Mental model:</strong> Treat DPO and Preference Optimization as a pipeline: input representation → central mechanism → objective/state update → observable output. At every boundary, state shape/state, allowed information flow, and the invariant that should remain true.</p>
+<p><strong>Code walkthrough:</strong> Read public API first, then input checks, state/shape transformations, numerical core, returned values and tests. Connect each important code block to the equation or algorithm in the chapter README.</p>
+<p><strong>Visualization / inspection:</strong> Use a tiny case. Inspect intermediate values, distributions, norms, scores, states or trajectories appropriate to DPO and Preference Optimization; do not rely only on the final metric.</p>
+<p><strong>Experiment:</strong> Run a baseline, one controlled parameter change, one edge case and one repeated seeded comparison. Record seed, environment, data version, configuration and metric.</p>
+<p><strong>Limitations:</strong> List at least one assumption, one data-related limitation, one numerical/optimization limitation and one scaling limitation for DPO and Preference Optimization.</p>
+<p><strong>Analysis workflow:</strong> Check inputs → preprocessing → shapes/state → finite numerical values → objective/update → evaluation protocol. The earliest unexpected state is more informative than a downstream metric.</p>
+<p><strong>Performance:</strong> Identify the dominant time and memory terms and measure them on the local learning run before attempting optimization.</p>
+<p><strong>Production perspective:</strong> Define input validation, artifact/configuration versioning, quality and resource measurements, staged release criteria and a way to return to the previous known-good artifact.</p>
+<p><strong>Research perspective:</strong> State a falsifiable hypothesis, baseline, one-factor change, metric, repeated-run plan when stochastic, and how negative results will be recorded.</p>
+<p><strong>Interview questions:</strong>
+1. Explain DPO and Preference Optimization from first principles without naming a library API.
+2. Trace one input through the central mechanism and give the important intermediate shapes/state.
+3. Name the strongest assumption and a case where it fails.
+4. State the dominant compute/memory cost.
+5. Describe how you would validate a new implementation against a trusted baseline.</p>
+<p><strong>Summary / exit condition:</strong> You may move on when you can explain, derive or trace, implement, test, analyze, measure and evaluate DPO and Preference Optimization, and when the chapter mini-project plus twenty total exercises are complete.</p></details></section><section id="objective-evidence" class="canonical-section"><h2>พิสูจน์ความสามารถทีละ objective</h2><p>ทำกรณีใหม่ก่อนเปิด reference แล้วบันทึกงานด้านล่าง ให้ผู้ตรวจใช้ rubric ตรวจคำอธิบาย ผลคำนวณ โค้ด และข้อจำกัด บันทึกเก็บในเบราว์เซอร์เครื่องนี้ กดส่งออกเพื่อสำรองหรือส่งให้ผู้ตรวจ เว็บไม่ได้รันโค้ดหรือตัดสินผลงานแทนผู้ตรวจ</p><button type="button" class="secondary-button" data-export-evidence>ส่งออกหลักฐานบทนี้เป็น JSON</button><p role="status" id="evidence-export-status"></p><details id="ch59-objective-01" class="objective-proof"><summary>represent chosen/rejected preference data</summary><p>represent chosen/rejected preference data: ใช้กรณีในหัวข้อ Pairwise Data เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch59-evidence-01"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch59-evidence-01-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch59-evidence-01-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch59-evidence-01-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch59-evidence-01-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch59-evidence-01-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch59-evidence-01-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch59-evidence-01-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch59-evidence-01-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>3. Pairwise Data</h3>
+<p>Each example contains:</p>
+<pre><code class="language-text">prompt x
+chosen y_w
+rejected y_l
+</code></pre>
+<p>The preference says:</p>
+<pre><code class="language-text">y_w ≻ y_l
+</code></pre>
+<p>Both responses should be judged under the same prompt/context.</p><h3>3. Pairwise Data</h3>
+<p>Each example contains:</p>
+<pre><code class="language-text">prompt x
+chosen y_w
+rejected y_l
+</code></pre>
+<p>The preference says:</p>
+<pre><code class="language-text">y_w ≻ y_l
+</code></pre>
+<p>Both responses should be judged under the same prompt/context.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch59-objective-02" class="objective-proof"><summary>compute sequence log probabilities</summary><p>compute sequence log probabilities: ใช้กรณีในหัวข้อ Sequence Log Probability เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch59-evidence-02"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch59-evidence-02-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch59-evidence-02-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch59-evidence-02-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch59-evidence-02-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch59-evidence-02-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch59-evidence-02-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch59-evidence-02-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch59-evidence-02-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>completionlogp=Σtmaskt·logp(yt|prefix); logps[−.1,−.2,−.3],mask[0,1,1]ได้−.5; padding/promptไม่รวมและstandardDPOใช้sumไม่mean</p><h3>4. Sequence Log Probability</h3>
+<p>For response tokens y_1...y_T:</p>
+<pre><code class="language-text">log pi(y|x)
+=
+Σ_t log pi(y_t | x, y_&lt;t)
+</code></pre>
+<p>Do not include prompt-only tokens in the completion log-probability comparison unless the formulation explicitly requires it.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch59-objective-03" class="objective-proof"><summary>distinguish policy and reference log-probabilities</summary><p>distinguish policy and reference log-probabilities: ใช้กรณีในหัวข้อ Policy Preference Margin, Reference Preference Margin เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch59-evidence-03"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch59-evidence-03-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch59-evidence-03-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch59-evidence-03-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch59-evidence-03-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch59-evidence-03-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch59-evidence-03-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch59-evidence-03-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch59-evidence-03-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>policymargin=logπ(chosen)−logπ(rejected); −2−(−5)=3 ใช้completionเดียวกันกับreferenceไม่รวมpromptscore</p><h3>5. Policy Preference Margin</h3>
+<p>For the trainable policy:</p>
+<pre><code class="language-text">m_policy
+=
+log pi_theta(y_w|x)
+-
+log pi_theta(y_l|x)
+</code></pre>
+<p>Positive means the policy assigns more probability to the chosen response.</p>
+<h3>6. Reference Preference Margin</h3>
+<p>For frozen reference policy:</p>
+<pre><code class="language-text">m_ref
+=
+log pi_ref(y_w|x)
+-
+log pi_ref(y_l|x)
+</code></pre>
+<p>The reference anchors how much the new policy changes preference relative to the starting model.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch59-objective-04" class="objective-proof"><summary>derive DPO log-ratio margins</summary><p>derive DPO log-ratio margins: ใช้กรณีในหัวข้อ DPO Logit เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch59-evidence-04"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch59-evidence-04-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch59-evidence-04-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch59-evidence-04-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch59-evidence-04-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch59-evidence-04-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch59-evidence-04-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch59-evidence-04-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch59-evidence-04-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>z=β(policy_margin−reference_margin); β.1,margins3/1ให้z.2,losssoftplus(−.2)=.5981389; ไม่ใช้βคูณlogsigmoidข้างนอก</p><h3>7. DPO Logit</h3>
+<p>Standard DPO preference logit:</p>
+<pre><code class="language-text">z
+=
+beta * (
+m_policy
+-
+m_ref
+)
+</code></pre>
+<p>Equivalent expanded form:</p>
+<pre><code class="language-text">z
+=
+beta * [
+(log pi_theta(y_w)-log pi_ref(y_w))
+-
+(log pi_theta(y_l)-log pi_ref(y_l))
+]
+</code></pre></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch59-objective-05" class="objective-proof"><summary>implement the standard sigmoid DPO loss</summary><p>implement the standard sigmoid DPO loss: ใช้กรณีในหัวข้อ DPO Loss เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch59-evidence-05"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch59-evidence-05-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch59-evidence-05-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch59-evidence-05-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch59-evidence-05-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch59-evidence-05-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch59-evidence-05-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch59-evidence-05-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch59-evidence-05-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>z=β(policy_margin−reference_margin); β.1,margins3/1ให้z.2,losssoftplus(−.2)=.5981389; ไม่ใช้βคูณlogsigmoidข้างนอก</p><h3>8. DPO Loss</h3>
+<pre><code class="language-text">L_DPO
+=
+-log sigmoid(z)
+</code></pre>
+<p>Stable implementation:</p>
+<pre><code class="language-text">softplus(-z)
+</code></pre>
+<p>A large positive z yields low loss.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch59-objective-06" class="objective-proof"><summary>explain beta</summary><p>explain beta: ใช้กรณีในหัวข้อ Beta เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch59-evidence-06"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch59-evidence-06-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch59-evidence-06-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch59-evidence-06-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch59-evidence-06-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch59-evidence-06-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch59-evidence-06-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch59-evidence-06-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch59-evidence-06-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>marginadvantage2,β.1/.5ให้loss.598139/.313262; negativeadvantageเพิ่มβทำlossเพิ่มและgradientscaleเปลี่ยน ไม่รับประกันtrainingqualityเพิ่ม</p><h3>9. Beta</h3>
+<p>Beta controls the strength/temperature of the preference-vs-reference trade-off.</p>
+<p>Current TRL documents beta as controlling deviation from the reference model.</p>
+<p>Interpretation depends on objective conventions, so compare equations rather than relying on a slogan.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch59-objective-07" class="objective-proof"><summary>calculate preference accuracy</summary><p>calculate preference accuracy: ใช้กรณีในหัวข้อ Preference Accuracy เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch59-evidence-07"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch59-evidence-07-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch59-evidence-07-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch59-evidence-07-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch59-evidence-07-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch59-evidence-07-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch59-evidence-07-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch59-evidence-07-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch59-evidence-07-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>implicitpreferenceaccuracy=mean(policy_margin−reference_margin&gt;0)ตามDPOmetricที่ประกาศ; chosenpolicyhigherprobaccuracyเป็นอีกmetricห้ามสลับ</p><h3>10. Preference Accuracy</h3>
+<p>A simple metric:</p>
+<pre><code class="language-text">accuracy =
+mean(z &gt; 0)
+</code></pre>
+<p>or equivalently whether the policy-reference preference shift favors chosen over rejected.</p>
+<p>Track:
+- mean chosen reward/log-ratio
+- mean rejected reward/log-ratio
+- margin
+- accuracy</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch59-objective-08" class="objective-proof"><summary>understand reference-free variants conceptually</summary><p>understand reference-free variants conceptually: ใช้กรณีในหัวข้อ Reference-Free Concept เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch59-evidence-08"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch59-evidence-08-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch59-evidence-08-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch59-evidence-08-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch59-evidence-08-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch59-evidence-08-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch59-evidence-08-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch59-evidence-08-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch59-evidence-08-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>17. Reference-Free Concept</h3>
+<p>Some implementations support reference-free modes or alternate objectives.</p>
+<p>These alter the regularization assumptions.</p>
+<p>Do not silently compare them as if they were standard DPO.</p><h3>17. Reference-Free Concept</h3>
+<p>Some implementations support reference-free modes or alternate objectives.</p>
+<p>These alter the regularization assumptions.</p>
+<p>Do not silently compare them as if they were standard DPO.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch59-objective-09" class="objective-proof"><summary>explain IPO / ORPO / KTO at a high level</summary><p>explain IPO / ORPO / KTO at a high level: ใช้กรณีในหัวข้อ IPO Concept, ORPO Concept, KTO Concept, Other Preference Objectives เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch59-evidence-09"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch59-evidence-09-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch59-evidence-09-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch59-evidence-09-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch59-evidence-09-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch59-evidence-09-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch59-evidence-09-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch59-evidence-09-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch59-evidence-09-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>educationalIPO loss=(policy_margin−reference_margin−1/(2β))²; β.5,advantage2,target1ให้loss1; ระบุสูตรนี้แยกจากvariantsที่length-normalize</p><h3>19. IPO Concept</h3>
+<p>Implicit Preference Optimization modifies the loss to avoid some behavior of the logistic DPO objective.</p>
+<p>Conceptually it targets a preferred log-ratio gap using a squared objective.</p>
+<p>Study the exact paper/objective before implementation.</p>
+<h3>20. ORPO Concept</h3>
+<p>Odds Ratio Preference Optimization combines:
+- supervised likelihood-style learning
+- preference odds-ratio optimization</p>
+<p>It can avoid a separate reference model in its formulation.</p>
+<p>This is not the same equation as standard DPO.</p>
+<h3>21. KTO Concept</h3>
+<p>KTO can use desirable/undesirable examples without requiring every sample to be an explicit chosen/rejected pair.</p>
+<p>It derives from prospect-theory-inspired preference optimization.</p>
+<h3>22. Other Preference Objectives</h3>
+<p>Modern libraries contain many objectives:
+- hinge
+- robust
+- IPO
+- EXO
+- NCA
+- BCO
+- AOT
+- APO
+- multi-loss combinations</p>
+<p>Do not treat "DPOTrainer" as meaning one fixed objective forever.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch59-objective-10" class="objective-proof"><summary>understand length/token masking</summary><p>understand length/token masking: ใช้กรณีในหัวข้อ Length Effects, Token Masking, Truncation เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch59-evidence-10"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch59-evidence-10-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch59-evidence-10-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch59-evidence-10-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch59-evidence-10-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch59-evidence-10-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch59-evidence-10-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch59-evidence-10-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch59-evidence-10-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>completionlogp=Σtmaskt·logp(yt|prefix); logps[−.1,−.2,−.3],mask[0,1,1]ได้−.5; padding/promptไม่รวมและstandardDPOใช้sumไม่mean</p><h3>13. Length Effects</h3>
+<p>Sequence log-probability sums become more negative with more tokens.</p>
+<p>Potential issues:
+- response-length bias
+- dataset chosen/rejected length imbalance</p>
+<p>Audit:
+- chosen length distribution
+- rejected length distribution
+- margin vs length</p>
+<p>Do not automatically normalize unless the chosen algorithm specifies it.</p>
+<h3>14. Token Masking</h3>
+<p>Sequence score should cover the intended completion tokens only.</p>
+<p>Mask:
+- padding
+- prompt prefix when using completion-only likelihood
+- invalid/truncated targets</p>
+<p>A single off-by-one can invalidate DPO labels.</p>
+<h3>15. Truncation</h3>
+<p>If chosen/rejected responses are truncated differently, the preference objective can change.</p>
+<p>Track:
+- prompt truncation
+- chosen token count
+- rejected token count</p>
+<p>Prefer deterministic preprocessing.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch59-objective-11" class="objective-proof"><summary>evaluate preference-data quality</summary><p>evaluate preference-data quality: ใช้กรณีในหัวข้อ Preference Dataset Quality, Preference Strength เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch59-evidence-11"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch59-evidence-11-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch59-evidence-11-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch59-evidence-11-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch59-evidence-11-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch59-evidence-11-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch59-evidence-11-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch59-evidence-11-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch59-evidence-11-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>judgeชอบคำตอบยาวหรือpreferencepairsnear-duplicateข้ามsplitทำwinrateสูงปลอม; blindanswerorderและbalancedlength-eval</p><h3>24. Preference Dataset Quality</h3>
+<p>Bad pairs:
+- chosen/rejected identical
+- trivial formatting differences only
+- wrong preference labels
+- response lengths systematically biased
+- duplicated prompts
+- benchmark contamination</p>
+<p>Quality audits can outperform blind scaling.</p>
+<h3>25. Preference Strength</h3>
+<p>Binary chosen/rejected labels hide certainty.</p>
+<p>Potential metadata:
+- annotator agreement
+- score gap
+- confidence
+- number of votes</p>
+<p>Use carefully; not every objective supports weighted preferences directly.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch59-objective-12" class="objective-proof"><summary>compare DPO with PPO-based RLHF</summary><p>compare DPO with PPO-based RLHF: ใช้กรณีในหัวข้อ DPO vs Reward Model + PPO เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch59-evidence-12"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch59-evidence-12-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch59-evidence-12-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch59-evidence-12-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch59-evidence-12-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch59-evidence-12-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch59-evidence-12-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch59-evidence-12-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch59-evidence-12-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>DPOใช้preferencepairs+frozenreferenceฝึกpolicyตรง; RM/PPOต้องrewardmodelและonpolicyrollouts/value/oldpolicy เพิ่มcomponentsแต่สำรวจใหม่ได้</p><h3>12. DPO vs Reward Model + PPO</h3>
+<p>DPO:
+- offline chosen/rejected pairs
+- no separately trained scalar reward model required
+- no online PPO rollout loop required</p>
+<p>PPO RLHF:
+- explicit reward model
+- online policy samples
+- value/advantage estimation
+- policy-gradient optimization</p>
+<p>Neither is universally superior.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch59-objective-13" class="objective-proof"><summary>recognize overoptimization and distribution shift</summary><p>recognize overoptimization and distribution shift: ใช้กรณีในหัวข้อ Evaluation, From Scratch เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch59-evidence-13"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch59-evidence-13-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch59-evidence-13-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch59-evidence-13-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch59-evidence-13-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch59-evidence-13-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch59-evidence-13-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch59-evidence-13-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch59-evidence-13-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>NumPysoftplusDPOเทียบTorchF.logsigmoidด้วยsamecompletionmask/sumreduction; finite-differencegradientกับβ/marginตรง</p><h3>26. Evaluation</h3>
+<p>Before and after DPO evaluate:
+- held-out preference accuracy
+- task correctness
+- instruction following
+- formatting
+- length
+- diversity
+- retained capability
+- independent human/judge win rates</p>
+<p>Do not report DPO training loss alone.</p>
+<h3>27. From Scratch</h3>
+<p>src/dpo_numpy.py implements:</p>
+<ul>
+<li>preference_margin</li>
+<li>dpo_logits</li>
+<li>dpo_loss</li>
+<li>dpo_pair_accuracy</li>
+<li>chosen_rejected_rewards</li>
+<li>completion_logprob</li>
+<li>length_audit</li>
+<li>ipo_squared_loss</li>
+</ul></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch59-objective-14" class="objective-proof"><summary>Reference Log-Probability Caching</summary><p>Reference Log-Probability Caching: ใช้กรณีในหัวข้อ Reference Log-Probability Caching เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch59-evidence-14"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch59-evidence-14-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch59-evidence-14-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch59-evidence-14-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch59-evidence-14-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch59-evidence-14-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch59-evidence-14-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch59-evidence-14-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch59-evidence-14-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>cachekeyhash(referenceweights/tokenizer/template/datasetcompletionIDs/maskpolicy/reduction); อันใดเปลี่ยนต้องinvalidate ไม่ใช้เพียงexampleID</p><h3>16. Reference Log-Probability Caching</h3>
+<p>Reference policy is frozen.</p>
+<p>Therefore reference log-probabilities can often be precomputed.</p>
+<p>Trade-off:
+- extra dataset storage
+- faster training
+- must invalidate cache when tokenizer/template/reference changes</p>
+<p>Current TRL exposes precompute_ref_log_probs in DPO configuration.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch59-objective-15" class="objective-proof"><summary>Current TRL DPOTrainer</summary><p>Current TRL DPOTrainer: ใช้กรณีในหัวข้อ Current TRL DPOTrainer เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch59-evidence-15"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch59-evidence-15-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch59-evidence-15-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch59-evidence-15-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch59-evidence-15-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch59-evidence-15-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch59-evidence-15-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch59-evidence-15-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch59-evidence-15-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>manifest มีpolicy/refdigest/tokenizer/chattemplate/pairIDs/chosen-labelprovenance/β/logpreduction/mask/cachekey/seed/evalset</p><h3>23. Current TRL DPOTrainer</h3>
+<p>Current TRL supports DPOConfig / DPOTrainer and multiple loss types.</p>
+<p>The standard/default preference loss remains sigmoid-style DPO, while modern options include IPO and many other variants.</p>
+<p>Always record:
+- library version
+- loss_type
+- beta
+- label_smoothing
+- reference configuration
+- chat template/tokenizer revision</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details></section><section id="implementation" class="canonical-section"><h2>Implementation และ tests ที่รันบนเครื่องได้</h2><details><summary>59-dpo-preference-optimization/src/dpo_numpy.py</summary><pre><code>&quot;&quot;&quot;Direct Preference Optimization math and diagnostics.&quot;&quot;&quot;
+
+from __future__ import annotations
+
+import numpy as np
+
+
+def preference_margin(
+    chosen_log_probs: np.ndarray,
+    rejected_log_probs: np.ndarray,
+) -&gt; np.ndarray:
+    chosen = np.asarray(chosen_log_probs, dtype=float)
+    rejected = np.asarray(rejected_log_probs, dtype=float)
+
+    if chosen.shape != rejected.shape:
+        raise ValueError(&quot;chosen/rejected shapes must match&quot;)
+
+    return chosen - rejected
+
+
+def dpo_logits(
+    policy_chosen_log_probs: np.ndarray,
+    policy_rejected_log_probs: np.ndarray,
+    reference_chosen_log_probs: np.ndarray,
+    reference_rejected_log_probs: np.ndarray,
+    *,
+    beta: float = 0.1,
+) -&gt; np.ndarray:
+    if beta &lt;= 0:
+        raise ValueError(&quot;beta must be positive&quot;)
+
+    policy_margin = preference_margin(
+        policy_chosen_log_probs,
+        policy_rejected_log_probs,
+    )
+    reference_margin = preference_margin(
+        reference_chosen_log_probs,
+        reference_rejected_log_probs,
+    )
+
+    if policy_margin.shape != reference_margin.shape:
+        raise ValueError(&quot;policy/reference shapes must match&quot;)
+
+    return beta * (policy_margin - reference_margin)
+
+
+def dpo_loss(
+    policy_chosen_log_probs: np.ndarray,
+    policy_rejected_log_probs: np.ndarray,
+    reference_chosen_log_probs: np.ndarray,
+    reference_rejected_log_probs: np.ndarray,
+    *,
+    beta: float = 0.1,
+) -&gt; float:
+    logits = dpo_logits(
+        policy_chosen_log_probs,
+        policy_rejected_log_probs,
+        reference_chosen_log_probs,
+        reference_rejected_log_probs,
+        beta=beta,
+    )
+
+    if logits.size == 0:
+        raise ValueError(&quot;preference batch must be non-empty&quot;)
+
+    return float(np.mean(np.logaddexp(0.0, -logits)))
+
+
+def dpo_pair_accuracy(
+    policy_chosen_log_probs: np.ndarray,
+    policy_rejected_log_probs: np.ndarray,
+    reference_chosen_log_probs: np.ndarray,
+    reference_rejected_log_probs: np.ndarray,
+    *,
+    beta: float = 0.1,
+) -&gt; float:
+    logits = dpo_logits(
+        policy_chosen_log_probs,
+        policy_rejected_log_probs,
+        reference_chosen_log_probs,
+        reference_rejected_log_probs,
+        beta=beta,
+    )
+
+    if logits.size == 0:
+        raise ValueError(&quot;preference batch must be non-empty&quot;)
+
+    return float(np.mean(logits &gt; 0))
+
+
+def chosen_rejected_rewards(
+    policy_chosen_log_probs: np.ndarray,
+    policy_rejected_log_probs: np.ndarray,
+    reference_chosen_log_probs: np.ndarray,
+    reference_rejected_log_probs: np.ndarray,
+    *,
+    beta: float = 0.1,
+) -&gt; tuple[np.ndarray, np.ndarray]:
+    if beta &lt;= 0:
+        raise ValueError(&quot;beta must be positive&quot;)
+
+    pc = np.asarray(policy_chosen_log_probs, dtype=float)
+    pr = np.asarray(policy_rejected_log_probs, dtype=float)
+    rc = np.asarray(reference_chosen_log_probs, dtype=float)
+    rr = np.asarray(reference_rejected_log_probs, dtype=float)
+
+    if not (pc.shape == pr.shape == rc.shape == rr.shape):
+        raise ValueError(&quot;all log-probability shapes must match&quot;)
+
+    return beta * (pc - rc), beta * (pr - rr)
+
+
+def completion_logprob(
+    token_log_probs: np.ndarray,
+    completion_mask: np.ndarray,
+) -&gt; np.ndarray:
+    log_probs = np.asarray(token_log_probs, dtype=float)
+    mask = np.asarray(completion_mask, dtype=bool)
+
+    if log_probs.shape != mask.shape:
+        raise ValueError(&quot;log-probability/mask shapes must match&quot;)
+    if log_probs.ndim &lt; 1:
+        raise ValueError(&quot;expected token dimension&quot;)
+
+    return np.sum(
+        np.where(mask, log_probs, 0.0),
+        axis=-1,
+    )
+
+
+def length_audit(
+    chosen_lengths: np.ndarray,
+    rejected_lengths: np.ndarray,
+) -&gt; dict[str, float]:
+    chosen = np.asarray(chosen_lengths, dtype=float)
+    rejected = np.asarray(rejected_lengths, dtype=float)
+
+    if chosen.shape != rejected.shape or chosen.size == 0:
+        raise ValueError(&quot;matching non-empty lengths required&quot;)
+
+    return {
+        &quot;chosen_mean&quot;: float(np.mean(chosen)),
+        &quot;rejected_mean&quot;: float(np.mean(rejected)),
+        &quot;mean_difference&quot;: float(np.mean(chosen - rejected)),
+        &quot;chosen_longer_fraction&quot;: float(np.mean(chosen &gt; rejected)),
+    }
+
+
+def ipo_squared_loss(
+    policy_chosen_log_probs: np.ndarray,
+    policy_rejected_log_probs: np.ndarray,
+    reference_chosen_log_probs: np.ndarray,
+    reference_rejected_log_probs: np.ndarray,
+    *,
+    beta: float,
+) -&gt; float:
+    &quot;&quot;&quot;Educational IPO-style squared margin objective.
+
+    Uses target gap 1/(2*beta), matching a common IPO presentation.
+    &quot;&quot;&quot;
+    if beta &lt;= 0:
+        raise ValueError(&quot;beta must be positive&quot;)
+
+    policy_margin = preference_margin(
+        policy_chosen_log_probs,
+        policy_rejected_log_probs,
+    )
+    reference_margin = preference_margin(
+        reference_chosen_log_probs,
+        reference_rejected_log_probs,
+    )
+
+    gap = policy_margin - reference_margin
+    target = 1.0 / (2.0 * beta)
+
+    return float(np.mean((gap - target) ** 2))
+</code></pre></details><details><summary>59-dpo-preference-optimization/tests/test_dpo_numpy.py</summary><pre><code>from pathlib import Path
+import importlib.util
+
+import numpy as np
+
+
+MODULE_PATH = Path(__file__).parents[1] / &quot;src&quot; / &quot;dpo_numpy.py&quot;
+SPEC = importlib.util.spec_from_file_location(&quot;dpo_numpy_course&quot;, MODULE_PATH)
+assert SPEC and SPEC.loader
+mod = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(mod)
+
+
+def test_dpo_loss_improves_when_policy_favors_chosen() -&gt; None:
+    reference_chosen = np.array([-2.0])
+    reference_rejected = np.array([-2.0])
+
+    neutral = mod.dpo_loss(
+        np.array([-2.0]),
+        np.array([-2.0]),
+        reference_chosen,
+        reference_rejected,
+        beta=1.0,
+    )
+    improved = mod.dpo_loss(
+        np.array([-1.0]),
+        np.array([-3.0]),
+        reference_chosen,
+        reference_rejected,
+        beta=1.0,
+    )
+
+    assert improved &lt; neutral
+
+
+def test_policy_reference_cancellation() -&gt; None:
+    logits = mod.dpo_logits(
+        np.array([-1.0]),
+        np.array([-3.0]),
+        np.array([-1.0]),
+        np.array([-3.0]),
+        beta=0.2,
+    )
+    np.testing.assert_allclose(logits, 0.0)
+
+
+def test_completion_logprob_respects_mask() -&gt; None:
+    token_log_probs = np.array(
+        [[-1.0, -2.0, -3.0, -4.0]]
+    )
+    mask = np.array(
+        [[False, False, True, True]]
+    )
+    score = mod.completion_logprob(
+        token_log_probs,
+        mask,
+    )
+    np.testing.assert_allclose(score, [-7.0])
+
+
+def test_length_audit() -&gt; None:
+    report = mod.length_audit(
+        np.array([10, 20, 30]),
+        np.array([8, 22, 25]),
+    )
+    np.testing.assert_allclose(report[&quot;chosen_mean&quot;], 20.0)
+    assert 0.0 &lt;= report[&quot;chosen_longer_fraction&quot;] &lt;= 1.0
+
+
+def test_ipo_loss_zero_at_target_gap() -&gt; None:
+    beta = 0.5
+    target_gap = 1.0 / (2.0 * beta)
+
+    loss = mod.ipo_squared_loss(
+        np.array([target_gap]),
+        np.array([0.0]),
+        np.array([0.0]),
+        np.array([0.0]),
+        beta=beta,
+    )
+    np.testing.assert_allclose(loss, 0.0)
+</code></pre></details></section><section id="glossary" class="canonical-section"><h2>อภิธานศัพท์ — คำไทย ความหมาย และข้อควรตรวจ</h2><dl><dt>tensor</dt><dd>เทนเซอร์: ชุดตัวเลขที่มีแกน เช่น scalar ไม่มีแกน, vector หนึ่งแกน, matrix สองแกน; shape บอกขนาดแต่ละแกน ไม่บอกความหมายของแกนจนกว่าจะระบุ</dd><dt>shape</dt><dd>รูปทรงข้อมูล: (B,T,d) หมายถึง batch × เวลา/ตำแหน่ง × features; ใช้ชื่อแกนกำกับเสมอ การ transpose เปลี่ยนแกนแต่ไม่ใช่แค่เปลี่ยนชื่อ</dd><dt>batch</dt><dd>กลุ่มตัวอย่างที่คำนวณร่วมกันหนึ่งครั้ง; B คือจำนวนตัวอย่าง ไม่ใช่จำนวน features หรือจำนวน optimizer updates</dd><dt>weight w / θ</dt><dd>น้ำหนักหรือพารามิเตอร์ที่โมเดลใช้คำนวณ; แก้ด้วยมือทำ forward ใหม่ ส่วน optimizer ต้องรับ gradient แล้วกด update จึงแก้ state</dd><dt>bias b</dt><dd>ค่าคงที่ที่บวกกับผลเชิงเส้น; regression scalar bias เพิ่ม Δ ทำให้ prediction ทุกจุดเพิ่ม Δ เท่ากัน</dd><dt>prediction ŷ</dt><dd>ค่าที่โมเดลทำนายจาก input และพารามิเตอร์ปัจจุบัน; เครื่องหมายหมวกแยกจาก target y ที่มาจากข้อมูล</dd><dt>residual e</dt><dd>ความคลาดเคลื่อน ในเว็บนี้นิยาม prediction − target; บางตำราใช้เครื่องหมายกลับกัน จึงต้องตรวจนิยามก่อนเทียบสูตร gradient</dd><dt>MSE</dt><dd>mean squared error = ผลรวม residual กำลังสองหารจำนวนรายการที่ระบุ; มีหน่วยเป็น target ยกกำลังสอง และการใช้ sum แทน mean เปลี่ยน scale gradient</dd><dt>loss L / objective J</dt><dd>จำนวนที่ optimizer ต้องการลด; objective อาจรวม data loss และ regularization จึงต้องดูองค์ประกอบและ reduction ให้ตรง implementation</dd><dt>gradient ∇ / ∂</dt><dd>เวกเตอร์ของ partial derivatives บอกอัตราเปลี่ยน loss ต่อพารามิเตอร์แต่ละตัว; ∂ ใช้เมื่อเปลี่ยนตัวหนึ่งโดยตรึงตัวอื่น</dd><dt>chain rule</dt><dd>กฎลูกโซ่: คูณอนุพันธ์ตามเส้นทาง และบวก contribution จากทุกเส้นทางที่มารวมกัน ใช้ย้อนจาก loss ถึง weights</dd><dt>learning rate η</dt><dd>ขนาดตัวคูณ gradient ใน update θnew=θ−ηg; η≥0, ศูนย์หมายถึงไม่มีการขยับพารามิเตอร์ ก้าวใหญ่เกินอาจ diverge</dd><dt>regularization λ</dt><dd>ตัวคูณค่าลงโทษ ต้อง λ≥0 ตามนิยามการลงโทษ; Ridge λΣw² เพิ่ม gradient 2λw โดยบท Regression นี้ไม่ลงโทษ bias</dd><dt>baseline</dt><dd>สถานะอ้างอิงที่ตรึงไว้สำหรับเทียบ; ต้องเก็บ snapshot ไม่อ้าง object ปัจจุบันที่แก้ตามไปด้วย</dd><dt>invariant</dt><dd>คุณสมบัติที่กลไกต้องรักษา เช่น probability รวม1, shape สอดคล้อง, queue ไม่เกิน capacity; ใช้ tests ตรวจได้มากกว่าดูภาพสวย</dd><dt>optimizer state</dt><dd>ความจำของอัลกอริทึม เช่น velocity, moments และ completed updates; คืนเฉพาะ weights ยังไม่เท่ากับเริ่มการฝึกใหม่ทั้งหมด</dd><dt>finite difference</dt><dd>ประมาณ derivative ด้วย [f(x+h)−f(x−h)]/(2h); h&gt;0, ใช้ smooth point และลองหลาย h เพื่อแยก truncation error จาก roundoff</dd><dt>softmax</dt><dd>แปลง logits เป็นความน่าจะเป็นตามแกนที่กำหนด; ลบ max ก่อน exp เพื่อความเสถียร และ fully masked row ต้องมีนโยบายชัดเจน</dd><dt>logit</dt><dd>คะแนนก่อน sigmoid/softmax ไม่ใช่ probability; อาจเป็นจำนวนจริงติดลบหรือเกิน1ได้ จึงห้ามส่งให้ loss ที่คาด probability โดยไม่แปลง</dd><dt>temperature τ / T</dt><dd>ตัวหาร logits ก่อน softmax; ต้องเป็นบวก ค่าเล็กทำ distribution แหลมขึ้น โดยไม่เท่ากับ retrain weights</dd><dt>mask</dt><dd>ตัวกำหนดตำแหน่งที่อ่านหรือคิด loss ได้; causal mask ปิดอนาคต, padding mask ปิดข้อมูลเติม, loss mask เลือก target แต่ละอย่างคนละหน้าที่</dd><dt>Q / K / V</dt><dd>query ใช้ค้นข้อมูล, key ใช้จับคู่ query, value เป็นข้อมูลที่ถูกถัวเฉลี่ย; เป็น learned projections ของ representation ไม่ใช่ป้ายความหมายตายตัว</dd><dt>head</dt><dd>ส่วนของ feature representation ที่ทำ attention แยกกัน แล้ว concat/project กลับ; ต้องตรวจ d_model หารจำนวน heads ลงตัว</dd><dt>ε-neighborhood</dt><dd>เพื่อนบ้านทั้งหมดที่มีระยะไม่เกิน ε รวมจุดตัวเองใน DBSCAN นี้; ε มีหน่วยเดียวกับพิกัด ไม่ใช่จำนวน k ที่ใช้โหวต</dd><dt>core / border / noise</dt><dd>DBSCAN core มีเพื่อนบ้านรวมตัวเองถึง min_samples; border อยู่ใกล้ core แต่เพื่อนบ้านไม่ถึง; noise ไม่ถูกเชื่อมกับ core cluster ใด</dd><dt>bootstrap</dt><dd>สุ่ม observations แบบ replacement ขนาดเท่าเดิมซ้ำหลายครั้งแล้วคำนวณ statistic ใหม่; seed ทำให้ตรวจซ้ำได้ แต่ไม่แก้สมมติฐาน IID ที่ผิด</dd><dt>confidence interval</dt><dd>ช่วงที่สร้างด้วย procedure ที่มี coverage ตามสมมติฐาน; ช่วงหนึ่งที่ได้แล้วไม่ใช่ posterior probability ของ parameter และ sample เล็กยังไม่แน่นอนมาก</dd><dt>validation / test</dt><dd>validation ใช้เลือกโมเดล/ค่าตั้ง ส่วน test ใช้ประเมินหลัง freeze การตัดสินใจ; fit preprocessing/tokenizer จาก test เป็น leakage</dd><dt>leakage</dt><dd>ข้อมูลที่ควรยังไม่รู้ไหลเข้า training/การเลือกโมเดล เช่น future feature หรือเอกสารซ้ำข้าม split ทำให้ metric ดูดีเกินการใช้งานจริง</dd><dt>queue / capacity</dt><dd>queue คือรายการรอ, capacity การให้บริการรวม = workers × service rate ตามแบบจำลอง; เพิ่ม timeout ไม่เพิ่มกำลังประมวลผล</dd><dt>state transition</dt><dd>การเปลี่ยนสถานะเมื่อเกิดเหตุการณ์ที่อนุญาต เช่น queued→active→done; ต้องระบุ guard, side effect และเหตุผลเมื่อ transition ถูกปฏิเสธ</dd><dt>latency / throughput</dt><dd>latency คือเวลาต่อคำขอ, throughput คือปริมาณงานต่อหน่วยเวลา; batching อาจเพิ่ม throughput แต่เพิ่มเวลารอ จึงต้องวัดทั้งคู่</dd><dt>idempotency</dt><dd>ทำคำขอ business operation เดิมซ้ำแล้ว side effect เกิดครั้งเดียวตาม key และ transaction protocol; ไม่ได้รับประกันจากการใช้ UUID ใหม่ทุก attempt</dd><dt>local lab</dt><dd>โปรแกรม Python และ tests ที่ผู้เรียนรันบนเครื่อง; เว็บเก็บเพียงคำยืนยันของผู้เรียน การผ่าน tests ของโค้ดต้นแบบไม่ใช่ผลตรวจโค้ดผู้เรียน</dd></dl></section></article>
+<section id="practice" class="practice-section"><span class="eyebrow">PRACTICE · DEBUG · BUILD</span><h2>พิสูจน์ด้วยการลงมือทำ</h2><div id="web-checks"></div><div class="retry-actions"><button class="secondary-button" id="retry-checks">เริ่มทำโจทย์ในเว็บใหม่</button><button class="text-button" id="undo-retry" hidden>คืนผลก่อนเริ่มใหม่</button></div><div id="exercise-content"><h2>แบบฝึก 20 ข้อ — เฉลยเฉพาะข้อ</h2><p>ทำคำตอบก่อนเปิด hints; โจทย์ปลายเปิดให้ใช้ตัวอย่างคำตอบและหลักฐานราย objective ตรวจงานจริง</p><section id="exercise-1" class="exercise-item"><h3>ข้อ 1</h3><p>Sum token log-probabilities over completion masks.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Sequence Log Probability, Token Masking: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): completionlogp=Σtmaskt·logp(yt|prefix); logps[−.1,…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: completionlogp=Σtmaskt·logp(yt|prefix); logps[−.1,−.2,−.3],mask[0,1,1]ได้−.5; padding/prom…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>completionlogp=Σtmaskt·logp(yt|prefix); logps[−.1,−.2,−.3],mask[0,1,1]ได้−.5; padding/promptไม่รวมและstandardDPOใช้sumไม่mean</p><p>อ้างอิง: <a href="#chapter-59/section/topic-4">Sequence Log Probability</a>, <a href="#chapter-59/section/topic-14">Token Masking</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch59-exercise-01"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-2" class="exercise-item"><h3>ข้อ 2</h3><p>Compute policy chosen-vs-rejected margin.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Policy Preference Margin: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): policymargin=logπ(chosen)−logπ(rejected)…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: policymargin=logπ(chosen)−logπ(rejected); −2−(−5)=3 ใช้completionเดียวกัน…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>policymargin=logπ(chosen)−logπ(rejected); −2−(−5)=3 ใช้completionเดียวกันกับreferenceไม่รวมpromptscore</p><p>อ้างอิง: <a href="#chapter-59/section/topic-5">Policy Preference Margin</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch59-exercise-02"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-3" class="exercise-item"><h3>ข้อ 3</h3><p>Compute the reference margin.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Reference Preference Margin: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): referencemargin=logπref(chosen)−logπref(reje…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: referencemargin=logπref(chosen)−logπref(rejected); −3−(−4)=1; referencefreezeแล…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>referencemargin=logπref(chosen)−logπref(rejected); −3−(−4)=1; referencefreezeและtokenizer/templateต้องตรงpolicy</p><p>อ้างอิง: <a href="#chapter-59/section/topic-6">Reference Preference Margin</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch59-exercise-03"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-4" class="exercise-item"><h3>ข้อ 4</h3><p>Derive standard DPO logits and loss.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ DPO Logit, DPO Loss: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): z=β(policy_margin−reference_margin); β.1,marg…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: z=β(policy_margin−reference_margin); β.1,margins3/1ให้z.2,losssoftplus(−.2)=.5981…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>z=β(policy_margin−reference_margin); β.1,margins3/1ให้z.2,losssoftplus(−.2)=.5981389; ไม่ใช้βคูณlogsigmoidข้างนอก</p><p>อ้างอิง: <a href="#chapter-59/section/topic-7">DPO Logit</a>, <a href="#chapter-59/section/topic-8">DPO Loss</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch59-exercise-04"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-5" class="exercise-item"><h3>ข้อ 5</h3><p>Sweep beta and plot loss curves.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Beta: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): marginadvantage2,β.1/.5ให้loss.598139/.313262; negativ…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: marginadvantage2,β.1/.5ให้loss.598139/.313262; negativeadvantageเพิ่มβทำlossเพิ่มและgradientscaleเ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>marginadvantage2,β.1/.5ให้loss.598139/.313262; negativeadvantageเพิ่มβทำlossเพิ่มและgradientscaleเปลี่ยน ไม่รับประกันtrainingqualityเพิ่ม</p><p>อ้างอิง: <a href="#chapter-59/section/topic-9">Beta</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch59-exercise-05"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-6" class="exercise-item"><h3>ข้อ 6</h3><p>Measure pairwise preference accuracy.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Preference Accuracy: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): implicitpreferenceaccuracy=mean(policy_margin−reference…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: implicitpreferenceaccuracy=mean(policy_margin−reference_margin&gt;0)ตามDPOmetricที่ประกาศ; chosenpolicy…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>implicitpreferenceaccuracy=mean(policy_margin−reference_margin&gt;0)ตามDPOmetricที่ประกาศ; chosenpolicyhigherprobaccuracyเป็นอีกmetricห้ามสลับ</p><p>อ้างอิง: <a href="#chapter-59/section/topic-10">Preference Accuracy</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch59-exercise-06"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-7" class="exercise-item"><h3>ข้อ 7</h3><p>Audit chosen/rejected response lengths.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Length Effects: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): reportchosen/rejectedtokenlengthmeans/distributionsและlength-…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: reportchosen/rejectedtokenlengthmeans/distributionsและlength-conditionedaccuracy; summedlogpมีlengthdependence…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>reportchosen/rejectedtokenlengthmeans/distributionsและlength-conditionedaccuracy; summedlogpมีlengthdependenceแต่ไม่แก้เป็นmeanเงียบๆเพราะเปลี่ยนobjective</p><p>อ้างอิง: <a href="#chapter-59/section/topic-13">Length Effects</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch59-exercise-07"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-8" class="exercise-item"><h3>ข้อ 8</h3><p>Cache reference log-probabilities and verify cache invalidation rules.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Reference Log-Probability Caching: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): cachekeyhash(referenceweights/tokenizer/template/dataset…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: cachekeyhash(referenceweights/tokenizer/template/datasetcompletionIDs/maskpolicy/reduction); อันใดเป…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>cachekeyhash(referenceweights/tokenizer/template/datasetcompletionIDs/maskpolicy/reduction); อันใดเปลี่ยนต้องinvalidate ไม่ใช้เพียงexampleID</p><p>อ้างอิง: <a href="#chapter-59/section/topic-16">Reference Log-Probability Caching</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch59-exercise-08"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-9" class="exercise-item"><h3>ข้อ 9</h3><p>Implement the educational IPO squared objective.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ IPO Concept: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): educationalIPO loss=(policy_margin−reference_margin−1/(…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: educationalIPO loss=(policy_margin−reference_margin−1/(2β))²; β.5,advantage2,target1ให้loss1; ระบุส…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>educationalIPO loss=(policy_margin−reference_margin−1/(2β))²; β.5,advantage2,target1ให้loss1; ระบุสูตรนี้แยกจากvariantsที่length-normalize</p><p>อ้างอิง: <a href="#chapter-59/section/topic-19">IPO Concept</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch59-exercise-09"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-10" class="exercise-item"><h3>ข้อ 10</h3><p>Compare DPO with a reward-model/PPO pipeline conceptually.</p>
+<p>Challenge:
+- train a tiny categorical policy with DPO on synthetic preference pairs
+- reproduce the same experiment using the optional TRL environment</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ DPO vs Reward Model + PPO: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): DPOใช้preferencepairs+frozenreferenceฝึกpolicyตรง; RM/P…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: DPOใช้preferencepairs+frozenreferenceฝึกpolicyตรง; RM/PPOต้องrewardmodelและonpolicyrollouts/value/o…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>DPOใช้preferencepairs+frozenreferenceฝึกpolicyตรง; RM/PPOต้องrewardmodelและonpolicyrollouts/value/oldpolicy เพิ่มcomponentsแต่สำรวจใหม่ได้</p><p>อ้างอิง: <a href="#chapter-59/section/topic-12">DPO vs Reward Model + PPO</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch59-exercise-10"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-11" class="exercise-item"><h3>ข้อ 11</h3><p>Reproduce one central calculation from DPO using a tiny hand-checkable input.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ DPO Loss: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): β.1,advantage2ให้z.2,loss.598138869; derivativ…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: β.1,advantage2ให้z.2,loss.598138869; derivativeต่อpolicymargin=−βσ(−z)≈−.0450166 จึง…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>β.1,advantage2ให้z.2,loss.598138869; derivativeต่อpolicymargin=−βσ(−z)≈−.0450166 จึงupdateเพิ่มchosen-relative-margin</p><p>อ้างอิง: <a href="#chapter-59/section/topic-8">DPO Loss</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch59-exercise-11"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-12" class="exercise-item"><h3>ข้อ 12</h3><p>Write a deterministic test that verifies the most important invariant in DPO.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Why Reference Policy?, Token Masking: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): policy=referenceให้losslog2,gradientfinite; swapch…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: policy=referenceให้losslog2,gradientfinite; swapchosen/rejectedเปลี่ยนsignz,maskedpromptlo…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>policy=referenceให้losslog2,gradientfinite; swapchosen/rejectedเปลี่ยนsignz,maskedpromptlogpไม่กระทบlossและreferenceไม่มีgrad</p><p>อ้างอิง: <a href="#chapter-59/section/topic-11">Why Reference Policy?</a>, <a href="#chapter-59/section/topic-14">Token Masking</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch59-exercise-12"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-13" class="exercise-item"><h3>ข้อ 13</h3><p>Compare two meaningful configurations while keeping data and seed fixed.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Beta: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): β.1/.3คงpairs/base/ref/seed/tokenbudget; reporthel…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: β.1/.3คงpairs/base/ref/seed/tokenbudget; reportheldoutpreferenceaccuracy/taskquality/KL/le…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>β.1/.3คงpairs/base/ref/seed/tokenbudget; reportheldoutpreferenceaccuracy/taskquality/KL/lengthbiasไม่เลือกจากtraininglossคนละβ</p><p>อ้างอิง: <a href="#chapter-59/section/topic-9">Beta</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch59-exercise-13"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-14" class="exercise-item"><h3>ข้อ 14</h3><p>Record intermediate shapes, ranges, and one quality metric for a tiny end-to-end run.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Truncation: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): recordchosen/rejectedlogps,completionc…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: recordchosen/rejectedlogps,completioncounts,margins,z/loss,gradnormแล…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>recordchosen/rejectedlogps,completioncounts,margins,z/loss,gradnormและheldoutwinsแยกlengthslices</p><p>อ้างอิง: <a href="#chapter-59/section/topic-15">Truncation</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch59-exercise-14"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-15" class="exercise-item"><h3>ข้อ 15</h3><p>Explain one evaluation mistake that could make a DPO result look better than it really is.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Preference Dataset Quality: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): judgeชอบคำตอบยาวหรือpreferencepairsnear-dupli…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: judgeชอบคำตอบยาวหรือpreferencepairsnear-duplicateข้ามsplitทำwinrateสูงปลอม; blinda…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>judgeชอบคำตอบยาวหรือpreferencepairsnear-duplicateข้ามsplitทำwinrateสูงปลอม; blindanswerorderและbalancedlength-eval</p><p>อ้างอิง: <a href="#chapter-59/section/topic-24">Preference Dataset Quality</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch59-exercise-15"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-16" class="exercise-item"><h3>ข้อ 16</h3><p>State the dominant time and memory complexity for the main operation in DPO.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Reference Log-Probability Caching: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): DPOforwardpolicy2responses+reference2responsesหากไม่cache…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: DPOforwardpolicy2responses+reference2responsesหากไม่cache; cacheลดreferencecomputeแต่storageO(numberpai…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>DPOforwardpolicy2responses+reference2responsesหากไม่cache; cacheลดreferencecomputeแต่storageO(numberpairs),trainingactivationตามcompletionlength</p><p>อ้างอิง: <a href="#chapter-59/section/topic-16">Reference Log-Probability Caching</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch59-exercise-16"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-17" class="exercise-item"><h3>ข้อ 17</h3><p>Compare a from-scratch result with a trusted implementation using identical inputs and settings.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ From Scratch: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): NumPysoftplusDPOเทียบTorchF.logsigmoidด้วยsam…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: NumPysoftplusDPOเทียบTorchF.logsigmoidด้วยsamecompletionmask/sumreduction; finite-…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>NumPysoftplusDPOเทียบTorchF.logsigmoidด้วยsamecompletionmask/sumreduction; finite-differencegradientกับβ/marginตรง</p><p>อ้างอิง: <a href="#chapter-59/section/topic-27">From Scratch</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch59-exercise-17"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-18" class="exercise-item"><h3>ข้อ 18</h3><p>Run a one-factor ablation and report the measured change over repeated runs when randomness matters.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Reference Log-Probability Caching: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): referencecacheoff/onคงweights/pairs/templates; ass…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: referencecacheoff/onคงweights/pairs/templates; assertloss/gradallcloseและmeasurewalltime/c…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>referencecacheoff/onคงweights/pairs/templates; assertloss/gradallcloseและmeasurewalltime/cachebytes ไม่ใช้stalevaluesเพื่อเร่ง</p><p>อ้างอิง: <a href="#chapter-59/section/topic-16">Reference Log-Probability Caching</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch59-exercise-18"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-19" class="exercise-item"><h3>ข้อ 19</h3><p>Design a small reproducibility record containing seed, code version, data version, configuration, and metric.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Current TRL DPOTrainer: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): manifest มีpolicy/refdigest/tokenizer/chattemplat…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: manifest มีpolicy/refdigest/tokenizer/chattemplate/pairIDs/chosen-labelprovenance/β/logpr…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>manifest มีpolicy/refdigest/tokenizer/chattemplate/pairIDs/chosen-labelprovenance/β/logpreduction/mask/cachekey/seed/evalset</p><p>อ้างอิง: <a href="#chapter-59/section/topic-23">Current TRL DPOTrainer</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch59-exercise-19"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-20" class="exercise-item"><h3>ข้อ 20</h3><p>Propose one falsifiable research question for DPO and specify the baseline, changed factor, and acceptance metric.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Evaluation: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ทดลอง“length-balancedpairsลดlong-answerbiasโดยheldou…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ทดลอง“length-balancedpairsลดlong-answerbiasโดยheldoutaccuracyไม่ลด”; originalpairsbaselineและ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ทดลอง“length-balancedpairsลดlong-answerbiasโดยheldoutaccuracyไม่ลด”; originalpairsbaselineและlength-controlledblindjudgingหลายseed</p><p>อ้างอิง: <a href="#chapter-59/section/topic-26">Evaluation</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch59-exercise-20"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section></div><div id="local-lab-content"><section id="local-lab"><h2>Local lab: Python 3.12 บน CPU</h2><p>รันจาก repository root; ใช้ Python 3.12 แยก environment สำหรับ framework ตาม requirements ของชุดบท</p><pre><code>python3.12 -m venv .venv-course
+source .venv-course/bin/activate
+python -m pip install -r requirements-batch20.txt pytest
+(cd 59-dpo-preference-optimization &amp;&amp; python -m pytest tests -q -rs)</code></pre><p>ผลที่คาดหวัง: required tests ผ่านและไม่มี required test ถูก skip; GPU/integrations ที่ยังไม่รันต้องระบุแยก Python 3.15 ที่มากับเครื่องอาจใช้กับ framework wheels เหล่านี้ไม่ได้</p><h2>Mini Project — Offline Preference Optimizer</h2>
+<p>Create a toy prompt→response policy with chosen/rejected pairs.</p>
+<p>Build:
+- completion masks
+- frozen reference log-prob cache
+- standard DPO loss
+- pairwise accuracy
+- length audit
+- held-out preference split</p>
+<p>Compare:
+- SFT-only baseline
+- DPO
+- educational IPO objective</p>
+<p>Report held-out preference accuracy and task utility, not training loss alone.</p><h2>Batch 20 Integration Project — Preference Alignment &amp; Evaluation Lab</h2>
+<p>Batch 20 connects reward modeling, DPO and rigorous evaluation.</p>
+<h3>Part A — Reward Model</h3>
+<p>Synthetic prompts have several candidate responses with hidden utilities.</p>
+<pre><code class="language-text">response features
+↓
+hidden utility
+↓
+chosen / rejected pairs
+↓
+linear reward model
+↓
+Bradley-Terry loss
+</code></pre>
+<p>Track:
+- first/final pairwise loss
+- pairwise accuracy
+- parameter count</p>
+<h3>Part B — DPO</h3>
+<p>A categorical policy starts equal to a frozen uniform reference.</p>
+<pre><code class="language-text">chosen/rejected pairs
++
+reference log probabilities
+↓
+DPO objective
+↓
+policy logits
+</code></pre>
+<p>Track:
+- first/final DPO loss
+- chosen-vs-rejected accuracy
+- hidden true-best-response accuracy</p>
+<p>This separates training preference accuracy from an independent hidden utility target.</p>
+<h3>Part C — Evaluation</h3>
+<p>The evaluation mode demonstrates:</p>
+<pre><code class="language-text">baseline per-sample scores
+aligned per-sample scores
+↓
+paired bootstrap difference
+
+baseline scores
+↓
+bootstrap confidence interval
+
+training/eval texts
+↓
+normalized-hash contamination audit
+</code></pre>
+<p>A reproducibility manifest records seed and bootstrap configuration.</p>
+<h3>Run</h3>
+<pre><code class="language-bash">python integration-project-batch20/src/rlhf_dpo_eval_lab.py --mode reward --steps 40
+
+python integration-project-batch20/src/rlhf_dpo_eval_lab.py \
+  --mode dpo \
+  --steps 60 \
+  --beta 0.5
+
+python integration-project-batch20/src/rlhf_dpo_eval_lab.py --mode evaluate
+</code></pre>
+<h3>Optional TRL Lab</h3>
+<pre><code class="language-bash">python -m pip install -r requirements-batch20-trl.txt
+</code></pre>
+<p>Then reproduce:
+- reward modeling with RewardTrainer
+- DPO with DPOTrainer / DPOConfig</p>
+<p>Record the installed TRL version and configuration because post-training APIs evolve quickly.</p>
+<h3>Required Extensions</h3>
+<ol>
+<li>noisy/tied human preferences</li>
+<li>reward-model held-out prompt split</li>
+<li>reward calibration</li>
+<li>reward-hacking synthetic failure case</li>
+<li>PPO bandit update</li>
+<li>DPO completion masks</li>
+<li>reference log-probability cache</li>
+<li>length-bias audit</li>
+<li>per-sample JSONL output</li>
+<li>evaluation slices and judge-order randomization</li>
+</ol></section></div><label class="local-confirm"><input type="checkbox" id="local-lab-confirm"> ฉันรัน local lab และตรวจผลตาม rubric ด้วยตัวเองแล้ว</label><p class="local-note">สถานะนี้เป็นคำยืนยันของผู้เรียน เว็บไม่ได้รันหรือตรวจ Python บนเครื่องแทนคุณ</p></section>
+<section id="mastery-review" class="practice-section"><h2>หลักฐานตามเกณฑ์การเรียนรู้</h2><p>ทุก objective ต้องแสดงหลักฐานอธิบาย ทำนาย คำนวณ อ่าน shape/state debug และประยุกต์ พร้อมกรณีใหม่ ผลรัน source ผู้เรียนจริง และการประเมินซ้ำ เกณฑ์นี้ไม่รับประกันความเข้าใจทุกสถานการณ์ เปิด JavaScript เพื่อดูรายการที่ยังขาดและนำเข้ารายงานผู้ตรวจ</p></section><section class="coverage-section"><h2>แผนที่สิ่งที่เรียน → สิ่งที่ต้องแสดงให้ได้</h2><div id="coverage-table"></div></section><footer><span>ZERO TO ELITE AI ENGINEER · LEARNING STUDIO</span><span>อ่าน · derive · implement · debug · experiment · build</span></footer></div></main><noscript><style>.workbench,.sidebar,.reading-route,.lesson-toc,.mastery-status,#web-checks{display:none}main{margin-left:0}</style>อ่านเนื้อหา HTML ได้ตามปกติ เปิด JavaScript เพื่อใช้ห้องทดลองและตรวจคำตอบ</noscript></body></html>

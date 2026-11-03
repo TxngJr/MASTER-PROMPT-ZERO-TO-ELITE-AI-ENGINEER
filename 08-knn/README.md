@@ -1,5 +1,11 @@
 # Chapter 08 — K-Nearest Neighbors (KNN)
 
+## Interactive Animation Lab
+
+[เปิดภาพจำลองของบทนี้](animation.html) · [เลือกจากทั้ง 80 บท](../visual-lab/index.html)
+
+ดู flow ทีละขั้น → ทดลองเปลี่ยนค่า → อ่านสมการและโค้ด → ตอบคำถามเช็กความเข้าใจ แล้วกลับมาทำแบบฝึกหัดในบทนี้
+
 ## 1. Why This Matters
 
 KNN เป็นตัวอย่างสำคัญของ **instance-based learning**: แทนที่จะเรียน parameters แบบ `w,b` มันเก็บ training examples แล้วตัดสินจากตัวอย่างที่อยู่ใกล้ query

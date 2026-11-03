@@ -1,0 +1,1554 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="บทเรียน AI Engineer ภาษาไทย พร้อมคณิตศาสตร์ทีละขั้นและห้องทดลองที่คำนวณจริง"><title>Multimodal: เรียนให้คนละ modality มาอยู่ space เดียวกัน · AI Engineer Studio</title><link rel="stylesheet" href="../visual-lab/assets/styles.css"><link rel="stylesheet" href="../visual-lab/assets/course.css"><script defer src="../visual-lab/assets/lessons.js"></script><script defer src="../visual-lab/assets/chapter-meta.js"></script><script defer src="../visual-lab/assets/course-math.js"></script><script defer src="../visual-lab/assets/course-models.js"></script><script defer src="../visual-lab/assets/course-models-v3.js"></script><script defer src="../visual-lab/assets/course-assessment.js"></script><script defer src="../visual-lab/assets/course-mastery.js"></script><script defer src="../visual-lab/assets/course-catalog.js"></script><script defer src="../visual-lab/assets/book-content.js"></script><script defer src="../visual-lab/assets/course-render.js"></script><script defer src="../visual-lab/assets/course-mastery-panel.js"></script><script defer src="../visual-lab/assets/quality-report.js"></script><script defer src="../visual-lab/assets/course-app.js"></script></head>
+<body data-chapter="41" data-root="../"><a class="skip-link" href="#main">ข้ามไปบทเรียน</a>
+<aside class="sidebar" id="sidebar" aria-label="เลือกบทเรียน"><a class="brand" href="../visual-lab/index.html"><span class="brand-mark">ai</span><span>AI ENGINEER<small>LEARN · DERIVE · BUILD</small></span></a><div class="sidebar-intro">อ่านให้เข้าใจ · คำนวณให้เห็น · เขียนให้เป็น</div><label class="search-box"><input id="search" type="search" placeholder="ค้นหาบท / attention" aria-label="ค้นหาบทเรียน"></label><label class="filter-label" for="phase-filter">เส้นทางการเรียน <span id="nav-count"></span></label><select id="phase-filter"><option value="">ทุก Phase</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option></select><nav id="chapter-list" class="chapter-list" aria-label="รายชื่อบท"></nav><div class="course-progress"><div><span>ผ่านโจทย์ในเว็บ</span><strong id="progress-count">0 / 80</strong></div><progress id="course-progress" max="80" value="0" aria-label="บทที่ผ่านโจทย์"></progress><a id="resume-link" href="#chapter-1">อ่านต่อจากเดิม →</a></div></aside>
+<button class="nav-backdrop" id="nav-backdrop" aria-label="ปิดเมนู" hidden></button>
+<main id="main" tabindex="-1"><header class="topbar"><div><button id="nav-toggle" class="icon-button mobile-menu" aria-label="เปิดเมนูบทเรียน" aria-expanded="false" aria-controls="sidebar">☰</button><span id="breadcrumb"></span></div><span class="local-badge"><i></i> คำนวณในเครื่อง · ไม่มี API</span></header><div class="content">
+<div class="chapter-navigation"><label for="chapter-select" class="sr-only">เลือกบทเรียน</label><select id="chapter-select"></select><div class="chapter-arrows"><button id="prev-chapter" class="icon-button" aria-label="บทก่อนหน้า">←</button><button id="next-chapter" class="icon-button" aria-label="บทถัดไป">→</button></div></div>
+<section class="chapter-hero"><div><p id="chapter-kicker" class="eyebrow"></p><h1 id="chapter-title">Multimodal: เรียนให้คนละ modality มาอยู่ space เดียวกัน</h1><p class="english-title" id="chapter-english"></p></div><span class="hero-symbol">f(x) ↗</span></section>
+<p id="quality-status" class="quality-status"></p><div id="mastery-status" class="mastery-status"></div><div class="reading-route"><a href="#chapter-41/section/overview">01 อ่านบทเรียน</a><a href="#workbench">02 ทดลองสมการ</a><a href="#practice">03 ฝึกและตรวจงาน</a><a href="#mastery-review">04 หลักฐานตามเกณฑ์</a></div>
+<nav id="lesson-toc" class="lesson-toc" aria-label="สารบัญบท"></nav>
+<section id="overview" class="course-overview"><span class="eyebrow">THE LEARNING CONTRACT</span><h2>เรียนบทนี้แล้วต้องทำอะไรได้</h2><p id="chapter-purpose"></p><div id="chapter-objectives"></div><div class="learning-hint">ทำนาย → เปลี่ยนทีละค่า → ตรวจตัวเลข → อธิบายเหตุผล → เขียนด้วย Python เอง</div></section>
+<section class="workbench lab-card" id="workbench" aria-label="ห้องทดลองคำนวณจริง"><div class="card-header"><div><span class="live-dot"></span><span class="eyebrow">COMPUTATION WORKBENCH</span></div><span class="simulation-label">ทุกภาพใช้ผลคำนวณชุดเดียวกัน</span></div><div class="lab-top"><label for="lab-select">เลือกกลไกที่ต้องการทดลอง</label><select id="lab-select"></select><p id="lab-question"></p></div><div class="workbench-grid"><div class="viz-column"><div class="compare-labels"><span>เส้นทึบ: ปัจจุบัน</span><span>เส้นประ: baseline ที่ตรึงไว้</span></div><div id="simulation" class="simulation"></div><div id="metrics" class="metrics"></div><div id="baseline-diff" class="baseline-diff"></div><div class="playback"><div class="playback-buttons"><button class="primary-button" id="update-once">อัปเดตหนึ่งก้าว</button><button class="secondary-button" id="train-many">▶ ฝึก 30 ก้าว</button><button class="icon-button" id="back-state" aria-label="ย้อนประวัติ">↶</button><button class="icon-button" id="forward-state" aria-label="ประวัติถัดไป">↷</button></div></div><div class="lab-secondary-actions"><button id="pin-baseline" class="text-button">ตรึง baseline ปัจจุบัน</button><button id="reset-lab" class="text-button">คืนค่าเริ่มต้น</button><button id="download-state" class="text-button">บันทึกผล JSON</button><span id="history-status"></span></div><p id="simulation-note" class="simulation-note"></p><p class="lab-error" id="lab-error" role="alert" hidden></p></div><div class="controls-column"><h3>เปลี่ยนทีละตัว แล้วสังเกตผล</h3><div id="lab-controls"></div><p class="control-note">แก้ weight ด้วยมือจะคำนวณ forward ใหม่; optimizer เปลี่ยน weights เมื่อกดอัปเดตเท่านั้น</p></div></div>
+<div class="trace-section"><div class="trace-toolbar"><h3>เดินสมการทีละ operation</h3><div><button id="trace-prev" class="icon-button" aria-label="operation ก่อนหน้า">←</button><button id="play-trace" class="secondary-button" aria-pressed="false">▶ เล่น flow</button><button id="trace-next" class="icon-button" aria-label="operation ถัดไป">→</button><span id="stage-counter"></span></div></div><label class="motion-control"><input id="reduce-motion" type="checkbox"> ลดภาพเคลื่อนไหว (หยุดการเล่นที่ค้างอยู่)</label><div id="operation-steps" class="operation-steps"></div><div id="flow-diagram" class="flow-diagram"></div><div id="active-operation" class="active-operation" aria-live="polite"></div><p class="control-note">ตัวเลขบนภาพปัดเศษเพื่อให้อ่านง่าย; บันทึก JSON เพื่อดูค่าที่ใช้คำนวณเต็ม precision</p><details open><summary>ตารางค่าระหว่างทาง — ตรวจด้วยมือได้</summary><div id="result-table"></div></details><div id="tensor-tables" class="tensor-tables"></div><details id="surface-details"><summary>ดู loss surface และเส้นทางของ w₁,b (ตรึง controls อื่น)</summary><div id="surface-chart"></div><p>surface คำนวณ objective ปัจจุบันโดยตรึง degree, penalty, ข้อมูล และ weights อื่น เส้นทางแสดงเฉพาะ snapshots ที่ค่าเหล่านี้ตรงกัน; นอกช่วง w=[−1,5], b=[−2,4] ให้ตรวจค่าจริงใน history</p></details><details><summary>ประวัติการเปลี่ยนค่า</summary><div id="history-table"></div></details></div></section>
+<article id="chapter-article" class="chapter-article"><section id="mechanism-1" class="teaching-section"><span class="section-kicker">CHAPTER 41 · ภาพ → สมการ → โค้ด</span><h2>1. dimension เท่ากันยังไม่ใช่ alignment</h2><h3>โจทย์และเหตุผล</h3><p>image และ text encoder อาจให้ vectors ขนาดเดียวกันแต่ความหมายยังไม่ตรง ต้องเรียนจาก paired data เพื่อให้คู่ที่สัมพันธ์ได้ score สูงกว่าคู่ลบ</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Compute symmetric contrastive loss by hand for B=3.</p><p>B3,S=I3logitsdiag1,offdiag0ให้CE=log(e+2)−1≈.551445ต่อrowและsymmetricmeanเท่ากัน; averageimage/textlossไม่sumถ้าใช้CLIPmean</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>image1: image vector coordinate1,initial=1; image2: image vector coordinate2,initial=0.2; text1: matched text coordinate1,initial=1; text2: matched text coordinate2,initial=0; temperature: temperature τ,initial=0.5</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = [1, 0.2]; กำหนดความหมายและหน่วยของ input ก่อนทดลอง</li><li>p=softmax(cos(image,texts)/τ); L=−log p_match = [0.8142903630106096, 0.1695907077430543, 0.016118929246335994]; negative candidates เปลี่ยน denominator; τ เปลี่ยนความคม ไม่ได้หมุน vectors เอง</li><li>normal / boundary / comparison = [0.8142903630106096, 0.1695907077430543, 0.016118929246335994]; ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="contrastive-image-text-cosine---logi">เปิดการทดลองนี้</a><p class="failure-box">ภาพเดียวหลายcaptionข้ามsplitทำretrievalleak; splitตามimage/sourcegroupและdedupทั้งmodalities ไม่ให้filenameบอกlabel; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>B3,S=I3logitsdiag1,offdiag0ให้CE=log(e+2)−1≈.551445ต่อrowและsymmetricmeanเท่ากัน; averageimage/textlossไม่sumถ้าใช้CLIPmean</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-1-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = [1, 0.2]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>p=softmax(cos(image,texts)/τ); L=−log p_match</code> = [0.8142903630106096, 0.1695907077430543, 0.016118929246335994]<p>negative candidates เปลี่ยน denominator; τ เปลี่ยนความคม ไม่ได้หมุน vectors เอง</p></li><li><code>normal / boundary / comparison</code> = [0.8142903630106096, 0.1695907077430543, 0.016118929246335994]<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-1-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>shape / range</code> = [1, 0.2]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>p=softmax(cos(image,texts)/τ); L=−log p_match</code> = [0.8142903630106096, 0.1695907077430543, 0.016118929246335994]<p>negative candidates เปลี่ยน denominator; τ เปลี่ยนความคม ไม่ได้หมุน vectors เอง</p></li><li><code>normal / boundary / comparison</code> = [0.8142903630106096, 0.1695907077430543, 0.016118929246335994]<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-1-code"><summary>โค้ด</summary><p>B3,S=I3logitsdiag1,offdiag0ให้CE=log(e+2)−1≈.551445ต่อrowและsymmetricmeanเท่ากัน; averageimage/textlossไม่sumถ้าใช้CLIPmean</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-1-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = [1, 0.2]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>p=softmax(cos(image,texts)/τ); L=−log p_match</code> = [0.8142903630106096, 0.1695907077430543, 0.016118929246335994]<p>negative candidates เปลี่ยน denominator; τ เปลี่ยนความคม ไม่ได้หมุน vectors เอง</p></li><li><code>normal / boundary / comparison</code> = [0.8142903630106096, 0.1695907077430543, 0.016118929246335994]<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-1"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-2" class="teaching-section"><span class="section-kicker">CHAPTER 41 · ภาพ → สมการ → โค้ด</span><h2>2. normalize แยกมุมออกจากความยาว</h2><h3>โจทย์และเหตุผล</h3><p>cosine หารด้วย norms ก่อน temperature การเปลี่ยนทิศ vector จึงต่างจากขยาย magnitude คง positive pair เดิมแล้วเปลี่ยน negative candidates เพื่อดู denominator ของ contrastive objective</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Sweep temperature and inspect softmax sharpness.</p><p>τเล็กทำsoftmaxแหลมและgradientscale1/τสูง; τต้อง&gt;0; logitsที่เปลี่ยนจากtemperatureไม่ใช่embeddingsretrained</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>image1: image vector coordinate1,initial=1; image2: image vector coordinate2,initial=0.2; text1: matched text coordinate1,initial=1; text2: matched text coordinate2,initial=0; temperature: temperature τ,initial=0.1</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = [1, 0.2]; กำหนดความหมายและหน่วยของ input ก่อนทดลอง</li><li>p=softmax(cos(image,texts)/τ); L=−log p_match = [0.9996083059156023, 0.00039169104621189065, 3.038185773722636e-09]; negative candidates เปลี่ยน denominator; τ เปลี่ยนความคม ไม่ได้หมุน vectors เอง</li><li>normal / boundary / comparison = [0.9996083059156023, 0.00039169104621189065, 3.038185773722636e-09]; ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="contrastive-temperature-ทำ-distribut">เปิดการทดลองนี้</a><p class="failure-box">ภาพเดียวหลายcaptionข้ามsplitทำretrievalleak; splitตามimage/sourcegroupและdedupทั้งmodalities ไม่ให้filenameบอกlabel; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>τเล็กทำsoftmaxแหลมและgradientscale1/τสูง; τต้อง&gt;0; logitsที่เปลี่ยนจากtemperatureไม่ใช่embeddingsretrained</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-2-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = [1, 0.2]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>p=softmax(cos(image,texts)/τ); L=−log p_match</code> = [0.9996083059156023, 0.00039169104621189065, 3.038185773722636e-09]<p>negative candidates เปลี่ยน denominator; τ เปลี่ยนความคม ไม่ได้หมุน vectors เอง</p></li><li><code>normal / boundary / comparison</code> = [0.9996083059156023, 0.00039169104621189065, 3.038185773722636e-09]<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-2-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>shape / range</code> = [1, 0.2]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>p=softmax(cos(image,texts)/τ); L=−log p_match</code> = [0.9996083059156023, 0.00039169104621189065, 3.038185773722636e-09]<p>negative candidates เปลี่ยน denominator; τ เปลี่ยนความคม ไม่ได้หมุน vectors เอง</p></li><li><code>normal / boundary / comparison</code> = [0.9996083059156023, 0.00039169104621189065, 3.038185773722636e-09]<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-2-code"><summary>โค้ด</summary><p>τเล็กทำsoftmaxแหลมและgradientscale1/τสูง; τต้อง&gt;0; logitsที่เปลี่ยนจากtemperatureไม่ใช่embeddingsretrained</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-2-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = [1, 0.2]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>p=softmax(cos(image,texts)/τ); L=−log p_match</code> = [0.9996083059156023, 0.00039169104621189065, 3.038185773722636e-09]<p>negative candidates เปลี่ยน denominator; τ เปลี่ยนความคม ไม่ได้หมุน vectors เอง</p></li><li><code>normal / boundary / comparison</code> = [0.9996083059156023, 0.00039169104621189065, 3.038185773722636e-09]<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-2"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-3" class="teaching-section"><span class="section-kicker">CHAPTER 41 · ภาพ → สมการ → โค้ด</span><h2>3. retrieval กับ generation ใช้ fusion ต่างกัน</h2><h3>โจทย์และเหตุผล</h3><p>dual encoder เหมาะค้นข้าม modalities ส่วน cross-attention/token injection ให้ model รวมข้อมูลสำหรับตอบ ตรวจ missing modality, modality dominance และ data leakage ของคู่ภาพ/ข้อความ</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Run text-only/image-only/shuffled-modality ablations.</p>
+<p>Challenge:
+- build a tiny CLIP-style dual encoder
+- inject projected visual tokens into a tiny causal LM</p><p>text-only/image-only/shuffledpairsfullmodelablation; shuffledimageควรลดtaskที่ต้องอ่านภาพ หากไม่ลดให้ตรวจshortcutleakageไม่อ้างmultimodalreasoning</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>q1: query q₁,initial=1; q2: query q₂,initial=0; k11: key1 coordinate1,initial=1; k12: key1 coordinate2,initial=0; v1: value1,initial=1; temperature: extra temperature,initial=1; queryPosition: query position,initial=2; window: window size,initial=4; mask: mask,initial=none</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>q in R²; K (4,2); V (4,1) = [1, 0]; scalar values ใช้เพื่ออ่าน output ได้; learned projections ในบทเต็ม</li><li>score_j=q·k_j/√2/temperature = [0.7071067811865475, 0, 0.7071067811865475, -0.7071067811865475]; หาร √d_k ลดขนาด score ตามมิติ; extra temperature แยกเพื่อทดลองความคม</li><li>disallowed scores → −∞ = [0.7071067811865475, 0, 0.7071067811865475, -0.7071067811865475]; mask ต้องมาก่อน normalize จึงได้ weight ศูนย์จริง</li><li>a=exp(score−max)/sum(exp(score−max)) = [0.3654723070154712, 0.1802029521613177, 0.3654723070154712, 0.08885243380773993]; ผลรวมหนึ่งต่อ query; ห้าม mask ทุก key</li><li>output=Σ_j a_j v_j = 2.1777048676154798; ค่าทุกตำแหน่งมีส่วนตาม attention weight ไม่ใช่ hard select</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="attention-cross-attention-สำหร-บกา">เปิดการทดลองนี้</a><p class="failure-box">ภาพเดียวหลายcaptionข้ามsplitทำretrievalleak; splitตามimage/sourcegroupและdedupทั้งmodalities ไม่ให้filenameบอกlabel; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>text-only/image-only/shuffledpairsfullmodelablation; shuffledimageควรลดtaskที่ต้องอ่านภาพ หากไม่ลดให้ตรวจshortcutleakageไม่อ้างmultimodalreasoning</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-3-equation"><summary>สมการ</summary><ol><li><code>q in R²; K (4,2); V (4,1)</code> = [1, 0]<p>scalar values ใช้เพื่ออ่าน output ได้; learned projections ในบทเต็ม</p></li><li><code>score_j=q·k_j/√2/temperature</code> = [0.7071067811865475, 0, 0.7071067811865475, -0.7071067811865475]<p>หาร √d_k ลดขนาด score ตามมิติ; extra temperature แยกเพื่อทดลองความคม</p></li><li><code>disallowed scores → −∞</code> = [0.7071067811865475, 0, 0.7071067811865475, -0.7071067811865475]<p>mask ต้องมาก่อน normalize จึงได้ weight ศูนย์จริง</p></li><li><code>a=exp(score−max)/sum(exp(score−max))</code> = [0.3654723070154712, 0.1802029521613177, 0.3654723070154712, 0.08885243380773993]<p>ผลรวมหนึ่งต่อ query; ห้าม mask ทุก key</p></li><li><code>output=Σ_j a_j v_j</code> = 2.1777048676154798<p>ค่าทุกตำแหน่งมีส่วนตาม attention weight ไม่ใช่ hard select</p></li></ol></details><details id="help-mechanism-3-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>q in R²; K (4,2); V (4,1)</code> = [1, 0]<p>scalar values ใช้เพื่ออ่าน output ได้; learned projections ในบทเต็ม</p></li><li><code>score_j=q·k_j/√2/temperature</code> = [0.7071067811865475, 0, 0.7071067811865475, -0.7071067811865475]<p>หาร √d_k ลดขนาด score ตามมิติ; extra temperature แยกเพื่อทดลองความคม</p></li><li><code>disallowed scores → −∞</code> = [0.7071067811865475, 0, 0.7071067811865475, -0.7071067811865475]<p>mask ต้องมาก่อน normalize จึงได้ weight ศูนย์จริง</p></li><li><code>a=exp(score−max)/sum(exp(score−max))</code> = [0.3654723070154712, 0.1802029521613177, 0.3654723070154712, 0.08885243380773993]<p>ผลรวมหนึ่งต่อ query; ห้าม mask ทุก key</p></li><li><code>output=Σ_j a_j v_j</code> = 2.1777048676154798<p>ค่าทุกตำแหน่งมีส่วนตาม attention weight ไม่ใช่ hard select</p></li></ol></details><details id="help-mechanism-3-code"><summary>โค้ด</summary><p>text-only/image-only/shuffledpairsfullmodelablation; shuffledimageควรลดtaskที่ต้องอ่านภาพ หากไม่ลดให้ตรวจshortcutleakageไม่อ้างmultimodalreasoning</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-3-result"><summary>ผลการทดลอง</summary><ol><li><code>q in R²; K (4,2); V (4,1)</code> = [1, 0]<p>scalar values ใช้เพื่ออ่าน output ได้; learned projections ในบทเต็ม</p></li><li><code>score_j=q·k_j/√2/temperature</code> = [0.7071067811865475, 0, 0.7071067811865475, -0.7071067811865475]<p>หาร √d_k ลดขนาด score ตามมิติ; extra temperature แยกเพื่อทดลองความคม</p></li><li><code>disallowed scores → −∞</code> = [0.7071067811865475, 0, 0.7071067811865475, -0.7071067811865475]<p>mask ต้องมาก่อน normalize จึงได้ weight ศูนย์จริง</p></li><li><code>a=exp(score−max)/sum(exp(score−max))</code> = [0.3654723070154712, 0.1802029521613177, 0.3654723070154712, 0.08885243380773993]<p>ผลรวมหนึ่งต่อ query; ห้าม mask ทุก key</p></li><li><code>output=Σ_j a_j v_j</code> = 2.1777048676154798<p>ค่าทุกตำแหน่งมีส่วนตาม attention weight ไม่ใช่ hard select</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-3"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="reference" class="canonical-section"><h2>เนื้อหาครบทุกหัวข้อ พร้อมแผนที่ objective</h2><nav class="source-toc"><a href="#chapter-41/section/topic-1">1. What Is Multimodal AI?</a> <a href="#chapter-41/section/topic-2">2. Learning Objectives</a> <a href="#chapter-41/section/topic-3">3. Two Core Problems</a> <a href="#chapter-41/section/topic-4">4. Dual-Encoder Architecture</a> <a href="#chapter-41/section/topic-5">5. Normalize Embeddings</a> <a href="#chapter-41/section/topic-6">6. Similarity Matrix</a> <a href="#chapter-41/section/topic-7">7. Temperature</a> <a href="#chapter-41/section/topic-8">8. Image-to-Text Loss</a> <a href="#chapter-41/section/topic-9">9. Text-to-Image Loss</a> <a href="#chapter-41/section/topic-10">10. Symmetric Contrastive Loss</a> <a href="#chapter-41/section/topic-11">11. In-Batch Negatives</a> <a href="#chapter-41/section/topic-12">12. Retrieval</a> <a href="#chapter-41/section/topic-13">13. Early Fusion</a> <a href="#chapter-41/section/topic-14">14. Late Fusion</a> <a href="#chapter-41/section/topic-15">15. Intermediate Fusion</a> <a href="#chapter-41/section/topic-16">16. Cross-Attention</a> <a href="#chapter-41/section/topic-17">17. Image Tokens</a> <a href="#chapter-41/section/topic-18">18. Projection Layer</a> <a href="#chapter-41/section/topic-19">19. VLM Pattern A — Cross-Attention</a> <a href="#chapter-41/section/topic-20">20. VLM Pattern B — Token Injection</a> <a href="#chapter-41/section/topic-21">21. Frozen Encoders</a> <a href="#chapter-41/section/topic-22">22. Joint Training</a> <a href="#chapter-41/section/topic-23">23. Contrastive vs Generative Objectives</a> <a href="#chapter-41/section/topic-24">24. Image Captioning</a> <a href="#chapter-41/section/topic-25">25. Multimodal Instruction Tuning</a> <a href="#chapter-41/section/topic-26">26. Missing Modality</a> <a href="#chapter-41/section/topic-27">27. Modality Dominance</a> <a href="#chapter-41/section/topic-28">28. Evaluation</a> <a href="#chapter-41/section/topic-29">29. From Scratch</a> <a href="#chapter-41/section/topic-30">30. Common Mistakes</a> <a href="#chapter-41/section/topic-31">31. Exercises / Mini Project</a> <a href="#chapter-41/section/topic-32">32. Checklist</a> <a href="#chapter-41/section/topic-33">33. What&#x27;s Next</a> </nav><section id="topic-1" class="source-topic"><span id="source-41-multimodal-models-canonical-chapter-41-multimodal-models" class="legacy-anchor"></span><span id="source-41-multimodal-models-canonical-1-what-is-multimodal-ai" class="legacy-anchor"></span><h3>1. What Is Multimodal AI?</h3>
+<p>A multimodal model works with more than one data modality.</p>
+<p>Examples:
+- text + image
+- text + audio
+- image + audio
+- text + image + audio + video</p>
+<p>The main challenge is not simply concatenating inputs; it is learning representations whose information can be aligned and fused.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>1. What Is Multimodal AI?</h3>
+<p>A multimodal model works with more than one data modality.</p>
+<p>Examples:
+- text + image
+- text + audio
+- image + audio
+- text + image + audio + video</p>
+<p>The main challenge is not simply concatenating inputs; it is learning representations whose information can be aligned and fused.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-1-equation"><summary>สมการ</summary><h3>1. What Is Multimodal AI?</h3>
+<p>A multimodal model works with more than one data modality.</p>
+<p>Examples:
+- text + image
+- text + audio
+- image + audio
+- text + image + audio + video</p>
+<p>The main challenge is not simply concatenating inputs; it is learning representations whose information can be aligned and fused.</p></details><details id="help-topic-1-visual"><summary>ภาพและ shape</summary><h3>1. What Is Multimodal AI?</h3>
+<p>A multimodal model works with more than one data modality.</p>
+<p>Examples:
+- text + image
+- text + audio
+- image + audio
+- text + image + audio + video</p>
+<p>The main challenge is not simply concatenating inputs; it is learning representations whose information can be aligned and fused.</p></details><details id="help-topic-1-code"><summary>โค้ด</summary><h3>1. What Is Multimodal AI?</h3>
+<p>A multimodal model works with more than one data modality.</p>
+<p>Examples:
+- text + image
+- text + audio
+- image + audio
+- text + image + audio + video</p>
+<p>The main challenge is not simply concatenating inputs; it is learning representations whose information can be aligned and fused.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-1-result"><summary>ผลการทดลอง</summary><h3>1. What Is Multimodal AI?</h3>
+<p>A multimodal model works with more than one data modality.</p>
+<p>Examples:
+- text + image
+- text + audio
+- image + audio
+- text + image + audio + video</p>
+<p>The main challenge is not simply concatenating inputs; it is learning representations whose information can be aligned and fused.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-1"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-2" class="source-topic"><span id="source-41-multimodal-models-canonical-2-learning-objectives" class="legacy-anchor"></span><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>explain modality-specific encoders</li>
+<li>explain shared embedding spaces</li>
+<li>derive CLIP-style contrastive learning</li>
+<li>implement cosine-similarity logits</li>
+<li>explain temperature/logit scale</li>
+<li>compute symmetric image-text contrastive loss</li>
+<li>distinguish early/late/intermediate fusion</li>
+<li>explain cross-attention fusion</li>
+<li>explain image tokens</li>
+<li>understand VLM architecture patterns</li>
+<li>explain frozen vs jointly trained encoders</li>
+<li>understand retrieval vs generation objectives</li>
+<li>identify multimodal evaluation pitfalls</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>explain modality-specific encoders</li>
+<li>explain shared embedding spaces</li>
+<li>derive CLIP-style contrastive learning</li>
+<li>implement cosine-similarity logits</li>
+<li>explain temperature/logit scale</li>
+<li>compute symmetric image-text contrastive loss</li>
+<li>distinguish early/late/intermediate fusion</li>
+<li>explain cross-attention fusion</li>
+<li>explain image tokens</li>
+<li>understand VLM architecture patterns</li>
+<li>explain frozen vs jointly trained encoders</li>
+<li>understand retrieval vs generation objectives</li>
+<li>identify multimodal evaluation pitfalls</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-2-equation"><summary>สมการ</summary><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>explain modality-specific encoders</li>
+<li>explain shared embedding spaces</li>
+<li>derive CLIP-style contrastive learning</li>
+<li>implement cosine-similarity logits</li>
+<li>explain temperature/logit scale</li>
+<li>compute symmetric image-text contrastive loss</li>
+<li>distinguish early/late/intermediate fusion</li>
+<li>explain cross-attention fusion</li>
+<li>explain image tokens</li>
+<li>understand VLM architecture patterns</li>
+<li>explain frozen vs jointly trained encoders</li>
+<li>understand retrieval vs generation objectives</li>
+<li>identify multimodal evaluation pitfalls</li>
+</ul></details><details id="help-topic-2-visual"><summary>ภาพและ shape</summary><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>explain modality-specific encoders</li>
+<li>explain shared embedding spaces</li>
+<li>derive CLIP-style contrastive learning</li>
+<li>implement cosine-similarity logits</li>
+<li>explain temperature/logit scale</li>
+<li>compute symmetric image-text contrastive loss</li>
+<li>distinguish early/late/intermediate fusion</li>
+<li>explain cross-attention fusion</li>
+<li>explain image tokens</li>
+<li>understand VLM architecture patterns</li>
+<li>explain frozen vs jointly trained encoders</li>
+<li>understand retrieval vs generation objectives</li>
+<li>identify multimodal evaluation pitfalls</li>
+</ul></details><details id="help-topic-2-code"><summary>โค้ด</summary><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>explain modality-specific encoders</li>
+<li>explain shared embedding spaces</li>
+<li>derive CLIP-style contrastive learning</li>
+<li>implement cosine-similarity logits</li>
+<li>explain temperature/logit scale</li>
+<li>compute symmetric image-text contrastive loss</li>
+<li>distinguish early/late/intermediate fusion</li>
+<li>explain cross-attention fusion</li>
+<li>explain image tokens</li>
+<li>understand VLM architecture patterns</li>
+<li>explain frozen vs jointly trained encoders</li>
+<li>understand retrieval vs generation objectives</li>
+<li>identify multimodal evaluation pitfalls</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-2-result"><summary>ผลการทดลอง</summary><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>explain modality-specific encoders</li>
+<li>explain shared embedding spaces</li>
+<li>derive CLIP-style contrastive learning</li>
+<li>implement cosine-similarity logits</li>
+<li>explain temperature/logit scale</li>
+<li>compute symmetric image-text contrastive loss</li>
+<li>distinguish early/late/intermediate fusion</li>
+<li>explain cross-attention fusion</li>
+<li>explain image tokens</li>
+<li>understand VLM architecture patterns</li>
+<li>explain frozen vs jointly trained encoders</li>
+<li>understand retrieval vs generation objectives</li>
+<li>identify multimodal evaluation pitfalls</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-2"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-3" class="source-topic"><span id="source-41-multimodal-models-canonical-3-two-core-problems" class="legacy-anchor"></span><span id="source-41-multimodal-models-canonical-alignment" class="legacy-anchor"></span><span id="source-41-multimodal-models-canonical-fusion" class="legacy-anchor"></span><h3>3. Two Core Problems</h3>
+<h4>Alignment</h4>
+<pre><code class="language-text">image of a cat
+↔
+&quot;text: a cat&quot;
+</code></pre>
+<p>Represent corresponding items near each other.</p>
+<h4>Fusion</h4>
+<p>Combine information so one modality can influence processing of another.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>3. Two Core Problems</h3>
+<h4>Alignment</h4>
+<pre><code class="language-text">image of a cat
+↔
+&quot;text: a cat&quot;
+</code></pre>
+<p>Represent corresponding items near each other.</p>
+<h4>Fusion</h4>
+<p>Combine information so one modality can influence processing of another.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-3-equation"><summary>สมการ</summary><h3>3. Two Core Problems</h3>
+<h4>Alignment</h4>
+<pre><code class="language-text">image of a cat
+↔
+&quot;text: a cat&quot;
+</code></pre>
+<p>Represent corresponding items near each other.</p>
+<h4>Fusion</h4>
+<p>Combine information so one modality can influence processing of another.</p></details><details id="help-topic-3-visual"><summary>ภาพและ shape</summary><h3>3. Two Core Problems</h3>
+<h4>Alignment</h4>
+<pre><code class="language-text">image of a cat
+↔
+&quot;text: a cat&quot;
+</code></pre>
+<p>Represent corresponding items near each other.</p>
+<h4>Fusion</h4>
+<p>Combine information so one modality can influence processing of another.</p></details><details id="help-topic-3-code"><summary>โค้ด</summary><h3>3. Two Core Problems</h3>
+<h4>Alignment</h4>
+<pre><code class="language-text">image of a cat
+↔
+&quot;text: a cat&quot;
+</code></pre>
+<p>Represent corresponding items near each other.</p>
+<h4>Fusion</h4>
+<p>Combine information so one modality can influence processing of another.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-3-result"><summary>ผลการทดลอง</summary><h3>3. Two Core Problems</h3>
+<h4>Alignment</h4>
+<pre><code class="language-text">image of a cat
+↔
+&quot;text: a cat&quot;
+</code></pre>
+<p>Represent corresponding items near each other.</p>
+<h4>Fusion</h4>
+<p>Combine information so one modality can influence processing of another.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-3"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-4" class="source-topic"><span id="source-41-multimodal-models-canonical-4-dual-encoder-architecture" class="legacy-anchor"></span><h3>4. Dual-Encoder Architecture</h3>
+<p>CLIP-style:</p>
+<pre><code class="language-text">image
+↓
+vision encoder
+↓
+image embedding
+      ↘
+        shared space
+      ↗
+text
+↓
+text encoder
+↓
+text embedding
+</code></pre>
+<p>Each modality has its own encoder.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-4-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>4. Dual-Encoder Architecture</h3>
+<p>CLIP-style:</p>
+<pre><code class="language-text">image
+↓
+vision encoder
+↓
+image embedding
+      ↘
+        shared space
+      ↗
+text
+↓
+text encoder
+↓
+text embedding
+</code></pre>
+<p>Each modality has its own encoder.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-4-equation"><summary>สมการ</summary><h3>4. Dual-Encoder Architecture</h3>
+<p>CLIP-style:</p>
+<pre><code class="language-text">image
+↓
+vision encoder
+↓
+image embedding
+      ↘
+        shared space
+      ↗
+text
+↓
+text encoder
+↓
+text embedding
+</code></pre>
+<p>Each modality has its own encoder.</p></details><details id="help-topic-4-visual"><summary>ภาพและ shape</summary><h3>4. Dual-Encoder Architecture</h3>
+<p>CLIP-style:</p>
+<pre><code class="language-text">image
+↓
+vision encoder
+↓
+image embedding
+      ↘
+        shared space
+      ↗
+text
+↓
+text encoder
+↓
+text embedding
+</code></pre>
+<p>Each modality has its own encoder.</p></details><details id="help-topic-4-code"><summary>โค้ด</summary><h3>4. Dual-Encoder Architecture</h3>
+<p>CLIP-style:</p>
+<pre><code class="language-text">image
+↓
+vision encoder
+↓
+image embedding
+      ↘
+        shared space
+      ↗
+text
+↓
+text encoder
+↓
+text embedding
+</code></pre>
+<p>Each modality has its own encoder.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-4-result"><summary>ผลการทดลอง</summary><h3>4. Dual-Encoder Architecture</h3>
+<p>CLIP-style:</p>
+<pre><code class="language-text">image
+↓
+vision encoder
+↓
+image embedding
+      ↘
+        shared space
+      ↗
+text
+↓
+text encoder
+↓
+text embedding
+</code></pre>
+<p>Each modality has its own encoder.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-4"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-5" class="source-topic"><span id="source-41-multimodal-models-canonical-5-normalize-embeddings" class="legacy-anchor"></span><h3>5. Normalize Embeddings</h3>
+<p>Commonly:</p>
+<pre><code class="language-text">z_i =
+h_i / ||h_i||
+</code></pre>
+<p>Then:</p>
+<pre><code class="language-text">z_i^T z_j
+</code></pre>
+<p>is cosine similarity.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>normalizeeachrow e/‖e‖; [3,4]→[.6,.8]; zeroembeddingต้องerrorหรือpolicyชัดเจนไม่หาร0แล้วซ่อนNaN</p><p>normrow≈1,similaritymatrixshape(B,B),permutebothmodalitiesเท่ากันไม่เปลี่ยนloss; permuteข้างเดียวต้องเปลี่ยนmatchinglabelsตาม</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-5-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>normalizeeachrow e/‖e‖; [3,4]→[.6,.8]; zeroembeddingต้องerrorหรือpolicyชัดเจนไม่หาร0แล้วซ่อนNaN</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-5-equation"><summary>สมการ</summary><p>normalizeeachrow e/‖e‖; [3,4]→[.6,.8]; zeroembeddingต้องerrorหรือpolicyชัดเจนไม่หาร0แล้วซ่อนNaN</p></details><details id="help-topic-5-visual"><summary>ภาพและ shape</summary><p>normalizeeachrow e/‖e‖; [3,4]→[.6,.8]; zeroembeddingต้องerrorหรือpolicyชัดเจนไม่หาร0แล้วซ่อนNaN</p></details><details id="help-topic-5-code"><summary>โค้ด</summary><p>normalizeeachrow e/‖e‖; [3,4]→[.6,.8]; zeroembeddingต้องerrorหรือpolicyชัดเจนไม่หาร0แล้วซ่อนNaN</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-5-result"><summary>ผลการทดลอง</summary><p>normalizeeachrow e/‖e‖; [3,4]→[.6,.8]; zeroembeddingต้องerrorหรือpolicyชัดเจนไม่หาร0แล้วซ่อนNaN</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-5"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-6" class="source-topic"><span id="source-41-multimodal-models-canonical-6-similarity-matrix" class="legacy-anchor"></span><h3>6. Similarity Matrix</h3>
+<p>For B aligned image-text pairs:</p>
+<pre><code class="language-text">I ∈ R^(B,D)
+T ∈ R^(B,D)
+
+S =
+I T^T / tau
+</code></pre>
+<p>Shape:</p>
+<pre><code class="language-text">(B,B)
+</code></pre>
+<p>Diagonal entries are matching pairs.</p>
+<p>Off-diagonal entries are in-batch negatives.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>imageI(B,d),textT(B,d),S=I@T.T/τ→(B,B); diagonalคือคู่positiveตามalignment ไม่ใช่everyhighsimilarityเป็นpositive</p><p>normrow≈1,similaritymatrixshape(B,B),permutebothmodalitiesเท่ากันไม่เปลี่ยนloss; permuteข้างเดียวต้องเปลี่ยนmatchinglabelsตาม</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-6-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>imageI(B,d),textT(B,d),S=I@T.T/τ→(B,B); diagonalคือคู่positiveตามalignment ไม่ใช่everyhighsimilarityเป็นpositive</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-6-equation"><summary>สมการ</summary><p>imageI(B,d),textT(B,d),S=I@T.T/τ→(B,B); diagonalคือคู่positiveตามalignment ไม่ใช่everyhighsimilarityเป็นpositive</p></details><details id="help-topic-6-visual"><summary>ภาพและ shape</summary><p>imageI(B,d),textT(B,d),S=I@T.T/τ→(B,B); diagonalคือคู่positiveตามalignment ไม่ใช่everyhighsimilarityเป็นpositive</p></details><details id="help-topic-6-code"><summary>โค้ด</summary><p>imageI(B,d),textT(B,d),S=I@T.T/τ→(B,B); diagonalคือคู่positiveตามalignment ไม่ใช่everyhighsimilarityเป็นpositive</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-6-result"><summary>ผลการทดลอง</summary><p>imageI(B,d),textT(B,d),S=I@T.T/τ→(B,B); diagonalคือคู่positiveตามalignment ไม่ใช่everyhighsimilarityเป็นpositive</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-6"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-7" class="source-topic"><span id="source-41-multimodal-models-canonical-7-temperature" class="legacy-anchor"></span><h3>7. Temperature</h3>
+<p>Contrastive logits:</p>
+<pre><code class="language-text">S_ij =
+cos(i,j) / tau
+</code></pre>
+<p>Smaller tau:
+- sharper distribution</p>
+<p>Larger tau:
+- softer distribution</p>
+<p>Some systems learn a logit scale instead of directly learning tau.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>τเล็กทำsoftmaxแหลมและgradientscale1/τสูง; τต้อง&gt;0; logitsที่เปลี่ยนจากtemperatureไม่ใช่embeddingsretrained</p><p>τ.1/.5คงpairedembeddingsแล้วreportentropy/loss; trainingrunต้องคงinit/split/budgetและmeasureRecall@Kจริง</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-7-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>τเล็กทำsoftmaxแหลมและgradientscale1/τสูง; τต้อง&gt;0; logitsที่เปลี่ยนจากtemperatureไม่ใช่embeddingsretrained</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-7-equation"><summary>สมการ</summary><p>τเล็กทำsoftmaxแหลมและgradientscale1/τสูง; τต้อง&gt;0; logitsที่เปลี่ยนจากtemperatureไม่ใช่embeddingsretrained</p></details><details id="help-topic-7-visual"><summary>ภาพและ shape</summary><p>τเล็กทำsoftmaxแหลมและgradientscale1/τสูง; τต้อง&gt;0; logitsที่เปลี่ยนจากtemperatureไม่ใช่embeddingsretrained</p></details><details id="help-topic-7-code"><summary>โค้ด</summary><p>τเล็กทำsoftmaxแหลมและgradientscale1/τสูง; τต้อง&gt;0; logitsที่เปลี่ยนจากtemperatureไม่ใช่embeddingsretrained</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-7-result"><summary>ผลการทดลอง</summary><p>τเล็กทำsoftmaxแหลมและgradientscale1/τสูง; τต้อง&gt;0; logitsที่เปลี่ยนจากtemperatureไม่ใช่embeddingsretrained</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-7"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-8" class="source-topic"><span id="source-41-multimodal-models-canonical-8-image-to-text-loss" class="legacy-anchor"></span><h3>8. Image-to-Text Loss</h3>
+<p>For each image row, the correct target is matching text index.</p>
+<pre><code class="language-text">L_i2t =
+CE(S, arange(B))
+</code></pre><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-8-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>8. Image-to-Text Loss</h3>
+<p>For each image row, the correct target is matching text index.</p>
+<pre><code class="language-text">L_i2t =
+CE(S, arange(B))
+</code></pre><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-8-equation"><summary>สมการ</summary><h3>8. Image-to-Text Loss</h3>
+<p>For each image row, the correct target is matching text index.</p>
+<pre><code class="language-text">L_i2t =
+CE(S, arange(B))
+</code></pre></details><details id="help-topic-8-visual"><summary>ภาพและ shape</summary><h3>8. Image-to-Text Loss</h3>
+<p>For each image row, the correct target is matching text index.</p>
+<pre><code class="language-text">L_i2t =
+CE(S, arange(B))
+</code></pre></details><details id="help-topic-8-code"><summary>โค้ด</summary><h3>8. Image-to-Text Loss</h3>
+<p>For each image row, the correct target is matching text index.</p>
+<pre><code class="language-text">L_i2t =
+CE(S, arange(B))
+</code></pre><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-8-result"><summary>ผลการทดลอง</summary><h3>8. Image-to-Text Loss</h3>
+<p>For each image row, the correct target is matching text index.</p>
+<pre><code class="language-text">L_i2t =
+CE(S, arange(B))
+</code></pre><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-8"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-9" class="source-topic"><span id="source-41-multimodal-models-canonical-9-text-to-image-loss" class="legacy-anchor"></span><h3>9. Text-to-Image Loss</h3>
+<p>Transpose direction:</p>
+<pre><code class="language-text">L_t2i =
+CE(S^T, arange(B))
+</code></pre><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-9-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>9. Text-to-Image Loss</h3>
+<p>Transpose direction:</p>
+<pre><code class="language-text">L_t2i =
+CE(S^T, arange(B))
+</code></pre><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-9-equation"><summary>สมการ</summary><h3>9. Text-to-Image Loss</h3>
+<p>Transpose direction:</p>
+<pre><code class="language-text">L_t2i =
+CE(S^T, arange(B))
+</code></pre></details><details id="help-topic-9-visual"><summary>ภาพและ shape</summary><h3>9. Text-to-Image Loss</h3>
+<p>Transpose direction:</p>
+<pre><code class="language-text">L_t2i =
+CE(S^T, arange(B))
+</code></pre></details><details id="help-topic-9-code"><summary>โค้ด</summary><h3>9. Text-to-Image Loss</h3>
+<p>Transpose direction:</p>
+<pre><code class="language-text">L_t2i =
+CE(S^T, arange(B))
+</code></pre><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-9-result"><summary>ผลการทดลอง</summary><h3>9. Text-to-Image Loss</h3>
+<p>Transpose direction:</p>
+<pre><code class="language-text">L_t2i =
+CE(S^T, arange(B))
+</code></pre><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-9"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-10" class="source-topic"><span id="source-41-multimodal-models-canonical-10-symmetric-contrastive-loss" class="legacy-anchor"></span><h3>10. Symmetric Contrastive Loss</h3>
+<pre><code class="language-text">L =
+0.5(
+L_i2t + L_t2i
+)
+</code></pre>
+<p>This encourages alignment in both retrieval directions.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>B3,S=I3logitsdiag1,offdiag0ให้CE=log(e+2)−1≈.551445ต่อrowและsymmetricmeanเท่ากัน; averageimage/textlossไม่sumถ้าใช้CLIPmean</p><p>I/Tidentity3,τ1ให้symmetricloss.551445; เปลี่ยนpairalignmentโดยไม่เปลี่ยนlabelsควรlossสูงขึ้นแม้scorematrixshapeเท่าเดิม</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-10-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>B3,S=I3logitsdiag1,offdiag0ให้CE=log(e+2)−1≈.551445ต่อrowและsymmetricmeanเท่ากัน; averageimage/textlossไม่sumถ้าใช้CLIPmean</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-10-equation"><summary>สมการ</summary><p>B3,S=I3logitsdiag1,offdiag0ให้CE=log(e+2)−1≈.551445ต่อrowและsymmetricmeanเท่ากัน; averageimage/textlossไม่sumถ้าใช้CLIPmean</p></details><details id="help-topic-10-visual"><summary>ภาพและ shape</summary><p>B3,S=I3logitsdiag1,offdiag0ให้CE=log(e+2)−1≈.551445ต่อrowและsymmetricmeanเท่ากัน; averageimage/textlossไม่sumถ้าใช้CLIPmean</p></details><details id="help-topic-10-code"><summary>โค้ด</summary><p>B3,S=I3logitsdiag1,offdiag0ให้CE=log(e+2)−1≈.551445ต่อrowและsymmetricmeanเท่ากัน; averageimage/textlossไม่sumถ้าใช้CLIPmean</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-10-result"><summary>ผลการทดลอง</summary><p>B3,S=I3logitsdiag1,offdiag0ให้CE=log(e+2)−1≈.551445ต่อrowและsymmetricmeanเท่ากัน; averageimage/textlossไม่sumถ้าใช้CLIPmean</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-10"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-11" class="source-topic"><span id="source-41-multimodal-models-canonical-11-in-batch-negatives" class="legacy-anchor"></span><h3>11. In-Batch Negatives</h3>
+<p>Other examples in the same batch act as negatives.</p>
+<p>Larger batches can provide more negatives, but:
+- memory cost rises
+- false negatives can occur
+- duplicated semantic content complicates labels</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>captionsซ้ำของภาพเดียวในbatchเป็นfalse negativesหากใช้onlydiagonal; ใช้multi-positivecontrastiveหรือdedupและreportcollisionpolicy</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-11-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>captionsซ้ำของภาพเดียวในbatchเป็นfalse negativesหากใช้onlydiagonal; ใช้multi-positivecontrastiveหรือdedupและreportcollisionpolicy</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-11-equation"><summary>สมการ</summary><p>captionsซ้ำของภาพเดียวในbatchเป็นfalse negativesหากใช้onlydiagonal; ใช้multi-positivecontrastiveหรือdedupและreportcollisionpolicy</p></details><details id="help-topic-11-visual"><summary>ภาพและ shape</summary><p>captionsซ้ำของภาพเดียวในbatchเป็นfalse negativesหากใช้onlydiagonal; ใช้multi-positivecontrastiveหรือdedupและreportcollisionpolicy</p></details><details id="help-topic-11-code"><summary>โค้ด</summary><p>captionsซ้ำของภาพเดียวในbatchเป็นfalse negativesหากใช้onlydiagonal; ใช้multi-positivecontrastiveหรือdedupและreportcollisionpolicy</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-11-result"><summary>ผลการทดลอง</summary><p>captionsซ้ำของภาพเดียวในbatchเป็นfalse negativesหากใช้onlydiagonal; ใช้multi-positivecontrastiveหรือdedupและreportcollisionpolicy</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-11"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-12" class="source-topic"><span id="source-41-multimodal-models-canonical-12-retrieval" class="legacy-anchor"></span><h3>12. Retrieval</h3>
+<p>After training:</p>
+<p>Text-to-image:
+1. encode query text
+2. normalize
+3. compare with image embeddings
+4. rank similarities</p>
+<p>Image-to-text is symmetric.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>Recall@Kคือfractionqueriesที่goldอยู่topK; queries3,hit2ให้2/3; multi-positiveต้องกำหนดanyhitหรือfractionpositivesก่อน</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-12-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Recall@Kคือfractionqueriesที่goldอยู่topK; queries3,hit2ให้2/3; multi-positiveต้องกำหนดanyhitหรือfractionpositivesก่อน</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-12-equation"><summary>สมการ</summary><p>Recall@Kคือfractionqueriesที่goldอยู่topK; queries3,hit2ให้2/3; multi-positiveต้องกำหนดanyhitหรือfractionpositivesก่อน</p></details><details id="help-topic-12-visual"><summary>ภาพและ shape</summary><p>Recall@Kคือfractionqueriesที่goldอยู่topK; queries3,hit2ให้2/3; multi-positiveต้องกำหนดanyhitหรือfractionpositivesก่อน</p></details><details id="help-topic-12-code"><summary>โค้ด</summary><p>Recall@Kคือfractionqueriesที่goldอยู่topK; queries3,hit2ให้2/3; multi-positiveต้องกำหนดanyhitหรือfractionpositivesก่อน</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-12-result"><summary>ผลการทดลอง</summary><p>Recall@Kคือfractionqueriesที่goldอยู่topK; queries3,hit2ให้2/3; multi-positiveต้องกำหนดanyhitหรือfractionpositivesก่อน</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-12"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-13" class="source-topic"><span id="source-41-multimodal-models-canonical-13-early-fusion" class="legacy-anchor"></span><h3>13. Early Fusion</h3>
+<p>Combine raw/low-level features early.</p>
+<p>Pros:
+- rich joint interactions</p>
+<p>Cons:
+- modalities can have incompatible structure/scales
+- expensive</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-13-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>13. Early Fusion</h3>
+<p>Combine raw/low-level features early.</p>
+<p>Pros:
+- rich joint interactions</p>
+<p>Cons:
+- modalities can have incompatible structure/scales
+- expensive</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-13-equation"><summary>สมการ</summary><h3>13. Early Fusion</h3>
+<p>Combine raw/low-level features early.</p>
+<p>Pros:
+- rich joint interactions</p>
+<p>Cons:
+- modalities can have incompatible structure/scales
+- expensive</p></details><details id="help-topic-13-visual"><summary>ภาพและ shape</summary><h3>13. Early Fusion</h3>
+<p>Combine raw/low-level features early.</p>
+<p>Pros:
+- rich joint interactions</p>
+<p>Cons:
+- modalities can have incompatible structure/scales
+- expensive</p></details><details id="help-topic-13-code"><summary>โค้ด</summary><h3>13. Early Fusion</h3>
+<p>Combine raw/low-level features early.</p>
+<p>Pros:
+- rich joint interactions</p>
+<p>Cons:
+- modalities can have incompatible structure/scales
+- expensive</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-13-result"><summary>ผลการทดลอง</summary><h3>13. Early Fusion</h3>
+<p>Combine raw/low-level features early.</p>
+<p>Pros:
+- rich joint interactions</p>
+<p>Cons:
+- modalities can have incompatible structure/scales
+- expensive</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-13"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-14" class="source-topic"><span id="source-41-multimodal-models-canonical-14-late-fusion" class="legacy-anchor"></span><h3>14. Late Fusion</h3>
+<p>Process modalities separately, combine predictions/embeddings late.</p>
+<p>Pros:
+- modular
+- simple</p>
+<p>Cons:
+- weaker fine-grained interaction</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>latefusionผสมpooledvectorsราคาถูกแต่สูญเสียtokenalignment; crossattentionแพงกว่าจับregion-wordrelationได้; comparetoyspatialquestionaccuracy</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-14-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>latefusionผสมpooledvectorsราคาถูกแต่สูญเสียtokenalignment; crossattentionแพงกว่าจับregion-wordrelationได้; comparetoyspatialquestionaccuracy</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-14-equation"><summary>สมการ</summary><p>latefusionผสมpooledvectorsราคาถูกแต่สูญเสียtokenalignment; crossattentionแพงกว่าจับregion-wordrelationได้; comparetoyspatialquestionaccuracy</p></details><details id="help-topic-14-visual"><summary>ภาพและ shape</summary><p>latefusionผสมpooledvectorsราคาถูกแต่สูญเสียtokenalignment; crossattentionแพงกว่าจับregion-wordrelationได้; comparetoyspatialquestionaccuracy</p></details><details id="help-topic-14-code"><summary>โค้ด</summary><p>latefusionผสมpooledvectorsราคาถูกแต่สูญเสียtokenalignment; crossattentionแพงกว่าจับregion-wordrelationได้; comparetoyspatialquestionaccuracy</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-14-result"><summary>ผลการทดลอง</summary><p>latefusionผสมpooledvectorsราคาถูกแต่สูญเสียtokenalignment; crossattentionแพงกว่าจับregion-wordrelationได้; comparetoyspatialquestionaccuracy</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-14"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-15" class="source-topic"><span id="source-41-multimodal-models-canonical-15-intermediate-fusion" class="legacy-anchor"></span><h3>15. Intermediate Fusion</h3>
+<p>Encode modalities first, then allow cross-modal interactions in deeper layers.</p>
+<p>This is common in multimodal Transformers.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-15-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>15. Intermediate Fusion</h3>
+<p>Encode modalities first, then allow cross-modal interactions in deeper layers.</p>
+<p>This is common in multimodal Transformers.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-15-equation"><summary>สมการ</summary><h3>15. Intermediate Fusion</h3>
+<p>Encode modalities first, then allow cross-modal interactions in deeper layers.</p>
+<p>This is common in multimodal Transformers.</p></details><details id="help-topic-15-visual"><summary>ภาพและ shape</summary><h3>15. Intermediate Fusion</h3>
+<p>Encode modalities first, then allow cross-modal interactions in deeper layers.</p>
+<p>This is common in multimodal Transformers.</p></details><details id="help-topic-15-code"><summary>โค้ด</summary><h3>15. Intermediate Fusion</h3>
+<p>Encode modalities first, then allow cross-modal interactions in deeper layers.</p>
+<p>This is common in multimodal Transformers.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-15-result"><summary>ผลการทดลอง</summary><h3>15. Intermediate Fusion</h3>
+<p>Encode modalities first, then allow cross-modal interactions in deeper layers.</p>
+<p>This is common in multimodal Transformers.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-15"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-16" class="source-topic"><span id="source-41-multimodal-models-canonical-16-cross-attention" class="legacy-anchor"></span><h3>16. Cross-Attention</h3>
+<p>Example:</p>
+<pre><code class="language-text">text hidden states → Q
+image tokens       → K,V
+</code></pre>
+<p>Then text tokens retrieve visual information.</p>
+<p>Reverse direction is also possible.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>Qtext(B,Tt,d),K/Vimage(B,Ti,d)ให้A(B,h,Tt,Ti); maskเฉพาะvalidimagepatchesไม่causalข้ามmodality</p><p>similaritiesO(B²d)memoryO(B²); crossattentionO(BTtTi d),visualprojectorO(BNdvdllm); encodercostต้องวัดรวมด้วย</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-16-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Qtext(B,Tt,d),K/Vimage(B,Ti,d)ให้A(B,h,Tt,Ti); maskเฉพาะvalidimagepatchesไม่causalข้ามmodality</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-16-equation"><summary>สมการ</summary><p>Qtext(B,Tt,d),K/Vimage(B,Ti,d)ให้A(B,h,Tt,Ti); maskเฉพาะvalidimagepatchesไม่causalข้ามmodality</p></details><details id="help-topic-16-visual"><summary>ภาพและ shape</summary><p>Qtext(B,Tt,d),K/Vimage(B,Ti,d)ให้A(B,h,Tt,Ti); maskเฉพาะvalidimagepatchesไม่causalข้ามmodality</p></details><details id="help-topic-16-code"><summary>โค้ด</summary><p>Qtext(B,Tt,d),K/Vimage(B,Ti,d)ให้A(B,h,Tt,Ti); maskเฉพาะvalidimagepatchesไม่causalข้ามmodality</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-16-result"><summary>ผลการทดลอง</summary><p>Qtext(B,Tt,d),K/Vimage(B,Ti,d)ให้A(B,h,Tt,Ti); maskเฉพาะvalidimagepatchesไม่causalข้ามmodality</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-16"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-17" class="source-topic"><span id="source-41-multimodal-models-canonical-17-image-tokens" class="legacy-anchor"></span><h3>17. Image Tokens</h3>
+<p>Vision encoder may produce patch tokens:</p>
+<pre><code class="language-text">image
+↓
+ViT
+↓
+(B,N,D_v)
+</code></pre>
+<p>Project into language-model dimension:</p>
+<pre><code class="language-text">(B,N,D_lm)
+</code></pre>
+<p>Then insert or attend to them as visual tokens.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>recordimagefeatures/textfeatures/projectedtokens/similaritymatrix/positiveIDsและRecall@1/5; B1contrastiveloss0ไม่พิสูจน์alignment</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-17-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>recordimagefeatures/textfeatures/projectedtokens/similaritymatrix/positiveIDsและRecall@1/5; B1contrastiveloss0ไม่พิสูจน์alignment</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-17-equation"><summary>สมการ</summary><p>recordimagefeatures/textfeatures/projectedtokens/similaritymatrix/positiveIDsและRecall@1/5; B1contrastiveloss0ไม่พิสูจน์alignment</p></details><details id="help-topic-17-visual"><summary>ภาพและ shape</summary><p>recordimagefeatures/textfeatures/projectedtokens/similaritymatrix/positiveIDsและRecall@1/5; B1contrastiveloss0ไม่พิสูจน์alignment</p></details><details id="help-topic-17-code"><summary>โค้ด</summary><p>recordimagefeatures/textfeatures/projectedtokens/similaritymatrix/positiveIDsและRecall@1/5; B1contrastiveloss0ไม่พิสูจน์alignment</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-17-result"><summary>ผลการทดลอง</summary><p>recordimagefeatures/textfeatures/projectedtokens/similaritymatrix/positiveIDsและRecall@1/5; B1contrastiveloss0ไม่พิสูจน์alignment</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-17"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-18" class="source-topic"><span id="source-41-multimodal-models-canonical-18-projection-layer" class="legacy-anchor"></span><h3>18. Projection Layer</h3>
+<p>If vision and language dimensions differ:</p>
+<pre><code class="language-text">visual features
+↓
+Linear / MLP projector
+↓
+LM-compatible features
+</code></pre>
+<p>The projector can be:
+- linear
+- MLP
+- resampler
+- query transformer</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>visualfeatures(B,N,dv)@W(dv,dllm)→(B,N,dllm); biasbroadcastlastdimและprojectoroutputscaleตรวจตรงLLMembeddingrange</p><p>recordimagefeatures/textfeatures/projectedtokens/similaritymatrix/positiveIDsและRecall@1/5; B1contrastiveloss0ไม่พิสูจน์alignment</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-18-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>visualfeatures(B,N,dv)@W(dv,dllm)→(B,N,dllm); biasbroadcastlastdimและprojectoroutputscaleตรวจตรงLLMembeddingrange</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-18-equation"><summary>สมการ</summary><p>visualfeatures(B,N,dv)@W(dv,dllm)→(B,N,dllm); biasbroadcastlastdimและprojectoroutputscaleตรวจตรงLLMembeddingrange</p></details><details id="help-topic-18-visual"><summary>ภาพและ shape</summary><p>visualfeatures(B,N,dv)@W(dv,dllm)→(B,N,dllm); biasbroadcastlastdimและprojectoroutputscaleตรวจตรงLLMembeddingrange</p></details><details id="help-topic-18-code"><summary>โค้ด</summary><p>visualfeatures(B,N,dv)@W(dv,dllm)→(B,N,dllm); biasbroadcastlastdimและprojectoroutputscaleตรวจตรงLLMembeddingrange</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-18-result"><summary>ผลการทดลอง</summary><p>visualfeatures(B,N,dv)@W(dv,dllm)→(B,N,dllm); biasbroadcastlastdimและprojectoroutputscaleตรวจตรงLLMembeddingrange</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-18"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-19" class="source-topic"><span id="source-41-multimodal-models-canonical-19-vlm-pattern-a-cross-attention" class="legacy-anchor"></span><h3>19. VLM Pattern A — Cross-Attention</h3>
+<pre><code class="language-text">vision encoder
+↓
+visual tokens
+        ↘
+       cross-attention
+        ↗
+language model
+</code></pre>
+<p>The LM attends to external vision features.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-19-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>19. VLM Pattern A — Cross-Attention</h3>
+<pre><code class="language-text">vision encoder
+↓
+visual tokens
+        ↘
+       cross-attention
+        ↗
+language model
+</code></pre>
+<p>The LM attends to external vision features.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-19-equation"><summary>สมการ</summary><h3>19. VLM Pattern A — Cross-Attention</h3>
+<pre><code class="language-text">vision encoder
+↓
+visual tokens
+        ↘
+       cross-attention
+        ↗
+language model
+</code></pre>
+<p>The LM attends to external vision features.</p></details><details id="help-topic-19-visual"><summary>ภาพและ shape</summary><h3>19. VLM Pattern A — Cross-Attention</h3>
+<pre><code class="language-text">vision encoder
+↓
+visual tokens
+        ↘
+       cross-attention
+        ↗
+language model
+</code></pre>
+<p>The LM attends to external vision features.</p></details><details id="help-topic-19-code"><summary>โค้ด</summary><h3>19. VLM Pattern A — Cross-Attention</h3>
+<pre><code class="language-text">vision encoder
+↓
+visual tokens
+        ↘
+       cross-attention
+        ↗
+language model
+</code></pre>
+<p>The LM attends to external vision features.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-19-result"><summary>ผลการทดลอง</summary><h3>19. VLM Pattern A — Cross-Attention</h3>
+<pre><code class="language-text">vision encoder
+↓
+visual tokens
+        ↘
+       cross-attention
+        ↗
+language model
+</code></pre>
+<p>The LM attends to external vision features.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-19"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-20" class="source-topic"><span id="source-41-multimodal-models-canonical-20-vlm-pattern-b-token-injection" class="legacy-anchor"></span><h3>20. VLM Pattern B — Token Injection</h3>
+<p>Project visual features into LM embedding space and concatenate with text tokens:</p>
+<pre><code class="language-text">[visual tokens][text tokens]
+↓
+decoder-only LM
+</code></pre>
+<p>Masking determines which positions can interact.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-20-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>20. VLM Pattern B — Token Injection</h3>
+<p>Project visual features into LM embedding space and concatenate with text tokens:</p>
+<pre><code class="language-text">[visual tokens][text tokens]
+↓
+decoder-only LM
+</code></pre>
+<p>Masking determines which positions can interact.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-20-equation"><summary>สมการ</summary><h3>20. VLM Pattern B — Token Injection</h3>
+<p>Project visual features into LM embedding space and concatenate with text tokens:</p>
+<pre><code class="language-text">[visual tokens][text tokens]
+↓
+decoder-only LM
+</code></pre>
+<p>Masking determines which positions can interact.</p></details><details id="help-topic-20-visual"><summary>ภาพและ shape</summary><h3>20. VLM Pattern B — Token Injection</h3>
+<p>Project visual features into LM embedding space and concatenate with text tokens:</p>
+<pre><code class="language-text">[visual tokens][text tokens]
+↓
+decoder-only LM
+</code></pre>
+<p>Masking determines which positions can interact.</p></details><details id="help-topic-20-code"><summary>โค้ด</summary><h3>20. VLM Pattern B — Token Injection</h3>
+<p>Project visual features into LM embedding space and concatenate with text tokens:</p>
+<pre><code class="language-text">[visual tokens][text tokens]
+↓
+decoder-only LM
+</code></pre>
+<p>Masking determines which positions can interact.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-20-result"><summary>ผลการทดลอง</summary><h3>20. VLM Pattern B — Token Injection</h3>
+<p>Project visual features into LM embedding space and concatenate with text tokens:</p>
+<pre><code class="language-text">[visual tokens][text tokens]
+↓
+decoder-only LM
+</code></pre>
+<p>Masking determines which positions can interact.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-20"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-21" class="source-topic"><span id="source-41-multimodal-models-canonical-21-frozen-encoders" class="legacy-anchor"></span><h3>21. Frozen Encoders</h3>
+<p>A practical training strategy:
+- freeze vision encoder
+- freeze or partially freeze LM
+- train projector/adapters</p>
+<p>Advantages:
+- lower compute
+- preserve pretrained capabilities</p>
+<p>But capacity may be limited.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-21-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>21. Frozen Encoders</h3>
+<p>A practical training strategy:
+- freeze vision encoder
+- freeze or partially freeze LM
+- train projector/adapters</p>
+<p>Advantages:
+- lower compute
+- preserve pretrained capabilities</p>
+<p>But capacity may be limited.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-21-equation"><summary>สมการ</summary><h3>21. Frozen Encoders</h3>
+<p>A practical training strategy:
+- freeze vision encoder
+- freeze or partially freeze LM
+- train projector/adapters</p>
+<p>Advantages:
+- lower compute
+- preserve pretrained capabilities</p>
+<p>But capacity may be limited.</p></details><details id="help-topic-21-visual"><summary>ภาพและ shape</summary><h3>21. Frozen Encoders</h3>
+<p>A practical training strategy:
+- freeze vision encoder
+- freeze or partially freeze LM
+- train projector/adapters</p>
+<p>Advantages:
+- lower compute
+- preserve pretrained capabilities</p>
+<p>But capacity may be limited.</p></details><details id="help-topic-21-code"><summary>โค้ด</summary><h3>21. Frozen Encoders</h3>
+<p>A practical training strategy:
+- freeze vision encoder
+- freeze or partially freeze LM
+- train projector/adapters</p>
+<p>Advantages:
+- lower compute
+- preserve pretrained capabilities</p>
+<p>But capacity may be limited.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-21-result"><summary>ผลการทดลอง</summary><h3>21. Frozen Encoders</h3>
+<p>A practical training strategy:
+- freeze vision encoder
+- freeze or partially freeze LM
+- train projector/adapters</p>
+<p>Advantages:
+- lower compute
+- preserve pretrained capabilities</p>
+<p>But capacity may be limited.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-21"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-22" class="source-topic"><span id="source-41-multimodal-models-canonical-22-joint-training" class="legacy-anchor"></span><h3>22. Joint Training</h3>
+<p>End-to-end training can adapt both modalities deeply.</p>
+<p>Costs:
+- more compute
+- more data
+- greater catastrophic-forgetting risk</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-22-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>22. Joint Training</h3>
+<p>End-to-end training can adapt both modalities deeply.</p>
+<p>Costs:
+- more compute
+- more data
+- greater catastrophic-forgetting risk</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-22-equation"><summary>สมการ</summary><h3>22. Joint Training</h3>
+<p>End-to-end training can adapt both modalities deeply.</p>
+<p>Costs:
+- more compute
+- more data
+- greater catastrophic-forgetting risk</p></details><details id="help-topic-22-visual"><summary>ภาพและ shape</summary><h3>22. Joint Training</h3>
+<p>End-to-end training can adapt both modalities deeply.</p>
+<p>Costs:
+- more compute
+- more data
+- greater catastrophic-forgetting risk</p></details><details id="help-topic-22-code"><summary>โค้ด</summary><h3>22. Joint Training</h3>
+<p>End-to-end training can adapt both modalities deeply.</p>
+<p>Costs:
+- more compute
+- more data
+- greater catastrophic-forgetting risk</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-22-result"><summary>ผลการทดลอง</summary><h3>22. Joint Training</h3>
+<p>End-to-end training can adapt both modalities deeply.</p>
+<p>Costs:
+- more compute
+- more data
+- greater catastrophic-forgetting risk</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-22"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-23" class="source-topic"><span id="source-41-multimodal-models-canonical-23-contrastive-vs-generative-objectives" class="legacy-anchor"></span><h3>23. Contrastive vs Generative Objectives</h3>
+<p>Contrastive:
+- learn aligned embeddings
+- strong retrieval</p>
+<p>Generative:
+- predict text/tokens conditioned on another modality
+- image captioning / VQA / multimodal chat</p>
+<p>Many modern systems combine objectives.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>manifestเก็บpairIDs/modalityhash/encoder/tokenizer/imagepreprocess/projector/temperature/false-negativepolicy/split/seed/metrics</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-23-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>manifestเก็บpairIDs/modalityhash/encoder/tokenizer/imagepreprocess/projector/temperature/false-negativepolicy/split/seed/metrics</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-23-equation"><summary>สมการ</summary><p>manifestเก็บpairIDs/modalityhash/encoder/tokenizer/imagepreprocess/projector/temperature/false-negativepolicy/split/seed/metrics</p></details><details id="help-topic-23-visual"><summary>ภาพและ shape</summary><p>manifestเก็บpairIDs/modalityhash/encoder/tokenizer/imagepreprocess/projector/temperature/false-negativepolicy/split/seed/metrics</p></details><details id="help-topic-23-code"><summary>โค้ด</summary><p>manifestเก็บpairIDs/modalityhash/encoder/tokenizer/imagepreprocess/projector/temperature/false-negativepolicy/split/seed/metrics</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-23-result"><summary>ผลการทดลอง</summary><p>manifestเก็บpairIDs/modalityhash/encoder/tokenizer/imagepreprocess/projector/temperature/false-negativepolicy/split/seed/metrics</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-23"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-24" class="source-topic"><span id="source-41-multimodal-models-canonical-24-image-captioning" class="legacy-anchor"></span><h3>24. Image Captioning</h3>
+<p>Conceptually:</p>
+<pre><code class="language-text">image encoder
+↓
+visual features
+↓
+text decoder
+↓
+caption tokens
+</code></pre>
+<p>Train with next-token cross-entropy conditioned on visual input.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-24-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>24. Image Captioning</h3>
+<p>Conceptually:</p>
+<pre><code class="language-text">image encoder
+↓
+visual features
+↓
+text decoder
+↓
+caption tokens
+</code></pre>
+<p>Train with next-token cross-entropy conditioned on visual input.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-24-equation"><summary>สมการ</summary><h3>24. Image Captioning</h3>
+<p>Conceptually:</p>
+<pre><code class="language-text">image encoder
+↓
+visual features
+↓
+text decoder
+↓
+caption tokens
+</code></pre>
+<p>Train with next-token cross-entropy conditioned on visual input.</p></details><details id="help-topic-24-visual"><summary>ภาพและ shape</summary><h3>24. Image Captioning</h3>
+<p>Conceptually:</p>
+<pre><code class="language-text">image encoder
+↓
+visual features
+↓
+text decoder
+↓
+caption tokens
+</code></pre>
+<p>Train with next-token cross-entropy conditioned on visual input.</p></details><details id="help-topic-24-code"><summary>โค้ด</summary><h3>24. Image Captioning</h3>
+<p>Conceptually:</p>
+<pre><code class="language-text">image encoder
+↓
+visual features
+↓
+text decoder
+↓
+caption tokens
+</code></pre>
+<p>Train with next-token cross-entropy conditioned on visual input.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-24-result"><summary>ผลการทดลอง</summary><h3>24. Image Captioning</h3>
+<p>Conceptually:</p>
+<pre><code class="language-text">image encoder
+↓
+visual features
+↓
+text decoder
+↓
+caption tokens
+</code></pre>
+<p>Train with next-token cross-entropy conditioned on visual input.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-24"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-25" class="source-topic"><span id="source-41-multimodal-models-canonical-25-multimodal-instruction-tuning" class="legacy-anchor"></span><h3>25. Multimodal Instruction Tuning</h3>
+<p>Examples contain:
+- modality input
+- user instruction
+- desired response</p>
+<p>The model learns task-following behavior across modalities.</p>
+<p>This occurs after strong pretrained representations in many systems.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-25-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>25. Multimodal Instruction Tuning</h3>
+<p>Examples contain:
+- modality input
+- user instruction
+- desired response</p>
+<p>The model learns task-following behavior across modalities.</p>
+<p>This occurs after strong pretrained representations in many systems.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-25-equation"><summary>สมการ</summary><h3>25. Multimodal Instruction Tuning</h3>
+<p>Examples contain:
+- modality input
+- user instruction
+- desired response</p>
+<p>The model learns task-following behavior across modalities.</p>
+<p>This occurs after strong pretrained representations in many systems.</p></details><details id="help-topic-25-visual"><summary>ภาพและ shape</summary><h3>25. Multimodal Instruction Tuning</h3>
+<p>Examples contain:
+- modality input
+- user instruction
+- desired response</p>
+<p>The model learns task-following behavior across modalities.</p>
+<p>This occurs after strong pretrained representations in many systems.</p></details><details id="help-topic-25-code"><summary>โค้ด</summary><h3>25. Multimodal Instruction Tuning</h3>
+<p>Examples contain:
+- modality input
+- user instruction
+- desired response</p>
+<p>The model learns task-following behavior across modalities.</p>
+<p>This occurs after strong pretrained representations in many systems.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-25-result"><summary>ผลการทดลอง</summary><h3>25. Multimodal Instruction Tuning</h3>
+<p>Examples contain:
+- modality input
+- user instruction
+- desired response</p>
+<p>The model learns task-following behavior across modalities.</p>
+<p>This occurs after strong pretrained representations in many systems.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-25"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-26" class="source-topic"><span id="source-41-multimodal-models-canonical-26-missing-modality" class="legacy-anchor"></span><h3>26. Missing Modality</h3>
+<p>Real systems may receive:
+- text only
+- image only
+- both</p>
+<p>Architecture/training must define behavior when a modality is absent.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>text-only/image-only/shuffledpairsfullmodelablation; shuffledimageควรลดtaskที่ต้องอ่านภาพ หากไม่ลดให้ตรวจshortcutleakageไม่อ้างmultimodalreasoning</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-26-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>text-only/image-only/shuffledpairsfullmodelablation; shuffledimageควรลดtaskที่ต้องอ่านภาพ หากไม่ลดให้ตรวจshortcutleakageไม่อ้างmultimodalreasoning</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-26-equation"><summary>สมการ</summary><p>text-only/image-only/shuffledpairsfullmodelablation; shuffledimageควรลดtaskที่ต้องอ่านภาพ หากไม่ลดให้ตรวจshortcutleakageไม่อ้างmultimodalreasoning</p></details><details id="help-topic-26-visual"><summary>ภาพและ shape</summary><p>text-only/image-only/shuffledpairsfullmodelablation; shuffledimageควรลดtaskที่ต้องอ่านภาพ หากไม่ลดให้ตรวจshortcutleakageไม่อ้างmultimodalreasoning</p></details><details id="help-topic-26-code"><summary>โค้ด</summary><p>text-only/image-only/shuffledpairsfullmodelablation; shuffledimageควรลดtaskที่ต้องอ่านภาพ หากไม่ลดให้ตรวจshortcutleakageไม่อ้างmultimodalreasoning</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-26-result"><summary>ผลการทดลอง</summary><p>text-only/image-only/shuffledpairsfullmodelablation; shuffledimageควรลดtaskที่ต้องอ่านภาพ หากไม่ลดให้ตรวจshortcutleakageไม่อ้างmultimodalreasoning</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-26"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-27" class="source-topic"><span id="source-41-multimodal-models-canonical-27-modality-dominance" class="legacy-anchor"></span><h3>27. Modality Dominance</h3>
+<p>One modality can dominate if it is easier to exploit.</p>
+<p>Example:
+- text shortcut predicts answer without image</p>
+<p>Use ablations:
+- image-only
+- text-only
+- shuffled-image
+- shuffled-text</p>
+<p>to verify real cross-modal use.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>text-only/image-only/shuffledpairsfullmodelablation; shuffledimageควรลดtaskที่ต้องอ่านภาพ หากไม่ลดให้ตรวจshortcutleakageไม่อ้างmultimodalreasoning</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-27-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>text-only/image-only/shuffledpairsfullmodelablation; shuffledimageควรลดtaskที่ต้องอ่านภาพ หากไม่ลดให้ตรวจshortcutleakageไม่อ้างmultimodalreasoning</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-27-equation"><summary>สมการ</summary><p>text-only/image-only/shuffledpairsfullmodelablation; shuffledimageควรลดtaskที่ต้องอ่านภาพ หากไม่ลดให้ตรวจshortcutleakageไม่อ้างmultimodalreasoning</p></details><details id="help-topic-27-visual"><summary>ภาพและ shape</summary><p>text-only/image-only/shuffledpairsfullmodelablation; shuffledimageควรลดtaskที่ต้องอ่านภาพ หากไม่ลดให้ตรวจshortcutleakageไม่อ้างmultimodalreasoning</p></details><details id="help-topic-27-code"><summary>โค้ด</summary><p>text-only/image-only/shuffledpairsfullmodelablation; shuffledimageควรลดtaskที่ต้องอ่านภาพ หากไม่ลดให้ตรวจshortcutleakageไม่อ้างmultimodalreasoning</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-27-result"><summary>ผลการทดลอง</summary><p>text-only/image-only/shuffledpairsfullmodelablation; shuffledimageควรลดtaskที่ต้องอ่านภาพ หากไม่ลดให้ตรวจshortcutleakageไม่อ้างmultimodalreasoning</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-27"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-28" class="source-topic"><span id="source-41-multimodal-models-canonical-28-evaluation" class="legacy-anchor"></span><h3>28. Evaluation</h3>
+<p>Retrieval:
+- Recall@K
+- median rank</p>
+<p>Captioning:
+- automated text metrics
+- human/task evaluation</p>
+<p>VQA:
+- task accuracy</p>
+<p>Multimodal assistants:
+- grounding
+- hallucination
+- robustness
+- safety</p>
+<p>No single metric covers every failure.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>ภาพเดียวหลายcaptionข้ามsplitทำretrievalleak; splitตามimage/sourcegroupและdedupทั้งmodalities ไม่ให้filenameบอกlabel</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-28-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>ภาพเดียวหลายcaptionข้ามsplitทำretrievalleak; splitตามimage/sourcegroupและdedupทั้งmodalities ไม่ให้filenameบอกlabel</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-28-equation"><summary>สมการ</summary><p>ภาพเดียวหลายcaptionข้ามsplitทำretrievalleak; splitตามimage/sourcegroupและdedupทั้งmodalities ไม่ให้filenameบอกlabel</p></details><details id="help-topic-28-visual"><summary>ภาพและ shape</summary><p>ภาพเดียวหลายcaptionข้ามsplitทำretrievalleak; splitตามimage/sourcegroupและdedupทั้งmodalities ไม่ให้filenameบอกlabel</p></details><details id="help-topic-28-code"><summary>โค้ด</summary><p>ภาพเดียวหลายcaptionข้ามsplitทำretrievalleak; splitตามimage/sourcegroupและdedupทั้งmodalities ไม่ให้filenameบอกlabel</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-28-result"><summary>ผลการทดลอง</summary><p>ภาพเดียวหลายcaptionข้ามsplitทำretrievalleak; splitตามimage/sourcegroupและdedupทั้งmodalities ไม่ให้filenameบอกlabel</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-28"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-29" class="source-topic"><span id="source-41-multimodal-models-canonical-29-from-scratch" class="legacy-anchor"></span><h3>29. From Scratch</h3>
+<p>src/multimodal_numpy.py includes:</p>
+<ul>
+<li>l2_normalize</li>
+<li>similarity_logits</li>
+<li>stable_cross_entropy</li>
+<li>symmetric_contrastive_loss</li>
+<li>retrieval_top1_accuracy</li>
+<li>simple_cross_attention</li>
+</ul><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>NumPyrow-normalize+logsumexpCEเทียบtorchfunctional.normalize+cross_entropyสองทิศmean; epsและpositivealignmentตรง</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-29-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>NumPyrow-normalize+logsumexpCEเทียบtorchfunctional.normalize+cross_entropyสองทิศmean; epsและpositivealignmentตรง</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-29-equation"><summary>สมการ</summary><p>NumPyrow-normalize+logsumexpCEเทียบtorchfunctional.normalize+cross_entropyสองทิศmean; epsและpositivealignmentตรง</p></details><details id="help-topic-29-visual"><summary>ภาพและ shape</summary><p>NumPyrow-normalize+logsumexpCEเทียบtorchfunctional.normalize+cross_entropyสองทิศmean; epsและpositivealignmentตรง</p></details><details id="help-topic-29-code"><summary>โค้ด</summary><p>NumPyrow-normalize+logsumexpCEเทียบtorchfunctional.normalize+cross_entropyสองทิศmean; epsและpositivealignmentตรง</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-29-result"><summary>ผลการทดลอง</summary><p>NumPyrow-normalize+logsumexpCEเทียบtorchfunctional.normalize+cross_entropyสองทิศmean; epsและpositivealignmentตรง</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-29"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-30" class="source-topic"><span id="source-41-multimodal-models-canonical-30-common-mistakes" class="legacy-anchor"></span><h3>30. Common Mistakes</h3>
+<ol>
+<li>not normalizing before cosine similarity</li>
+<li>wrong matching diagonal</li>
+<li>temperature &lt;= 0</li>
+<li>only training image→text direction unintentionally</li>
+<li>treating all in-batch examples as true negatives</li>
+<li>dimension mismatch between vision/LM</li>
+<li>claiming fusion when one modality is ignored</li>
+<li>leakage from paired duplicates across splits</li>
+<li>retrieval evaluation on training pairs</li>
+<li>interpreting high similarity as proof of grounding</li>
+</ol><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-30-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>30. Common Mistakes</h3>
+<ol>
+<li>not normalizing before cosine similarity</li>
+<li>wrong matching diagonal</li>
+<li>temperature &lt;= 0</li>
+<li>only training image→text direction unintentionally</li>
+<li>treating all in-batch examples as true negatives</li>
+<li>dimension mismatch between vision/LM</li>
+<li>claiming fusion when one modality is ignored</li>
+<li>leakage from paired duplicates across splits</li>
+<li>retrieval evaluation on training pairs</li>
+<li>interpreting high similarity as proof of grounding</li>
+</ol><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-30-equation"><summary>สมการ</summary><h3>30. Common Mistakes</h3>
+<ol>
+<li>not normalizing before cosine similarity</li>
+<li>wrong matching diagonal</li>
+<li>temperature &lt;= 0</li>
+<li>only training image→text direction unintentionally</li>
+<li>treating all in-batch examples as true negatives</li>
+<li>dimension mismatch between vision/LM</li>
+<li>claiming fusion when one modality is ignored</li>
+<li>leakage from paired duplicates across splits</li>
+<li>retrieval evaluation on training pairs</li>
+<li>interpreting high similarity as proof of grounding</li>
+</ol></details><details id="help-topic-30-visual"><summary>ภาพและ shape</summary><h3>30. Common Mistakes</h3>
+<ol>
+<li>not normalizing before cosine similarity</li>
+<li>wrong matching diagonal</li>
+<li>temperature &lt;= 0</li>
+<li>only training image→text direction unintentionally</li>
+<li>treating all in-batch examples as true negatives</li>
+<li>dimension mismatch between vision/LM</li>
+<li>claiming fusion when one modality is ignored</li>
+<li>leakage from paired duplicates across splits</li>
+<li>retrieval evaluation on training pairs</li>
+<li>interpreting high similarity as proof of grounding</li>
+</ol></details><details id="help-topic-30-code"><summary>โค้ด</summary><h3>30. Common Mistakes</h3>
+<ol>
+<li>not normalizing before cosine similarity</li>
+<li>wrong matching diagonal</li>
+<li>temperature &lt;= 0</li>
+<li>only training image→text direction unintentionally</li>
+<li>treating all in-batch examples as true negatives</li>
+<li>dimension mismatch between vision/LM</li>
+<li>claiming fusion when one modality is ignored</li>
+<li>leakage from paired duplicates across splits</li>
+<li>retrieval evaluation on training pairs</li>
+<li>interpreting high similarity as proof of grounding</li>
+</ol><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-30-result"><summary>ผลการทดลอง</summary><h3>30. Common Mistakes</h3>
+<ol>
+<li>not normalizing before cosine similarity</li>
+<li>wrong matching diagonal</li>
+<li>temperature &lt;= 0</li>
+<li>only training image→text direction unintentionally</li>
+<li>treating all in-batch examples as true negatives</li>
+<li>dimension mismatch between vision/LM</li>
+<li>claiming fusion when one modality is ignored</li>
+<li>leakage from paired duplicates across splits</li>
+<li>retrieval evaluation on training pairs</li>
+<li>interpreting high similarity as proof of grounding</li>
+</ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-30"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-31" class="source-topic"><span id="source-41-multimodal-models-canonical-31-exercises-mini-project" class="legacy-anchor"></span><h3>31. Exercises / Mini Project</h3>
+<ul>
+<li><a href="../41-multimodal-models/exercises/README.md">Exercises</a></li>
+<li><a href="../41-multimodal-models/solutions/README.md">Solutions</a></li>
+<li><a href="../41-multimodal-models/mini-project/README.md">Mini Project</a></li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-31-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>31. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-31-equation"><summary>สมการ</summary><h3>31. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-31-visual"><summary>ภาพและ shape</summary><h3>31. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-31-code"><summary>โค้ด</summary><h3>31. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-31-result"><summary>ผลการทดลอง</summary><h3>31. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-31"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-32" class="source-topic"><span id="source-41-multimodal-models-canonical-32-checklist" class="legacy-anchor"></span><h3>32. Checklist</h3>
+<ul>
+<li>[ ] modality encoders</li>
+<li>[ ] shared embedding space</li>
+<li>[ ] contrastive logits</li>
+<li>[ ] temperature</li>
+<li>[ ] symmetric contrastive loss</li>
+<li>[ ] retrieval</li>
+<li>[ ] early/late/intermediate fusion</li>
+<li>[ ] cross-attention</li>
+<li>[ ] visual tokens</li>
+<li>[ ] VLM projector</li>
+<li>[ ] multimodal ablations</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-32-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>32. Checklist</h3>
+<ul>
+<li>[ ] modality encoders</li>
+<li>[ ] shared embedding space</li>
+<li>[ ] contrastive logits</li>
+<li>[ ] temperature</li>
+<li>[ ] symmetric contrastive loss</li>
+<li>[ ] retrieval</li>
+<li>[ ] early/late/intermediate fusion</li>
+<li>[ ] cross-attention</li>
+<li>[ ] visual tokens</li>
+<li>[ ] VLM projector</li>
+<li>[ ] multimodal ablations</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-32-equation"><summary>สมการ</summary><h3>32. Checklist</h3>
+<ul>
+<li>[ ] modality encoders</li>
+<li>[ ] shared embedding space</li>
+<li>[ ] contrastive logits</li>
+<li>[ ] temperature</li>
+<li>[ ] symmetric contrastive loss</li>
+<li>[ ] retrieval</li>
+<li>[ ] early/late/intermediate fusion</li>
+<li>[ ] cross-attention</li>
+<li>[ ] visual tokens</li>
+<li>[ ] VLM projector</li>
+<li>[ ] multimodal ablations</li>
+</ul></details><details id="help-topic-32-visual"><summary>ภาพและ shape</summary><h3>32. Checklist</h3>
+<ul>
+<li>[ ] modality encoders</li>
+<li>[ ] shared embedding space</li>
+<li>[ ] contrastive logits</li>
+<li>[ ] temperature</li>
+<li>[ ] symmetric contrastive loss</li>
+<li>[ ] retrieval</li>
+<li>[ ] early/late/intermediate fusion</li>
+<li>[ ] cross-attention</li>
+<li>[ ] visual tokens</li>
+<li>[ ] VLM projector</li>
+<li>[ ] multimodal ablations</li>
+</ul></details><details id="help-topic-32-code"><summary>โค้ด</summary><h3>32. Checklist</h3>
+<ul>
+<li>[ ] modality encoders</li>
+<li>[ ] shared embedding space</li>
+<li>[ ] contrastive logits</li>
+<li>[ ] temperature</li>
+<li>[ ] symmetric contrastive loss</li>
+<li>[ ] retrieval</li>
+<li>[ ] early/late/intermediate fusion</li>
+<li>[ ] cross-attention</li>
+<li>[ ] visual tokens</li>
+<li>[ ] VLM projector</li>
+<li>[ ] multimodal ablations</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-32-result"><summary>ผลการทดลอง</summary><h3>32. Checklist</h3>
+<ul>
+<li>[ ] modality encoders</li>
+<li>[ ] shared embedding space</li>
+<li>[ ] contrastive logits</li>
+<li>[ ] temperature</li>
+<li>[ ] symmetric contrastive loss</li>
+<li>[ ] retrieval</li>
+<li>[ ] early/late/intermediate fusion</li>
+<li>[ ] cross-attention</li>
+<li>[ ] visual tokens</li>
+<li>[ ] VLM projector</li>
+<li>[ ] multimodal ablations</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-32"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-33" class="source-topic"><span id="source-41-multimodal-models-canonical-33-whats-next" class="legacy-anchor"></span><span id="source-41-multimodal-models-canonical-41-multimodal-models-multimodal-models" class="legacy-anchor"></span><h3>33. What's Next</h3>
+<p>Chapter 42 focuses on speech: waveform, STFT, mel features, STT, CTC, seq2seq speech recognition, TTS and vocoders.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-33-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>33. What's Next</h3>
+<p>Chapter 42 focuses on speech: waveform, STFT, mel features, STT, CTC, seq2seq speech recognition, TTS and vocoders.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-33-equation"><summary>สมการ</summary><h3>33. What's Next</h3>
+<p>Chapter 42 focuses on speech: waveform, STFT, mel features, STT, CTC, seq2seq speech recognition, TTS and vocoders.</p></details><details id="help-topic-33-visual"><summary>ภาพและ shape</summary><h3>33. What's Next</h3>
+<p>Chapter 42 focuses on speech: waveform, STFT, mel features, STT, CTC, seq2seq speech recognition, TTS and vocoders.</p></details><details id="help-topic-33-code"><summary>โค้ด</summary><h3>33. What's Next</h3>
+<p>Chapter 42 focuses on speech: waveform, STFT, mel features, STT, CTC, seq2seq speech recognition, TTS and vocoders.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-33-result"><summary>ผลการทดลอง</summary><h3>33. What's Next</h3>
+<p>Chapter 42 focuses on speech: waveform, STFT, mel features, STT, CTC, seq2seq speech recognition, TTS and vocoders.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-33"> อ่านหัวข้อนี้แล้ว</label></section><details><summary>รายละเอียดเพิ่มเติมและข้อกำหนดของ local lab</summary><h3>41-multimodal-models — Multimodal Models</h3>
+<p><strong>Prerequisites:</strong> Complete 40-diffusion-models; be able to trace array/tensor shapes, separate train/validation/test data, and explain the core objective of the current chapter.</p>
+<p><strong>Mental model:</strong> Treat Multimodal Models as a pipeline: input representation → central mechanism → objective/state update → observable output. At every boundary, state shape/state, allowed information flow, and the invariant that should remain true.</p>
+<p><strong>Code walkthrough:</strong> Read public API first, then input checks, state/shape transformations, numerical core, returned values and tests. Connect each important code block to the equation or algorithm in the chapter README.</p>
+<p><strong>Visualization / inspection:</strong> Use a tiny case. Inspect intermediate values, distributions, norms, scores, states or trajectories appropriate to Multimodal Models; do not rely only on the final metric.</p>
+<p><strong>Experiment:</strong> Run a baseline, one controlled parameter change, one edge case and one repeated seeded comparison. Record seed, environment, data version, configuration and metric.</p>
+<p><strong>Limitations:</strong> List at least one assumption, one data-related limitation, one numerical/optimization limitation and one scaling limitation for Multimodal Models.</p>
+<p><strong>Analysis workflow:</strong> Check inputs → preprocessing → shapes/state → finite numerical values → objective/update → evaluation protocol. The earliest unexpected state is more informative than a downstream metric.</p>
+<p><strong>Performance:</strong> Identify the dominant time and memory terms and measure them on the local learning run before attempting optimization.</p>
+<p><strong>Production perspective:</strong> Define input validation, artifact/configuration versioning, quality and resource measurements, staged release criteria and a way to return to the previous known-good artifact.</p>
+<p><strong>Research perspective:</strong> State a falsifiable hypothesis, baseline, one-factor change, metric, repeated-run plan when stochastic, and how negative results will be recorded.</p>
+<p><strong>Interview questions:</strong>
+1. Explain Multimodal Models from first principles without naming a library API.
+2. Trace one input through the central mechanism and give the important intermediate shapes/state.
+3. Name the strongest assumption and a case where it fails.
+4. State the dominant compute/memory cost.
+5. Describe how you would validate a new implementation against a trusted baseline.</p>
+<p><strong>Summary / exit condition:</strong> You may move on when you can explain, derive or trace, implement, test, analyze, measure and evaluate Multimodal Models, and when the chapter mini-project plus twenty total exercises are complete.</p></details></section><section id="objective-evidence" class="canonical-section"><h2>พิสูจน์ความสามารถทีละ objective</h2><p>ทำกรณีใหม่ก่อนเปิด reference แล้วบันทึกงานด้านล่าง ให้ผู้ตรวจใช้ rubric ตรวจคำอธิบาย ผลคำนวณ โค้ด และข้อจำกัด บันทึกเก็บในเบราว์เซอร์เครื่องนี้ กดส่งออกเพื่อสำรองหรือส่งให้ผู้ตรวจ เว็บไม่ได้รันโค้ดหรือตัดสินผลงานแทนผู้ตรวจ</p><button type="button" class="secondary-button" data-export-evidence>ส่งออกหลักฐานบทนี้เป็น JSON</button><p role="status" id="evidence-export-status"></p><details id="ch41-objective-01" class="objective-proof"><summary>explain modality-specific encoders</summary><p>explain modality-specific encoders: ใช้กรณีในหัวข้อ Two Core Problems, Dual-Encoder Architecture เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch41-evidence-01"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch41-evidence-01-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch41-evidence-01-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch41-evidence-01-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch41-evidence-01-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch41-evidence-01-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch41-evidence-01-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch41-evidence-01-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch41-evidence-01-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>3. Two Core Problems</h3>
+<h4>Alignment</h4>
+<pre><code class="language-text">image of a cat
+↔
+&quot;text: a cat&quot;
+</code></pre>
+<p>Represent corresponding items near each other.</p>
+<h4>Fusion</h4>
+<p>Combine information so one modality can influence processing of another.</p>
+<h3>4. Dual-Encoder Architecture</h3>
+<p>CLIP-style:</p>
+<pre><code class="language-text">image
+↓
+vision encoder
+↓
+image embedding
+      ↘
+        shared space
+      ↗
+text
+↓
+text encoder
+↓
+text embedding
+</code></pre>
+<p>Each modality has its own encoder.</p><h3>3. Two Core Problems</h3>
+<h4>Alignment</h4>
+<pre><code class="language-text">image of a cat
+↔
+&quot;text: a cat&quot;
+</code></pre>
+<p>Represent corresponding items near each other.</p>
+<h4>Fusion</h4>
+<p>Combine information so one modality can influence processing of another.</p>
+<h3>4. Dual-Encoder Architecture</h3>
+<p>CLIP-style:</p>
+<pre><code class="language-text">image
+↓
+vision encoder
+↓
+image embedding
+      ↘
+        shared space
+      ↗
+text
+↓
+text encoder
+↓
+text embedding
+</code></pre>
+<p>Each modality has its own encoder.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch41-objective-02" class="objective-proof"><summary>explain shared embedding spaces</summary><p>explain shared embedding spaces: ใช้กรณีในหัวข้อ Normalize Embeddings เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch41-evidence-02"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch41-evidence-02-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch41-evidence-02-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch41-evidence-02-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch41-evidence-02-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch41-evidence-02-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch41-evidence-02-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch41-evidence-02-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch41-evidence-02-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>normalizeeachrow e/‖e‖; [3,4]→[.6,.8]; zeroembeddingต้องerrorหรือpolicyชัดเจนไม่หาร0แล้วซ่อนNaN</p><h3>5. Normalize Embeddings</h3>
+<p>Commonly:</p>
+<pre><code class="language-text">z_i =
+h_i / ||h_i||
+</code></pre>
+<p>Then:</p>
+<pre><code class="language-text">z_i^T z_j
+</code></pre>
+<p>is cosine similarity.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch41-objective-03" class="objective-proof"><summary>derive CLIP-style contrastive learning</summary><p>derive CLIP-style contrastive learning: ใช้กรณีในหัวข้อ Similarity Matrix, Image-to-Text Loss, Text-to-Image Loss เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch41-evidence-03"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch41-evidence-03-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch41-evidence-03-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch41-evidence-03-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch41-evidence-03-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch41-evidence-03-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch41-evidence-03-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch41-evidence-03-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch41-evidence-03-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>imageI(B,d),textT(B,d),S=I@T.T/τ→(B,B); diagonalคือคู่positiveตามalignment ไม่ใช่everyhighsimilarityเป็นpositive</p><h3>6. Similarity Matrix</h3>
+<p>For B aligned image-text pairs:</p>
+<pre><code class="language-text">I ∈ R^(B,D)
+T ∈ R^(B,D)
+
+S =
+I T^T / tau
+</code></pre>
+<p>Shape:</p>
+<pre><code class="language-text">(B,B)
+</code></pre>
+<p>Diagonal entries are matching pairs.</p>
+<p>Off-diagonal entries are in-batch negatives.</p>
+<h3>8. Image-to-Text Loss</h3>
+<p>For each image row, the correct target is matching text index.</p>
+<pre><code class="language-text">L_i2t =
+CE(S, arange(B))
+</code></pre>
+<h3>9. Text-to-Image Loss</h3>
+<p>Transpose direction:</p>
+<pre><code class="language-text">L_t2i =
+CE(S^T, arange(B))
+</code></pre></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch41-objective-04" class="objective-proof"><summary>implement cosine-similarity logits</summary><p>implement cosine-similarity logits: ใช้กรณีในหัวข้อ Normalize Embeddings, Similarity Matrix เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch41-evidence-04"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch41-evidence-04-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch41-evidence-04-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch41-evidence-04-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch41-evidence-04-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch41-evidence-04-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch41-evidence-04-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch41-evidence-04-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch41-evidence-04-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>normalizeeachrow e/‖e‖; [3,4]→[.6,.8]; zeroembeddingต้องerrorหรือpolicyชัดเจนไม่หาร0แล้วซ่อนNaN</p><h3>5. Normalize Embeddings</h3>
+<p>Commonly:</p>
+<pre><code class="language-text">z_i =
+h_i / ||h_i||
+</code></pre>
+<p>Then:</p>
+<pre><code class="language-text">z_i^T z_j
+</code></pre>
+<p>is cosine similarity.</p>
+<h3>6. Similarity Matrix</h3>
+<p>For B aligned image-text pairs:</p>
+<pre><code class="language-text">I ∈ R^(B,D)
+T ∈ R^(B,D)
+
+S =
+I T^T / tau
+</code></pre>
+<p>Shape:</p>
+<pre><code class="language-text">(B,B)
+</code></pre>
+<p>Diagonal entries are matching pairs.</p>
+<p>Off-diagonal entries are in-batch negatives.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch41-objective-05" class="objective-proof"><summary>explain temperature/logit scale</summary><p>explain temperature/logit scale: ใช้กรณีในหัวข้อ Temperature เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch41-evidence-05"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch41-evidence-05-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch41-evidence-05-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch41-evidence-05-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch41-evidence-05-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch41-evidence-05-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch41-evidence-05-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch41-evidence-05-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch41-evidence-05-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>τเล็กทำsoftmaxแหลมและgradientscale1/τสูง; τต้อง&gt;0; logitsที่เปลี่ยนจากtemperatureไม่ใช่embeddingsretrained</p><h3>7. Temperature</h3>
+<p>Contrastive logits:</p>
+<pre><code class="language-text">S_ij =
+cos(i,j) / tau
+</code></pre>
+<p>Smaller tau:
+- sharper distribution</p>
+<p>Larger tau:
+- softer distribution</p>
+<p>Some systems learn a logit scale instead of directly learning tau.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch41-objective-06" class="objective-proof"><summary>compute symmetric image-text contrastive loss</summary><p>compute symmetric image-text contrastive loss: ใช้กรณีในหัวข้อ Symmetric Contrastive Loss เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch41-evidence-06"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch41-evidence-06-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch41-evidence-06-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch41-evidence-06-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch41-evidence-06-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch41-evidence-06-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch41-evidence-06-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch41-evidence-06-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch41-evidence-06-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>B3,S=I3logitsdiag1,offdiag0ให้CE=log(e+2)−1≈.551445ต่อrowและsymmetricmeanเท่ากัน; averageimage/textlossไม่sumถ้าใช้CLIPmean</p><h3>10. Symmetric Contrastive Loss</h3>
+<pre><code class="language-text">L =
+0.5(
+L_i2t + L_t2i
+)
+</code></pre>
+<p>This encourages alignment in both retrieval directions.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch41-objective-07" class="objective-proof"><summary>distinguish early/late/intermediate fusion</summary><p>distinguish early/late/intermediate fusion: ใช้กรณีในหัวข้อ Early Fusion, Late Fusion, Intermediate Fusion เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch41-evidence-07"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch41-evidence-07-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch41-evidence-07-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch41-evidence-07-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch41-evidence-07-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch41-evidence-07-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch41-evidence-07-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch41-evidence-07-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch41-evidence-07-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>latefusionผสมpooledvectorsราคาถูกแต่สูญเสียtokenalignment; crossattentionแพงกว่าจับregion-wordrelationได้; comparetoyspatialquestionaccuracy</p><h3>13. Early Fusion</h3>
+<p>Combine raw/low-level features early.</p>
+<p>Pros:
+- rich joint interactions</p>
+<p>Cons:
+- modalities can have incompatible structure/scales
+- expensive</p>
+<h3>14. Late Fusion</h3>
+<p>Process modalities separately, combine predictions/embeddings late.</p>
+<p>Pros:
+- modular
+- simple</p>
+<p>Cons:
+- weaker fine-grained interaction</p>
+<h3>15. Intermediate Fusion</h3>
+<p>Encode modalities first, then allow cross-modal interactions in deeper layers.</p>
+<p>This is common in multimodal Transformers.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch41-objective-08" class="objective-proof"><summary>explain cross-attention fusion</summary><p>explain cross-attention fusion: ใช้กรณีในหัวข้อ Cross-Attention เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch41-evidence-08"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch41-evidence-08-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch41-evidence-08-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch41-evidence-08-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch41-evidence-08-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch41-evidence-08-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch41-evidence-08-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch41-evidence-08-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch41-evidence-08-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>Qtext(B,Tt,d),K/Vimage(B,Ti,d)ให้A(B,h,Tt,Ti); maskเฉพาะvalidimagepatchesไม่causalข้ามmodality</p><h3>16. Cross-Attention</h3>
+<p>Example:</p>
+<pre><code class="language-text">text hidden states → Q
+image tokens       → K,V
+</code></pre>
+<p>Then text tokens retrieve visual information.</p>
+<p>Reverse direction is also possible.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch41-objective-09" class="objective-proof"><summary>explain image tokens</summary><p>explain image tokens: ใช้กรณีในหัวข้อ Image Tokens, Projection Layer เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch41-evidence-09"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch41-evidence-09-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch41-evidence-09-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch41-evidence-09-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch41-evidence-09-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch41-evidence-09-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch41-evidence-09-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch41-evidence-09-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch41-evidence-09-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>visualfeatures(B,N,dv)@W(dv,dllm)→(B,N,dllm); biasbroadcastlastdimและprojectoroutputscaleตรวจตรงLLMembeddingrange</p><h3>17. Image Tokens</h3>
+<p>Vision encoder may produce patch tokens:</p>
+<pre><code class="language-text">image
+↓
+ViT
+↓
+(B,N,D_v)
+</code></pre>
+<p>Project into language-model dimension:</p>
+<pre><code class="language-text">(B,N,D_lm)
+</code></pre>
+<p>Then insert or attend to them as visual tokens.</p>
+<h3>18. Projection Layer</h3>
+<p>If vision and language dimensions differ:</p>
+<pre><code class="language-text">visual features
+↓
+Linear / MLP projector
+↓
+LM-compatible features
+</code></pre>
+<p>The projector can be:
+- linear
+- MLP
+- resampler
+- query transformer</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch41-objective-10" class="objective-proof"><summary>understand VLM architecture patterns</summary><p>understand VLM architecture patterns: ใช้กรณีในหัวข้อ VLM Pattern A — Cross-Attention, VLM Pattern B — Token Injection เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch41-evidence-10"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch41-evidence-10-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch41-evidence-10-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch41-evidence-10-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch41-evidence-10-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch41-evidence-10-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch41-evidence-10-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch41-evidence-10-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch41-evidence-10-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>19. VLM Pattern A — Cross-Attention</h3>
+<pre><code class="language-text">vision encoder
+↓
+visual tokens
+        ↘
+       cross-attention
+        ↗
+language model
+</code></pre>
+<p>The LM attends to external vision features.</p>
+<h3>20. VLM Pattern B — Token Injection</h3>
+<p>Project visual features into LM embedding space and concatenate with text tokens:</p>
+<pre><code class="language-text">[visual tokens][text tokens]
+↓
+decoder-only LM
+</code></pre>
+<p>Masking determines which positions can interact.</p><h3>19. VLM Pattern A — Cross-Attention</h3>
+<pre><code class="language-text">vision encoder
+↓
+visual tokens
+        ↘
+       cross-attention
+        ↗
+language model
+</code></pre>
+<p>The LM attends to external vision features.</p>
+<h3>20. VLM Pattern B — Token Injection</h3>
+<p>Project visual features into LM embedding space and concatenate with text tokens:</p>
+<pre><code class="language-text">[visual tokens][text tokens]
+↓
+decoder-only LM
+</code></pre>
+<p>Masking determines which positions can interact.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch41-objective-11" class="objective-proof"><summary>explain frozen vs jointly trained encoders</summary><p>explain frozen vs jointly trained encoders: ใช้กรณีในหัวข้อ Frozen Encoders, Joint Training เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch41-evidence-11"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch41-evidence-11-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch41-evidence-11-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch41-evidence-11-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch41-evidence-11-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch41-evidence-11-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch41-evidence-11-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch41-evidence-11-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch41-evidence-11-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>21. Frozen Encoders</h3>
+<p>A practical training strategy:
+- freeze vision encoder
+- freeze or partially freeze LM
+- train projector/adapters</p>
+<p>Advantages:
+- lower compute
+- preserve pretrained capabilities</p>
+<p>But capacity may be limited.</p>
+<h3>22. Joint Training</h3>
+<p>End-to-end training can adapt both modalities deeply.</p>
+<p>Costs:
+- more compute
+- more data
+- greater catastrophic-forgetting risk</p><h3>21. Frozen Encoders</h3>
+<p>A practical training strategy:
+- freeze vision encoder
+- freeze or partially freeze LM
+- train projector/adapters</p>
+<p>Advantages:
+- lower compute
+- preserve pretrained capabilities</p>
+<p>But capacity may be limited.</p>
+<h3>22. Joint Training</h3>
+<p>End-to-end training can adapt both modalities deeply.</p>
+<p>Costs:
+- more compute
+- more data
+- greater catastrophic-forgetting risk</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch41-objective-12" class="objective-proof"><summary>understand retrieval vs generation objectives</summary><p>understand retrieval vs generation objectives: ใช้กรณีในหัวข้อ Contrastive vs Generative Objectives, Image Captioning, Multimodal Instruction Tuning เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch41-evidence-12"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch41-evidence-12-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch41-evidence-12-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch41-evidence-12-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch41-evidence-12-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch41-evidence-12-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch41-evidence-12-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch41-evidence-12-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch41-evidence-12-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>manifestเก็บpairIDs/modalityhash/encoder/tokenizer/imagepreprocess/projector/temperature/false-negativepolicy/split/seed/metrics</p><h3>23. Contrastive vs Generative Objectives</h3>
+<p>Contrastive:
+- learn aligned embeddings
+- strong retrieval</p>
+<p>Generative:
+- predict text/tokens conditioned on another modality
+- image captioning / VQA / multimodal chat</p>
+<p>Many modern systems combine objectives.</p>
+<h3>24. Image Captioning</h3>
+<p>Conceptually:</p>
+<pre><code class="language-text">image encoder
+↓
+visual features
+↓
+text decoder
+↓
+caption tokens
+</code></pre>
+<p>Train with next-token cross-entropy conditioned on visual input.</p>
+<h3>25. Multimodal Instruction Tuning</h3>
+<p>Examples contain:
+- modality input
+- user instruction
+- desired response</p>
+<p>The model learns task-following behavior across modalities.</p>
+<p>This occurs after strong pretrained representations in many systems.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch41-objective-13" class="objective-proof"><summary>identify multimodal evaluation pitfalls</summary><p>identify multimodal evaluation pitfalls: ใช้กรณีในหัวข้อ Missing Modality, Modality Dominance, Evaluation เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch41-evidence-13"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch41-evidence-13-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch41-evidence-13-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch41-evidence-13-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch41-evidence-13-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch41-evidence-13-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch41-evidence-13-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch41-evidence-13-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch41-evidence-13-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>text-only/image-only/shuffledpairsfullmodelablation; shuffledimageควรลดtaskที่ต้องอ่านภาพ หากไม่ลดให้ตรวจshortcutleakageไม่อ้างmultimodalreasoning</p><h3>26. Missing Modality</h3>
+<p>Real systems may receive:
+- text only
+- image only
+- both</p>
+<p>Architecture/training must define behavior when a modality is absent.</p>
+<h3>27. Modality Dominance</h3>
+<p>One modality can dominate if it is easier to exploit.</p>
+<p>Example:
+- text shortcut predicts answer without image</p>
+<p>Use ablations:
+- image-only
+- text-only
+- shuffled-image
+- shuffled-text</p>
+<p>to verify real cross-modal use.</p>
+<h3>28. Evaluation</h3>
+<p>Retrieval:
+- Recall@K
+- median rank</p>
+<p>Captioning:
+- automated text metrics
+- human/task evaluation</p>
+<p>VQA:
+- task accuracy</p>
+<p>Multimodal assistants:
+- grounding
+- hallucination
+- robustness
+- safety</p>
+<p>No single metric covers every failure.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch41-objective-14" class="objective-proof"><summary>Retrieval</summary><p>Retrieval: ใช้กรณีในหัวข้อ Retrieval เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch41-evidence-14"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch41-evidence-14-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch41-evidence-14-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch41-evidence-14-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch41-evidence-14-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch41-evidence-14-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch41-evidence-14-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch41-evidence-14-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch41-evidence-14-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>Recall@Kคือfractionqueriesที่goldอยู่topK; queries3,hit2ให้2/3; multi-positiveต้องกำหนดanyhitหรือfractionpositivesก่อน</p><h3>12. Retrieval</h3>
+<p>After training:</p>
+<p>Text-to-image:
+1. encode query text
+2. normalize
+3. compare with image embeddings
+4. rank similarities</p>
+<p>Image-to-text is symmetric.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch41-objective-15" class="objective-proof"><summary>In-Batch Negatives</summary><p>In-Batch Negatives: ใช้กรณีในหัวข้อ In-Batch Negatives เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch41-evidence-15"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch41-evidence-15-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch41-evidence-15-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch41-evidence-15-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch41-evidence-15-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch41-evidence-15-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch41-evidence-15-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch41-evidence-15-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch41-evidence-15-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>captionsซ้ำของภาพเดียวในbatchเป็นfalse negativesหากใช้onlydiagonal; ใช้multi-positivecontrastiveหรือdedupและreportcollisionpolicy</p><h3>11. In-Batch Negatives</h3>
+<p>Other examples in the same batch act as negatives.</p>
+<p>Larger batches can provide more negatives, but:
+- memory cost rises
+- false negatives can occur
+- duplicated semantic content complicates labels</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch41-objective-16" class="objective-proof"><summary>From Scratch</summary><p>From Scratch: ใช้กรณีในหัวข้อ From Scratch เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch41-evidence-16"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch41-evidence-16-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch41-evidence-16-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch41-evidence-16-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch41-evidence-16-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch41-evidence-16-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch41-evidence-16-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch41-evidence-16-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch41-evidence-16-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>NumPyrow-normalize+logsumexpCEเทียบtorchfunctional.normalize+cross_entropyสองทิศmean; epsและpositivealignmentตรง</p><h3>29. From Scratch</h3>
+<p>src/multimodal_numpy.py includes:</p>
+<ul>
+<li>l2_normalize</li>
+<li>similarity_logits</li>
+<li>stable_cross_entropy</li>
+<li>symmetric_contrastive_loss</li>
+<li>retrieval_top1_accuracy</li>
+<li>simple_cross_attention</li>
+</ul></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details></section><section id="implementation" class="canonical-section"><h2>Implementation และ tests ที่รันบนเครื่องได้</h2><details><summary>41-multimodal-models/src/multimodal_numpy.py</summary><pre><code>&quot;&quot;&quot;Educational multimodal contrastive and cross-attention primitives.&quot;&quot;&quot;
+
+from __future__ import annotations
+
+import numpy as np
+
+
+def l2_normalize(
+    x: np.ndarray,
+    axis: int = -1,
+    eps: float = 1e-12,
+) -&gt; np.ndarray:
+    values = np.asarray(x, dtype=float)
+    norm = np.linalg.norm(values, axis=axis, keepdims=True)
+    return values / np.maximum(norm, eps)
+
+
+def similarity_logits(
+    left: np.ndarray,
+    right: np.ndarray,
+    *,
+    temperature: float = 0.07,
+) -&gt; np.ndarray:
+    if temperature &lt;= 0:
+        raise ValueError(&quot;temperature must be positive&quot;)
+
+    a = np.asarray(left, dtype=float)
+    b = np.asarray(right, dtype=float)
+
+    if a.ndim != 2 or b.ndim != 2:
+        raise ValueError(&quot;embeddings must be matrices&quot;)
+    if a.shape[1] != b.shape[1]:
+        raise ValueError(&quot;embedding dimensions must match&quot;)
+
+    a = l2_normalize(a)
+    b = l2_normalize(b)
+    return (a @ b.T) / temperature
+
+
+def stable_cross_entropy(
+    logits: np.ndarray,
+    targets: np.ndarray,
+) -&gt; float:
+    scores = np.asarray(logits, dtype=float)
+    y = np.asarray(targets, dtype=np.int64)
+
+    if scores.ndim != 2 or y.shape != (scores.shape[0],):
+        raise ValueError(&quot;shape mismatch&quot;)
+    if np.any((y &lt; 0) | (y &gt;= scores.shape[1])):
+        raise ValueError(&quot;target out of range&quot;)
+
+    maximum = np.max(scores, axis=1, keepdims=True)
+    logsumexp = (
+        maximum[:, 0]
+        + np.log(np.sum(np.exp(scores - maximum), axis=1))
+    )
+    correct = scores[np.arange(len(y)), y]
+    return float(np.mean(logsumexp - correct))
+
+
+def symmetric_contrastive_loss(
+    image_embeddings: np.ndarray,
+    text_embeddings: np.ndarray,
+    *,
+    temperature: float = 0.07,
+) -&gt; float:
+    images = np.asarray(image_embeddings, dtype=float)
+    texts = np.asarray(text_embeddings, dtype=float)
+
+    if images.shape != texts.shape:
+        raise ValueError(&quot;paired embedding matrices must have equal shape&quot;)
+
+    logits = similarity_logits(
+        images,
+        texts,
+        temperature=temperature,
+    )
+    targets = np.arange(len(images), dtype=np.int64)
+
+    return 0.5 * (
+        stable_cross_entropy(logits, targets)
+        + stable_cross_entropy(logits.T, targets)
+    )
+
+
+def retrieval_top1_accuracy(
+    query_embeddings: np.ndarray,
+    candidate_embeddings: np.ndarray,
+) -&gt; float:
+    q = np.asarray(query_embeddings, dtype=float)
+    c = np.asarray(candidate_embeddings, dtype=float)
+
+    if q.shape != c.shape:
+        raise ValueError(&quot;paired matrices must have equal shape&quot;)
+
+    logits = similarity_logits(q, c, temperature=1.0)
+    predicted = np.argmax(logits, axis=1)
+    expected = np.arange(len(q))
+    return float(np.mean(predicted == expected))
+
+
+def simple_cross_attention(
+    query: np.ndarray,
+    key: np.ndarray,
+    value: np.ndarray,
+) -&gt; tuple[np.ndarray, np.ndarray]:
+    q = np.asarray(query, dtype=float)
+    k = np.asarray(key, dtype=float)
+    v = np.asarray(value, dtype=float)
+
+    if q.ndim != 3 or k.ndim != 3 or v.ndim != 3:
+        raise ValueError(&quot;expected batched Q/K/V tensors&quot;)
+    if q.shape[0] != k.shape[0] or k.shape[0] != v.shape[0]:
+        raise ValueError(&quot;batch sizes must match&quot;)
+    if q.shape[-1] != k.shape[-1]:
+        raise ValueError(&quot;query/key dimensions must match&quot;)
+    if k.shape[1] != v.shape[1]:
+        raise ValueError(&quot;key/value sequence lengths must match&quot;)
+
+    scores = q @ np.swapaxes(k, -1, -2)
+    scores = scores / np.sqrt(q.shape[-1])
+    scores = scores - np.max(scores, axis=-1, keepdims=True)
+
+    weights = np.exp(scores)
+    weights = weights / np.sum(weights, axis=-1, keepdims=True)
+    return weights @ v, weights
+</code></pre></details><details><summary>41-multimodal-models/tests/test_multimodal_numpy.py</summary><pre><code>from pathlib import Path
+import importlib.util
+
+import numpy as np
+
+
+MODULE_PATH = Path(__file__).parents[1] / &quot;src&quot; / &quot;multimodal_numpy.py&quot;
+SPEC = importlib.util.spec_from_file_location(&quot;multimodal_numpy_course&quot;, MODULE_PATH)
+assert SPEC and SPEC.loader
+mod = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(mod)
+
+
+def test_l2_normalize() -&gt; None:
+    x = np.array([[3.0, 4.0], [1.0, 0.0]])
+    normalized = mod.l2_normalize(x)
+    np.testing.assert_allclose(
+        np.linalg.norm(normalized, axis=1),
+        1.0,
+    )
+
+
+def test_perfect_pairs_have_high_retrieval_accuracy() -&gt; None:
+    x = np.eye(4)
+    assert mod.retrieval_top1_accuracy(x, x.copy()) == 1.0
+
+
+def test_good_pairs_have_lower_contrastive_loss() -&gt; None:
+    good = np.eye(4)
+    bad = good[::-1].copy()
+
+    good_loss = mod.symmetric_contrastive_loss(
+        good,
+        good,
+        temperature=0.1,
+    )
+    bad_loss = mod.symmetric_contrastive_loss(
+        good,
+        bad,
+        temperature=0.1,
+    )
+    assert good_loss &lt; bad_loss
+
+
+def test_cross_attention_shapes() -&gt; None:
+    rng = np.random.default_rng(3)
+    q = rng.normal(size=(2, 4, 6))
+    k = rng.normal(size=(2, 5, 6))
+    v = rng.normal(size=(2, 5, 7))
+
+    output, weights = mod.simple_cross_attention(q, k, v)
+
+    assert output.shape == (2, 4, 7)
+    assert weights.shape == (2, 4, 5)
+    np.testing.assert_allclose(weights.sum(axis=-1), 1.0)
+</code></pre></details></section><section id="glossary" class="canonical-section"><h2>อภิธานศัพท์ — คำไทย ความหมาย และข้อควรตรวจ</h2><dl><dt>tensor</dt><dd>เทนเซอร์: ชุดตัวเลขที่มีแกน เช่น scalar ไม่มีแกน, vector หนึ่งแกน, matrix สองแกน; shape บอกขนาดแต่ละแกน ไม่บอกความหมายของแกนจนกว่าจะระบุ</dd><dt>shape</dt><dd>รูปทรงข้อมูล: (B,T,d) หมายถึง batch × เวลา/ตำแหน่ง × features; ใช้ชื่อแกนกำกับเสมอ การ transpose เปลี่ยนแกนแต่ไม่ใช่แค่เปลี่ยนชื่อ</dd><dt>batch</dt><dd>กลุ่มตัวอย่างที่คำนวณร่วมกันหนึ่งครั้ง; B คือจำนวนตัวอย่าง ไม่ใช่จำนวน features หรือจำนวน optimizer updates</dd><dt>weight w / θ</dt><dd>น้ำหนักหรือพารามิเตอร์ที่โมเดลใช้คำนวณ; แก้ด้วยมือทำ forward ใหม่ ส่วน optimizer ต้องรับ gradient แล้วกด update จึงแก้ state</dd><dt>bias b</dt><dd>ค่าคงที่ที่บวกกับผลเชิงเส้น; regression scalar bias เพิ่ม Δ ทำให้ prediction ทุกจุดเพิ่ม Δ เท่ากัน</dd><dt>prediction ŷ</dt><dd>ค่าที่โมเดลทำนายจาก input และพารามิเตอร์ปัจจุบัน; เครื่องหมายหมวกแยกจาก target y ที่มาจากข้อมูล</dd><dt>residual e</dt><dd>ความคลาดเคลื่อน ในเว็บนี้นิยาม prediction − target; บางตำราใช้เครื่องหมายกลับกัน จึงต้องตรวจนิยามก่อนเทียบสูตร gradient</dd><dt>MSE</dt><dd>mean squared error = ผลรวม residual กำลังสองหารจำนวนรายการที่ระบุ; มีหน่วยเป็น target ยกกำลังสอง และการใช้ sum แทน mean เปลี่ยน scale gradient</dd><dt>loss L / objective J</dt><dd>จำนวนที่ optimizer ต้องการลด; objective อาจรวม data loss และ regularization จึงต้องดูองค์ประกอบและ reduction ให้ตรง implementation</dd><dt>gradient ∇ / ∂</dt><dd>เวกเตอร์ของ partial derivatives บอกอัตราเปลี่ยน loss ต่อพารามิเตอร์แต่ละตัว; ∂ ใช้เมื่อเปลี่ยนตัวหนึ่งโดยตรึงตัวอื่น</dd><dt>chain rule</dt><dd>กฎลูกโซ่: คูณอนุพันธ์ตามเส้นทาง และบวก contribution จากทุกเส้นทางที่มารวมกัน ใช้ย้อนจาก loss ถึง weights</dd><dt>learning rate η</dt><dd>ขนาดตัวคูณ gradient ใน update θnew=θ−ηg; η≥0, ศูนย์หมายถึงไม่มีการขยับพารามิเตอร์ ก้าวใหญ่เกินอาจ diverge</dd><dt>regularization λ</dt><dd>ตัวคูณค่าลงโทษ ต้อง λ≥0 ตามนิยามการลงโทษ; Ridge λΣw² เพิ่ม gradient 2λw โดยบท Regression นี้ไม่ลงโทษ bias</dd><dt>baseline</dt><dd>สถานะอ้างอิงที่ตรึงไว้สำหรับเทียบ; ต้องเก็บ snapshot ไม่อ้าง object ปัจจุบันที่แก้ตามไปด้วย</dd><dt>invariant</dt><dd>คุณสมบัติที่กลไกต้องรักษา เช่น probability รวม1, shape สอดคล้อง, queue ไม่เกิน capacity; ใช้ tests ตรวจได้มากกว่าดูภาพสวย</dd><dt>optimizer state</dt><dd>ความจำของอัลกอริทึม เช่น velocity, moments และ completed updates; คืนเฉพาะ weights ยังไม่เท่ากับเริ่มการฝึกใหม่ทั้งหมด</dd><dt>finite difference</dt><dd>ประมาณ derivative ด้วย [f(x+h)−f(x−h)]/(2h); h&gt;0, ใช้ smooth point และลองหลาย h เพื่อแยก truncation error จาก roundoff</dd><dt>softmax</dt><dd>แปลง logits เป็นความน่าจะเป็นตามแกนที่กำหนด; ลบ max ก่อน exp เพื่อความเสถียร และ fully masked row ต้องมีนโยบายชัดเจน</dd><dt>logit</dt><dd>คะแนนก่อน sigmoid/softmax ไม่ใช่ probability; อาจเป็นจำนวนจริงติดลบหรือเกิน1ได้ จึงห้ามส่งให้ loss ที่คาด probability โดยไม่แปลง</dd><dt>temperature τ / T</dt><dd>ตัวหาร logits ก่อน softmax; ต้องเป็นบวก ค่าเล็กทำ distribution แหลมขึ้น โดยไม่เท่ากับ retrain weights</dd><dt>mask</dt><dd>ตัวกำหนดตำแหน่งที่อ่านหรือคิด loss ได้; causal mask ปิดอนาคต, padding mask ปิดข้อมูลเติม, loss mask เลือก target แต่ละอย่างคนละหน้าที่</dd><dt>Q / K / V</dt><dd>query ใช้ค้นข้อมูล, key ใช้จับคู่ query, value เป็นข้อมูลที่ถูกถัวเฉลี่ย; เป็น learned projections ของ representation ไม่ใช่ป้ายความหมายตายตัว</dd><dt>head</dt><dd>ส่วนของ feature representation ที่ทำ attention แยกกัน แล้ว concat/project กลับ; ต้องตรวจ d_model หารจำนวน heads ลงตัว</dd><dt>ε-neighborhood</dt><dd>เพื่อนบ้านทั้งหมดที่มีระยะไม่เกิน ε รวมจุดตัวเองใน DBSCAN นี้; ε มีหน่วยเดียวกับพิกัด ไม่ใช่จำนวน k ที่ใช้โหวต</dd><dt>core / border / noise</dt><dd>DBSCAN core มีเพื่อนบ้านรวมตัวเองถึง min_samples; border อยู่ใกล้ core แต่เพื่อนบ้านไม่ถึง; noise ไม่ถูกเชื่อมกับ core cluster ใด</dd><dt>bootstrap</dt><dd>สุ่ม observations แบบ replacement ขนาดเท่าเดิมซ้ำหลายครั้งแล้วคำนวณ statistic ใหม่; seed ทำให้ตรวจซ้ำได้ แต่ไม่แก้สมมติฐาน IID ที่ผิด</dd><dt>confidence interval</dt><dd>ช่วงที่สร้างด้วย procedure ที่มี coverage ตามสมมติฐาน; ช่วงหนึ่งที่ได้แล้วไม่ใช่ posterior probability ของ parameter และ sample เล็กยังไม่แน่นอนมาก</dd><dt>validation / test</dt><dd>validation ใช้เลือกโมเดล/ค่าตั้ง ส่วน test ใช้ประเมินหลัง freeze การตัดสินใจ; fit preprocessing/tokenizer จาก test เป็น leakage</dd><dt>leakage</dt><dd>ข้อมูลที่ควรยังไม่รู้ไหลเข้า training/การเลือกโมเดล เช่น future feature หรือเอกสารซ้ำข้าม split ทำให้ metric ดูดีเกินการใช้งานจริง</dd><dt>queue / capacity</dt><dd>queue คือรายการรอ, capacity การให้บริการรวม = workers × service rate ตามแบบจำลอง; เพิ่ม timeout ไม่เพิ่มกำลังประมวลผล</dd><dt>state transition</dt><dd>การเปลี่ยนสถานะเมื่อเกิดเหตุการณ์ที่อนุญาต เช่น queued→active→done; ต้องระบุ guard, side effect และเหตุผลเมื่อ transition ถูกปฏิเสธ</dd><dt>latency / throughput</dt><dd>latency คือเวลาต่อคำขอ, throughput คือปริมาณงานต่อหน่วยเวลา; batching อาจเพิ่ม throughput แต่เพิ่มเวลารอ จึงต้องวัดทั้งคู่</dd><dt>idempotency</dt><dd>ทำคำขอ business operation เดิมซ้ำแล้ว side effect เกิดครั้งเดียวตาม key และ transaction protocol; ไม่ได้รับประกันจากการใช้ UUID ใหม่ทุก attempt</dd><dt>local lab</dt><dd>โปรแกรม Python และ tests ที่ผู้เรียนรันบนเครื่อง; เว็บเก็บเพียงคำยืนยันของผู้เรียน การผ่าน tests ของโค้ดต้นแบบไม่ใช่ผลตรวจโค้ดผู้เรียน</dd></dl></section></article>
+<section id="practice" class="practice-section"><span class="eyebrow">PRACTICE · DEBUG · BUILD</span><h2>พิสูจน์ด้วยการลงมือทำ</h2><div id="web-checks"></div><div class="retry-actions"><button class="secondary-button" id="retry-checks">เริ่มทำโจทย์ในเว็บใหม่</button><button class="text-button" id="undo-retry" hidden>คืนผลก่อนเริ่มใหม่</button></div><div id="exercise-content"><h2>แบบฝึก 20 ข้อ — เฉลยเฉพาะข้อ</h2><p>ทำคำตอบก่อนเปิด hints; โจทย์ปลายเปิดให้ใช้ตัวอย่างคำตอบและหลักฐานราย objective ตรวจงานจริง</p><section id="exercise-1" class="exercise-item"><h3>ข้อ 1</h3><p>Normalize paired image/text embeddings.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Normalize Embeddings: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): normalizeeachrow e/‖e‖; [3,4]→[.6,.8];…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: normalizeeachrow e/‖e‖; [3,4]→[.6,.8]; zeroembeddingต้องerrorหรือpol…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>normalizeeachrow e/‖e‖; [3,4]→[.6,.8]; zeroembeddingต้องerrorหรือpolicyชัดเจนไม่หาร0แล้วซ่อนNaN</p><p>อ้างอิง: <a href="#chapter-41/section/topic-5">Normalize Embeddings</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch41-exercise-01"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-2" class="exercise-item"><h3>ข้อ 2</h3><p>Build a BxB contrastive similarity matrix.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Similarity Matrix: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): imageI(B,d),textT(B,d),S=I@T.T/τ→(B,B); diag…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: imageI(B,d),textT(B,d),S=I@T.T/τ→(B,B); diagonalคือคู่positiveตามalignment ไม่ใช…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>imageI(B,d),textT(B,d),S=I@T.T/τ→(B,B); diagonalคือคู่positiveตามalignment ไม่ใช่everyhighsimilarityเป็นpositive</p><p>อ้างอิง: <a href="#chapter-41/section/topic-6">Similarity Matrix</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch41-exercise-02"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-3" class="exercise-item"><h3>ข้อ 3</h3><p>Compute symmetric contrastive loss by hand for B=3.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Symmetric Contrastive Loss: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): B3,S=I3logitsdiag1,offdiag0ให้CE=log(e+2)−1≈.5514…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: B3,S=I3logitsdiag1,offdiag0ให้CE=log(e+2)−1≈.551445ต่อrowและsymmetricmeanเท่ากัน; averag…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>B3,S=I3logitsdiag1,offdiag0ให้CE=log(e+2)−1≈.551445ต่อrowและsymmetricmeanเท่ากัน; averageimage/textlossไม่sumถ้าใช้CLIPmean</p><p>อ้างอิง: <a href="#chapter-41/section/topic-10">Symmetric Contrastive Loss</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch41-exercise-03"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-4" class="exercise-item"><h3>ข้อ 4</h3><p>Sweep temperature and inspect softmax sharpness.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Temperature: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): τเล็กทำsoftmaxแหลมและgradientscale1/τสูง; …</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: τเล็กทำsoftmaxแหลมและgradientscale1/τสูง; τต้อง&gt;0; logitsที่เปลี่ยนจากtemper…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>τเล็กทำsoftmaxแหลมและgradientscale1/τสูง; τต้อง&gt;0; logitsที่เปลี่ยนจากtemperatureไม่ใช่embeddingsretrained</p><p>อ้างอิง: <a href="#chapter-41/section/topic-7">Temperature</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch41-exercise-04"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-5" class="exercise-item"><h3>ข้อ 5</h3><p>Implement Recall@K retrieval.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Retrieval: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): Recall@Kคือfractionqueriesที่goldอยู่topK; quer…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: Recall@Kคือfractionqueriesที่goldอยู่topK; queries3,hit2ให้2/3; multi-positiveต้องกำ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>Recall@Kคือfractionqueriesที่goldอยู่topK; queries3,hit2ให้2/3; multi-positiveต้องกำหนดanyhitหรือfractionpositivesก่อน</p><p>อ้างอิง: <a href="#chapter-41/section/topic-12">Retrieval</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch41-exercise-05"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-6" class="exercise-item"><h3>ข้อ 6</h3><p>Create false-negative duplicate examples.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ In-Batch Negatives: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): captionsซ้ำของภาพเดียวในbatchเป็นfalse negativesหาก…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: captionsซ้ำของภาพเดียวในbatchเป็นfalse negativesหากใช้onlydiagonal; ใช้multi-positivecontras…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>captionsซ้ำของภาพเดียวในbatchเป็นfalse negativesหากใช้onlydiagonal; ใช้multi-positivecontrastiveหรือdedupและreportcollisionpolicy</p><p>อ้างอิง: <a href="#chapter-41/section/topic-11">In-Batch Negatives</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch41-exercise-06"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-7" class="exercise-item"><h3>ข้อ 7</h3><p>Implement text-query/image-key cross-attention.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Cross-Attention: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): Qtext(B,Tt,d),K/Vimage(B,Ti,d)ให้A(B,…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: Qtext(B,Tt,d),K/Vimage(B,Ti,d)ให้A(B,h,Tt,Ti); maskเฉพาะvalidimagep…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>Qtext(B,Tt,d),K/Vimage(B,Ti,d)ให้A(B,h,Tt,Ti); maskเฉพาะvalidimagepatchesไม่causalข้ามmodality</p><p>อ้างอิง: <a href="#chapter-41/section/topic-16">Cross-Attention</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch41-exercise-07"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-8" class="exercise-item"><h3>ข้อ 8</h3><p>Compare late fusion vs cross-attention on a toy task.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Late Fusion: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): latefusionผสมpooledvectorsราคาถูกแต่สูญเสียtokenalignmen…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: latefusionผสมpooledvectorsราคาถูกแต่สูญเสียtokenalignment; crossattentionแพงกว่าจับregion-wordrelati…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>latefusionผสมpooledvectorsราคาถูกแต่สูญเสียtokenalignment; crossattentionแพงกว่าจับregion-wordrelationได้; comparetoyspatialquestionaccuracy</p><p>อ้างอิง: <a href="#chapter-41/section/topic-14">Late Fusion</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch41-exercise-08"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-9" class="exercise-item"><h3>ข้อ 9</h3><p>Build a visual-token projector.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Projection Layer: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): visualfeatures(B,N,dv)@W(dv,dllm)→(B,N,dllm);…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: visualfeatures(B,N,dv)@W(dv,dllm)→(B,N,dllm); biasbroadcastlastdimและprojectorout…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>visualfeatures(B,N,dv)@W(dv,dllm)→(B,N,dllm); biasbroadcastlastdimและprojectoroutputscaleตรวจตรงLLMembeddingrange</p><p>อ้างอิง: <a href="#chapter-41/section/topic-18">Projection Layer</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch41-exercise-09"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-10" class="exercise-item"><h3>ข้อ 10</h3><p>Run text-only/image-only/shuffled-modality ablations.</p>
+<p>Challenge:
+- build a tiny CLIP-style dual encoder
+- inject projected visual tokens into a tiny causal LM</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Missing Modality, Modality Dominance: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): text-only/image-only/shuffledpairsfullmodelablation; shuff…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: text-only/image-only/shuffledpairsfullmodelablation; shuffledimageควรลดtaskที่ต้องอ่านภาพ หากไม่ลดให้ตรวจ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>text-only/image-only/shuffledpairsfullmodelablation; shuffledimageควรลดtaskที่ต้องอ่านภาพ หากไม่ลดให้ตรวจshortcutleakageไม่อ้างmultimodalreasoning</p><p>อ้างอิง: <a href="#chapter-41/section/topic-26">Missing Modality</a>, <a href="#chapter-41/section/topic-27">Modality Dominance</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch41-exercise-10"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-11" class="exercise-item"><h3>ข้อ 11</h3><p>Reproduce one central calculation from Multimodal Models using a tiny hand-checkable input.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Symmetric Contrastive Loss: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): I/Tidentity3,τ1ให้symmetricloss.551445; เปลี่ยนp…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: I/Tidentity3,τ1ให้symmetricloss.551445; เปลี่ยนpairalignmentโดยไม่เปลี่ยนlabelsควรloss…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>I/Tidentity3,τ1ให้symmetricloss.551445; เปลี่ยนpairalignmentโดยไม่เปลี่ยนlabelsควรlossสูงขึ้นแม้scorematrixshapeเท่าเดิม</p><p>อ้างอิง: <a href="#chapter-41/section/topic-10">Symmetric Contrastive Loss</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch41-exercise-11"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-12" class="exercise-item"><h3>ข้อ 12</h3><p>Write a deterministic test that verifies the most important invariant in Multimodal Models.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Normalize Embeddings, Similarity Matrix: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): normrow≈1,similaritymatrixshape(B,B),permutebothmo…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: normrow≈1,similaritymatrixshape(B,B),permutebothmodalitiesเท่ากันไม่เปลี่ยนloss; permuteข้…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>normrow≈1,similaritymatrixshape(B,B),permutebothmodalitiesเท่ากันไม่เปลี่ยนloss; permuteข้างเดียวต้องเปลี่ยนmatchinglabelsตาม</p><p>อ้างอิง: <a href="#chapter-41/section/topic-5">Normalize Embeddings</a>, <a href="#chapter-41/section/topic-6">Similarity Matrix</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch41-exercise-12"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-13" class="exercise-item"><h3>ข้อ 13</h3><p>Compare two meaningful configurations while keeping data and seed fixed.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Temperature: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): τ.1/.5คงpairedembeddingsแล้วreportentropy…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: τ.1/.5คงpairedembeddingsแล้วreportentropy/loss; trainingrunต้องคงinit/spli…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>τ.1/.5คงpairedembeddingsแล้วreportentropy/loss; trainingrunต้องคงinit/split/budgetและmeasureRecall@Kจริง</p><p>อ้างอิง: <a href="#chapter-41/section/topic-7">Temperature</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch41-exercise-13"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-14" class="exercise-item"><h3>ข้อ 14</h3><p>Record intermediate shapes, ranges, and one quality metric for a tiny end-to-end run.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Image Tokens, Projection Layer: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): recordimagefeatures/textfeatures/projectedtokens/si…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: recordimagefeatures/textfeatures/projectedtokens/similaritymatrix/positiveIDsและRecall@1/5; …</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>recordimagefeatures/textfeatures/projectedtokens/similaritymatrix/positiveIDsและRecall@1/5; B1contrastiveloss0ไม่พิสูจน์alignment</p><p>อ้างอิง: <a href="#chapter-41/section/topic-17">Image Tokens</a>, <a href="#chapter-41/section/topic-18">Projection Layer</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch41-exercise-14"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-15" class="exercise-item"><h3>ข้อ 15</h3><p>Explain one evaluation mistake that could make a Multimodal Models result look better than it really is.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Evaluation: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ภาพเดียวหลายcaptionข้ามsplitทำretrievalleak; s…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ภาพเดียวหลายcaptionข้ามsplitทำretrievalleak; splitตามimage/sourcegroupและdedupทั้ง…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ภาพเดียวหลายcaptionข้ามsplitทำretrievalleak; splitตามimage/sourcegroupและdedupทั้งmodalities ไม่ให้filenameบอกlabel</p><p>อ้างอิง: <a href="#chapter-41/section/topic-28">Evaluation</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch41-exercise-15"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-16" class="exercise-item"><h3>ข้อ 16</h3><p>State the dominant time and memory complexity for the main operation in Multimodal Models.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Cross-Attention: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): similaritiesO(B²d)memoryO(B²); crossattenti…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: similaritiesO(B²d)memoryO(B²); crossattentionO(BTtTi d),visualprojectorO(BNdvd…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>similaritiesO(B²d)memoryO(B²); crossattentionO(BTtTi d),visualprojectorO(BNdvdllm); encodercostต้องวัดรวมด้วย</p><p>อ้างอิง: <a href="#chapter-41/section/topic-16">Cross-Attention</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch41-exercise-16"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-17" class="exercise-item"><h3>ข้อ 17</h3><p>Compare a from-scratch result with a trusted implementation using identical inputs and settings.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ From Scratch: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): NumPyrow-normalize+logsumexpCEเทียบtorchfunc…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: NumPyrow-normalize+logsumexpCEเทียบtorchfunctional.normalize+cross_entropyสองทิศ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>NumPyrow-normalize+logsumexpCEเทียบtorchfunctional.normalize+cross_entropyสองทิศmean; epsและpositivealignmentตรง</p><p>อ้างอิง: <a href="#chapter-41/section/topic-29">From Scratch</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch41-exercise-17"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-18" class="exercise-item"><h3>ข้อ 18</h3><p>Run a one-factor ablation and report the measured change over repeated runs when randomness matters.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Projection Layer: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): เปลี่ยนprojectorlinear→2layerMLPคงencoders/data/…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: เปลี่ยนprojectorlinear→2layerMLPคงencoders/data/seed; reportparameters/Recall@K/latenc…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>เปลี่ยนprojectorlinear→2layerMLPคงencoders/data/seed; reportparameters/Recall@K/latencyและหลายrunsไม่เทียบเฉพาะtrainloss</p><p>อ้างอิง: <a href="#chapter-41/section/topic-18">Projection Layer</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch41-exercise-18"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-19" class="exercise-item"><h3>ข้อ 19</h3><p>Design a small reproducibility record containing seed, code version, data version, configuration, and metric.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Contrastive vs Generative Objectives: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): manifestเก็บpairIDs/modalityhash/encoder/tokenizer/…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: manifestเก็บpairIDs/modalityhash/encoder/tokenizer/imagepreprocess/projector/temperature/fal…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>manifestเก็บpairIDs/modalityhash/encoder/tokenizer/imagepreprocess/projector/temperature/false-negativepolicy/split/seed/metrics</p><p>อ้างอิง: <a href="#chapter-41/section/topic-23">Contrastive vs Generative Objectives</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch41-exercise-19"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-20" class="exercise-item"><h3>ข้อ 20</h3><p>Propose one falsifiable research question for Multimodal Models and specify the baseline, changed factor, and acceptance metric.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Cross-Attention: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ทดลอง“crossattentionช่วยspatialrelationtask≥5จุดเทีย…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ทดลอง“crossattentionช่วยspatialrelationtask≥5จุดเทียบlatefusion”; fixedencoder/data/budget,ho…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ทดลอง“crossattentionช่วยspatialrelationtask≥5จุดเทียบlatefusion”; fixedencoder/data/budget,holdoutrelationsและlatency/memorybudget</p><p>อ้างอิง: <a href="#chapter-41/section/topic-16">Cross-Attention</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch41-exercise-20"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section></div><div id="local-lab-content"><section id="local-lab"><h2>Local lab: Python 3.12 บน CPU</h2><p>รันจาก repository root; ใช้ Python 3.12 แยก environment สำหรับ framework ตาม requirements ของชุดบท</p><pre><code>python3.12 -m venv .venv-course
+source .venv-course/bin/activate
+python -m pip install -r requirements-batch14.txt pytest
+(cd 41-multimodal-models &amp;&amp; python -m pytest tests -q -rs)</code></pre><p>ผลที่คาดหวัง: required tests ผ่านและไม่มี required test ถูก skip; GPU/integrations ที่ยังไม่รันต้องระบุแยก Python 3.15 ที่มากับเครื่องอาจใช้กับ framework wheels เหล่านี้ไม่ได้</p><h2>Mini Project — Tiny CLIP &amp; Fusion Lab</h2>
+<p>Create paired synthetic modalities generated from the same hidden semantic vector.</p>
+<p>Train:
+- image encoder
+- text encoder
+- projection heads
+- symmetric contrastive objective</p>
+<p>Evaluate:
+- image→text Recall@1/5
+- text→image Recall@1/5
+- cosine alignment
+- shuffled-pair baseline</p>
+<p>Extension:
+- add token-level cross-attention and a small classification task requiring both modalities.</p><h2>Batch 14 Integration Project — Diffusion, Multimodal &amp; Speech Lab</h2>
+<p>Batch 14 contains three framework experiments.</p>
+<h3>Part A — 2D DDPM</h3>
+<pre><code class="language-text">4-mode 2D data
+↓
+sample random timestep
+↓
+add Gaussian noise
+↓
+MLP epsilon predictor
+↓
+MSE noise objective
+↓
+reverse DDPM sampler
+</code></pre>
+<p>Tracks:
+- training loss
+- parameter count
+- generated mean/covariance
+- number of diffusion steps</p>
+<h3>Part B — CLIP-Style Alignment</h3>
+<p>Two synthetic modalities are generated from the same hidden semantic vector.</p>
+<pre><code class="language-text">image features → image encoder ─┐
+                               ├→ contrastive loss
+text features  → text encoder ─┘
+</code></pre>
+<p>Tracks:
+- symmetric contrastive loss
+- image→text top-1 retrieval
+- text→image top-1 retrieval</p>
+<h3>Part C — Synthetic Speech CTC</h3>
+<pre><code class="language-text">toy token sequence
+↓
+tone waveform
+↓
+torch.stft + log power
+↓
+BiGRU acoustic model
+↓
+CTC logits
+↓
+greedy CTC decode
+</code></pre>
+<p>This verifies:
+- waveform frontend
+- explicit Hann window
+- complex STFT output
+- CTC log-probability shapes
+- blank-token decoding</p>
+<p>It is not a real human speech recognizer.</p>
+<h3>Run</h3>
+<pre><code class="language-bash">python integration-project-batch14/src/diffusion_multimodal_speech_lab.py --mode diffusion --steps 100
+python integration-project-batch14/src/diffusion_multimodal_speech_lab.py --mode multimodal --steps 100
+python integration-project-batch14/src/diffusion_multimodal_speech_lab.py --mode speech --steps 40
+</code></pre>
+<h3>Required Extensions</h3>
+<ol>
+<li>cosine alpha-bar schedule</li>
+<li>DDIM sampler</li>
+<li>conditional diffusion + classifier-free guidance</li>
+<li>multimodal Recall@K</li>
+<li>token-level cross-attention fusion</li>
+<li>visual-token-to-LM projector</li>
+<li>mel filter-bank speech frontend</li>
+<li>CTC beam-search concept implementation</li>
+<li>seq2seq STT model</li>
+<li>toy mel-to-waveform vocoder experiment</li>
+</ol></section></div><label class="local-confirm"><input type="checkbox" id="local-lab-confirm"> ฉันรัน local lab และตรวจผลตาม rubric ด้วยตัวเองแล้ว</label><p class="local-note">สถานะนี้เป็นคำยืนยันของผู้เรียน เว็บไม่ได้รันหรือตรวจ Python บนเครื่องแทนคุณ</p></section>
+<section id="mastery-review" class="practice-section"><h2>หลักฐานตามเกณฑ์การเรียนรู้</h2><p>ทุก objective ต้องแสดงหลักฐานอธิบาย ทำนาย คำนวณ อ่าน shape/state debug และประยุกต์ พร้อมกรณีใหม่ ผลรัน source ผู้เรียนจริง และการประเมินซ้ำ เกณฑ์นี้ไม่รับประกันความเข้าใจทุกสถานการณ์ เปิด JavaScript เพื่อดูรายการที่ยังขาดและนำเข้ารายงานผู้ตรวจ</p></section><section class="coverage-section"><h2>แผนที่สิ่งที่เรียน → สิ่งที่ต้องแสดงให้ได้</h2><div id="coverage-table"></div></section><footer><span>ZERO TO ELITE AI ENGINEER · LEARNING STUDIO</span><span>อ่าน · derive · implement · debug · experiment · build</span></footer></div></main><noscript><style>.workbench,.sidebar,.reading-route,.lesson-toc,.mastery-status,#web-checks{display:none}main{margin-left:0}</style>อ่านเนื้อหา HTML ได้ตามปกติ เปิด JavaScript เพื่อใช้ห้องทดลองและตรวจคำตอบ</noscript></body></html>

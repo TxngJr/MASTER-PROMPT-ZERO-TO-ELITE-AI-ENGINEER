@@ -1,0 +1,1008 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="บทเรียน AI Engineer ภาษาไทย พร้อมคณิตศาสตร์ทีละขั้นและห้องทดลองที่คำนวณจริง"><title>Inference Optimization: อ่าน prompt กับสร้าง token ใช้ต้นทุนต่างกัน · AI Engineer Studio</title><link rel="stylesheet" href="../visual-lab/assets/styles.css"><link rel="stylesheet" href="../visual-lab/assets/course.css"><script defer src="../visual-lab/assets/lessons.js"></script><script defer src="../visual-lab/assets/chapter-meta.js"></script><script defer src="../visual-lab/assets/course-math.js"></script><script defer src="../visual-lab/assets/course-models.js"></script><script defer src="../visual-lab/assets/course-models-v3.js"></script><script defer src="../visual-lab/assets/course-assessment.js"></script><script defer src="../visual-lab/assets/course-mastery.js"></script><script defer src="../visual-lab/assets/course-catalog.js"></script><script defer src="../visual-lab/assets/book-content.js"></script><script defer src="../visual-lab/assets/course-render.js"></script><script defer src="../visual-lab/assets/course-mastery-panel.js"></script><script defer src="../visual-lab/assets/quality-report.js"></script><script defer src="../visual-lab/assets/course-app.js"></script></head>
+<body data-chapter="62" data-root="../"><a class="skip-link" href="#main">ข้ามไปบทเรียน</a>
+<aside class="sidebar" id="sidebar" aria-label="เลือกบทเรียน"><a class="brand" href="../visual-lab/index.html"><span class="brand-mark">ai</span><span>AI ENGINEER<small>LEARN · DERIVE · BUILD</small></span></a><div class="sidebar-intro">อ่านให้เข้าใจ · คำนวณให้เห็น · เขียนให้เป็น</div><label class="search-box"><input id="search" type="search" placeholder="ค้นหาบท / attention" aria-label="ค้นหาบทเรียน"></label><label class="filter-label" for="phase-filter">เส้นทางการเรียน <span id="nav-count"></span></label><select id="phase-filter"><option value="">ทุก Phase</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option></select><nav id="chapter-list" class="chapter-list" aria-label="รายชื่อบท"></nav><div class="course-progress"><div><span>ผ่านโจทย์ในเว็บ</span><strong id="progress-count">0 / 80</strong></div><progress id="course-progress" max="80" value="0" aria-label="บทที่ผ่านโจทย์"></progress><a id="resume-link" href="#chapter-1">อ่านต่อจากเดิม →</a></div></aside>
+<button class="nav-backdrop" id="nav-backdrop" aria-label="ปิดเมนู" hidden></button>
+<main id="main" tabindex="-1"><header class="topbar"><div><button id="nav-toggle" class="icon-button mobile-menu" aria-label="เปิดเมนูบทเรียน" aria-expanded="false" aria-controls="sidebar">☰</button><span id="breadcrumb"></span></div><span class="local-badge"><i></i> คำนวณในเครื่อง · ไม่มี API</span></header><div class="content">
+<div class="chapter-navigation"><label for="chapter-select" class="sr-only">เลือกบทเรียน</label><select id="chapter-select"></select><div class="chapter-arrows"><button id="prev-chapter" class="icon-button" aria-label="บทก่อนหน้า">←</button><button id="next-chapter" class="icon-button" aria-label="บทถัดไป">→</button></div></div>
+<section class="chapter-hero"><div><p id="chapter-kicker" class="eyebrow"></p><h1 id="chapter-title">Inference Optimization: อ่าน prompt กับสร้าง token ใช้ต้นทุนต่างกัน</h1><p class="english-title" id="chapter-english"></p></div><span class="hero-symbol">f(x) ↗</span></section>
+<p id="quality-status" class="quality-status"></p><div id="mastery-status" class="mastery-status"></div><div class="reading-route"><a href="#chapter-62/section/overview">01 อ่านบทเรียน</a><a href="#workbench">02 ทดลองสมการ</a><a href="#practice">03 ฝึกและตรวจงาน</a><a href="#mastery-review">04 หลักฐานตามเกณฑ์</a></div>
+<nav id="lesson-toc" class="lesson-toc" aria-label="สารบัญบท"></nav>
+<section id="overview" class="course-overview"><span class="eyebrow">THE LEARNING CONTRACT</span><h2>เรียนบทนี้แล้วต้องทำอะไรได้</h2><p id="chapter-purpose"></p><div id="chapter-objectives"></div><div class="learning-hint">ทำนาย → เปลี่ยนทีละค่า → ตรวจตัวเลข → อธิบายเหตุผล → เขียนด้วย Python เอง</div></section>
+<section class="workbench lab-card" id="workbench" aria-label="ห้องทดลองคำนวณจริง"><div class="card-header"><div><span class="live-dot"></span><span class="eyebrow">COMPUTATION WORKBENCH</span></div><span class="simulation-label">ทุกภาพใช้ผลคำนวณชุดเดียวกัน</span></div><div class="lab-top"><label for="lab-select">เลือกกลไกที่ต้องการทดลอง</label><select id="lab-select"></select><p id="lab-question"></p></div><div class="workbench-grid"><div class="viz-column"><div class="compare-labels"><span>เส้นทึบ: ปัจจุบัน</span><span>เส้นประ: baseline ที่ตรึงไว้</span></div><div id="simulation" class="simulation"></div><div id="metrics" class="metrics"></div><div id="baseline-diff" class="baseline-diff"></div><div class="playback"><div class="playback-buttons"><button class="primary-button" id="update-once">อัปเดตหนึ่งก้าว</button><button class="secondary-button" id="train-many">▶ ฝึก 30 ก้าว</button><button class="icon-button" id="back-state" aria-label="ย้อนประวัติ">↶</button><button class="icon-button" id="forward-state" aria-label="ประวัติถัดไป">↷</button></div></div><div class="lab-secondary-actions"><button id="pin-baseline" class="text-button">ตรึง baseline ปัจจุบัน</button><button id="reset-lab" class="text-button">คืนค่าเริ่มต้น</button><button id="download-state" class="text-button">บันทึกผล JSON</button><span id="history-status"></span></div><p id="simulation-note" class="simulation-note"></p><p class="lab-error" id="lab-error" role="alert" hidden></p></div><div class="controls-column"><h3>เปลี่ยนทีละตัว แล้วสังเกตผล</h3><div id="lab-controls"></div><p class="control-note">แก้ weight ด้วยมือจะคำนวณ forward ใหม่; optimizer เปลี่ยน weights เมื่อกดอัปเดตเท่านั้น</p></div></div>
+<div class="trace-section"><div class="trace-toolbar"><h3>เดินสมการทีละ operation</h3><div><button id="trace-prev" class="icon-button" aria-label="operation ก่อนหน้า">←</button><button id="play-trace" class="secondary-button" aria-pressed="false">▶ เล่น flow</button><button id="trace-next" class="icon-button" aria-label="operation ถัดไป">→</button><span id="stage-counter"></span></div></div><label class="motion-control"><input id="reduce-motion" type="checkbox"> ลดภาพเคลื่อนไหว (หยุดการเล่นที่ค้างอยู่)</label><div id="operation-steps" class="operation-steps"></div><div id="flow-diagram" class="flow-diagram"></div><div id="active-operation" class="active-operation" aria-live="polite"></div><p class="control-note">ตัวเลขบนภาพปัดเศษเพื่อให้อ่านง่าย; บันทึก JSON เพื่อดูค่าที่ใช้คำนวณเต็ม precision</p><details open><summary>ตารางค่าระหว่างทาง — ตรวจด้วยมือได้</summary><div id="result-table"></div></details><div id="tensor-tables" class="tensor-tables"></div><details id="surface-details"><summary>ดู loss surface และเส้นทางของ w₁,b (ตรึง controls อื่น)</summary><div id="surface-chart"></div><p>surface คำนวณ objective ปัจจุบันโดยตรึง degree, penalty, ข้อมูล และ weights อื่น เส้นทางแสดงเฉพาะ snapshots ที่ค่าเหล่านี้ตรงกัน; นอกช่วง w=[−1,5], b=[−2,4] ให้ตรวจค่าจริงใน history</p></details><details><summary>ประวัติการเปลี่ยนค่า</summary><div id="history-table"></div></details></div></section>
+<article id="chapter-article" class="chapter-article"><section id="mechanism-1" class="teaching-section"><span class="section-kicker">CHAPTER 62 · ภาพ → สมการ → โค้ด</span><h2>1. prefill คำนวณ prompt หลาย tokens</h2><h3>โจทย์และเหตุผล</h3><p>decode ของ token ใหม่อ่าน cached K,V ของอดีตเพื่อลดการ project อดีตซ้ำ แต่ context ยาวยังเพิ่ม memory reads จึงไม่ใช่ต้นทุนคงที่ต่อ token ทุกความยาว</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Calculate KV-cache memory for MHA/GQA/MQA.</p><p>KVbytes=2LBnkvTdk·bytes; MHAh8เทียบGQAnkv2ลด4×,MQAnkv1ลด8×เมื่อL/B/T/dk/dtypeเท่ากัน ไม่ลดqueryheadcomputeตามเดียวกัน</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>tokens: context T,initial=64; heads: KV heads,initial=2; layers: layers L,initial=4; batch: active requests B,initial=1; page: tokens per cache page,initial=16; length2: request2 tokens,initial=20</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = &quot;L=4, B=1, T=64, Hkv=2&quot;; กำหนดความหมายและหน่วยของ input ก่อนทดลอง</li><li>KV bytes=2*L*B*T*Hkv*Dhead*bytesPerElement = 32768; uniform estimate ใช้ T เดียวทุก request; paging example ด้านล่างแสดงสูงสุดสอง request ตามความยาวจริง</li><li>normal / boundary / comparison = 32768; ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="cache-kv-bytes-และ-request-len">เปิดการทดลองนี้</a><p class="failure-box">benchmarkเฉพาะdecodeหรือexcludequeuewaitทำservingดูเร็วเกิน; includeend-to-endSLOและreportprefill/cachehitdistribution; head_dim=16, FP16; ไม่รวม model weights, metadata และ buffers; paged allocator เป็น arithmetic example</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>KVbytes=2LBnkvTdk·bytes; MHAh8เทียบGQAnkv2ลด4×,MQAnkv1ลด8×เมื่อL/B/T/dk/dtypeเท่ากัน ไม่ลดqueryheadcomputeตามเดียวกัน</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-1-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = &quot;L=4, B=1, T=64, Hkv=2&quot;<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>KV bytes=2*L*B*T*Hkv*Dhead*bytesPerElement</code> = 32768<p>uniform estimate ใช้ T เดียวทุก request; paging example ด้านล่างแสดงสูงสุดสอง request ตามความยาวจริง</p></li><li><code>normal / boundary / comparison</code> = 32768<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-1-visual"><summary>ภาพและ shape</summary><p>head_dim=16, FP16; ไม่รวม model weights, metadata และ buffers; paged allocator เป็น arithmetic example</p><ol><li><code>shape / range</code> = &quot;L=4, B=1, T=64, Hkv=2&quot;<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>KV bytes=2*L*B*T*Hkv*Dhead*bytesPerElement</code> = 32768<p>uniform estimate ใช้ T เดียวทุก request; paging example ด้านล่างแสดงสูงสุดสอง request ตามความยาวจริง</p></li><li><code>normal / boundary / comparison</code> = 32768<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-1-code"><summary>โค้ด</summary><p>KVbytes=2LBnkvTdk·bytes; MHAh8เทียบGQAnkv2ลด4×,MQAnkv1ลด8×เมื่อL/B/T/dk/dtypeเท่ากัน ไม่ลดqueryheadcomputeตามเดียวกัน</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-1-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = &quot;L=4, B=1, T=64, Hkv=2&quot;<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>KV bytes=2*L*B*T*Hkv*Dhead*bytesPerElement</code> = 32768<p>uniform estimate ใช้ T เดียวทุก request; paging example ด้านล่างแสดงสูงสุดสอง request ตามความยาวจริง</p></li><li><code>normal / boundary / comparison</code> = 32768<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-1"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-2" class="teaching-section"><span class="section-kicker">CHAPTER 62 · ภาพ → สมการ → โค้ด</span><h2>2. paging แลก metadata กับพื้นที่ว่าง</h2><h3>โจทย์และเหตุผล</h3><p>ceil(length/page) กำหนดจำนวน pages ที่ต้องจอง requests สั้นต่างความยาวอาจเสียพื้นที่จาก padding การลด page size ลด waste แต่ต้องวัด allocator/kernel overhead จริง</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Calculate paged-block tail fragmentation.</p><p>blocksize16,lengths[17,31]จอง32+32=64slotsใช้48,tailwaste16=25%; sharedprefix/allocatoroverheadต้องนับแยก</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>tokens: context T,initial=64; heads: KV heads,initial=2; layers: layers L,initial=4; batch: active requests B,initial=1; page: tokens per cache page,initial=32; length2: request2 tokens,initial=36</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = &quot;L=4, B=1, T=64, Hkv=2&quot;; กำหนดความหมายและหน่วยของ input ก่อนทดลอง</li><li>KV bytes=2*L*B*T*Hkv*Dhead*bytesPerElement = 32768; uniform estimate ใช้ T เดียวทุก request; paging example ด้านล่างแสดงสูงสุดสอง request ตามความยาวจริง</li><li>normal / boundary / comparison = 32768; ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="cache-page-size-ก-บ-fragmentat">เปิดการทดลองนี้</a><p class="failure-box">benchmarkเฉพาะdecodeหรือexcludequeuewaitทำservingดูเร็วเกิน; includeend-to-endSLOและreportprefill/cachehitdistribution; head_dim=16, FP16; ไม่รวม model weights, metadata และ buffers; paged allocator เป็น arithmetic example</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>blocksize16,lengths[17,31]จอง32+32=64slotsใช้48,tailwaste16=25%; sharedprefix/allocatoroverheadต้องนับแยก</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-2-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = &quot;L=4, B=1, T=64, Hkv=2&quot;<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>KV bytes=2*L*B*T*Hkv*Dhead*bytesPerElement</code> = 32768<p>uniform estimate ใช้ T เดียวทุก request; paging example ด้านล่างแสดงสูงสุดสอง request ตามความยาวจริง</p></li><li><code>normal / boundary / comparison</code> = 32768<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-2-visual"><summary>ภาพและ shape</summary><p>head_dim=16, FP16; ไม่รวม model weights, metadata และ buffers; paged allocator เป็น arithmetic example</p><ol><li><code>shape / range</code> = &quot;L=4, B=1, T=64, Hkv=2&quot;<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>KV bytes=2*L*B*T*Hkv*Dhead*bytesPerElement</code> = 32768<p>uniform estimate ใช้ T เดียวทุก request; paging example ด้านล่างแสดงสูงสุดสอง request ตามความยาวจริง</p></li><li><code>normal / boundary / comparison</code> = 32768<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-2-code"><summary>โค้ด</summary><p>blocksize16,lengths[17,31]จอง32+32=64slotsใช้48,tailwaste16=25%; sharedprefix/allocatoroverheadต้องนับแยก</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-2-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = &quot;L=4, B=1, T=64, Hkv=2&quot;<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>KV bytes=2*L*B*T*Hkv*Dhead*bytesPerElement</code> = 32768<p>uniform estimate ใช้ T เดียวทุก request; paging example ด้านล่างแสดงสูงสุดสอง request ตามความยาวจริง</p></li><li><code>normal / boundary / comparison</code> = 32768<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-2"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-3" class="teaching-section"><span class="section-kicker">CHAPTER 62 · ภาพ → สมการ → โค้ด</span><h2>3. throughput กับ latency ต้องอ่านคู่กัน</h2><h3>โจทย์และเหตุผล</h3><p>continuous batching/prefix caching/chunked prefill เปลี่ยน scheduling และการใช้ memory วัด TTFT, inter-token latency, end-to-end latency และ utilization แยก อย่าใช้ tokens/s ตัวเดียวแทนประสบการณ์ผู้ใช้</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Compare TTFT/TPOT at multiple concurrencies.</p><p>TTFTจากarrivalถึงfirsttoken,TPOTจากsubsequentintertokenหรือtotaldecode/(tokens−1)ตามdefinition; compareconcurrency1/4/8พร้อมp95และthroughput</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>arrival: arrival interval (ms),initial=100; service: service duration (ms),initial=80; workers: workers,initial=1; jobs: job count,initial=12</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = [100, 80, 1]; กำหนดความหมายและหน่วยของ input ก่อนทดลอง</li><li>start=max(arrival,worker_available); end=start+service = 1180; finite deterministic FCFS queue; workload rate สูงกว่าความสามารถทำให้ waiting เพิ่มตาม jobs</li><li>normal / boundary / comparison = 1180; ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="queue-batch-scheduler-capacity">เปิดการทดลองนี้</a><p class="failure-box">benchmarkเฉพาะdecodeหรือexcludequeuewaitทำservingดูเร็วเกิน; includeend-to-endSLOและreportprefill/cachehitdistribution; discrete-event queue calculation จาก interarrival/service คงที่ ไม่ใช่ hardware serving benchmark และไม่ใช่ M/M/1 distribution</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>TTFTจากarrivalถึงfirsttoken,TPOTจากsubsequentintertokenหรือtotaldecode/(tokens−1)ตามdefinition; compareconcurrency1/4/8พร้อมp95และthroughput</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-3-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = [100, 80, 1]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>start=max(arrival,worker_available); end=start+service</code> = 1180<p>finite deterministic FCFS queue; workload rate สูงกว่าความสามารถทำให้ waiting เพิ่มตาม jobs</p></li><li><code>normal / boundary / comparison</code> = 1180<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-3-visual"><summary>ภาพและ shape</summary><p>discrete-event queue calculation จาก interarrival/service คงที่ ไม่ใช่ hardware serving benchmark และไม่ใช่ M/M/1 distribution</p><ol><li><code>shape / range</code> = [100, 80, 1]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>start=max(arrival,worker_available); end=start+service</code> = 1180<p>finite deterministic FCFS queue; workload rate สูงกว่าความสามารถทำให้ waiting เพิ่มตาม jobs</p></li><li><code>normal / boundary / comparison</code> = 1180<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-3-code"><summary>โค้ด</summary><p>TTFTจากarrivalถึงfirsttoken,TPOTจากsubsequentintertokenหรือtotaldecode/(tokens−1)ตามdefinition; compareconcurrency1/4/8พร้อมp95และthroughput</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-3-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = [100, 80, 1]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>start=max(arrival,worker_available); end=start+service</code> = 1180<p>finite deterministic FCFS queue; workload rate สูงกว่าความสามารถทำให้ waiting เพิ่มตาม jobs</p></li><li><code>normal / boundary / comparison</code> = 1180<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-3"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="reference" class="canonical-section"><h2>เนื้อหาครบทุกหัวข้อ พร้อมแผนที่ objective</h2><nav class="source-toc"><a href="#chapter-62/section/topic-1">1. Why Inference Is Different From Training</a> <a href="#chapter-62/section/topic-2">2. Learning Objectives</a> <a href="#chapter-62/section/topic-3">3. Prefill</a> <a href="#chapter-62/section/topic-4">4. Decode</a> <a href="#chapter-62/section/topic-5">5. KV Cache</a> <a href="#chapter-62/section/topic-6">6. MHA / GQA / MQA</a> <a href="#chapter-62/section/topic-7">7. Long Context</a> <a href="#chapter-62/section/topic-8">8. Cache Strategies</a> <a href="#chapter-62/section/topic-9">9. Latency vs Throughput</a> <a href="#chapter-62/section/topic-10">10. Padding Waste</a> <a href="#chapter-62/section/topic-11">11. Dynamic Batching</a> <a href="#chapter-62/section/topic-12">12. Continuous Batching</a> <a href="#chapter-62/section/topic-13">13. Paged KV Cache</a> <a href="#chapter-62/section/topic-14">14. Block Usage</a> <a href="#chapter-62/section/topic-15">15. Prefix Caching</a> <a href="#chapter-62/section/topic-16">16. Chunked Prefill</a> <a href="#chapter-62/section/topic-17">17. FlashAttention</a> <a href="#chapter-62/section/topic-18">18. PyTorch SDPA</a> <a href="#chapter-62/section/topic-19">19. Speculative Decoding</a> <a href="#chapter-62/section/topic-20">20. Speculation Correctness</a> <a href="#chapter-62/section/topic-21">21. Draft Methods</a> <a href="#chapter-62/section/topic-22">22. Tensor Parallel Inference</a> <a href="#chapter-62/section/topic-23">23. Pipeline Parallel Inference</a> <a href="#chapter-62/section/topic-24">24. Data Parallel Serving</a> <a href="#chapter-62/section/topic-25">25. Prefix-Aware Routing</a> <a href="#chapter-62/section/topic-26">26. Queueing</a> <a href="#chapter-62/section/topic-27">27. Metrics</a> <a href="#chapter-62/section/topic-28">28. From Scratch</a> <a href="#chapter-62/section/topic-29">29. Common Mistakes</a> <a href="#chapter-62/section/topic-30">30. Exercises / Mini Project</a> <a href="#chapter-62/section/topic-31">31. Checklist</a> <a href="#chapter-62/section/topic-32">32. What&#x27;s Next</a> </nav><section id="topic-1" class="source-topic"><span id="source-62-inference-optimization-canonical-chapter-62-llm-inference-optimization" class="legacy-anchor"></span><span id="source-62-inference-optimization-canonical-1-why-inference-is-different-from-training" class="legacy-anchor"></span><h3>1. Why Inference Is Different From Training</h3>
+<p>Autoregressive serving has two distinct phases:</p>
+<pre><code class="language-text">prompt
+↓
+PREFILL
+many prompt tokens in parallel
+↓
+first generated token
+↓
+DECODE
+one/few new tokens at a time
+↓
+response
+</code></pre>
+<p>These phases have different compute, memory and scheduling bottlenecks.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>1. Why Inference Is Different From Training</h3>
+<p>Autoregressive serving has two distinct phases:</p>
+<pre><code class="language-text">prompt
+↓
+PREFILL
+many prompt tokens in parallel
+↓
+first generated token
+↓
+DECODE
+one/few new tokens at a time
+↓
+response
+</code></pre>
+<p>These phases have different compute, memory and scheduling bottlenecks.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-1-equation"><summary>สมการ</summary><h3>1. Why Inference Is Different From Training</h3>
+<p>Autoregressive serving has two distinct phases:</p>
+<pre><code class="language-text">prompt
+↓
+PREFILL
+many prompt tokens in parallel
+↓
+first generated token
+↓
+DECODE
+one/few new tokens at a time
+↓
+response
+</code></pre>
+<p>These phases have different compute, memory and scheduling bottlenecks.</p></details><details id="help-topic-1-visual"><summary>ภาพและ shape</summary><h3>1. Why Inference Is Different From Training</h3>
+<p>Autoregressive serving has two distinct phases:</p>
+<pre><code class="language-text">prompt
+↓
+PREFILL
+many prompt tokens in parallel
+↓
+first generated token
+↓
+DECODE
+one/few new tokens at a time
+↓
+response
+</code></pre>
+<p>These phases have different compute, memory and scheduling bottlenecks.</p></details><details id="help-topic-1-code"><summary>โค้ด</summary><h3>1. Why Inference Is Different From Training</h3>
+<p>Autoregressive serving has two distinct phases:</p>
+<pre><code class="language-text">prompt
+↓
+PREFILL
+many prompt tokens in parallel
+↓
+first generated token
+↓
+DECODE
+one/few new tokens at a time
+↓
+response
+</code></pre>
+<p>These phases have different compute, memory and scheduling bottlenecks.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-1-result"><summary>ผลการทดลอง</summary><h3>1. Why Inference Is Different From Training</h3>
+<p>Autoregressive serving has two distinct phases:</p>
+<pre><code class="language-text">prompt
+↓
+PREFILL
+many prompt tokens in parallel
+↓
+first generated token
+↓
+DECODE
+one/few new tokens at a time
+↓
+response
+</code></pre>
+<p>These phases have different compute, memory and scheduling bottlenecks.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-1"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-2" class="source-topic"><span id="source-62-inference-optimization-canonical-2-learning-objectives" class="legacy-anchor"></span><h3>2. Learning Objectives</h3>
+<ul>
+<li>distinguish prefill and decode</li>
+<li>derive KV-cache memory</li>
+<li>explain MHA/GQA/MQA cache savings</li>
+<li>explain dynamic/static/offloaded/quantized caches</li>
+<li>distinguish latency and throughput</li>
+<li>understand static/dynamic/continuous batching</li>
+<li>explain paged KV memory and fragmentation</li>
+<li>explain prefix caching and chunked prefill</li>
+<li>understand FlashAttention</li>
+<li>understand speculative decoding</li>
+<li>reason about distributed inference</li>
+<li>measure TTFT, TPOT, queue time and throughput</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>2. Learning Objectives</h3>
+<ul>
+<li>distinguish prefill and decode</li>
+<li>derive KV-cache memory</li>
+<li>explain MHA/GQA/MQA cache savings</li>
+<li>explain dynamic/static/offloaded/quantized caches</li>
+<li>distinguish latency and throughput</li>
+<li>understand static/dynamic/continuous batching</li>
+<li>explain paged KV memory and fragmentation</li>
+<li>explain prefix caching and chunked prefill</li>
+<li>understand FlashAttention</li>
+<li>understand speculative decoding</li>
+<li>reason about distributed inference</li>
+<li>measure TTFT, TPOT, queue time and throughput</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-2-equation"><summary>สมการ</summary><h3>2. Learning Objectives</h3>
+<ul>
+<li>distinguish prefill and decode</li>
+<li>derive KV-cache memory</li>
+<li>explain MHA/GQA/MQA cache savings</li>
+<li>explain dynamic/static/offloaded/quantized caches</li>
+<li>distinguish latency and throughput</li>
+<li>understand static/dynamic/continuous batching</li>
+<li>explain paged KV memory and fragmentation</li>
+<li>explain prefix caching and chunked prefill</li>
+<li>understand FlashAttention</li>
+<li>understand speculative decoding</li>
+<li>reason about distributed inference</li>
+<li>measure TTFT, TPOT, queue time and throughput</li>
+</ul></details><details id="help-topic-2-visual"><summary>ภาพและ shape</summary><h3>2. Learning Objectives</h3>
+<ul>
+<li>distinguish prefill and decode</li>
+<li>derive KV-cache memory</li>
+<li>explain MHA/GQA/MQA cache savings</li>
+<li>explain dynamic/static/offloaded/quantized caches</li>
+<li>distinguish latency and throughput</li>
+<li>understand static/dynamic/continuous batching</li>
+<li>explain paged KV memory and fragmentation</li>
+<li>explain prefix caching and chunked prefill</li>
+<li>understand FlashAttention</li>
+<li>understand speculative decoding</li>
+<li>reason about distributed inference</li>
+<li>measure TTFT, TPOT, queue time and throughput</li>
+</ul></details><details id="help-topic-2-code"><summary>โค้ด</summary><h3>2. Learning Objectives</h3>
+<ul>
+<li>distinguish prefill and decode</li>
+<li>derive KV-cache memory</li>
+<li>explain MHA/GQA/MQA cache savings</li>
+<li>explain dynamic/static/offloaded/quantized caches</li>
+<li>distinguish latency and throughput</li>
+<li>understand static/dynamic/continuous batching</li>
+<li>explain paged KV memory and fragmentation</li>
+<li>explain prefix caching and chunked prefill</li>
+<li>understand FlashAttention</li>
+<li>understand speculative decoding</li>
+<li>reason about distributed inference</li>
+<li>measure TTFT, TPOT, queue time and throughput</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-2-result"><summary>ผลการทดลอง</summary><h3>2. Learning Objectives</h3>
+<ul>
+<li>distinguish prefill and decode</li>
+<li>derive KV-cache memory</li>
+<li>explain MHA/GQA/MQA cache savings</li>
+<li>explain dynamic/static/offloaded/quantized caches</li>
+<li>distinguish latency and throughput</li>
+<li>understand static/dynamic/continuous batching</li>
+<li>explain paged KV memory and fragmentation</li>
+<li>explain prefix caching and chunked prefill</li>
+<li>understand FlashAttention</li>
+<li>understand speculative decoding</li>
+<li>reason about distributed inference</li>
+<li>measure TTFT, TPOT, queue time and throughput</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-2"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-3" class="source-topic"><span id="source-62-inference-optimization-canonical-3-prefill" class="legacy-anchor"></span><h3>3. Prefill</h3>
+<p>During prefill, the prompt is processed and K/V states are produced for all prompt positions.</p>
+<p>Important metric:</p>
+<pre><code class="language-text">TTFT = time to first token
+</code></pre>
+<p>Long prompts increase prefill work significantly.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>prefillattentionO(T²d),cacheddecodeO(Td)attentionต่อnewtoken; continuousbatchsimulatorcostขึ้นกับeventsแต่doesnotreplaceGPUbenchmark</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>prefillattentionO(T²d),cacheddecodeO(Td)attentionต่อnewtoken; continuousbatchsimulatorcostขึ้นกับeventsแต่doesnotreplaceGPUbenchmark</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-3-equation"><summary>สมการ</summary><p>prefillattentionO(T²d),cacheddecodeO(Td)attentionต่อnewtoken; continuousbatchsimulatorcostขึ้นกับeventsแต่doesnotreplaceGPUbenchmark</p></details><details id="help-topic-3-visual"><summary>ภาพและ shape</summary><p>prefillattentionO(T²d),cacheddecodeO(Td)attentionต่อnewtoken; continuousbatchsimulatorcostขึ้นกับeventsแต่doesnotreplaceGPUbenchmark</p></details><details id="help-topic-3-code"><summary>โค้ด</summary><p>prefillattentionO(T²d),cacheddecodeO(Td)attentionต่อnewtoken; continuousbatchsimulatorcostขึ้นกับeventsแต่doesnotreplaceGPUbenchmark</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-3-result"><summary>ผลการทดลอง</summary><p>prefillattentionO(T²d),cacheddecodeO(Td)attentionต่อnewtoken; continuousbatchsimulatorcostขึ้นกับeventsแต่doesnotreplaceGPUbenchmark</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-3"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-4" class="source-topic"><span id="source-62-inference-optimization-canonical-4-decode" class="legacy-anchor"></span><h3>4. Decode</h3>
+<p>After prefill, each new token produces a query that attends to cached keys/values.</p>
+<p>Decode repeatedly reads model weights and KV cache and can become memory-bandwidth bound.</p>
+<p>Important metric:</p>
+<pre><code class="language-text">TPOT = time per output token
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>decodebatchเล็กอ่านweights/KVมากต่อtokenแต่FLOPsน้อยจึงbandwidth-boundได้; batchingเพิ่มreuseแต่เพิ่มlatencyและKVmemory</p><p>prefillattentionO(T²d),cacheddecodeO(Td)attentionต่อnewtoken; continuousbatchsimulatorcostขึ้นกับeventsแต่doesnotreplaceGPUbenchmark</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-4-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>decodebatchเล็กอ่านweights/KVมากต่อtokenแต่FLOPsน้อยจึงbandwidth-boundได้; batchingเพิ่มreuseแต่เพิ่มlatencyและKVmemory</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-4-equation"><summary>สมการ</summary><p>decodebatchเล็กอ่านweights/KVมากต่อtokenแต่FLOPsน้อยจึงbandwidth-boundได้; batchingเพิ่มreuseแต่เพิ่มlatencyและKVmemory</p></details><details id="help-topic-4-visual"><summary>ภาพและ shape</summary><p>decodebatchเล็กอ่านweights/KVมากต่อtokenแต่FLOPsน้อยจึงbandwidth-boundได้; batchingเพิ่มreuseแต่เพิ่มlatencyและKVmemory</p></details><details id="help-topic-4-code"><summary>โค้ด</summary><p>decodebatchเล็กอ่านweights/KVมากต่อtokenแต่FLOPsน้อยจึงbandwidth-boundได้; batchingเพิ่มreuseแต่เพิ่มlatencyและKVmemory</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-4-result"><summary>ผลการทดลอง</summary><p>decodebatchเล็กอ่านweights/KVมากต่อtokenแต่FLOPsน้อยจึงbandwidth-boundได้; batchingเพิ่มreuseแต่เพิ่มlatencyและKVmemory</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-4"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-5" class="source-topic"><span id="source-62-inference-optimization-canonical-5-kv-cache" class="legacy-anchor"></span><h3>5. KV Cache</h3>
+<p>Approximate dense cache storage:</p>
+<pre><code class="language-text">bytes =
+2 × layers × batch × sequence_length
+× kv_heads × head_dim × bytes_per_element
+</code></pre>
+<p>The factor 2 represents key and value.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>KVbytes=2LBnkvTdk·bytes; MHAh8เทียบGQAnkv2ลด4×,MQAnkv1ลด8×เมื่อL/B/T/dk/dtypeเท่ากัน ไม่ลดqueryheadcomputeตามเดียวกัน</p><p>cachelengthmonotonicwithinrequest,freedslotsreusable,no-cross-tenantprefixreuseโดยไม่authorizationและcached/full-logitsallclose</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-5-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>KVbytes=2LBnkvTdk·bytes; MHAh8เทียบGQAnkv2ลด4×,MQAnkv1ลด8×เมื่อL/B/T/dk/dtypeเท่ากัน ไม่ลดqueryheadcomputeตามเดียวกัน</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-5-equation"><summary>สมการ</summary><p>KVbytes=2LBnkvTdk·bytes; MHAh8เทียบGQAnkv2ลด4×,MQAnkv1ลด8×เมื่อL/B/T/dk/dtypeเท่ากัน ไม่ลดqueryheadcomputeตามเดียวกัน</p></details><details id="help-topic-5-visual"><summary>ภาพและ shape</summary><p>KVbytes=2LBnkvTdk·bytes; MHAh8เทียบGQAnkv2ลด4×,MQAnkv1ลด8×เมื่อL/B/T/dk/dtypeเท่ากัน ไม่ลดqueryheadcomputeตามเดียวกัน</p></details><details id="help-topic-5-code"><summary>โค้ด</summary><p>KVbytes=2LBnkvTdk·bytes; MHAh8เทียบGQAnkv2ลด4×,MQAnkv1ลด8×เมื่อL/B/T/dk/dtypeเท่ากัน ไม่ลดqueryheadcomputeตามเดียวกัน</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-5-result"><summary>ผลการทดลอง</summary><p>KVbytes=2LBnkvTdk·bytes; MHAh8เทียบGQAnkv2ลด4×,MQAnkv1ลด8×เมื่อL/B/T/dk/dtypeเท่ากัน ไม่ลดqueryheadcomputeตามเดียวกัน</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-5"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-6" class="source-topic"><span id="source-62-inference-optimization-canonical-6-mha-gqa-mqa" class="legacy-anchor"></span><h3>6. MHA / GQA / MQA</h3>
+<pre><code class="language-text">MHA: kv_heads = query_heads
+GQA: kv_heads &lt; query_heads
+MQA: kv_heads = 1
+</code></pre>
+<p>Fewer KV heads reduce cache memory and decode bandwidth.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>KVbytes=2LBnkvTdk·bytes; MHAh8เทียบGQAnkv2ลด4×,MQAnkv1ลด8×เมื่อL/B/T/dk/dtypeเท่ากัน ไม่ลดqueryheadcomputeตามเดียวกัน</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-6-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>KVbytes=2LBnkvTdk·bytes; MHAh8เทียบGQAnkv2ลด4×,MQAnkv1ลด8×เมื่อL/B/T/dk/dtypeเท่ากัน ไม่ลดqueryheadcomputeตามเดียวกัน</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-6-equation"><summary>สมการ</summary><p>KVbytes=2LBnkvTdk·bytes; MHAh8เทียบGQAnkv2ลด4×,MQAnkv1ลด8×เมื่อL/B/T/dk/dtypeเท่ากัน ไม่ลดqueryheadcomputeตามเดียวกัน</p></details><details id="help-topic-6-visual"><summary>ภาพและ shape</summary><p>KVbytes=2LBnkvTdk·bytes; MHAh8เทียบGQAnkv2ลด4×,MQAnkv1ลด8×เมื่อL/B/T/dk/dtypeเท่ากัน ไม่ลดqueryheadcomputeตามเดียวกัน</p></details><details id="help-topic-6-code"><summary>โค้ด</summary><p>KVbytes=2LBnkvTdk·bytes; MHAh8เทียบGQAnkv2ลด4×,MQAnkv1ลด8×เมื่อL/B/T/dk/dtypeเท่ากัน ไม่ลดqueryheadcomputeตามเดียวกัน</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-6-result"><summary>ผลการทดลอง</summary><p>KVbytes=2LBnkvTdk·bytes; MHAh8เทียบGQAnkv2ลด4×,MQAnkv1ลด8×เมื่อL/B/T/dk/dtypeเท่ากัน ไม่ลดqueryheadcomputeตามเดียวกัน</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-6"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-7" class="source-topic"><span id="source-62-inference-optimization-canonical-7-long-context" class="legacy-anchor"></span><h3>7. Long Context</h3>
+<p>Ordinary dense KV-cache memory grows approximately linearly with cached sequence length. Long context can reduce the number of concurrent requests even when model weights already fit.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-7-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>7. Long Context</h3>
+<p>Ordinary dense KV-cache memory grows approximately linearly with cached sequence length. Long context can reduce the number of concurrent requests even when model weights already fit.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-7-equation"><summary>สมการ</summary><h3>7. Long Context</h3>
+<p>Ordinary dense KV-cache memory grows approximately linearly with cached sequence length. Long context can reduce the number of concurrent requests even when model weights already fit.</p></details><details id="help-topic-7-visual"><summary>ภาพและ shape</summary><h3>7. Long Context</h3>
+<p>Ordinary dense KV-cache memory grows approximately linearly with cached sequence length. Long context can reduce the number of concurrent requests even when model weights already fit.</p></details><details id="help-topic-7-code"><summary>โค้ด</summary><h3>7. Long Context</h3>
+<p>Ordinary dense KV-cache memory grows approximately linearly with cached sequence length. Long context can reduce the number of concurrent requests even when model weights already fit.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-7-result"><summary>ผลการทดลอง</summary><h3>7. Long Context</h3>
+<p>Ordinary dense KV-cache memory grows approximately linearly with cached sequence length. Long context can reduce the number of concurrent requests even when model weights already fit.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-7"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-8" class="source-topic"><span id="source-62-inference-optimization-canonical-8-cache-strategies" class="legacy-anchor"></span><h3>8. Cache Strategies</h3>
+<p>Modern Transformers provides multiple strategies:</p>
+<ul>
+<li>Dynamic cache — grows with sequence</li>
+<li>Static cache — preallocates capacity and can help fixed-shape compilation</li>
+<li>Offloaded cache — trades GPU memory for CPU transfer overhead</li>
+<li>Quantized cache — lowers cache memory with extra quantization costs</li>
+</ul>
+<p>Static cache can waste capacity/work when real sequence lengths are far below the configured maximum. (see references.md)</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>DynamicCacheโตตามactualcontextประหยัดจองล่วงหน้าแต่reallocation/compileยาก; StaticCacheจองmaxcontextช่วยfixedshapeแต่เสียreservedmemoryและต้องmaskunusedslots</p><p>static/dynamicคงmodel/lengthdistribution/batch/dtype; reportreserved/allocatedpeak,TTFT/TPOT,warmupและcompilecostแยก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-8-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>DynamicCacheโตตามactualcontextประหยัดจองล่วงหน้าแต่reallocation/compileยาก; StaticCacheจองmaxcontextช่วยfixedshapeแต่เสียreservedmemoryและต้องmaskunusedslots</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-8-equation"><summary>สมการ</summary><p>DynamicCacheโตตามactualcontextประหยัดจองล่วงหน้าแต่reallocation/compileยาก; StaticCacheจองmaxcontextช่วยfixedshapeแต่เสียreservedmemoryและต้องmaskunusedslots</p></details><details id="help-topic-8-visual"><summary>ภาพและ shape</summary><p>DynamicCacheโตตามactualcontextประหยัดจองล่วงหน้าแต่reallocation/compileยาก; StaticCacheจองmaxcontextช่วยfixedshapeแต่เสียreservedmemoryและต้องmaskunusedslots</p></details><details id="help-topic-8-code"><summary>โค้ด</summary><p>DynamicCacheโตตามactualcontextประหยัดจองล่วงหน้าแต่reallocation/compileยาก; StaticCacheจองmaxcontextช่วยfixedshapeแต่เสียreservedmemoryและต้องmaskunusedslots</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-8-result"><summary>ผลการทดลอง</summary><p>DynamicCacheโตตามactualcontextประหยัดจองล่วงหน้าแต่reallocation/compileยาก; StaticCacheจองmaxcontextช่วยfixedshapeแต่เสียreservedmemoryและต้องmaskunusedslots</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-8"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-9" class="source-topic"><span id="source-62-inference-optimization-canonical-9-latency-vs-throughput" class="legacy-anchor"></span><h3>9. Latency vs Throughput</h3>
+<pre><code class="language-text">latency = time per request
+throughput = tokens/sec or requests/sec
+</code></pre>
+<p>Optimizing one can hurt the other.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>benchmarkเฉพาะdecodeหรือexcludequeuewaitทำservingดูเร็วเกิน; includeend-to-endSLOและreportprefill/cachehitdistribution</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-9-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>benchmarkเฉพาะdecodeหรือexcludequeuewaitทำservingดูเร็วเกิน; includeend-to-endSLOและreportprefill/cachehitdistribution</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-9-equation"><summary>สมการ</summary><p>benchmarkเฉพาะdecodeหรือexcludequeuewaitทำservingดูเร็วเกิน; includeend-to-endSLOและreportprefill/cachehitdistribution</p></details><details id="help-topic-9-visual"><summary>ภาพและ shape</summary><p>benchmarkเฉพาะdecodeหรือexcludequeuewaitทำservingดูเร็วเกิน; includeend-to-endSLOและreportprefill/cachehitdistribution</p></details><details id="help-topic-9-code"><summary>โค้ด</summary><p>benchmarkเฉพาะdecodeหรือexcludequeuewaitทำservingดูเร็วเกิน; includeend-to-endSLOและreportprefill/cachehitdistribution</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-9-result"><summary>ผลการทดลอง</summary><p>benchmarkเฉพาะdecodeหรือexcludequeuewaitทำservingดูเร็วเกิน; includeend-to-endSLOและreportprefill/cachehitdistribution</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-9"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-10" class="source-topic"><span id="source-62-inference-optimization-canonical-10-padding-waste" class="legacy-anchor"></span><h3>10. Padding Waste</h3>
+<p>For sequence lengths L_i padded to max L:</p>
+<pre><code class="language-text">efficiency = sum(L_i) / (batch_size × max(L_i))
+</code></pre>
+<p>Length-aware batching can improve useful work.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>lengths[2,4,6],padmax6ให้usefultokens12จาก18,efficiency2/3; bucketingลดpaddingแต่ต้องคุมqueuewait/latency</p><p>ทดลอง“lengthbucketingเพิ่มpaddingefficiency≥20%โดยp95queuewait≤50ms”; FIFOconfigurationbaseline,fixedrequesttraceและsamecapacity</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-10-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>lengths[2,4,6],padmax6ให้usefultokens12จาก18,efficiency2/3; bucketingลดpaddingแต่ต้องคุมqueuewait/latency</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-10-equation"><summary>สมการ</summary><p>lengths[2,4,6],padmax6ให้usefultokens12จาก18,efficiency2/3; bucketingลดpaddingแต่ต้องคุมqueuewait/latency</p></details><details id="help-topic-10-visual"><summary>ภาพและ shape</summary><p>lengths[2,4,6],padmax6ให้usefultokens12จาก18,efficiency2/3; bucketingลดpaddingแต่ต้องคุมqueuewait/latency</p></details><details id="help-topic-10-code"><summary>โค้ด</summary><p>lengths[2,4,6],padmax6ให้usefultokens12จาก18,efficiency2/3; bucketingลดpaddingแต่ต้องคุมqueuewait/latency</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-10-result"><summary>ผลการทดลอง</summary><p>lengths[2,4,6],padmax6ให้usefultokens12จาก18,efficiency2/3; bucketingลดpaddingแต่ต้องคุมqueuewait/latency</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-10"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-11" class="source-topic"><span id="source-62-inference-optimization-canonical-11-dynamic-batching" class="legacy-anchor"></span><h3>11. Dynamic Batching</h3>
+<p>Collect requests inside a short scheduling window and form a batch. Larger windows may improve batch size but add queueing delay.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>ทดลอง“lengthbucketingเพิ่มpaddingefficiency≥20%โดยp95queuewait≤50ms”; FIFOconfigurationbaseline,fixedrequesttraceและsamecapacity</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-11-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>ทดลอง“lengthbucketingเพิ่มpaddingefficiency≥20%โดยp95queuewait≤50ms”; FIFOconfigurationbaseline,fixedrequesttraceและsamecapacity</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-11-equation"><summary>สมการ</summary><p>ทดลอง“lengthbucketingเพิ่มpaddingefficiency≥20%โดยp95queuewait≤50ms”; FIFOconfigurationbaseline,fixedrequesttraceและsamecapacity</p></details><details id="help-topic-11-visual"><summary>ภาพและ shape</summary><p>ทดลอง“lengthbucketingเพิ่มpaddingefficiency≥20%โดยp95queuewait≤50ms”; FIFOconfigurationbaseline,fixedrequesttraceและsamecapacity</p></details><details id="help-topic-11-code"><summary>โค้ด</summary><p>ทดลอง“lengthbucketingเพิ่มpaddingefficiency≥20%โดยp95queuewait≤50ms”; FIFOconfigurationbaseline,fixedrequesttraceและsamecapacity</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-11-result"><summary>ผลการทดลอง</summary><p>ทดลอง“lengthbucketingเพิ่มpaddingefficiency≥20%โดยp95queuewait≤50ms”; FIFOconfigurationbaseline,fixedrequesttraceและsamecapacity</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-11"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-12" class="source-topic"><span id="source-62-inference-optimization-canonical-12-continuous-batching" class="legacy-anchor"></span><h3>12. Continuous Batching</h3>
+<p>Instead of waiting for every sequence in a batch to finish, finished slots are replaced by new work during serving.</p>
+<p>This improves utilization for variable output lengths. vLLM currently lists continuous batching as a core feature. (see references.md)</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>continuousbatchschedulerทุกdecodeiterationปล่อยcompletedslots/รับwaitingเมื่อKVbudgetพอ; capqueue/maxbatch/maxtokensและrecordwaittime/admissionreason</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-12-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>continuousbatchschedulerทุกdecodeiterationปล่อยcompletedslots/รับwaitingเมื่อKVbudgetพอ; capqueue/maxbatch/maxtokensและrecordwaittime/admissionreason</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-12-equation"><summary>สมการ</summary><p>continuousbatchschedulerทุกdecodeiterationปล่อยcompletedslots/รับwaitingเมื่อKVbudgetพอ; capqueue/maxbatch/maxtokensและrecordwaittime/admissionreason</p></details><details id="help-topic-12-visual"><summary>ภาพและ shape</summary><p>continuousbatchschedulerทุกdecodeiterationปล่อยcompletedslots/รับwaitingเมื่อKVbudgetพอ; capqueue/maxbatch/maxtokensและrecordwaittime/admissionreason</p></details><details id="help-topic-12-code"><summary>โค้ด</summary><p>continuousbatchschedulerทุกdecodeiterationปล่อยcompletedslots/รับwaitingเมื่อKVbudgetพอ; capqueue/maxbatch/maxtokensและrecordwaittime/admissionreason</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-12-result"><summary>ผลการทดลอง</summary><p>continuousbatchschedulerทุกdecodeiterationปล่อยcompletedslots/รับwaitingเมื่อKVbudgetพอ; capqueue/maxbatch/maxtokensและrecordwaittime/admissionreason</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-12"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-13" class="source-topic"><span id="source-62-inference-optimization-canonical-13-paged-kv-cache" class="legacy-anchor"></span><h3>13. Paged KV Cache</h3>
+<p>Paged cache systems map logical request blocks to physical KV-memory blocks rather than requiring one large contiguous reservation.</p>
+<pre><code class="language-text">logical sequence blocks
+↓ block table
+physical KV blocks
+</code></pre>
+<p>This reduces allocator fragmentation and supports flexible sequence growth.</p>
+<p>vLLM's current cache remains block-oriented, though its historical PagedAttention design document explicitly warns that it is not a literal description of all current kernel code. (see references.md)</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>cachelengthmonotonicwithinrequest,freedslotsreusable,no-cross-tenantprefixreuseโดยไม่authorizationและcached/full-logitsallclose</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-13-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>cachelengthmonotonicwithinrequest,freedslotsreusable,no-cross-tenantprefixreuseโดยไม่authorizationและcached/full-logitsallclose</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-13-equation"><summary>สมการ</summary><p>cachelengthmonotonicwithinrequest,freedslotsreusable,no-cross-tenantprefixreuseโดยไม่authorizationและcached/full-logitsallclose</p></details><details id="help-topic-13-visual"><summary>ภาพและ shape</summary><p>cachelengthmonotonicwithinrequest,freedslotsreusable,no-cross-tenantprefixreuseโดยไม่authorizationและcached/full-logitsallclose</p></details><details id="help-topic-13-code"><summary>โค้ด</summary><p>cachelengthmonotonicwithinrequest,freedslotsreusable,no-cross-tenantprefixreuseโดยไม่authorizationและcached/full-logitsallclose</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-13-result"><summary>ผลการทดลอง</summary><p>cachelengthmonotonicwithinrequest,freedslotsreusable,no-cross-tenantprefixreuseโดยไม่authorizationและcached/full-logitsallclose</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-13"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-14" class="source-topic"><span id="source-62-inference-optimization-canonical-14-block-usage" class="legacy-anchor"></span><h3>14. Block Usage</h3>
+<p>For sequence length T and block size B:</p>
+<pre><code class="language-text">blocks = ceil(T/B)
+allocated_slots = blocks × B
+tail_waste = allocated_slots - T
+</code></pre>
+<p>Smaller blocks reduce tail waste but increase metadata and management overhead.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>blocksize16,lengths[17,31]จอง32+32=64slotsใช้48,tailwaste16=25%; sharedprefix/allocatoroverheadต้องนับแยก</p><p>lengths17/31block16waste16slots; เพิ่มblocksize32จอง64เท่าเดิมกรณีนี้ แต่distributionอื่นอาจต่าง จึงต้องวัดจากrequestlengthsจริง</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-14-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>blocksize16,lengths[17,31]จอง32+32=64slotsใช้48,tailwaste16=25%; sharedprefix/allocatoroverheadต้องนับแยก</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-14-equation"><summary>สมการ</summary><p>blocksize16,lengths[17,31]จอง32+32=64slotsใช้48,tailwaste16=25%; sharedprefix/allocatoroverheadต้องนับแยก</p></details><details id="help-topic-14-visual"><summary>ภาพและ shape</summary><p>blocksize16,lengths[17,31]จอง32+32=64slotsใช้48,tailwaste16=25%; sharedprefix/allocatoroverheadต้องนับแยก</p></details><details id="help-topic-14-code"><summary>โค้ด</summary><p>blocksize16,lengths[17,31]จอง32+32=64slotsใช้48,tailwaste16=25%; sharedprefix/allocatoroverheadต้องนับแยก</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-14-result"><summary>ผลการทดลอง</summary><p>blocksize16,lengths[17,31]จอง32+32=64slotsใช้48,tailwaste16=25%; sharedprefix/allocatoroverheadต้องนับแยก</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-14"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-15" class="source-topic"><span id="source-62-inference-optimization-canonical-15-prefix-caching" class="legacy-anchor"></span><h3>15. Prefix Caching</h3>
+<p>If requests share identical token prefixes, previously computed prefix KV blocks can be reused.</p>
+<pre><code class="language-text">common system/document prefix
+↓ cached KV
+new request suffix
+↓ compute only missing suffix
+</code></pre>
+<p>Current vLLM uses hash-based automatic prefix caching. (see references.md)</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>prefix1000tokensซ้ำใน10requests,cacheprefillreuseได้ประมาณ9000prefix-tokenprojectionsแทน10000ภายใต้identicalprefix/model/position ไม่ลดdecodeทั้งหมด</p><p>prefixcacheoff/onคงrequests/tenantpolicy/model; reporthit-rate/TTFT/KVbytesและverifyoutputsidenticalหลายprompts</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-15-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>prefix1000tokensซ้ำใน10requests,cacheprefillreuseได้ประมาณ9000prefix-tokenprojectionsแทน10000ภายใต้identicalprefix/model/position ไม่ลดdecodeทั้งหมด</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-15-equation"><summary>สมการ</summary><p>prefix1000tokensซ้ำใน10requests,cacheprefillreuseได้ประมาณ9000prefix-tokenprojectionsแทน10000ภายใต้identicalprefix/model/position ไม่ลดdecodeทั้งหมด</p></details><details id="help-topic-15-visual"><summary>ภาพและ shape</summary><p>prefix1000tokensซ้ำใน10requests,cacheprefillreuseได้ประมาณ9000prefix-tokenprojectionsแทน10000ภายใต้identicalprefix/model/position ไม่ลดdecodeทั้งหมด</p></details><details id="help-topic-15-code"><summary>โค้ด</summary><p>prefix1000tokensซ้ำใน10requests,cacheprefillreuseได้ประมาณ9000prefix-tokenprojectionsแทน10000ภายใต้identicalprefix/model/position ไม่ลดdecodeทั้งหมด</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-15-result"><summary>ผลการทดลอง</summary><p>prefix1000tokensซ้ำใน10requests,cacheprefillreuseได้ประมาณ9000prefix-tokenprojectionsแทน10000ภายใต้identicalprefix/model/position ไม่ลดdecodeทั้งหมด</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-15"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-16" class="source-topic"><span id="source-62-inference-optimization-canonical-16-chunked-prefill" class="legacy-anchor"></span><h3>16. Chunked Prefill</h3>
+<p>Very long prefills can monopolize compute and delay decode traffic. Chunked prefill splits prompt work so schedulers can interleave it with other requests.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-16-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>16. Chunked Prefill</h3>
+<p>Very long prefills can monopolize compute and delay decode traffic. Chunked prefill splits prompt work so schedulers can interleave it with other requests.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-16-equation"><summary>สมการ</summary><h3>16. Chunked Prefill</h3>
+<p>Very long prefills can monopolize compute and delay decode traffic. Chunked prefill splits prompt work so schedulers can interleave it with other requests.</p></details><details id="help-topic-16-visual"><summary>ภาพและ shape</summary><h3>16. Chunked Prefill</h3>
+<p>Very long prefills can monopolize compute and delay decode traffic. Chunked prefill splits prompt work so schedulers can interleave it with other requests.</p></details><details id="help-topic-16-code"><summary>โค้ด</summary><h3>16. Chunked Prefill</h3>
+<p>Very long prefills can monopolize compute and delay decode traffic. Chunked prefill splits prompt work so schedulers can interleave it with other requests.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-16-result"><summary>ผลการทดลอง</summary><h3>16. Chunked Prefill</h3>
+<p>Very long prefills can monopolize compute and delay decode traffic. Chunked prefill splits prompt work so schedulers can interleave it with other requests.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-16"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-17" class="source-topic"><span id="source-62-inference-optimization-canonical-17-flashattention" class="legacy-anchor"></span><h3>17. FlashAttention</h3>
+<p>Standard dense attention conceptually forms an N×N score matrix. FlashAttention reorganizes exact attention into tiles to reduce expensive memory IO and avoid materializing the entire score matrix in high-bandwidth device memory.</p>
+<p>Important:</p>
+<blockquote>
+<p>FlashAttention improves IO/memory behavior; standard dense attention still has quadratic token-pair arithmetic.</p>
+</blockquote><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>FlashAttentionจัดtile/fusionลดHBMtraffic/ไม่materializefullscores; denseattentionยังมีO(T²)paircompute ไม่เรียกlinearattention</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-17-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>FlashAttentionจัดtile/fusionลดHBMtraffic/ไม่materializefullscores; denseattentionยังมีO(T²)paircompute ไม่เรียกlinearattention</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-17-equation"><summary>สมการ</summary><p>FlashAttentionจัดtile/fusionลดHBMtraffic/ไม่materializefullscores; denseattentionยังมีO(T²)paircompute ไม่เรียกlinearattention</p></details><details id="help-topic-17-visual"><summary>ภาพและ shape</summary><p>FlashAttentionจัดtile/fusionลดHBMtraffic/ไม่materializefullscores; denseattentionยังมีO(T²)paircompute ไม่เรียกlinearattention</p></details><details id="help-topic-17-code"><summary>โค้ด</summary><p>FlashAttentionจัดtile/fusionลดHBMtraffic/ไม่materializefullscores; denseattentionยังมีO(T²)paircompute ไม่เรียกlinearattention</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-17-result"><summary>ผลการทดลอง</summary><p>FlashAttentionจัดtile/fusionลดHBMtraffic/ไม่materializefullscores; denseattentionยังมีO(T²)paircompute ไม่เรียกlinearattention</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-17"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-18" class="source-topic"><span id="source-62-inference-optimization-canonical-18-pytorch-sdpa" class="legacy-anchor"></span><h3>18. PyTorch SDPA</h3>
+<p>PyTorch scaled_dot_product_attention can dispatch to optimized backends depending on device, dtype and shape. Current torch.nn.attention exposes backend controls and FlashAttention implementations. (see references.md)</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-18-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>18. PyTorch SDPA</h3>
+<p>PyTorch scaled_dot_product_attention can dispatch to optimized backends depending on device, dtype and shape. Current torch.nn.attention exposes backend controls and FlashAttention implementations. (see references.md)</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-18-equation"><summary>สมการ</summary><h3>18. PyTorch SDPA</h3>
+<p>PyTorch scaled_dot_product_attention can dispatch to optimized backends depending on device, dtype and shape. Current torch.nn.attention exposes backend controls and FlashAttention implementations. (see references.md)</p></details><details id="help-topic-18-visual"><summary>ภาพและ shape</summary><h3>18. PyTorch SDPA</h3>
+<p>PyTorch scaled_dot_product_attention can dispatch to optimized backends depending on device, dtype and shape. Current torch.nn.attention exposes backend controls and FlashAttention implementations. (see references.md)</p></details><details id="help-topic-18-code"><summary>โค้ด</summary><h3>18. PyTorch SDPA</h3>
+<p>PyTorch scaled_dot_product_attention can dispatch to optimized backends depending on device, dtype and shape. Current torch.nn.attention exposes backend controls and FlashAttention implementations. (see references.md)</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-18-result"><summary>ผลการทดลอง</summary><h3>18. PyTorch SDPA</h3>
+<p>PyTorch scaled_dot_product_attention can dispatch to optimized backends depending on device, dtype and shape. Current torch.nn.attention exposes backend controls and FlashAttention implementations. (see references.md)</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-18"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-19" class="source-topic"><span id="source-62-inference-optimization-canonical-19-speculative-decoding" class="legacy-anchor"></span><h3>19. Speculative Decoding</h3>
+<p>Use a cheap draft method to propose multiple tokens, then let the target model verify them in parallel.</p>
+<pre><code class="language-text">draft proposes k tokens
+↓
+target verifies
+↓
+accept valid prefix
+↓
+advance multiple tokens when possible
+</code></pre>
+<p>Low acceptance can erase the speed benefit.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>acceptedtokens/totaldraftedtokens; drafted[4,4,4],accepted[3,1,4]rate8/12=2/3; end-to-endspeedรวมdraft/verifycostและrejecthandling</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-19-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>acceptedtokens/totaldraftedtokens; drafted[4,4,4],accepted[3,1,4]rate8/12=2/3; end-to-endspeedรวมdraft/verifycostและrejecthandling</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-19-equation"><summary>สมการ</summary><p>acceptedtokens/totaldraftedtokens; drafted[4,4,4],accepted[3,1,4]rate8/12=2/3; end-to-endspeedรวมdraft/verifycostและrejecthandling</p></details><details id="help-topic-19-visual"><summary>ภาพและ shape</summary><p>acceptedtokens/totaldraftedtokens; drafted[4,4,4],accepted[3,1,4]rate8/12=2/3; end-to-endspeedรวมdraft/verifycostและrejecthandling</p></details><details id="help-topic-19-code"><summary>โค้ด</summary><p>acceptedtokens/totaldraftedtokens; drafted[4,4,4],accepted[3,1,4]rate8/12=2/3; end-to-endspeedรวมdraft/verifycostและrejecthandling</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-19-result"><summary>ผลการทดลอง</summary><p>acceptedtokens/totaldraftedtokens; drafted[4,4,4],accepted[3,1,4]rate8/12=2/3; end-to-endspeedรวมdraft/verifycostและrejecthandling</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-19"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-20" class="source-topic"><span id="source-62-inference-optimization-canonical-20-speculation-correctness" class="legacy-anchor"></span><h3>20. Speculation Correctness</h3>
+<p>Correct speculative algorithms preserve the target distribution under their sampling assumptions. Draft tokens must not simply bypass target verification.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>acceptedtokens/totaldraftedtokens; drafted[4,4,4],accepted[3,1,4]rate8/12=2/3; end-to-endspeedรวมdraft/verifycostและrejecthandling</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-20-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>acceptedtokens/totaldraftedtokens; drafted[4,4,4],accepted[3,1,4]rate8/12=2/3; end-to-endspeedรวมdraft/verifycostและrejecthandling</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-20-equation"><summary>สมการ</summary><p>acceptedtokens/totaldraftedtokens; drafted[4,4,4],accepted[3,1,4]rate8/12=2/3; end-to-endspeedรวมdraft/verifycostและrejecthandling</p></details><details id="help-topic-20-visual"><summary>ภาพและ shape</summary><p>acceptedtokens/totaldraftedtokens; drafted[4,4,4],accepted[3,1,4]rate8/12=2/3; end-to-endspeedรวมdraft/verifycostและrejecthandling</p></details><details id="help-topic-20-code"><summary>โค้ด</summary><p>acceptedtokens/totaldraftedtokens; drafted[4,4,4],accepted[3,1,4]rate8/12=2/3; end-to-endspeedรวมdraft/verifycostและrejecthandling</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-20-result"><summary>ผลการทดลอง</summary><p>acceptedtokens/totaldraftedtokens; drafted[4,4,4],accepted[3,1,4]rate8/12=2/3; end-to-endspeedรวมdraft/verifycostและrejecthandling</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-20"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-21" class="source-topic"><span id="source-62-inference-optimization-canonical-21-draft-methods" class="legacy-anchor"></span><h3>21. Draft Methods</h3>
+<p>Possible proposal sources include:</p>
+<ul>
+<li>smaller draft model</li>
+<li>n-gram matches</li>
+<li>suffix/prefix heuristics</li>
+<li>learned multi-token heads</li>
+</ul>
+<p>Current vLLM documents several speculative-decoding approaches. (see references.md)</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-21-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>21. Draft Methods</h3>
+<p>Possible proposal sources include:</p>
+<ul>
+<li>smaller draft model</li>
+<li>n-gram matches</li>
+<li>suffix/prefix heuristics</li>
+<li>learned multi-token heads</li>
+</ul>
+<p>Current vLLM documents several speculative-decoding approaches. (see references.md)</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-21-equation"><summary>สมการ</summary><h3>21. Draft Methods</h3>
+<p>Possible proposal sources include:</p>
+<ul>
+<li>smaller draft model</li>
+<li>n-gram matches</li>
+<li>suffix/prefix heuristics</li>
+<li>learned multi-token heads</li>
+</ul>
+<p>Current vLLM documents several speculative-decoding approaches. (see references.md)</p></details><details id="help-topic-21-visual"><summary>ภาพและ shape</summary><h3>21. Draft Methods</h3>
+<p>Possible proposal sources include:</p>
+<ul>
+<li>smaller draft model</li>
+<li>n-gram matches</li>
+<li>suffix/prefix heuristics</li>
+<li>learned multi-token heads</li>
+</ul>
+<p>Current vLLM documents several speculative-decoding approaches. (see references.md)</p></details><details id="help-topic-21-code"><summary>โค้ด</summary><h3>21. Draft Methods</h3>
+<p>Possible proposal sources include:</p>
+<ul>
+<li>smaller draft model</li>
+<li>n-gram matches</li>
+<li>suffix/prefix heuristics</li>
+<li>learned multi-token heads</li>
+</ul>
+<p>Current vLLM documents several speculative-decoding approaches. (see references.md)</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-21-result"><summary>ผลการทดลอง</summary><h3>21. Draft Methods</h3>
+<p>Possible proposal sources include:</p>
+<ul>
+<li>smaller draft model</li>
+<li>n-gram matches</li>
+<li>suffix/prefix heuristics</li>
+<li>learned multi-token heads</li>
+</ul>
+<p>Current vLLM documents several speculative-decoding approaches. (see references.md)</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-21"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-22" class="source-topic"><span id="source-62-inference-optimization-canonical-22-tensor-parallel-inference" class="legacy-anchor"></span><h3>22. Tensor Parallel Inference</h3>
+<p>Split large matrices across GPUs. This can fit larger models and combine bandwidth/compute, but introduces layer-level collectives.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-22-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>22. Tensor Parallel Inference</h3>
+<p>Split large matrices across GPUs. This can fit larger models and combine bandwidth/compute, but introduces layer-level collectives.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-22-equation"><summary>สมการ</summary><h3>22. Tensor Parallel Inference</h3>
+<p>Split large matrices across GPUs. This can fit larger models and combine bandwidth/compute, but introduces layer-level collectives.</p></details><details id="help-topic-22-visual"><summary>ภาพและ shape</summary><h3>22. Tensor Parallel Inference</h3>
+<p>Split large matrices across GPUs. This can fit larger models and combine bandwidth/compute, but introduces layer-level collectives.</p></details><details id="help-topic-22-code"><summary>โค้ด</summary><h3>22. Tensor Parallel Inference</h3>
+<p>Split large matrices across GPUs. This can fit larger models and combine bandwidth/compute, but introduces layer-level collectives.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-22-result"><summary>ผลการทดลอง</summary><h3>22. Tensor Parallel Inference</h3>
+<p>Split large matrices across GPUs. This can fit larger models and combine bandwidth/compute, but introduces layer-level collectives.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-22"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-23" class="source-topic"><span id="source-62-inference-optimization-canonical-23-pipeline-parallel-inference" class="legacy-anchor"></span><h3>23. Pipeline Parallel Inference</h3>
+<p>Split layer ranges across devices. Pipeline balance and scheduling influence end-to-end latency.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-23-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>23. Pipeline Parallel Inference</h3>
+<p>Split layer ranges across devices. Pipeline balance and scheduling influence end-to-end latency.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-23-equation"><summary>สมการ</summary><h3>23. Pipeline Parallel Inference</h3>
+<p>Split layer ranges across devices. Pipeline balance and scheduling influence end-to-end latency.</p></details><details id="help-topic-23-visual"><summary>ภาพและ shape</summary><h3>23. Pipeline Parallel Inference</h3>
+<p>Split layer ranges across devices. Pipeline balance and scheduling influence end-to-end latency.</p></details><details id="help-topic-23-code"><summary>โค้ด</summary><h3>23. Pipeline Parallel Inference</h3>
+<p>Split layer ranges across devices. Pipeline balance and scheduling influence end-to-end latency.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-23-result"><summary>ผลการทดลอง</summary><h3>23. Pipeline Parallel Inference</h3>
+<p>Split layer ranges across devices. Pipeline balance and scheduling influence end-to-end latency.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-23"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-24" class="source-topic"><span id="source-62-inference-optimization-canonical-24-data-parallel-serving" class="legacy-anchor"></span><h3>24. Data Parallel Serving</h3>
+<p>Replicate full model servers and route requests across replicas. This is often the simplest scaling path when one model copy fits per worker.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-24-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>24. Data Parallel Serving</h3>
+<p>Replicate full model servers and route requests across replicas. This is often the simplest scaling path when one model copy fits per worker.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-24-equation"><summary>สมการ</summary><h3>24. Data Parallel Serving</h3>
+<p>Replicate full model servers and route requests across replicas. This is often the simplest scaling path when one model copy fits per worker.</p></details><details id="help-topic-24-visual"><summary>ภาพและ shape</summary><h3>24. Data Parallel Serving</h3>
+<p>Replicate full model servers and route requests across replicas. This is often the simplest scaling path when one model copy fits per worker.</p></details><details id="help-topic-24-code"><summary>โค้ด</summary><h3>24. Data Parallel Serving</h3>
+<p>Replicate full model servers and route requests across replicas. This is often the simplest scaling path when one model copy fits per worker.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-24-result"><summary>ผลการทดลอง</summary><h3>24. Data Parallel Serving</h3>
+<p>Replicate full model servers and route requests across replicas. This is often the simplest scaling path when one model copy fits per worker.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-24"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-25" class="source-topic"><span id="source-62-inference-optimization-canonical-25-prefix-aware-routing" class="legacy-anchor"></span><h3>25. Prefix-Aware Routing</h3>
+<p>If cache reuse matters, routing requests with shared prefixes to the same replica can raise cache hit rate, creating a load-balance vs locality trade-off.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-25-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>25. Prefix-Aware Routing</h3>
+<p>If cache reuse matters, routing requests with shared prefixes to the same replica can raise cache hit rate, creating a load-balance vs locality trade-off.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-25-equation"><summary>สมการ</summary><h3>25. Prefix-Aware Routing</h3>
+<p>If cache reuse matters, routing requests with shared prefixes to the same replica can raise cache hit rate, creating a load-balance vs locality trade-off.</p></details><details id="help-topic-25-visual"><summary>ภาพและ shape</summary><h3>25. Prefix-Aware Routing</h3>
+<p>If cache reuse matters, routing requests with shared prefixes to the same replica can raise cache hit rate, creating a load-balance vs locality trade-off.</p></details><details id="help-topic-25-code"><summary>โค้ด</summary><h3>25. Prefix-Aware Routing</h3>
+<p>If cache reuse matters, routing requests with shared prefixes to the same replica can raise cache hit rate, creating a load-balance vs locality trade-off.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-25-result"><summary>ผลการทดลอง</summary><h3>25. Prefix-Aware Routing</h3>
+<p>If cache reuse matters, routing requests with shared prefixes to the same replica can raise cache hit rate, creating a load-balance vs locality trade-off.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-25"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-26" class="source-topic"><span id="source-62-inference-optimization-canonical-26-queueing" class="legacy-anchor"></span><h3>26. Queueing</h3>
+<p>End-to-end latency includes:</p>
+<pre><code class="language-text">queue time
++ prefill
++ decode
++ serialization/network
+</code></pre>
+<p>Fast kernels do not guarantee low request latency.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>recordqueuearrival/admission/activeIDs/KVblocks/generatedlength/completion/TTFT/TPOTและtokens/sec; validstateต้องไม่overallocate</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-26-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>recordqueuearrival/admission/activeIDs/KVblocks/generatedlength/completion/TTFT/TPOTและtokens/sec; validstateต้องไม่overallocate</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-26-equation"><summary>สมการ</summary><p>recordqueuearrival/admission/activeIDs/KVblocks/generatedlength/completion/TTFT/TPOTและtokens/sec; validstateต้องไม่overallocate</p></details><details id="help-topic-26-visual"><summary>ภาพและ shape</summary><p>recordqueuearrival/admission/activeIDs/KVblocks/generatedlength/completion/TTFT/TPOTและtokens/sec; validstateต้องไม่overallocate</p></details><details id="help-topic-26-code"><summary>โค้ด</summary><p>recordqueuearrival/admission/activeIDs/KVblocks/generatedlength/completion/TTFT/TPOTและtokens/sec; validstateต้องไม่overallocate</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-26-result"><summary>ผลการทดลอง</summary><p>recordqueuearrival/admission/activeIDs/KVblocks/generatedlength/completion/TTFT/TPOTและtokens/sec; validstateต้องไม่overallocate</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-26"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-27" class="source-topic"><span id="source-62-inference-optimization-canonical-27-metrics" class="legacy-anchor"></span><h3>27. Metrics</h3>
+<ul>
+<li>TTFT — time to first token</li>
+<li>TPOT / ITL — output-token latency</li>
+<li>output tokens/sec</li>
+<li>requests/sec</li>
+<li>queue time</li>
+<li>KV occupancy</li>
+<li>prefix-cache hit rate</li>
+<li>speculative acceptance rate</li>
+</ul><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>TTFTจากarrivalถึงfirsttoken,TPOTจากsubsequentintertokenหรือtotaldecode/(tokens−1)ตามdefinition; compareconcurrency1/4/8พร้อมp95และthroughput</p><p>manifest มีmodel/tokenizer/cachelayout/blocksize/dtype/lengths/arrivalprocess/batchlimits/concurrency/prefixpolicy/hardware/runtime/warmup</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-27-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>TTFTจากarrivalถึงfirsttoken,TPOTจากsubsequentintertokenหรือtotaldecode/(tokens−1)ตามdefinition; compareconcurrency1/4/8พร้อมp95และthroughput</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-27-equation"><summary>สมการ</summary><p>TTFTจากarrivalถึงfirsttoken,TPOTจากsubsequentintertokenหรือtotaldecode/(tokens−1)ตามdefinition; compareconcurrency1/4/8พร้อมp95และthroughput</p></details><details id="help-topic-27-visual"><summary>ภาพและ shape</summary><p>TTFTจากarrivalถึงfirsttoken,TPOTจากsubsequentintertokenหรือtotaldecode/(tokens−1)ตามdefinition; compareconcurrency1/4/8พร้อมp95และthroughput</p></details><details id="help-topic-27-code"><summary>โค้ด</summary><p>TTFTจากarrivalถึงfirsttoken,TPOTจากsubsequentintertokenหรือtotaldecode/(tokens−1)ตามdefinition; compareconcurrency1/4/8พร้อมp95และthroughput</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-27-result"><summary>ผลการทดลอง</summary><p>TTFTจากarrivalถึงfirsttoken,TPOTจากsubsequentintertokenหรือtotaldecode/(tokens−1)ตามdefinition; compareconcurrency1/4/8พร้อมp95และthroughput</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-27"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-28" class="source-topic"><span id="source-62-inference-optimization-canonical-28-from-scratch" class="legacy-anchor"></span><h3>28. From Scratch</h3>
+<p>src/inference_math.py implements:</p>
+<ul>
+<li>kv_cache_bytes</li>
+<li>cache_reduction_ratio</li>
+<li>padded_batch_efficiency</li>
+<li>paged_block_usage</li>
+<li>prefix_cache_saved_tokens</li>
+<li>speculative_acceptance_rate</li>
+<li>average_tokens_per_target_verification</li>
+<li>bandwidth_lower_bound_seconds</li>
+</ul><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>KVformulaเทียบallocatedtensors.numel()*element_sizeบนCPUfixture; schedulerเทียบeventtraceด้วยconservationarrived=queued+active+done+dropped</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-28-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>KVformulaเทียบallocatedtensors.numel()*element_sizeบนCPUfixture; schedulerเทียบeventtraceด้วยconservationarrived=queued+active+done+dropped</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-28-equation"><summary>สมการ</summary><p>KVformulaเทียบallocatedtensors.numel()*element_sizeบนCPUfixture; schedulerเทียบeventtraceด้วยconservationarrived=queued+active+done+dropped</p></details><details id="help-topic-28-visual"><summary>ภาพและ shape</summary><p>KVformulaเทียบallocatedtensors.numel()*element_sizeบนCPUfixture; schedulerเทียบeventtraceด้วยconservationarrived=queued+active+done+dropped</p></details><details id="help-topic-28-code"><summary>โค้ด</summary><p>KVformulaเทียบallocatedtensors.numel()*element_sizeบนCPUfixture; schedulerเทียบeventtraceด้วยconservationarrived=queued+active+done+dropped</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-28-result"><summary>ผลการทดลอง</summary><p>KVformulaเทียบallocatedtensors.numel()*element_sizeบนCPUfixture; schedulerเทียบeventtraceด้วยconservationarrived=queued+active+done+dropped</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-28"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-29" class="source-topic"><span id="source-62-inference-optimization-canonical-29-common-mistakes" class="legacy-anchor"></span><h3>29. Common Mistakes</h3>
+<ol>
+<li>prefill/decode mixed into one timing number</li>
+<li>model weights measured while KV memory is ignored</li>
+<li>throughput compared at different concurrency</li>
+<li>static batching wastes padding</li>
+<li>cache block confused with CUDA thread block</li>
+<li>prefix-cache reuse based only on raw string equality</li>
+<li>FlashAttention claimed to make dense attention linear</li>
+<li>speculative tokens accepted without target verification</li>
+<li>GPU kernel time confused with end-to-end latency</li>
+<li>p50 optimized while p99 SLA is poor</li>
+</ol><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-29-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>29. Common Mistakes</h3>
+<ol>
+<li>prefill/decode mixed into one timing number</li>
+<li>model weights measured while KV memory is ignored</li>
+<li>throughput compared at different concurrency</li>
+<li>static batching wastes padding</li>
+<li>cache block confused with CUDA thread block</li>
+<li>prefix-cache reuse based only on raw string equality</li>
+<li>FlashAttention claimed to make dense attention linear</li>
+<li>speculative tokens accepted without target verification</li>
+<li>GPU kernel time confused with end-to-end latency</li>
+<li>p50 optimized while p99 SLA is poor</li>
+</ol><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-29-equation"><summary>สมการ</summary><h3>29. Common Mistakes</h3>
+<ol>
+<li>prefill/decode mixed into one timing number</li>
+<li>model weights measured while KV memory is ignored</li>
+<li>throughput compared at different concurrency</li>
+<li>static batching wastes padding</li>
+<li>cache block confused with CUDA thread block</li>
+<li>prefix-cache reuse based only on raw string equality</li>
+<li>FlashAttention claimed to make dense attention linear</li>
+<li>speculative tokens accepted without target verification</li>
+<li>GPU kernel time confused with end-to-end latency</li>
+<li>p50 optimized while p99 SLA is poor</li>
+</ol></details><details id="help-topic-29-visual"><summary>ภาพและ shape</summary><h3>29. Common Mistakes</h3>
+<ol>
+<li>prefill/decode mixed into one timing number</li>
+<li>model weights measured while KV memory is ignored</li>
+<li>throughput compared at different concurrency</li>
+<li>static batching wastes padding</li>
+<li>cache block confused with CUDA thread block</li>
+<li>prefix-cache reuse based only on raw string equality</li>
+<li>FlashAttention claimed to make dense attention linear</li>
+<li>speculative tokens accepted without target verification</li>
+<li>GPU kernel time confused with end-to-end latency</li>
+<li>p50 optimized while p99 SLA is poor</li>
+</ol></details><details id="help-topic-29-code"><summary>โค้ด</summary><h3>29. Common Mistakes</h3>
+<ol>
+<li>prefill/decode mixed into one timing number</li>
+<li>model weights measured while KV memory is ignored</li>
+<li>throughput compared at different concurrency</li>
+<li>static batching wastes padding</li>
+<li>cache block confused with CUDA thread block</li>
+<li>prefix-cache reuse based only on raw string equality</li>
+<li>FlashAttention claimed to make dense attention linear</li>
+<li>speculative tokens accepted without target verification</li>
+<li>GPU kernel time confused with end-to-end latency</li>
+<li>p50 optimized while p99 SLA is poor</li>
+</ol><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-29-result"><summary>ผลการทดลอง</summary><h3>29. Common Mistakes</h3>
+<ol>
+<li>prefill/decode mixed into one timing number</li>
+<li>model weights measured while KV memory is ignored</li>
+<li>throughput compared at different concurrency</li>
+<li>static batching wastes padding</li>
+<li>cache block confused with CUDA thread block</li>
+<li>prefix-cache reuse based only on raw string equality</li>
+<li>FlashAttention claimed to make dense attention linear</li>
+<li>speculative tokens accepted without target verification</li>
+<li>GPU kernel time confused with end-to-end latency</li>
+<li>p50 optimized while p99 SLA is poor</li>
+</ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-29"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-30" class="source-topic"><span id="source-62-inference-optimization-canonical-30-exercises-mini-project" class="legacy-anchor"></span><h3>30. Exercises / Mini Project</h3>
+<ul>
+<li><a href="../62-inference-optimization/exercises/README.md">Exercises</a></li>
+<li><a href="../62-inference-optimization/solutions/README.md">Solutions</a></li>
+<li><a href="../62-inference-optimization/mini-project/README.md">Mini Project</a></li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-30-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>30. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-30-equation"><summary>สมการ</summary><h3>30. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-30-visual"><summary>ภาพและ shape</summary><h3>30. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-30-code"><summary>โค้ด</summary><h3>30. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-30-result"><summary>ผลการทดลอง</summary><h3>30. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-30"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-31" class="source-topic"><span id="source-62-inference-optimization-canonical-31-checklist" class="legacy-anchor"></span><h3>31. Checklist</h3>
+<ul>
+<li>[ ] prefill / decode</li>
+<li>[ ] KV cache</li>
+<li>[ ] GQA / MQA memory</li>
+<li>[ ] cache strategies</li>
+<li>[ ] continuous batching</li>
+<li>[ ] paged cache</li>
+<li>[ ] prefix caching</li>
+<li>[ ] FlashAttention</li>
+<li>[ ] speculative decoding</li>
+<li>[ ] distributed inference</li>
+<li>[ ] TTFT / TPOT / throughput</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-31-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>31. Checklist</h3>
+<ul>
+<li>[ ] prefill / decode</li>
+<li>[ ] KV cache</li>
+<li>[ ] GQA / MQA memory</li>
+<li>[ ] cache strategies</li>
+<li>[ ] continuous batching</li>
+<li>[ ] paged cache</li>
+<li>[ ] prefix caching</li>
+<li>[ ] FlashAttention</li>
+<li>[ ] speculative decoding</li>
+<li>[ ] distributed inference</li>
+<li>[ ] TTFT / TPOT / throughput</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-31-equation"><summary>สมการ</summary><h3>31. Checklist</h3>
+<ul>
+<li>[ ] prefill / decode</li>
+<li>[ ] KV cache</li>
+<li>[ ] GQA / MQA memory</li>
+<li>[ ] cache strategies</li>
+<li>[ ] continuous batching</li>
+<li>[ ] paged cache</li>
+<li>[ ] prefix caching</li>
+<li>[ ] FlashAttention</li>
+<li>[ ] speculative decoding</li>
+<li>[ ] distributed inference</li>
+<li>[ ] TTFT / TPOT / throughput</li>
+</ul></details><details id="help-topic-31-visual"><summary>ภาพและ shape</summary><h3>31. Checklist</h3>
+<ul>
+<li>[ ] prefill / decode</li>
+<li>[ ] KV cache</li>
+<li>[ ] GQA / MQA memory</li>
+<li>[ ] cache strategies</li>
+<li>[ ] continuous batching</li>
+<li>[ ] paged cache</li>
+<li>[ ] prefix caching</li>
+<li>[ ] FlashAttention</li>
+<li>[ ] speculative decoding</li>
+<li>[ ] distributed inference</li>
+<li>[ ] TTFT / TPOT / throughput</li>
+</ul></details><details id="help-topic-31-code"><summary>โค้ด</summary><h3>31. Checklist</h3>
+<ul>
+<li>[ ] prefill / decode</li>
+<li>[ ] KV cache</li>
+<li>[ ] GQA / MQA memory</li>
+<li>[ ] cache strategies</li>
+<li>[ ] continuous batching</li>
+<li>[ ] paged cache</li>
+<li>[ ] prefix caching</li>
+<li>[ ] FlashAttention</li>
+<li>[ ] speculative decoding</li>
+<li>[ ] distributed inference</li>
+<li>[ ] TTFT / TPOT / throughput</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-31-result"><summary>ผลการทดลอง</summary><h3>31. Checklist</h3>
+<ul>
+<li>[ ] prefill / decode</li>
+<li>[ ] KV cache</li>
+<li>[ ] GQA / MQA memory</li>
+<li>[ ] cache strategies</li>
+<li>[ ] continuous batching</li>
+<li>[ ] paged cache</li>
+<li>[ ] prefix caching</li>
+<li>[ ] FlashAttention</li>
+<li>[ ] speculative decoding</li>
+<li>[ ] distributed inference</li>
+<li>[ ] TTFT / TPOT / throughput</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-31"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-32" class="source-topic"><span id="source-62-inference-optimization-canonical-32-whats-next" class="legacy-anchor"></span><span id="source-62-inference-optimization-canonical-62-inference-optimization-inference-optimization" class="legacy-anchor"></span><h3>32. What's Next</h3>
+<p>Chapter 63 turns these inference primitives into production model-serving systems.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-32-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>32. What's Next</h3>
+<p>Chapter 63 turns these inference primitives into production model-serving systems.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-32-equation"><summary>สมการ</summary><h3>32. What's Next</h3>
+<p>Chapter 63 turns these inference primitives into production model-serving systems.</p></details><details id="help-topic-32-visual"><summary>ภาพและ shape</summary><h3>32. What's Next</h3>
+<p>Chapter 63 turns these inference primitives into production model-serving systems.</p></details><details id="help-topic-32-code"><summary>โค้ด</summary><h3>32. What's Next</h3>
+<p>Chapter 63 turns these inference primitives into production model-serving systems.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-32-result"><summary>ผลการทดลอง</summary><h3>32. What's Next</h3>
+<p>Chapter 63 turns these inference primitives into production model-serving systems.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-32"> อ่านหัวข้อนี้แล้ว</label></section><details><summary>รายละเอียดเพิ่มเติมและข้อกำหนดของ local lab</summary><h3>62-inference-optimization — Inference Optimization</h3>
+<p><strong>Prerequisites:</strong> Complete 61-quantization; be able to trace array/tensor shapes, separate train/validation/test data, and explain the core objective of the current chapter.</p>
+<p><strong>Mental model:</strong> Treat Inference Optimization as a pipeline: input representation → central mechanism → objective/state update → observable output. At every boundary, state shape/state, allowed information flow, and the invariant that should remain true.</p>
+<p><strong>Code walkthrough:</strong> Read public API first, then input checks, state/shape transformations, numerical core, returned values and tests. Connect each important code block to the equation or algorithm in the chapter README.</p>
+<p><strong>Visualization / inspection:</strong> Use a tiny case. Inspect intermediate values, distributions, norms, scores, states or trajectories appropriate to Inference Optimization; do not rely only on the final metric.</p>
+<p><strong>Experiment:</strong> Run a baseline, one controlled parameter change, one edge case and one repeated seeded comparison. Record seed, environment, data version, configuration and metric.</p>
+<p><strong>Limitations:</strong> List at least one assumption, one data-related limitation, one numerical/optimization limitation and one scaling limitation for Inference Optimization.</p>
+<p><strong>Analysis workflow:</strong> Check inputs → preprocessing → shapes/state → finite numerical values → objective/update → evaluation protocol. The earliest unexpected state is more informative than a downstream metric.</p>
+<p><strong>Performance:</strong> Identify the dominant time and memory terms and measure them on the local learning run before attempting optimization.</p>
+<p><strong>Production perspective:</strong> Define input validation, artifact/configuration versioning, quality and resource measurements, staged release criteria and a way to return to the previous known-good artifact.</p>
+<p><strong>Research perspective:</strong> State a falsifiable hypothesis, baseline, one-factor change, metric, repeated-run plan when stochastic, and how negative results will be recorded.</p>
+<p><strong>Interview questions:</strong>
+1. Explain Inference Optimization from first principles without naming a library API.
+2. Trace one input through the central mechanism and give the important intermediate shapes/state.
+3. Name the strongest assumption and a case where it fails.
+4. State the dominant compute/memory cost.
+5. Describe how you would validate a new implementation against a trusted baseline.</p>
+<p><strong>Summary / exit condition:</strong> You may move on when you can explain, derive or trace, implement, test, analyze, measure and evaluate Inference Optimization, and when the chapter mini-project plus twenty total exercises are complete.</p></details></section><section id="objective-evidence" class="canonical-section"><h2>พิสูจน์ความสามารถทีละ objective</h2><p>ทำกรณีใหม่ก่อนเปิด reference แล้วบันทึกงานด้านล่าง ให้ผู้ตรวจใช้ rubric ตรวจคำอธิบาย ผลคำนวณ โค้ด และข้อจำกัด บันทึกเก็บในเบราว์เซอร์เครื่องนี้ กดส่งออกเพื่อสำรองหรือส่งให้ผู้ตรวจ เว็บไม่ได้รันโค้ดหรือตัดสินผลงานแทนผู้ตรวจ</p><button type="button" class="secondary-button" data-export-evidence>ส่งออกหลักฐานบทนี้เป็น JSON</button><p role="status" id="evidence-export-status"></p><details id="ch62-objective-01" class="objective-proof"><summary>distinguish prefill and decode</summary><p>distinguish prefill and decode: ใช้กรณีในหัวข้อ Prefill, Decode เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch62-evidence-01"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch62-evidence-01-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch62-evidence-01-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch62-evidence-01-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch62-evidence-01-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch62-evidence-01-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch62-evidence-01-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch62-evidence-01-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch62-evidence-01-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>decodebatchเล็กอ่านweights/KVมากต่อtokenแต่FLOPsน้อยจึงbandwidth-boundได้; batchingเพิ่มreuseแต่เพิ่มlatencyและKVmemory</p><h3>3. Prefill</h3>
+<p>During prefill, the prompt is processed and K/V states are produced for all prompt positions.</p>
+<p>Important metric:</p>
+<pre><code class="language-text">TTFT = time to first token
+</code></pre>
+<p>Long prompts increase prefill work significantly.</p>
+<h3>4. Decode</h3>
+<p>After prefill, each new token produces a query that attends to cached keys/values.</p>
+<p>Decode repeatedly reads model weights and KV cache and can become memory-bandwidth bound.</p>
+<p>Important metric:</p>
+<pre><code class="language-text">TPOT = time per output token
+</code></pre></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch62-objective-02" class="objective-proof"><summary>derive KV-cache memory</summary><p>derive KV-cache memory: ใช้กรณีในหัวข้อ KV Cache เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch62-evidence-02"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch62-evidence-02-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch62-evidence-02-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch62-evidence-02-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch62-evidence-02-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch62-evidence-02-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch62-evidence-02-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch62-evidence-02-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch62-evidence-02-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>KVbytes=2LBnkvTdk·bytes; MHAh8เทียบGQAnkv2ลด4×,MQAnkv1ลด8×เมื่อL/B/T/dk/dtypeเท่ากัน ไม่ลดqueryheadcomputeตามเดียวกัน</p><h3>5. KV Cache</h3>
+<p>Approximate dense cache storage:</p>
+<pre><code class="language-text">bytes =
+2 × layers × batch × sequence_length
+× kv_heads × head_dim × bytes_per_element
+</code></pre>
+<p>The factor 2 represents key and value.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch62-objective-03" class="objective-proof"><summary>explain MHA/GQA/MQA cache savings</summary><p>explain MHA/GQA/MQA cache savings: ใช้กรณีในหัวข้อ MHA / GQA / MQA เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch62-evidence-03"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch62-evidence-03-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch62-evidence-03-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch62-evidence-03-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch62-evidence-03-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch62-evidence-03-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch62-evidence-03-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch62-evidence-03-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch62-evidence-03-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>KVbytes=2LBnkvTdk·bytes; MHAh8เทียบGQAnkv2ลด4×,MQAnkv1ลด8×เมื่อL/B/T/dk/dtypeเท่ากัน ไม่ลดqueryheadcomputeตามเดียวกัน</p><h3>6. MHA / GQA / MQA</h3>
+<pre><code class="language-text">MHA: kv_heads = query_heads
+GQA: kv_heads &lt; query_heads
+MQA: kv_heads = 1
+</code></pre>
+<p>Fewer KV heads reduce cache memory and decode bandwidth.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch62-objective-04" class="objective-proof"><summary>explain dynamic/static/offloaded/quantized caches</summary><p>explain dynamic/static/offloaded/quantized caches: ใช้กรณีในหัวข้อ Cache Strategies เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch62-evidence-04"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch62-evidence-04-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch62-evidence-04-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch62-evidence-04-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch62-evidence-04-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch62-evidence-04-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch62-evidence-04-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch62-evidence-04-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch62-evidence-04-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>DynamicCacheโตตามactualcontextประหยัดจองล่วงหน้าแต่reallocation/compileยาก; StaticCacheจองmaxcontextช่วยfixedshapeแต่เสียreservedmemoryและต้องmaskunusedslots</p><h3>8. Cache Strategies</h3>
+<p>Modern Transformers provides multiple strategies:</p>
+<ul>
+<li>Dynamic cache — grows with sequence</li>
+<li>Static cache — preallocates capacity and can help fixed-shape compilation</li>
+<li>Offloaded cache — trades GPU memory for CPU transfer overhead</li>
+<li>Quantized cache — lowers cache memory with extra quantization costs</li>
+</ul>
+<p>Static cache can waste capacity/work when real sequence lengths are far below the configured maximum. (see references.md)</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch62-objective-05" class="objective-proof"><summary>distinguish latency and throughput</summary><p>distinguish latency and throughput: ใช้กรณีในหัวข้อ Latency vs Throughput, Metrics เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch62-evidence-05"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch62-evidence-05-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch62-evidence-05-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch62-evidence-05-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch62-evidence-05-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch62-evidence-05-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch62-evidence-05-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch62-evidence-05-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch62-evidence-05-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>TTFTจากarrivalถึงfirsttoken,TPOTจากsubsequentintertokenหรือtotaldecode/(tokens−1)ตามdefinition; compareconcurrency1/4/8พร้อมp95และthroughput</p><h3>9. Latency vs Throughput</h3>
+<pre><code class="language-text">latency = time per request
+throughput = tokens/sec or requests/sec
+</code></pre>
+<p>Optimizing one can hurt the other.</p>
+<h3>27. Metrics</h3>
+<ul>
+<li>TTFT — time to first token</li>
+<li>TPOT / ITL — output-token latency</li>
+<li>output tokens/sec</li>
+<li>requests/sec</li>
+<li>queue time</li>
+<li>KV occupancy</li>
+<li>prefix-cache hit rate</li>
+<li>speculative acceptance rate</li>
+</ul></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch62-objective-06" class="objective-proof"><summary>understand static/dynamic/continuous batching</summary><p>understand static/dynamic/continuous batching: ใช้กรณีในหัวข้อ Dynamic Batching, Continuous Batching เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch62-evidence-06"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch62-evidence-06-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch62-evidence-06-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch62-evidence-06-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch62-evidence-06-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch62-evidence-06-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch62-evidence-06-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch62-evidence-06-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch62-evidence-06-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>continuousbatchschedulerทุกdecodeiterationปล่อยcompletedslots/รับwaitingเมื่อKVbudgetพอ; capqueue/maxbatch/maxtokensและrecordwaittime/admissionreason</p><h3>11. Dynamic Batching</h3>
+<p>Collect requests inside a short scheduling window and form a batch. Larger windows may improve batch size but add queueing delay.</p>
+<h3>12. Continuous Batching</h3>
+<p>Instead of waiting for every sequence in a batch to finish, finished slots are replaced by new work during serving.</p>
+<p>This improves utilization for variable output lengths. vLLM currently lists continuous batching as a core feature. (see references.md)</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch62-objective-07" class="objective-proof"><summary>explain paged KV memory and fragmentation</summary><p>explain paged KV memory and fragmentation: ใช้กรณีในหัวข้อ Paged KV Cache, Block Usage เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch62-evidence-07"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch62-evidence-07-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch62-evidence-07-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch62-evidence-07-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch62-evidence-07-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch62-evidence-07-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch62-evidence-07-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch62-evidence-07-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch62-evidence-07-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>blocksize16,lengths[17,31]จอง32+32=64slotsใช้48,tailwaste16=25%; sharedprefix/allocatoroverheadต้องนับแยก</p><h3>13. Paged KV Cache</h3>
+<p>Paged cache systems map logical request blocks to physical KV-memory blocks rather than requiring one large contiguous reservation.</p>
+<pre><code class="language-text">logical sequence blocks
+↓ block table
+physical KV blocks
+</code></pre>
+<p>This reduces allocator fragmentation and supports flexible sequence growth.</p>
+<p>vLLM's current cache remains block-oriented, though its historical PagedAttention design document explicitly warns that it is not a literal description of all current kernel code. (see references.md)</p>
+<h3>14. Block Usage</h3>
+<p>For sequence length T and block size B:</p>
+<pre><code class="language-text">blocks = ceil(T/B)
+allocated_slots = blocks × B
+tail_waste = allocated_slots - T
+</code></pre>
+<p>Smaller blocks reduce tail waste but increase metadata and management overhead.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch62-objective-08" class="objective-proof"><summary>explain prefix caching and chunked prefill</summary><p>explain prefix caching and chunked prefill: ใช้กรณีในหัวข้อ Prefix Caching, Chunked Prefill เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch62-evidence-08"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch62-evidence-08-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch62-evidence-08-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch62-evidence-08-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch62-evidence-08-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch62-evidence-08-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch62-evidence-08-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch62-evidence-08-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch62-evidence-08-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>prefix1000tokensซ้ำใน10requests,cacheprefillreuseได้ประมาณ9000prefix-tokenprojectionsแทน10000ภายใต้identicalprefix/model/position ไม่ลดdecodeทั้งหมด</p><h3>15. Prefix Caching</h3>
+<p>If requests share identical token prefixes, previously computed prefix KV blocks can be reused.</p>
+<pre><code class="language-text">common system/document prefix
+↓ cached KV
+new request suffix
+↓ compute only missing suffix
+</code></pre>
+<p>Current vLLM uses hash-based automatic prefix caching. (see references.md)</p>
+<h3>16. Chunked Prefill</h3>
+<p>Very long prefills can monopolize compute and delay decode traffic. Chunked prefill splits prompt work so schedulers can interleave it with other requests.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch62-objective-09" class="objective-proof"><summary>understand FlashAttention</summary><p>understand FlashAttention: ใช้กรณีในหัวข้อ FlashAttention, PyTorch SDPA เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch62-evidence-09"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch62-evidence-09-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch62-evidence-09-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch62-evidence-09-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch62-evidence-09-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch62-evidence-09-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch62-evidence-09-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch62-evidence-09-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch62-evidence-09-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>FlashAttentionจัดtile/fusionลดHBMtraffic/ไม่materializefullscores; denseattentionยังมีO(T²)paircompute ไม่เรียกlinearattention</p><h3>17. FlashAttention</h3>
+<p>Standard dense attention conceptually forms an N×N score matrix. FlashAttention reorganizes exact attention into tiles to reduce expensive memory IO and avoid materializing the entire score matrix in high-bandwidth device memory.</p>
+<p>Important:</p>
+<blockquote>
+<p>FlashAttention improves IO/memory behavior; standard dense attention still has quadratic token-pair arithmetic.</p>
+</blockquote>
+<h3>18. PyTorch SDPA</h3>
+<p>PyTorch scaled_dot_product_attention can dispatch to optimized backends depending on device, dtype and shape. Current torch.nn.attention exposes backend controls and FlashAttention implementations. (see references.md)</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch62-objective-10" class="objective-proof"><summary>understand speculative decoding</summary><p>understand speculative decoding: ใช้กรณีในหัวข้อ Speculative Decoding, Speculation Correctness, Draft Methods เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch62-evidence-10"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch62-evidence-10-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch62-evidence-10-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch62-evidence-10-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch62-evidence-10-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch62-evidence-10-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch62-evidence-10-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch62-evidence-10-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch62-evidence-10-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>acceptedtokens/totaldraftedtokens; drafted[4,4,4],accepted[3,1,4]rate8/12=2/3; end-to-endspeedรวมdraft/verifycostและrejecthandling</p><h3>19. Speculative Decoding</h3>
+<p>Use a cheap draft method to propose multiple tokens, then let the target model verify them in parallel.</p>
+<pre><code class="language-text">draft proposes k tokens
+↓
+target verifies
+↓
+accept valid prefix
+↓
+advance multiple tokens when possible
+</code></pre>
+<p>Low acceptance can erase the speed benefit.</p>
+<h3>20. Speculation Correctness</h3>
+<p>Correct speculative algorithms preserve the target distribution under their sampling assumptions. Draft tokens must not simply bypass target verification.</p>
+<h3>21. Draft Methods</h3>
+<p>Possible proposal sources include:</p>
+<ul>
+<li>smaller draft model</li>
+<li>n-gram matches</li>
+<li>suffix/prefix heuristics</li>
+<li>learned multi-token heads</li>
+</ul>
+<p>Current vLLM documents several speculative-decoding approaches. (see references.md)</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch62-objective-11" class="objective-proof"><summary>reason about distributed inference</summary><p>reason about distributed inference: ใช้กรณีในหัวข้อ Tensor Parallel Inference, Pipeline Parallel Inference, Data Parallel Serving, Prefix-Aware Routing เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch62-evidence-11"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch62-evidence-11-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch62-evidence-11-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch62-evidence-11-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch62-evidence-11-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch62-evidence-11-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch62-evidence-11-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch62-evidence-11-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch62-evidence-11-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>22. Tensor Parallel Inference</h3>
+<p>Split large matrices across GPUs. This can fit larger models and combine bandwidth/compute, but introduces layer-level collectives.</p>
+<h3>23. Pipeline Parallel Inference</h3>
+<p>Split layer ranges across devices. Pipeline balance and scheduling influence end-to-end latency.</p>
+<h3>24. Data Parallel Serving</h3>
+<p>Replicate full model servers and route requests across replicas. This is often the simplest scaling path when one model copy fits per worker.</p>
+<h3>25. Prefix-Aware Routing</h3>
+<p>If cache reuse matters, routing requests with shared prefixes to the same replica can raise cache hit rate, creating a load-balance vs locality trade-off.</p><h3>22. Tensor Parallel Inference</h3>
+<p>Split large matrices across GPUs. This can fit larger models and combine bandwidth/compute, but introduces layer-level collectives.</p>
+<h3>23. Pipeline Parallel Inference</h3>
+<p>Split layer ranges across devices. Pipeline balance and scheduling influence end-to-end latency.</p>
+<h3>24. Data Parallel Serving</h3>
+<p>Replicate full model servers and route requests across replicas. This is often the simplest scaling path when one model copy fits per worker.</p>
+<h3>25. Prefix-Aware Routing</h3>
+<p>If cache reuse matters, routing requests with shared prefixes to the same replica can raise cache hit rate, creating a load-balance vs locality trade-off.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch62-objective-12" class="objective-proof"><summary>measure TTFT, TPOT, queue time and throughput</summary><p>measure TTFT, TPOT, queue time and throughput: ใช้กรณีในหัวข้อ Queueing เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch62-evidence-12"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch62-evidence-12-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch62-evidence-12-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch62-evidence-12-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch62-evidence-12-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch62-evidence-12-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch62-evidence-12-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch62-evidence-12-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch62-evidence-12-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>recordqueuearrival/admission/activeIDs/KVblocks/generatedlength/completion/TTFT/TPOTและtokens/sec; validstateต้องไม่overallocate</p><h3>26. Queueing</h3>
+<p>End-to-end latency includes:</p>
+<pre><code class="language-text">queue time
++ prefill
++ decode
++ serialization/network
+</code></pre>
+<p>Fast kernels do not guarantee low request latency.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch62-objective-13" class="objective-proof"><summary>Padding Waste</summary><p>Padding Waste: ใช้กรณีในหัวข้อ Padding Waste เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch62-evidence-13"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch62-evidence-13-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch62-evidence-13-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch62-evidence-13-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch62-evidence-13-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch62-evidence-13-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch62-evidence-13-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch62-evidence-13-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch62-evidence-13-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>lengths[2,4,6],padmax6ให้usefultokens12จาก18,efficiency2/3; bucketingลดpaddingแต่ต้องคุมqueuewait/latency</p><h3>10. Padding Waste</h3>
+<p>For sequence lengths L_i padded to max L:</p>
+<pre><code class="language-text">efficiency = sum(L_i) / (batch_size × max(L_i))
+</code></pre>
+<p>Length-aware batching can improve useful work.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch62-objective-14" class="objective-proof"><summary>From Scratch</summary><p>From Scratch: ใช้กรณีในหัวข้อ From Scratch เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch62-evidence-14"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch62-evidence-14-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch62-evidence-14-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch62-evidence-14-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch62-evidence-14-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch62-evidence-14-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch62-evidence-14-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch62-evidence-14-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch62-evidence-14-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>KVformulaเทียบallocatedtensors.numel()*element_sizeบนCPUfixture; schedulerเทียบeventtraceด้วยconservationarrived=queued+active+done+dropped</p><h3>28. From Scratch</h3>
+<p>src/inference_math.py implements:</p>
+<ul>
+<li>kv_cache_bytes</li>
+<li>cache_reduction_ratio</li>
+<li>padded_batch_efficiency</li>
+<li>paged_block_usage</li>
+<li>prefix_cache_saved_tokens</li>
+<li>speculative_acceptance_rate</li>
+<li>average_tokens_per_target_verification</li>
+<li>bandwidth_lower_bound_seconds</li>
+</ul></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details></section><section id="implementation" class="canonical-section"><h2>Implementation และ tests ที่รันบนเครื่องได้</h2><details><summary>62-inference-optimization/src/inference_math.py</summary><pre><code>&quot;&quot;&quot;LLM inference memory, batching, paging, and speculation math.&quot;&quot;&quot;
+
+from __future__ import annotations
+
+import math
+
+
+def kv_cache_bytes(
+    *,
+    layers: int,
+    batch_size: int,
+    sequence_length: int,
+    kv_heads: int,
+    head_dim: int,
+    bytes_per_element: int,
+) -&gt; int:
+    values = [
+        layers,
+        batch_size,
+        sequence_length,
+        kv_heads,
+        head_dim,
+        bytes_per_element,
+    ]
+    if any(value &lt;= 0 for value in values):
+        raise ValueError(&quot;all dimensions must be positive&quot;)
+
+    return int(
+        2
+        * layers
+        * batch_size
+        * sequence_length
+        * kv_heads
+        * head_dim
+        * bytes_per_element
+    )
+
+
+def cache_reduction_ratio(
+    *,
+    mha_heads: int,
+    kv_heads: int,
+) -&gt; float:
+    if mha_heads &lt;= 0 or kv_heads &lt;= 0:
+        raise ValueError(&quot;head counts must be positive&quot;)
+    if kv_heads &gt; mha_heads:
+        raise ValueError(&quot;kv_heads cannot exceed mha_heads&quot;)
+
+    return float(mha_heads / kv_heads)
+
+
+def padded_batch_efficiency(
+    sequence_lengths: list[int],
+) -&gt; float:
+    if not sequence_lengths:
+        raise ValueError(&quot;sequence_lengths must be non-empty&quot;)
+    if any(length &lt;= 0 for length in sequence_lengths):
+        raise ValueError(&quot;lengths must be positive&quot;)
+
+    maximum = max(sequence_lengths)
+    useful = sum(sequence_lengths)
+    allocated = len(sequence_lengths) * maximum
+    return float(useful / allocated)
+
+
+def paged_block_usage(
+    sequence_length: int,
+    *,
+    block_size: int,
+) -&gt; dict[str, int | float]:
+    if sequence_length &lt; 0:
+        raise ValueError(&quot;sequence_length must be non-negative&quot;)
+    if block_size &lt;= 0:
+        raise ValueError(&quot;block_size must be positive&quot;)
+
+    blocks = math.ceil(sequence_length / block_size)
+    allocated_slots = blocks * block_size
+    wasted_slots = allocated_slots - sequence_length
+    utilization = (
+        sequence_length / allocated_slots
+        if allocated_slots
+        else 1.0
+    )
+
+    return {
+        &quot;blocks&quot;: int(blocks),
+        &quot;allocated_slots&quot;: int(allocated_slots),
+        &quot;wasted_slots&quot;: int(wasted_slots),
+        &quot;utilization&quot;: float(utilization),
+    }
+
+
+def prefix_cache_saved_tokens(
+    prompt_length: int,
+    *,
+    cached_prefix_length: int,
+) -&gt; int:
+    if prompt_length &lt; 0 or cached_prefix_length &lt; 0:
+        raise ValueError(&quot;lengths must be non-negative&quot;)
+    if cached_prefix_length &gt; prompt_length:
+        raise ValueError(&quot;cached prefix exceeds prompt&quot;)
+
+    return int(cached_prefix_length)
+
+
+def speculative_acceptance_rate(
+    *,
+    proposed_tokens: int,
+    accepted_tokens: int,
+) -&gt; float:
+    if proposed_tokens &lt;= 0:
+        raise ValueError(&quot;proposed_tokens must be positive&quot;)
+    if not 0 &lt;= accepted_tokens &lt;= proposed_tokens:
+        raise ValueError(&quot;accepted_tokens out of range&quot;)
+
+    return float(accepted_tokens / proposed_tokens)
+
+
+def average_tokens_per_target_verification(
+    accepted_per_verification: list[int],
+) -&gt; float:
+    if not accepted_per_verification:
+        raise ValueError(&quot;values must be non-empty&quot;)
+    if any(value &lt; 0 for value in accepted_per_verification):
+        raise ValueError(&quot;accepted token counts must be non-negative&quot;)
+
+    return float(
+        sum(accepted_per_verification)
+        / len(accepted_per_verification)
+    )
+
+
+def bandwidth_lower_bound_seconds(
+    *,
+    bytes_read: float,
+    bandwidth_bytes_per_second: float,
+) -&gt; float:
+    if bytes_read &lt; 0:
+        raise ValueError(&quot;bytes_read must be non-negative&quot;)
+    if bandwidth_bytes_per_second &lt;= 0:
+        raise ValueError(&quot;bandwidth must be positive&quot;)
+
+    return float(bytes_read / bandwidth_bytes_per_second)
+</code></pre></details><details><summary>62-inference-optimization/tests/test_inference_math.py</summary><pre><code>from pathlib import Path
+import importlib.util
+
+import numpy as np
+
+
+MODULE_PATH = Path(__file__).parents[1] / &quot;src&quot; / &quot;inference_math.py&quot;
+SPEC = importlib.util.spec_from_file_location(&quot;inference_math_course&quot;, MODULE_PATH)
+assert SPEC and SPEC.loader
+mod = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(mod)
+
+
+def test_kv_cache_grows_linearly_with_sequence() -&gt; None:
+    short = mod.kv_cache_bytes(
+        layers=2,
+        batch_size=1,
+        sequence_length=128,
+        kv_heads=4,
+        head_dim=16,
+        bytes_per_element=2,
+    )
+    long = mod.kv_cache_bytes(
+        layers=2,
+        batch_size=1,
+        sequence_length=256,
+        kv_heads=4,
+        head_dim=16,
+        bytes_per_element=2,
+    )
+    assert long == 2 * short
+
+
+def test_gqa_cache_reduction() -&gt; None:
+    assert mod.cache_reduction_ratio(
+        mha_heads=32,
+        kv_heads=8,
+    ) == 4.0
+
+
+def test_padding_efficiency() -&gt; None:
+    efficiency = mod.padded_batch_efficiency([10, 100])
+    np.testing.assert_allclose(efficiency, 110 / 200)
+
+
+def test_paged_block_usage() -&gt; None:
+    report = mod.paged_block_usage(
+        33,
+        block_size=16,
+    )
+    assert report[&quot;blocks&quot;] == 3
+    assert report[&quot;allocated_slots&quot;] == 48
+    assert report[&quot;wasted_slots&quot;] == 15
+    assert 0.0 &lt; report[&quot;utilization&quot;] &lt;= 1.0
+
+
+def test_speculative_acceptance() -&gt; None:
+    assert mod.speculative_acceptance_rate(
+        proposed_tokens=10,
+        accepted_tokens=7,
+    ) == 0.7
+    assert mod.average_tokens_per_target_verification(
+        [2, 3, 1]
+    ) == 2.0
+
+
+def test_bandwidth_lower_bound() -&gt; None:
+    seconds = mod.bandwidth_lower_bound_seconds(
+        bytes_read=1_000_000_000,
+        bandwidth_bytes_per_second=500_000_000_000,
+    )
+    np.testing.assert_allclose(seconds, 0.002)
+</code></pre></details></section><section id="glossary" class="canonical-section"><h2>อภิธานศัพท์ — คำไทย ความหมาย และข้อควรตรวจ</h2><dl><dt>tensor</dt><dd>เทนเซอร์: ชุดตัวเลขที่มีแกน เช่น scalar ไม่มีแกน, vector หนึ่งแกน, matrix สองแกน; shape บอกขนาดแต่ละแกน ไม่บอกความหมายของแกนจนกว่าจะระบุ</dd><dt>shape</dt><dd>รูปทรงข้อมูล: (B,T,d) หมายถึง batch × เวลา/ตำแหน่ง × features; ใช้ชื่อแกนกำกับเสมอ การ transpose เปลี่ยนแกนแต่ไม่ใช่แค่เปลี่ยนชื่อ</dd><dt>batch</dt><dd>กลุ่มตัวอย่างที่คำนวณร่วมกันหนึ่งครั้ง; B คือจำนวนตัวอย่าง ไม่ใช่จำนวน features หรือจำนวน optimizer updates</dd><dt>weight w / θ</dt><dd>น้ำหนักหรือพารามิเตอร์ที่โมเดลใช้คำนวณ; แก้ด้วยมือทำ forward ใหม่ ส่วน optimizer ต้องรับ gradient แล้วกด update จึงแก้ state</dd><dt>bias b</dt><dd>ค่าคงที่ที่บวกกับผลเชิงเส้น; regression scalar bias เพิ่ม Δ ทำให้ prediction ทุกจุดเพิ่ม Δ เท่ากัน</dd><dt>prediction ŷ</dt><dd>ค่าที่โมเดลทำนายจาก input และพารามิเตอร์ปัจจุบัน; เครื่องหมายหมวกแยกจาก target y ที่มาจากข้อมูล</dd><dt>residual e</dt><dd>ความคลาดเคลื่อน ในเว็บนี้นิยาม prediction − target; บางตำราใช้เครื่องหมายกลับกัน จึงต้องตรวจนิยามก่อนเทียบสูตร gradient</dd><dt>MSE</dt><dd>mean squared error = ผลรวม residual กำลังสองหารจำนวนรายการที่ระบุ; มีหน่วยเป็น target ยกกำลังสอง และการใช้ sum แทน mean เปลี่ยน scale gradient</dd><dt>loss L / objective J</dt><dd>จำนวนที่ optimizer ต้องการลด; objective อาจรวม data loss และ regularization จึงต้องดูองค์ประกอบและ reduction ให้ตรง implementation</dd><dt>gradient ∇ / ∂</dt><dd>เวกเตอร์ของ partial derivatives บอกอัตราเปลี่ยน loss ต่อพารามิเตอร์แต่ละตัว; ∂ ใช้เมื่อเปลี่ยนตัวหนึ่งโดยตรึงตัวอื่น</dd><dt>chain rule</dt><dd>กฎลูกโซ่: คูณอนุพันธ์ตามเส้นทาง และบวก contribution จากทุกเส้นทางที่มารวมกัน ใช้ย้อนจาก loss ถึง weights</dd><dt>learning rate η</dt><dd>ขนาดตัวคูณ gradient ใน update θnew=θ−ηg; η≥0, ศูนย์หมายถึงไม่มีการขยับพารามิเตอร์ ก้าวใหญ่เกินอาจ diverge</dd><dt>regularization λ</dt><dd>ตัวคูณค่าลงโทษ ต้อง λ≥0 ตามนิยามการลงโทษ; Ridge λΣw² เพิ่ม gradient 2λw โดยบท Regression นี้ไม่ลงโทษ bias</dd><dt>baseline</dt><dd>สถานะอ้างอิงที่ตรึงไว้สำหรับเทียบ; ต้องเก็บ snapshot ไม่อ้าง object ปัจจุบันที่แก้ตามไปด้วย</dd><dt>invariant</dt><dd>คุณสมบัติที่กลไกต้องรักษา เช่น probability รวม1, shape สอดคล้อง, queue ไม่เกิน capacity; ใช้ tests ตรวจได้มากกว่าดูภาพสวย</dd><dt>optimizer state</dt><dd>ความจำของอัลกอริทึม เช่น velocity, moments และ completed updates; คืนเฉพาะ weights ยังไม่เท่ากับเริ่มการฝึกใหม่ทั้งหมด</dd><dt>finite difference</dt><dd>ประมาณ derivative ด้วย [f(x+h)−f(x−h)]/(2h); h&gt;0, ใช้ smooth point และลองหลาย h เพื่อแยก truncation error จาก roundoff</dd><dt>softmax</dt><dd>แปลง logits เป็นความน่าจะเป็นตามแกนที่กำหนด; ลบ max ก่อน exp เพื่อความเสถียร และ fully masked row ต้องมีนโยบายชัดเจน</dd><dt>logit</dt><dd>คะแนนก่อน sigmoid/softmax ไม่ใช่ probability; อาจเป็นจำนวนจริงติดลบหรือเกิน1ได้ จึงห้ามส่งให้ loss ที่คาด probability โดยไม่แปลง</dd><dt>temperature τ / T</dt><dd>ตัวหาร logits ก่อน softmax; ต้องเป็นบวก ค่าเล็กทำ distribution แหลมขึ้น โดยไม่เท่ากับ retrain weights</dd><dt>mask</dt><dd>ตัวกำหนดตำแหน่งที่อ่านหรือคิด loss ได้; causal mask ปิดอนาคต, padding mask ปิดข้อมูลเติม, loss mask เลือก target แต่ละอย่างคนละหน้าที่</dd><dt>Q / K / V</dt><dd>query ใช้ค้นข้อมูล, key ใช้จับคู่ query, value เป็นข้อมูลที่ถูกถัวเฉลี่ย; เป็น learned projections ของ representation ไม่ใช่ป้ายความหมายตายตัว</dd><dt>head</dt><dd>ส่วนของ feature representation ที่ทำ attention แยกกัน แล้ว concat/project กลับ; ต้องตรวจ d_model หารจำนวน heads ลงตัว</dd><dt>ε-neighborhood</dt><dd>เพื่อนบ้านทั้งหมดที่มีระยะไม่เกิน ε รวมจุดตัวเองใน DBSCAN นี้; ε มีหน่วยเดียวกับพิกัด ไม่ใช่จำนวน k ที่ใช้โหวต</dd><dt>core / border / noise</dt><dd>DBSCAN core มีเพื่อนบ้านรวมตัวเองถึง min_samples; border อยู่ใกล้ core แต่เพื่อนบ้านไม่ถึง; noise ไม่ถูกเชื่อมกับ core cluster ใด</dd><dt>bootstrap</dt><dd>สุ่ม observations แบบ replacement ขนาดเท่าเดิมซ้ำหลายครั้งแล้วคำนวณ statistic ใหม่; seed ทำให้ตรวจซ้ำได้ แต่ไม่แก้สมมติฐาน IID ที่ผิด</dd><dt>confidence interval</dt><dd>ช่วงที่สร้างด้วย procedure ที่มี coverage ตามสมมติฐาน; ช่วงหนึ่งที่ได้แล้วไม่ใช่ posterior probability ของ parameter และ sample เล็กยังไม่แน่นอนมาก</dd><dt>validation / test</dt><dd>validation ใช้เลือกโมเดล/ค่าตั้ง ส่วน test ใช้ประเมินหลัง freeze การตัดสินใจ; fit preprocessing/tokenizer จาก test เป็น leakage</dd><dt>leakage</dt><dd>ข้อมูลที่ควรยังไม่รู้ไหลเข้า training/การเลือกโมเดล เช่น future feature หรือเอกสารซ้ำข้าม split ทำให้ metric ดูดีเกินการใช้งานจริง</dd><dt>queue / capacity</dt><dd>queue คือรายการรอ, capacity การให้บริการรวม = workers × service rate ตามแบบจำลอง; เพิ่ม timeout ไม่เพิ่มกำลังประมวลผล</dd><dt>state transition</dt><dd>การเปลี่ยนสถานะเมื่อเกิดเหตุการณ์ที่อนุญาต เช่น queued→active→done; ต้องระบุ guard, side effect และเหตุผลเมื่อ transition ถูกปฏิเสธ</dd><dt>latency / throughput</dt><dd>latency คือเวลาต่อคำขอ, throughput คือปริมาณงานต่อหน่วยเวลา; batching อาจเพิ่ม throughput แต่เพิ่มเวลารอ จึงต้องวัดทั้งคู่</dd><dt>idempotency</dt><dd>ทำคำขอ business operation เดิมซ้ำแล้ว side effect เกิดครั้งเดียวตาม key และ transaction protocol; ไม่ได้รับประกันจากการใช้ UUID ใหม่ทุก attempt</dd><dt>local lab</dt><dd>โปรแกรม Python และ tests ที่ผู้เรียนรันบนเครื่อง; เว็บเก็บเพียงคำยืนยันของผู้เรียน การผ่าน tests ของโค้ดต้นแบบไม่ใช่ผลตรวจโค้ดผู้เรียน</dd></dl></section></article>
+<section id="practice" class="practice-section"><span class="eyebrow">PRACTICE · DEBUG · BUILD</span><h2>พิสูจน์ด้วยการลงมือทำ</h2><div id="web-checks"></div><div class="retry-actions"><button class="secondary-button" id="retry-checks">เริ่มทำโจทย์ในเว็บใหม่</button><button class="text-button" id="undo-retry" hidden>คืนผลก่อนเริ่มใหม่</button></div><div id="exercise-content"><h2>แบบฝึก 20 ข้อ — เฉลยเฉพาะข้อ</h2><p>ทำคำตอบก่อนเปิด hints; โจทย์ปลายเปิดให้ใช้ตัวอย่างคำตอบและหลักฐานราย objective ตรวจงานจริง</p><section id="exercise-1" class="exercise-item"><h3>ข้อ 1</h3><p>Calculate KV-cache memory for MHA/GQA/MQA.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ KV Cache, MHA / GQA / MQA: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): KVbytes=2LBnkvTdk·bytes; MHAh8เทียบGQAnkv2ลด4×…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: KVbytes=2LBnkvTdk·bytes; MHAh8เทียบGQAnkv2ลด4×,MQAnkv1ลด8×เมื่อL/B/T/dk/dtypeเท่ากัน…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>KVbytes=2LBnkvTdk·bytes; MHAh8เทียบGQAnkv2ลด4×,MQAnkv1ลด8×เมื่อL/B/T/dk/dtypeเท่ากัน ไม่ลดqueryheadcomputeตามเดียวกัน</p><p>อ้างอิง: <a href="#chapter-62/section/topic-5">KV Cache</a>, <a href="#chapter-62/section/topic-6">MHA / GQA / MQA</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch62-exercise-01"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-2" class="exercise-item"><h3>ข้อ 2</h3><p>Compare DynamicCache and StaticCache trade-offs.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Cache Strategies: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): DynamicCacheโตตามactualcontextประหยัดจองล่วงหน้าแต่reallocatio…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: DynamicCacheโตตามactualcontextประหยัดจองล่วงหน้าแต่reallocation/compileยาก; StaticCacheจองmaxcontextช่วยfixedshap…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>DynamicCacheโตตามactualcontextประหยัดจองล่วงหน้าแต่reallocation/compileยาก; StaticCacheจองmaxcontextช่วยfixedshapeแต่เสียreservedmemoryและต้องmaskunusedslots</p><p>อ้างอิง: <a href="#chapter-62/section/topic-8">Cache Strategies</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch62-exercise-02"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-3" class="exercise-item"><h3>ข้อ 3</h3><p>Calculate padding efficiency for variable-length batches.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Padding Waste: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): lengths[2,4,6],padmax6ให้usefultokens12จาก…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: lengths[2,4,6],padmax6ให้usefultokens12จาก18,efficiency2/3; bucketingลดpadd…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>lengths[2,4,6],padmax6ให้usefultokens12จาก18,efficiency2/3; bucketingลดpaddingแต่ต้องคุมqueuewait/latency</p><p>อ้างอิง: <a href="#chapter-62/section/topic-10">Padding Waste</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch62-exercise-03"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-4" class="exercise-item"><h3>ข้อ 4</h3><p>Calculate paged-block tail fragmentation.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Block Usage: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): blocksize16,lengths[17,31]จอง32+32=64slots…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: blocksize16,lengths[17,31]จอง32+32=64slotsใช้48,tailwaste16=25%; sharedpref…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>blocksize16,lengths[17,31]จอง32+32=64slotsใช้48,tailwaste16=25%; sharedprefix/allocatoroverheadต้องนับแยก</p><p>อ้างอิง: <a href="#chapter-62/section/topic-14">Block Usage</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch62-exercise-04"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-5" class="exercise-item"><h3>ข้อ 5</h3><p>Estimate prefix-cache prefill savings.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Prefix Caching: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): prefix1000tokensซ้ำใน10requests,cacheprefillreuseได้ประมาณ9…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: prefix1000tokensซ้ำใน10requests,cacheprefillreuseได้ประมาณ9000prefix-tokenprojectionsแทน10000ภายใต้identic…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>prefix1000tokensซ้ำใน10requests,cacheprefillreuseได้ประมาณ9000prefix-tokenprojectionsแทน10000ภายใต้identicalprefix/model/position ไม่ลดdecodeทั้งหมด</p><p>อ้างอิง: <a href="#chapter-62/section/topic-15">Prefix Caching</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch62-exercise-05"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-6" class="exercise-item"><h3>ข้อ 6</h3><p>Explain why decode can be memory-bandwidth bound.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Decode: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): decodebatchเล็กอ่านweights/KVมากต่อtokenแต่FLOP…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: decodebatchเล็กอ่านweights/KVมากต่อtokenแต่FLOPsน้อยจึงbandwidth-boundได้; batchingเพ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>decodebatchเล็กอ่านweights/KVมากต่อtokenแต่FLOPsน้อยจึงbandwidth-boundได้; batchingเพิ่มreuseแต่เพิ่มlatencyและKVmemory</p><p>อ้างอิง: <a href="#chapter-62/section/topic-4">Decode</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch62-exercise-06"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-7" class="exercise-item"><h3>ข้อ 7</h3><p>Explain FlashAttention without claiming linear dense attention.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ FlashAttention: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): FlashAttentionจัดtile/fusionลดHBMtraffic/ไม่materi…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: FlashAttentionจัดtile/fusionลดHBMtraffic/ไม่materializefullscores; denseattentionยังมีO(T²…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>FlashAttentionจัดtile/fusionลดHBMtraffic/ไม่materializefullscores; denseattentionยังมีO(T²)paircompute ไม่เรียกlinearattention</p><p>อ้างอิง: <a href="#chapter-62/section/topic-17">FlashAttention</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch62-exercise-07"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-8" class="exercise-item"><h3>ข้อ 8</h3><p>Measure speculative acceptance rate.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Speculative Decoding, Speculation Correctness: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): acceptedtokens/totaldraftedtokens; drafted[4,4,4],ac…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: acceptedtokens/totaldraftedtokens; drafted[4,4,4],accepted[3,1,4]rate8/12=2/3; end-to-endspee…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>acceptedtokens/totaldraftedtokens; drafted[4,4,4],accepted[3,1,4]rate8/12=2/3; end-to-endspeedรวมdraft/verifycostและrejecthandling</p><p>อ้างอิง: <a href="#chapter-62/section/topic-19">Speculative Decoding</a>, <a href="#chapter-62/section/topic-20">Speculation Correctness</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch62-exercise-08"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-9" class="exercise-item"><h3>ข้อ 9</h3><p>Compare TTFT/TPOT at multiple concurrencies.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Metrics: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): TTFTจากarrivalถึงfirsttoken,TPOTจากsubsequentintertokenห…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: TTFTจากarrivalถึงfirsttoken,TPOTจากsubsequentintertokenหรือtotaldecode/(tokens−1)ตามdefinition; comp…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>TTFTจากarrivalถึงfirsttoken,TPOTจากsubsequentintertokenหรือtotaldecode/(tokens−1)ตามdefinition; compareconcurrency1/4/8พร้อมp95และthroughput</p><p>อ้างอิง: <a href="#chapter-62/section/topic-27">Metrics</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch62-exercise-09"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-10" class="exercise-item"><h3>ข้อ 10</h3><p>Design a continuous-batching scheduler simulation.</p>
+<p>Challenge:
+- benchmark use_cache=True vs False on a tiny Transformers model
+- build a discrete-event continuous-batching simulator</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Continuous Batching: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): continuousbatchschedulerทุกdecodeiterationปล่อยcompletedslo…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: continuousbatchschedulerทุกdecodeiterationปล่อยcompletedslots/รับwaitingเมื่อKVbudgetพอ; capqueue/maxbatch/…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>continuousbatchschedulerทุกdecodeiterationปล่อยcompletedslots/รับwaitingเมื่อKVbudgetพอ; capqueue/maxbatch/maxtokensและrecordwaittime/admissionreason</p><p>อ้างอิง: <a href="#chapter-62/section/topic-12">Continuous Batching</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch62-exercise-10"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-11" class="exercise-item"><h3>ข้อ 11</h3><p>Reproduce one central calculation from Inference Optimization using a tiny hand-checkable input.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Block Usage: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): lengths17/31block16waste16slots; เพิ่มblocksize32จอ…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: lengths17/31block16waste16slots; เพิ่มblocksize32จอง64เท่าเดิมกรณีนี้ แต่distributionอื่นอาจ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>lengths17/31block16waste16slots; เพิ่มblocksize32จอง64เท่าเดิมกรณีนี้ แต่distributionอื่นอาจต่าง จึงต้องวัดจากrequestlengthsจริง</p><p>อ้างอิง: <a href="#chapter-62/section/topic-14">Block Usage</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch62-exercise-11"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-12" class="exercise-item"><h3>ข้อ 12</h3><p>Write a deterministic test that verifies the most important invariant in Inference Optimization.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ KV Cache, Paged KV Cache: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): cachelengthmonotonicwithinrequest,freedslotsreusab…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: cachelengthmonotonicwithinrequest,freedslotsreusable,no-cross-tenantprefixreuseโดยไม่author…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>cachelengthmonotonicwithinrequest,freedslotsreusable,no-cross-tenantprefixreuseโดยไม่authorizationและcached/full-logitsallclose</p><p>อ้างอิง: <a href="#chapter-62/section/topic-5">KV Cache</a>, <a href="#chapter-62/section/topic-13">Paged KV Cache</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch62-exercise-12"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-13" class="exercise-item"><h3>ข้อ 13</h3><p>Compare two meaningful configurations while keeping data and seed fixed.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Cache Strategies: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): static/dynamicคงmodel/lengthdistribution/batch…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: static/dynamicคงmodel/lengthdistribution/batch/dtype; reportreserved/allocatedpeak,…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>static/dynamicคงmodel/lengthdistribution/batch/dtype; reportreserved/allocatedpeak,TTFT/TPOT,warmupและcompilecostแยก</p><p>อ้างอิง: <a href="#chapter-62/section/topic-8">Cache Strategies</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch62-exercise-13"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-14" class="exercise-item"><h3>ข้อ 14</h3><p>Record intermediate shapes, ranges, and one quality metric for a tiny end-to-end run.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Queueing: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): recordqueuearrival/admission/activeIDs/KVblocks/gen…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: recordqueuearrival/admission/activeIDs/KVblocks/generatedlength/completion/TTFT/TPOTและtoken…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>recordqueuearrival/admission/activeIDs/KVblocks/generatedlength/completion/TTFT/TPOTและtokens/sec; validstateต้องไม่overallocate</p><p>อ้างอิง: <a href="#chapter-62/section/topic-26">Queueing</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch62-exercise-14"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-15" class="exercise-item"><h3>ข้อ 15</h3><p>Explain one evaluation mistake that could make a Inference Optimization result look better than it really is.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Latency vs Throughput: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): benchmarkเฉพาะdecodeหรือexcludequeuewaitทำservi…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: benchmarkเฉพาะdecodeหรือexcludequeuewaitทำservingดูเร็วเกิน; includeend-to-endSLOและ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>benchmarkเฉพาะdecodeหรือexcludequeuewaitทำservingดูเร็วเกิน; includeend-to-endSLOและreportprefill/cachehitdistribution</p><p>อ้างอิง: <a href="#chapter-62/section/topic-9">Latency vs Throughput</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch62-exercise-15"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-16" class="exercise-item"><h3>ข้อ 16</h3><p>State the dominant time and memory complexity for the main operation in Inference Optimization.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Prefill, Decode: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): prefillattentionO(T²d),cacheddecodeO(Td)attentionต่อ…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: prefillattentionO(T²d),cacheddecodeO(Td)attentionต่อnewtoken; continuousbatchsimulatorcostขึ้นก…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>prefillattentionO(T²d),cacheddecodeO(Td)attentionต่อnewtoken; continuousbatchsimulatorcostขึ้นกับeventsแต่doesnotreplaceGPUbenchmark</p><p>อ้างอิง: <a href="#chapter-62/section/topic-3">Prefill</a>, <a href="#chapter-62/section/topic-4">Decode</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch62-exercise-16"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-17" class="exercise-item"><h3>ข้อ 17</h3><p>Compare a from-scratch result with a trusted implementation using identical inputs and settings.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ From Scratch: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): KVformulaเทียบallocatedtensors.numel()*element_sizeบนCP…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: KVformulaเทียบallocatedtensors.numel()*element_sizeบนCPUfixture; schedulerเทียบeventtraceด้วยconserv…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>KVformulaเทียบallocatedtensors.numel()*element_sizeบนCPUfixture; schedulerเทียบeventtraceด้วยconservationarrived=queued+active+done+dropped</p><p>อ้างอิง: <a href="#chapter-62/section/topic-28">From Scratch</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch62-exercise-17"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-18" class="exercise-item"><h3>ข้อ 18</h3><p>Run a one-factor ablation and report the measured change over repeated runs when randomness matters.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Prefix Caching: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): prefixcacheoff/onคงrequests/tenantpolicy/mod…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: prefixcacheoff/onคงrequests/tenantpolicy/model; reporthit-rate/TTFT/KVbytesและv…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>prefixcacheoff/onคงrequests/tenantpolicy/model; reporthit-rate/TTFT/KVbytesและverifyoutputsidenticalหลายprompts</p><p>อ้างอิง: <a href="#chapter-62/section/topic-15">Prefix Caching</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch62-exercise-18"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-19" class="exercise-item"><h3>ข้อ 19</h3><p>Design a small reproducibility record containing seed, code version, data version, configuration, and metric.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Metrics: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): manifest มีmodel/tokenizer/cachelayout/blocksize/dtype/…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: manifest มีmodel/tokenizer/cachelayout/blocksize/dtype/lengths/arrivalprocess/batchlimits/concurren…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>manifest มีmodel/tokenizer/cachelayout/blocksize/dtype/lengths/arrivalprocess/batchlimits/concurrency/prefixpolicy/hardware/runtime/warmup</p><p>อ้างอิง: <a href="#chapter-62/section/topic-27">Metrics</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch62-exercise-19"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-20" class="exercise-item"><h3>ข้อ 20</h3><p>Propose one falsifiable research question for Inference Optimization and specify the baseline, changed factor, and acceptance metric.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Padding Waste, Dynamic Batching: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ทดลอง“lengthbucketingเพิ่มpaddingefficiency≥20%โดยp…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ทดลอง“lengthbucketingเพิ่มpaddingefficiency≥20%โดยp95queuewait≤50ms”; FIFOconfigurationbasel…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ทดลอง“lengthbucketingเพิ่มpaddingefficiency≥20%โดยp95queuewait≤50ms”; FIFOconfigurationbaseline,fixedrequesttraceและsamecapacity</p><p>อ้างอิง: <a href="#chapter-62/section/topic-10">Padding Waste</a>, <a href="#chapter-62/section/topic-11">Dynamic Batching</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch62-exercise-20"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section></div><div id="local-lab-content"><section id="local-lab"><h2>Local lab: Python 3.12 บน CPU</h2><p>รันจาก repository root; ใช้ Python 3.12 แยก environment สำหรับ framework ตาม requirements ของชุดบท</p><pre><code>python3.12 -m venv .venv-course
+source .venv-course/bin/activate
+python -m pip install -r requirements-batch21.txt pytest
+(cd 62-inference-optimization &amp;&amp; python -m pytest tests -q -rs)</code></pre><p>ผลที่คาดหวัง: required tests ผ่านและไม่มี required test ถูก skip; GPU/integrations ที่ยังไม่รันต้องระบุแยก Python 3.15 ที่มากับเครื่องอาจใช้กับ framework wheels เหล่านี้ไม่ได้</p><h2>Mini Project — Inference Capacity Planner</h2>
+<p>Given a model and server workload, estimate:
+- weight memory
+- KV memory/request
+- max theoretical concurrent sequences
+- paged block waste
+- prompt-prefix reuse
+- padding efficiency
+- memory-bandwidth lower bound</p>
+<p>Then benchmark or simulate:
+- static batches
+- continuous batching
+- prefix caching
+- speculative decoding</p>
+<p>Report TTFT, TPOT and throughput separately.</p><h2>Batch 21 Integration Project — Quantized Inference &amp; Serving Capacity Lab</h2>
+<p>Batch 21 connects low-bit model storage, KV-cache capacity and production serving metrics.</p>
+<h3>Part A — Quantization</h3>
+<p>A synthetic weight matrix is quantized with:</p>
+<pre><code class="language-text">FP weights
+├── INT8 symmetric
+├── INT4 symmetric
+└── INT4 per-channel
+</code></pre>
+<p>Report:
+- reconstruction MSE
+- ideal raw weight bytes
+- compression ratio vs FP16
+- per-channel scale count</p>
+<h3>Part B — Inference Capacity</h3>
+<p>Estimate a 32-layer decoder cache under:</p>
+<pre><code class="language-text">MHA: 32 KV heads
+vs
+GQA: 8 KV heads
+</code></pre>
+<p>Also report:
+- padding efficiency
+- paged block fragmentation
+- prefix-cache saved tokens
+- speculative acceptance rate</p>
+<h3>Part C — Serving SLO Planner</h3>
+<p>Synthetic request traces produce:
+- p50 / p95 / p99 latency
+- Little's-Law concurrency
+- required replica estimate
+- success rate
+- 5% canary traffic split</p>
+<h3>Part D — PyTorch Weight-Only Smoke</h3>
+<p>Quantize/dequantize one linear weight tensor and compare its output with the FP32 source tensor.</p>
+<p>This is an educational reconstruction test, not a claim that NumPy quantization matches an optimized production low-bit kernel.</p>
+<h3>Run</h3>
+<pre><code class="language-bash">python integration-project-batch21/src/quantized_inference_serving_lab.py --mode quantization
+python integration-project-batch21/src/quantized_inference_serving_lab.py --mode capacity
+python integration-project-batch21/src/quantized_inference_serving_lab.py --mode serving
+python integration-project-batch21/src/quantized_inference_serving_lab.py --mode torch-weight-only --bits 4
+</code></pre>
+<h3>Optional Serving Environment</h3>
+<pre><code class="language-bash">python -m pip install -r requirements-batch21-serving.txt
+</code></pre>
+<p>vLLM and llama.cpp are hardware/runtime-specific and intentionally not forced into lightweight CPU CI.</p>
+<h3>Required Extensions</h3>
+<ol>
+<li>actual Transformers model.generate benchmark</li>
+<li>cache on/off comparison</li>
+<li>GGUF metadata inspection</li>
+<li>llama.cpp load test</li>
+<li>vLLM benchmark on compatible GPU</li>
+<li>continuous-batching simulation</li>
+<li>prefix-cache hit-rate experiment</li>
+<li>TTFT/TPOT per-sample traces</li>
+<li>bounded-queue FastAPI service</li>
+<li>canary quality + latency rollback gate</li>
+</ol></section></div><label class="local-confirm"><input type="checkbox" id="local-lab-confirm"> ฉันรัน local lab และตรวจผลตาม rubric ด้วยตัวเองแล้ว</label><p class="local-note">สถานะนี้เป็นคำยืนยันของผู้เรียน เว็บไม่ได้รันหรือตรวจ Python บนเครื่องแทนคุณ</p></section>
+<section id="mastery-review" class="practice-section"><h2>หลักฐานตามเกณฑ์การเรียนรู้</h2><p>ทุก objective ต้องแสดงหลักฐานอธิบาย ทำนาย คำนวณ อ่าน shape/state debug และประยุกต์ พร้อมกรณีใหม่ ผลรัน source ผู้เรียนจริง และการประเมินซ้ำ เกณฑ์นี้ไม่รับประกันความเข้าใจทุกสถานการณ์ เปิด JavaScript เพื่อดูรายการที่ยังขาดและนำเข้ารายงานผู้ตรวจ</p></section><section class="coverage-section"><h2>แผนที่สิ่งที่เรียน → สิ่งที่ต้องแสดงให้ได้</h2><div id="coverage-table"></div></section><footer><span>ZERO TO ELITE AI ENGINEER · LEARNING STUDIO</span><span>อ่าน · derive · implement · debug · experiment · build</span></footer></div></main><noscript><style>.workbench,.sidebar,.reading-route,.lesson-toc,.mastery-status,#web-checks{display:none}main{margin-left:0}</style>อ่านเนื้อหา HTML ได้ตามปกติ เปิด JavaScript เพื่อใช้ห้องทดลองและตรวจคำตอบ</noscript></body></html>

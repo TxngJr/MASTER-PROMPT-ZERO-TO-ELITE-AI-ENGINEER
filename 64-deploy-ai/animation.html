@@ -1,0 +1,1330 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="บทเรียน AI Engineer ภาษาไทย พร้อมคณิตศาสตร์ทีละขั้นและห้องทดลองที่คำนวณจริง"><title>Deployment: artifact พร้อมยังไม่แปลว่า model พร้อมรับงาน · AI Engineer Studio</title><link rel="stylesheet" href="../visual-lab/assets/styles.css"><link rel="stylesheet" href="../visual-lab/assets/course.css"><script defer src="../visual-lab/assets/lessons.js"></script><script defer src="../visual-lab/assets/chapter-meta.js"></script><script defer src="../visual-lab/assets/course-math.js"></script><script defer src="../visual-lab/assets/course-models.js"></script><script defer src="../visual-lab/assets/course-models-v3.js"></script><script defer src="../visual-lab/assets/course-assessment.js"></script><script defer src="../visual-lab/assets/course-mastery.js"></script><script defer src="../visual-lab/assets/course-catalog.js"></script><script defer src="../visual-lab/assets/book-content.js"></script><script defer src="../visual-lab/assets/course-render.js"></script><script defer src="../visual-lab/assets/course-mastery-panel.js"></script><script defer src="../visual-lab/assets/quality-report.js"></script><script defer src="../visual-lab/assets/course-app.js"></script></head>
+<body data-chapter="64" data-root="../"><a class="skip-link" href="#main">ข้ามไปบทเรียน</a>
+<aside class="sidebar" id="sidebar" aria-label="เลือกบทเรียน"><a class="brand" href="../visual-lab/index.html"><span class="brand-mark">ai</span><span>AI ENGINEER<small>LEARN · DERIVE · BUILD</small></span></a><div class="sidebar-intro">อ่านให้เข้าใจ · คำนวณให้เห็น · เขียนให้เป็น</div><label class="search-box"><input id="search" type="search" placeholder="ค้นหาบท / attention" aria-label="ค้นหาบทเรียน"></label><label class="filter-label" for="phase-filter">เส้นทางการเรียน <span id="nav-count"></span></label><select id="phase-filter"><option value="">ทุก Phase</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option></select><nav id="chapter-list" class="chapter-list" aria-label="รายชื่อบท"></nav><div class="course-progress"><div><span>ผ่านโจทย์ในเว็บ</span><strong id="progress-count">0 / 80</strong></div><progress id="course-progress" max="80" value="0" aria-label="บทที่ผ่านโจทย์"></progress><a id="resume-link" href="#chapter-1">อ่านต่อจากเดิม →</a></div></aside>
+<button class="nav-backdrop" id="nav-backdrop" aria-label="ปิดเมนู" hidden></button>
+<main id="main" tabindex="-1"><header class="topbar"><div><button id="nav-toggle" class="icon-button mobile-menu" aria-label="เปิดเมนูบทเรียน" aria-expanded="false" aria-controls="sidebar">☰</button><span id="breadcrumb"></span></div><span class="local-badge"><i></i> คำนวณในเครื่อง · ไม่มี API</span></header><div class="content">
+<div class="chapter-navigation"><label for="chapter-select" class="sr-only">เลือกบทเรียน</label><select id="chapter-select"></select><div class="chapter-arrows"><button id="prev-chapter" class="icon-button" aria-label="บทก่อนหน้า">←</button><button id="next-chapter" class="icon-button" aria-label="บทถัดไป">→</button></div></div>
+<section class="chapter-hero"><div><p id="chapter-kicker" class="eyebrow"></p><h1 id="chapter-title">Deployment: artifact พร้อมยังไม่แปลว่า model พร้อมรับงาน</h1><p class="english-title" id="chapter-english"></p></div><span class="hero-symbol">f(x) ↗</span></section>
+<p id="quality-status" class="quality-status"></p><div id="mastery-status" class="mastery-status"></div><div class="reading-route"><a href="#chapter-64/section/overview">01 อ่านบทเรียน</a><a href="#workbench">02 ทดลองสมการ</a><a href="#practice">03 ฝึกและตรวจงาน</a><a href="#mastery-review">04 หลักฐานตามเกณฑ์</a></div>
+<nav id="lesson-toc" class="lesson-toc" aria-label="สารบัญบท"></nav>
+<section id="overview" class="course-overview"><span class="eyebrow">THE LEARNING CONTRACT</span><h2>เรียนบทนี้แล้วต้องทำอะไรได้</h2><p id="chapter-purpose"></p><div id="chapter-objectives"></div><div class="learning-hint">ทำนาย → เปลี่ยนทีละค่า → ตรวจตัวเลข → อธิบายเหตุผล → เขียนด้วย Python เอง</div></section>
+<section class="workbench lab-card" id="workbench" aria-label="ห้องทดลองคำนวณจริง"><div class="card-header"><div><span class="live-dot"></span><span class="eyebrow">COMPUTATION WORKBENCH</span></div><span class="simulation-label">ทุกภาพใช้ผลคำนวณชุดเดียวกัน</span></div><div class="lab-top"><label for="lab-select">เลือกกลไกที่ต้องการทดลอง</label><select id="lab-select"></select><p id="lab-question"></p></div><div class="workbench-grid"><div class="viz-column"><div class="compare-labels"><span>เส้นทึบ: ปัจจุบัน</span><span>เส้นประ: baseline ที่ตรึงไว้</span></div><div id="simulation" class="simulation"></div><div id="metrics" class="metrics"></div><div id="baseline-diff" class="baseline-diff"></div><div class="playback"><div class="playback-buttons"><button class="primary-button" id="update-once">อัปเดตหนึ่งก้าว</button><button class="secondary-button" id="train-many">▶ ฝึก 30 ก้าว</button><button class="icon-button" id="back-state" aria-label="ย้อนประวัติ">↶</button><button class="icon-button" id="forward-state" aria-label="ประวัติถัดไป">↷</button></div></div><div class="lab-secondary-actions"><button id="pin-baseline" class="text-button">ตรึง baseline ปัจจุบัน</button><button id="reset-lab" class="text-button">คืนค่าเริ่มต้น</button><button id="download-state" class="text-button">บันทึกผล JSON</button><span id="history-status"></span></div><p id="simulation-note" class="simulation-note"></p><p class="lab-error" id="lab-error" role="alert" hidden></p></div><div class="controls-column"><h3>เปลี่ยนทีละตัว แล้วสังเกตผล</h3><div id="lab-controls"></div><p class="control-note">แก้ weight ด้วยมือจะคำนวณ forward ใหม่; optimizer เปลี่ยน weights เมื่อกดอัปเดตเท่านั้น</p></div></div>
+<div class="trace-section"><div class="trace-toolbar"><h3>เดินสมการทีละ operation</h3><div><button id="trace-prev" class="icon-button" aria-label="operation ก่อนหน้า">←</button><button id="play-trace" class="secondary-button" aria-pressed="false">▶ เล่น flow</button><button id="trace-next" class="icon-button" aria-label="operation ถัดไป">→</button><span id="stage-counter"></span></div></div><label class="motion-control"><input id="reduce-motion" type="checkbox"> ลดภาพเคลื่อนไหว (หยุดการเล่นที่ค้างอยู่)</label><div id="operation-steps" class="operation-steps"></div><div id="flow-diagram" class="flow-diagram"></div><div id="active-operation" class="active-operation" aria-live="polite"></div><p class="control-note">ตัวเลขบนภาพปัดเศษเพื่อให้อ่านง่าย; บันทึก JSON เพื่อดูค่าที่ใช้คำนวณเต็ม precision</p><details open><summary>ตารางค่าระหว่างทาง — ตรวจด้วยมือได้</summary><div id="result-table"></div></details><div id="tensor-tables" class="tensor-tables"></div><details id="surface-details"><summary>ดู loss surface และเส้นทางของ w₁,b (ตรึง controls อื่น)</summary><div id="surface-chart"></div><p>surface คำนวณ objective ปัจจุบันโดยตรึง degree, penalty, ข้อมูล และ weights อื่น เส้นทางแสดงเฉพาะ snapshots ที่ค่าเหล่านี้ตรงกัน; นอกช่วง w=[−1,5], b=[−2,4] ให้ตรวจค่าจริงใน history</p></details><details><summary>ประวัติการเปลี่ยนค่า</summary><div id="history-table"></div></details></div></section>
+<article id="chapter-article" class="chapter-article"><section id="mechanism-1" class="teaching-section"><span class="section-kicker">CHAPTER 64 · ภาพ → สมการ → โค้ด</span><h2>1. artifact ต้องผูกกับ code/model/config version</h2><h3>โจทย์และเหตุผล</h3><p>container image ที่เปิด process ได้ยังอาจโหลด weights ไม่เสร็จ ใช้ startup/readiness checks ให้ตรงงานและอย่าปล่อย requests เข้า engine ที่ยังไม่ warm</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Calculate rolling-update surge capacity.</p><p>desired4,maxSurge25%=1จึงpeak5pods,maxUnavailable25%=1จึงminimumavailable3; GPUcapacityต้องรองรับsurgeหรือrolloutติดpending</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>elapsed: elapsed startup ms,initial=500; loadTime: model load time ms,initial=300; warmup: warmup duration ms,initial=100; newError: canary errors /100,initial=1; errorLimit: allowed errors /100,initial=3</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = [500, 300, 100]; กำหนดความหมายและหน่วยของ input ก่อนทดลอง</li><li>ready=elapsed≥load+warmup; rollback=error&gt;limit = &quot;canary&quot;; process alive กับ model ready เป็นคนละเงื่อนไข; error gate ปิด traffic ไปเวอร์ชันใหม่</li><li>normal / boundary / comparison = &quot;canary&quot;; ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="deployment-startup---load---warmup-">เปิดการทดลองนี้</a><p class="failure-box">ดูhealthHTTP200อย่างเดียวไม่ยืนยันmodelquality; canaryต้องsamepromptmixและenoughsamplesก่อนpromote ไม่ใช้metricaverageซ่อนtailfailure; deployment decision state machine; ไม่ได้เปิด container หรือเปลี่ยน traffic จริง</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>desired4,maxSurge25%=1จึงpeak5pods,maxUnavailable25%=1จึงminimumavailable3; GPUcapacityต้องรองรับsurgeหรือrolloutติดpending</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-1-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = [500, 300, 100]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>ready=elapsed≥load+warmup; rollback=error&gt;limit</code> = &quot;canary&quot;<p>process alive กับ model ready เป็นคนละเงื่อนไข; error gate ปิด traffic ไปเวอร์ชันใหม่</p></li><li><code>normal / boundary / comparison</code> = &quot;canary&quot;<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-1-visual"><summary>ภาพและ shape</summary><p>deployment decision state machine; ไม่ได้เปิด container หรือเปลี่ยน traffic จริง</p><ol><li><code>shape / range</code> = [500, 300, 100]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>ready=elapsed≥load+warmup; rollback=error&gt;limit</code> = &quot;canary&quot;<p>process alive กับ model ready เป็นคนละเงื่อนไข; error gate ปิด traffic ไปเวอร์ชันใหม่</p></li><li><code>normal / boundary / comparison</code> = &quot;canary&quot;<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-1-code"><summary>โค้ด</summary><p>desired4,maxSurge25%=1จึงpeak5pods,maxUnavailable25%=1จึงminimumavailable3; GPUcapacityต้องรองรับsurgeหรือrolloutติดpending</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-1-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = [500, 300, 100]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>ready=elapsed≥load+warmup; rollback=error&gt;limit</code> = &quot;canary&quot;<p>process alive กับ model ready เป็นคนละเงื่อนไข; error gate ปิด traffic ไปเวอร์ชันใหม่</p></li><li><code>normal / boundary / comparison</code> = &quot;canary&quot;<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-1"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-2" class="teaching-section"><span class="section-kicker">CHAPTER 64 · ภาพ → สมการ → โค้ด</span><h2>2. health probes ทำคนละหน้าที่</h2><h3>โจทย์และเหตุผล</h3><p>liveness ตรวจ process ยังทำงาน readiness ตรวจรับงานได้ ถ้าเอาเงื่อนไขช้าของ model load ไปใช้ restart loop ผิด อาจไม่เคยเปิด service สำเร็จ</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Calculate canary request counts.</p><p>5%of2000=100expectedcanary,remaining1900champion; randomroutingต้องmeasureactualcounts/CIไม่บังคับexact100เว้นdeterministicassignment</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>elapsed: elapsed startup ms,initial=700; loadTime: model load time ms,initial=300; warmup: warmup duration ms,initial=100; newError: canary errors /100,initial=10; errorLimit: allowed errors /100,initial=3</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = [700, 300, 100]; กำหนดความหมายและหน่วยของ input ก่อนทดลอง</li><li>ready=elapsed≥load+warmup; rollback=error&gt;limit = &quot;rollback&quot;; process alive กับ model ready เป็นคนละเงื่อนไข; error gate ปิด traffic ไปเวอร์ชันใหม่</li><li>normal / boundary / comparison = &quot;rollback&quot;; ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="deployment-canary-error-gate-ส--ง-r">เปิดการทดลองนี้</a><p class="failure-box">ดูhealthHTTP200อย่างเดียวไม่ยืนยันmodelquality; canaryต้องsamepromptmixและenoughsamplesก่อนpromote ไม่ใช้metricaverageซ่อนtailfailure; deployment decision state machine; ไม่ได้เปิด container หรือเปลี่ยน traffic จริง</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>5%of2000=100expectedcanary,remaining1900champion; randomroutingต้องmeasureactualcounts/CIไม่บังคับexact100เว้นdeterministicassignment</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-2-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = [700, 300, 100]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>ready=elapsed≥load+warmup; rollback=error&gt;limit</code> = &quot;rollback&quot;<p>process alive กับ model ready เป็นคนละเงื่อนไข; error gate ปิด traffic ไปเวอร์ชันใหม่</p></li><li><code>normal / boundary / comparison</code> = &quot;rollback&quot;<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-2-visual"><summary>ภาพและ shape</summary><p>deployment decision state machine; ไม่ได้เปิด container หรือเปลี่ยน traffic จริง</p><ol><li><code>shape / range</code> = [700, 300, 100]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>ready=elapsed≥load+warmup; rollback=error&gt;limit</code> = &quot;rollback&quot;<p>process alive กับ model ready เป็นคนละเงื่อนไข; error gate ปิด traffic ไปเวอร์ชันใหม่</p></li><li><code>normal / boundary / comparison</code> = &quot;rollback&quot;<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-2-code"><summary>โค้ด</summary><p>5%of2000=100expectedcanary,remaining1900champion; randomroutingต้องmeasureactualcounts/CIไม่บังคับexact100เว้นdeterministicassignment</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-2-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = [700, 300, 100]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>ready=elapsed≥load+warmup; rollback=error&gt;limit</code> = &quot;rollback&quot;<p>process alive กับ model ready เป็นคนละเงื่อนไข; error gate ปิด traffic ไปเวอร์ชันใหม่</p></li><li><code>normal / boundary / comparison</code> = &quot;rollback&quot;<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-2"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-3" class="teaching-section"><span class="section-kicker">CHAPTER 64 · ภาพ → สมการ → โค้ด</span><h2>3. rollout ต้องมีเกณฑ์ย้อนกลับ</h2><h3>โจทย์และเหตุผล</h3><p>กำหนด quality/error/resource limits ก่อนปล่อย canary เพิ่ม traffic เมื่อผ่าน และ rollback ไป artifact ที่รู้จักได้ ภาพเป็น decision simulation ไม่ได้เปิด cloud หรือเปลี่ยนระบบจริง</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Design rollback gates for latency + model quality.</p><p>gatesเช่นp95≤500ms,error≤1%,quality≥baseline−.02,minN100; failanyrequiredgateหยุดpromote/rollbackไปknowndigestพร้อมaudit</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>arrival: arrival interval (ms),initial=100; service: service duration (ms),initial=80; workers: workers,initial=1; jobs: job count,initial=12</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = [100, 80, 1]; กำหนดความหมายและหน่วยของ input ก่อนทดลอง</li><li>start=max(arrival,worker_available); end=start+service = 1180; finite deterministic FCFS queue; workload rate สูงกว่าความสามารถทำให้ waiting เพิ่มตาม jobs</li><li>normal / boundary / comparison = 1180; ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="queue-traffic-capacity-ระหว-าง">เปิดการทดลองนี้</a><p class="failure-box">ดูhealthHTTP200อย่างเดียวไม่ยืนยันmodelquality; canaryต้องsamepromptmixและenoughsamplesก่อนpromote ไม่ใช้metricaverageซ่อนtailfailure; discrete-event queue calculation จาก interarrival/service คงที่ ไม่ใช่ hardware serving benchmark และไม่ใช่ M/M/1 distribution</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>gatesเช่นp95≤500ms,error≤1%,quality≥baseline−.02,minN100; failanyrequiredgateหยุดpromote/rollbackไปknowndigestพร้อมaudit</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-3-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = [100, 80, 1]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>start=max(arrival,worker_available); end=start+service</code> = 1180<p>finite deterministic FCFS queue; workload rate สูงกว่าความสามารถทำให้ waiting เพิ่มตาม jobs</p></li><li><code>normal / boundary / comparison</code> = 1180<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-3-visual"><summary>ภาพและ shape</summary><p>discrete-event queue calculation จาก interarrival/service คงที่ ไม่ใช่ hardware serving benchmark และไม่ใช่ M/M/1 distribution</p><ol><li><code>shape / range</code> = [100, 80, 1]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>start=max(arrival,worker_available); end=start+service</code> = 1180<p>finite deterministic FCFS queue; workload rate สูงกว่าความสามารถทำให้ waiting เพิ่มตาม jobs</p></li><li><code>normal / boundary / comparison</code> = 1180<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-3-code"><summary>โค้ด</summary><p>gatesเช่นp95≤500ms,error≤1%,quality≥baseline−.02,minN100; failanyrequiredgateหยุดpromote/rollbackไปknowndigestพร้อมaudit</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-3-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = [100, 80, 1]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>start=max(arrival,worker_available); end=start+service</code> = 1180<p>finite deterministic FCFS queue; workload rate สูงกว่าความสามารถทำให้ waiting เพิ่มตาม jobs</p></li><li><code>normal / boundary / comparison</code> = 1180<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-3"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="reference" class="canonical-section"><h2>เนื้อหาครบทุกหัวข้อ พร้อมแผนที่ objective</h2><nav class="source-toc"><a href="#chapter-64/section/topic-1">1. Deployment Is a System Problem</a> <a href="#chapter-64/section/topic-2">2. Learning Objectives</a> <a href="#chapter-64/section/topic-3">3. API Layer</a> <a href="#chapter-64/section/topic-4">4. Immutable Artifacts</a> <a href="#chapter-64/section/topic-5">5. Docker Image Layers</a> <a href="#chapter-64/section/topic-6">6. Runtime Image</a> <a href="#chapter-64/section/topic-7">7. Container Resources</a> <a href="#chapter-64/section/topic-8">8. Kubernetes Object Model</a> <a href="#chapter-64/section/topic-9">9. Service</a> <a href="#chapter-64/section/topic-10">10. Gateway vs Ingress</a> <a href="#chapter-64/section/topic-11">11. ConfigMap</a> <a href="#chapter-64/section/topic-12">12. Secret</a> <a href="#chapter-64/section/topic-13">13. Probes</a> <a href="#chapter-64/section/topic-14">14. GPU Scheduling</a> <a href="#chapter-64/section/topic-15">15. Rolling Update</a> <a href="#chapter-64/section/topic-16">16. Rollout Safety</a> <a href="#chapter-64/section/topic-17">17. HPA</a> <a href="#chapter-64/section/topic-18">18. HPA Control Loop</a> <a href="#chapter-64/section/topic-19">19. Scale-to-Zero</a> <a href="#chapter-64/section/topic-20">20. Cluster Autoscaling</a> <a href="#chapter-64/section/topic-21">21. Canary</a> <a href="#chapter-64/section/topic-22">22. Blue-Green</a> <a href="#chapter-64/section/topic-23">23. Cloud Building Blocks</a> <a href="#chapter-64/section/topic-24">24. Stateful Dependencies</a> <a href="#chapter-64/section/topic-25">25. Graceful Termination</a> <a href="#chapter-64/section/topic-26">26. Deployment Math</a> <a href="#chapter-64/section/topic-27">27. Example Manifests</a> <a href="#chapter-64/section/topic-28">28. Common Mistakes</a> <a href="#chapter-64/section/topic-29">29. Exercises / Mini Project</a> <a href="#chapter-64/section/topic-30">30. Checklist</a> <a href="#chapter-64/section/topic-31">31. What&#x27;s Next</a> </nav><section id="topic-1" class="source-topic"><span id="source-64-deploy-ai-canonical-chapter-64-deploy-ai-api-docker-kubernetes-cloud" class="legacy-anchor"></span><span id="source-64-deploy-ai-canonical-1-deployment-is-a-system-problem" class="legacy-anchor"></span><h3>1. Deployment Is a System Problem</h3>
+<p>Training creates an artifact. Deployment makes that artifact reliably reachable under real traffic.</p>
+<pre><code class="language-text">model artifact
+↓
+container image
+↓
+registry
+↓
+Kubernetes / cloud runtime
+↓
+service / gateway
+↓
+observability + autoscaling + rollout
+</code></pre><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>1. Deployment Is a System Problem</h3>
+<p>Training creates an artifact. Deployment makes that artifact reliably reachable under real traffic.</p>
+<pre><code class="language-text">model artifact
+↓
+container image
+↓
+registry
+↓
+Kubernetes / cloud runtime
+↓
+service / gateway
+↓
+observability + autoscaling + rollout
+</code></pre><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-1-equation"><summary>สมการ</summary><h3>1. Deployment Is a System Problem</h3>
+<p>Training creates an artifact. Deployment makes that artifact reliably reachable under real traffic.</p>
+<pre><code class="language-text">model artifact
+↓
+container image
+↓
+registry
+↓
+Kubernetes / cloud runtime
+↓
+service / gateway
+↓
+observability + autoscaling + rollout
+</code></pre></details><details id="help-topic-1-visual"><summary>ภาพและ shape</summary><h3>1. Deployment Is a System Problem</h3>
+<p>Training creates an artifact. Deployment makes that artifact reliably reachable under real traffic.</p>
+<pre><code class="language-text">model artifact
+↓
+container image
+↓
+registry
+↓
+Kubernetes / cloud runtime
+↓
+service / gateway
+↓
+observability + autoscaling + rollout
+</code></pre></details><details id="help-topic-1-code"><summary>โค้ด</summary><h3>1. Deployment Is a System Problem</h3>
+<p>Training creates an artifact. Deployment makes that artifact reliably reachable under real traffic.</p>
+<pre><code class="language-text">model artifact
+↓
+container image
+↓
+registry
+↓
+Kubernetes / cloud runtime
+↓
+service / gateway
+↓
+observability + autoscaling + rollout
+</code></pre><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-1-result"><summary>ผลการทดลอง</summary><h3>1. Deployment Is a System Problem</h3>
+<p>Training creates an artifact. Deployment makes that artifact reliably reachable under real traffic.</p>
+<pre><code class="language-text">model artifact
+↓
+container image
+↓
+registry
+↓
+Kubernetes / cloud runtime
+↓
+service / gateway
+↓
+observability + autoscaling + rollout
+</code></pre><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-1"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-2" class="source-topic"><span id="source-64-deploy-ai-canonical-2-learning-objectives" class="legacy-anchor"></span><h3>2. Learning Objectives</h3>
+<ul>
+<li>package an AI service into an immutable container</li>
+<li>understand Docker layers and image reproducibility</li>
+<li>separate build-time and runtime dependencies</li>
+<li>design health, readiness and startup probes</li>
+<li>understand Deployment / ReplicaSet / Pod / Service</li>
+<li>request GPU resources correctly</li>
+<li>use ConfigMap and Secret appropriately</li>
+<li>reason about Gateway / Ingress</li>
+<li>calculate rolling-update capacity</li>
+<li>understand HPA and custom metrics</li>
+<li>design canary/blue-green rollouts</li>
+<li>reason about cloud load balancers and registries</li>
+<li>define rollback and disaster-recovery criteria</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>2. Learning Objectives</h3>
+<ul>
+<li>package an AI service into an immutable container</li>
+<li>understand Docker layers and image reproducibility</li>
+<li>separate build-time and runtime dependencies</li>
+<li>design health, readiness and startup probes</li>
+<li>understand Deployment / ReplicaSet / Pod / Service</li>
+<li>request GPU resources correctly</li>
+<li>use ConfigMap and Secret appropriately</li>
+<li>reason about Gateway / Ingress</li>
+<li>calculate rolling-update capacity</li>
+<li>understand HPA and custom metrics</li>
+<li>design canary/blue-green rollouts</li>
+<li>reason about cloud load balancers and registries</li>
+<li>define rollback and disaster-recovery criteria</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-2-equation"><summary>สมการ</summary><h3>2. Learning Objectives</h3>
+<ul>
+<li>package an AI service into an immutable container</li>
+<li>understand Docker layers and image reproducibility</li>
+<li>separate build-time and runtime dependencies</li>
+<li>design health, readiness and startup probes</li>
+<li>understand Deployment / ReplicaSet / Pod / Service</li>
+<li>request GPU resources correctly</li>
+<li>use ConfigMap and Secret appropriately</li>
+<li>reason about Gateway / Ingress</li>
+<li>calculate rolling-update capacity</li>
+<li>understand HPA and custom metrics</li>
+<li>design canary/blue-green rollouts</li>
+<li>reason about cloud load balancers and registries</li>
+<li>define rollback and disaster-recovery criteria</li>
+</ul></details><details id="help-topic-2-visual"><summary>ภาพและ shape</summary><h3>2. Learning Objectives</h3>
+<ul>
+<li>package an AI service into an immutable container</li>
+<li>understand Docker layers and image reproducibility</li>
+<li>separate build-time and runtime dependencies</li>
+<li>design health, readiness and startup probes</li>
+<li>understand Deployment / ReplicaSet / Pod / Service</li>
+<li>request GPU resources correctly</li>
+<li>use ConfigMap and Secret appropriately</li>
+<li>reason about Gateway / Ingress</li>
+<li>calculate rolling-update capacity</li>
+<li>understand HPA and custom metrics</li>
+<li>design canary/blue-green rollouts</li>
+<li>reason about cloud load balancers and registries</li>
+<li>define rollback and disaster-recovery criteria</li>
+</ul></details><details id="help-topic-2-code"><summary>โค้ด</summary><h3>2. Learning Objectives</h3>
+<ul>
+<li>package an AI service into an immutable container</li>
+<li>understand Docker layers and image reproducibility</li>
+<li>separate build-time and runtime dependencies</li>
+<li>design health, readiness and startup probes</li>
+<li>understand Deployment / ReplicaSet / Pod / Service</li>
+<li>request GPU resources correctly</li>
+<li>use ConfigMap and Secret appropriately</li>
+<li>reason about Gateway / Ingress</li>
+<li>calculate rolling-update capacity</li>
+<li>understand HPA and custom metrics</li>
+<li>design canary/blue-green rollouts</li>
+<li>reason about cloud load balancers and registries</li>
+<li>define rollback and disaster-recovery criteria</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-2-result"><summary>ผลการทดลอง</summary><h3>2. Learning Objectives</h3>
+<ul>
+<li>package an AI service into an immutable container</li>
+<li>understand Docker layers and image reproducibility</li>
+<li>separate build-time and runtime dependencies</li>
+<li>design health, readiness and startup probes</li>
+<li>understand Deployment / ReplicaSet / Pod / Service</li>
+<li>request GPU resources correctly</li>
+<li>use ConfigMap and Secret appropriately</li>
+<li>reason about Gateway / Ingress</li>
+<li>calculate rolling-update capacity</li>
+<li>understand HPA and custom metrics</li>
+<li>design canary/blue-green rollouts</li>
+<li>reason about cloud load balancers and registries</li>
+<li>define rollback and disaster-recovery criteria</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-2"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-3" class="source-topic"><span id="source-64-deploy-ai-canonical-3-api-layer" class="legacy-anchor"></span><h3>3. API Layer</h3>
+<p>A model server should expose a stable contract rather than leaking framework internals.</p>
+<p>Typical API responsibilities:
+- request validation
+- model/version selection
+- authentication/authorization
+- timeouts and cancellation
+- response schema
+- health/readiness
+- tracing / metrics</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>3. API Layer</h3>
+<p>A model server should expose a stable contract rather than leaking framework internals.</p>
+<p>Typical API responsibilities:
+- request validation
+- model/version selection
+- authentication/authorization
+- timeouts and cancellation
+- response schema
+- health/readiness
+- tracing / metrics</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-3-equation"><summary>สมการ</summary><h3>3. API Layer</h3>
+<p>A model server should expose a stable contract rather than leaking framework internals.</p>
+<p>Typical API responsibilities:
+- request validation
+- model/version selection
+- authentication/authorization
+- timeouts and cancellation
+- response schema
+- health/readiness
+- tracing / metrics</p></details><details id="help-topic-3-visual"><summary>ภาพและ shape</summary><h3>3. API Layer</h3>
+<p>A model server should expose a stable contract rather than leaking framework internals.</p>
+<p>Typical API responsibilities:
+- request validation
+- model/version selection
+- authentication/authorization
+- timeouts and cancellation
+- response schema
+- health/readiness
+- tracing / metrics</p></details><details id="help-topic-3-code"><summary>โค้ด</summary><h3>3. API Layer</h3>
+<p>A model server should expose a stable contract rather than leaking framework internals.</p>
+<p>Typical API responsibilities:
+- request validation
+- model/version selection
+- authentication/authorization
+- timeouts and cancellation
+- response schema
+- health/readiness
+- tracing / metrics</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-3-result"><summary>ผลการทดลอง</summary><h3>3. API Layer</h3>
+<p>A model server should expose a stable contract rather than leaking framework internals.</p>
+<p>Typical API responsibilities:
+- request validation
+- model/version selection
+- authentication/authorization
+- timeouts and cancellation
+- response schema
+- health/readiness
+- tracing / metrics</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-3"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-4" class="source-topic"><span id="source-64-deploy-ai-canonical-4-immutable-artifacts" class="legacy-anchor"></span><h3>4. Immutable Artifacts</h3>
+<p>Production deployment should identify exact:
+- source commit
+- model revision
+- tokenizer/config
+- container digest
+- dependency lock</p>
+<p>A mutable tag such as latest is insufficient for reproducible rollback.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>imagebuildtaggitSHAและpinimagedigest; tagเดียวถูกoverwriteได้จึงdeploydigest@sha256 พร้อมsource/config/modelartifacthash</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-4-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>imagebuildtaggitSHAและpinimagedigest; tagเดียวถูกoverwriteได้จึงdeploydigest@sha256 พร้อมsource/config/modelartifacthash</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-4-equation"><summary>สมการ</summary><p>imagebuildtaggitSHAและpinimagedigest; tagเดียวถูกoverwriteได้จึงdeploydigest@sha256 พร้อมsource/config/modelartifacthash</p></details><details id="help-topic-4-visual"><summary>ภาพและ shape</summary><p>imagebuildtaggitSHAและpinimagedigest; tagเดียวถูกoverwriteได้จึงdeploydigest@sha256 พร้อมsource/config/modelartifacthash</p></details><details id="help-topic-4-code"><summary>โค้ด</summary><p>imagebuildtaggitSHAและpinimagedigest; tagเดียวถูกoverwriteได้จึงdeploydigest@sha256 พร้อมsource/config/modelartifacthash</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-4-result"><summary>ผลการทดลอง</summary><p>imagebuildtaggitSHAและpinimagedigest; tagเดียวถูกoverwriteได้จึงdeploydigest@sha256 พร้อมsource/config/modelartifacthash</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-4"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-5" class="source-topic"><span id="source-64-deploy-ai-canonical-5-docker-image-layers" class="legacy-anchor"></span><h3>5. Docker Image Layers</h3>
+<p>Container builds form cacheable layers. Put slowly changing dependency installation before frequently changing source files when practical.</p>
+<p>Use multi-stage builds when build-time tooling does not belong in the runtime image.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-5-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>5. Docker Image Layers</h3>
+<p>Container builds form cacheable layers. Put slowly changing dependency installation before frequently changing source files when practical.</p>
+<p>Use multi-stage builds when build-time tooling does not belong in the runtime image.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-5-equation"><summary>สมการ</summary><h3>5. Docker Image Layers</h3>
+<p>Container builds form cacheable layers. Put slowly changing dependency installation before frequently changing source files when practical.</p>
+<p>Use multi-stage builds when build-time tooling does not belong in the runtime image.</p></details><details id="help-topic-5-visual"><summary>ภาพและ shape</summary><h3>5. Docker Image Layers</h3>
+<p>Container builds form cacheable layers. Put slowly changing dependency installation before frequently changing source files when practical.</p>
+<p>Use multi-stage builds when build-time tooling does not belong in the runtime image.</p></details><details id="help-topic-5-code"><summary>โค้ด</summary><h3>5. Docker Image Layers</h3>
+<p>Container builds form cacheable layers. Put slowly changing dependency installation before frequently changing source files when practical.</p>
+<p>Use multi-stage builds when build-time tooling does not belong in the runtime image.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-5-result"><summary>ผลการทดลอง</summary><h3>5. Docker Image Layers</h3>
+<p>Container builds form cacheable layers. Put slowly changing dependency installation before frequently changing source files when practical.</p>
+<p>Use multi-stage builds when build-time tooling does not belong in the runtime image.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-5"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-6" class="source-topic"><span id="source-64-deploy-ai-canonical-6-runtime-image" class="legacy-anchor"></span><h3>6. Runtime Image</h3>
+<p>Prefer:
+- non-root user
+- minimal packages
+- pinned dependencies
+- explicit entrypoint
+- read-only configuration where possible
+- no embedded credentials</p>
+<p>Do not bake cloud tokens, API keys or model-registry secrets into the image.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-6-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>6. Runtime Image</h3>
+<p>Prefer:
+- non-root user
+- minimal packages
+- pinned dependencies
+- explicit entrypoint
+- read-only configuration where possible
+- no embedded credentials</p>
+<p>Do not bake cloud tokens, API keys or model-registry secrets into the image.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-6-equation"><summary>สมการ</summary><h3>6. Runtime Image</h3>
+<p>Prefer:
+- non-root user
+- minimal packages
+- pinned dependencies
+- explicit entrypoint
+- read-only configuration where possible
+- no embedded credentials</p>
+<p>Do not bake cloud tokens, API keys or model-registry secrets into the image.</p></details><details id="help-topic-6-visual"><summary>ภาพและ shape</summary><h3>6. Runtime Image</h3>
+<p>Prefer:
+- non-root user
+- minimal packages
+- pinned dependencies
+- explicit entrypoint
+- read-only configuration where possible
+- no embedded credentials</p>
+<p>Do not bake cloud tokens, API keys or model-registry secrets into the image.</p></details><details id="help-topic-6-code"><summary>โค้ด</summary><h3>6. Runtime Image</h3>
+<p>Prefer:
+- non-root user
+- minimal packages
+- pinned dependencies
+- explicit entrypoint
+- read-only configuration where possible
+- no embedded credentials</p>
+<p>Do not bake cloud tokens, API keys or model-registry secrets into the image.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-6-result"><summary>ผลการทดลอง</summary><h3>6. Runtime Image</h3>
+<p>Prefer:
+- non-root user
+- minimal packages
+- pinned dependencies
+- explicit entrypoint
+- read-only configuration where possible
+- no embedded credentials</p>
+<p>Do not bake cloud tokens, API keys or model-registry secrets into the image.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-6"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-7" class="source-topic"><span id="source-64-deploy-ai-canonical-7-container-resources" class="legacy-anchor"></span><h3>7. Container Resources</h3>
+<p>Define CPU and memory requests/limits based on measurements.</p>
+<p>For GPU workloads, Kubernetes exposes vendor devices through device plugins. A typical NVIDIA resource is <code>nvidia.com/gpu</code>.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-7-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>7. Container Resources</h3>
+<p>Define CPU and memory requests/limits based on measurements.</p>
+<p>For GPU workloads, Kubernetes exposes vendor devices through device plugins. A typical NVIDIA resource is <code>nvidia.com/gpu</code>.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-7-equation"><summary>สมการ</summary><h3>7. Container Resources</h3>
+<p>Define CPU and memory requests/limits based on measurements.</p>
+<p>For GPU workloads, Kubernetes exposes vendor devices through device plugins. A typical NVIDIA resource is <code>nvidia.com/gpu</code>.</p></details><details id="help-topic-7-visual"><summary>ภาพและ shape</summary><h3>7. Container Resources</h3>
+<p>Define CPU and memory requests/limits based on measurements.</p>
+<p>For GPU workloads, Kubernetes exposes vendor devices through device plugins. A typical NVIDIA resource is <code>nvidia.com/gpu</code>.</p></details><details id="help-topic-7-code"><summary>โค้ด</summary><h3>7. Container Resources</h3>
+<p>Define CPU and memory requests/limits based on measurements.</p>
+<p>For GPU workloads, Kubernetes exposes vendor devices through device plugins. A typical NVIDIA resource is <code>nvidia.com/gpu</code>.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-7-result"><summary>ผลการทดลอง</summary><h3>7. Container Resources</h3>
+<p>Define CPU and memory requests/limits based on measurements.</p>
+<p>For GPU workloads, Kubernetes exposes vendor devices through device plugins. A typical NVIDIA resource is <code>nvidia.com/gpu</code>.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-7"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-8" class="source-topic"><span id="source-64-deploy-ai-canonical-8-kubernetes-object-model" class="legacy-anchor"></span><h3>8. Kubernetes Object Model</h3>
+<pre><code class="language-text">Deployment
+↓ manages
+ReplicaSet
+↓ manages
+Pods
+
+Service
+↓ stable discovery/load balancing
+Pods
+</code></pre>
+<p>Deployments support declarative rollout and rollback of stateless workloads.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>recordpodstatespending/loading/ready/draining/terminated,replicacount/GPUs/queue/latency/qualitygateversion</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-8-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>recordpodstatespending/loading/ready/draining/terminated,replicacount/GPUs/queue/latency/qualitygateversion</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-8-equation"><summary>สมการ</summary><p>recordpodstatespending/loading/ready/draining/terminated,replicacount/GPUs/queue/latency/qualitygateversion</p></details><details id="help-topic-8-visual"><summary>ภาพและ shape</summary><p>recordpodstatespending/loading/ready/draining/terminated,replicacount/GPUs/queue/latency/qualitygateversion</p></details><details id="help-topic-8-code"><summary>โค้ด</summary><p>recordpodstatespending/loading/ready/draining/terminated,replicacount/GPUs/queue/latency/qualitygateversion</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-8-result"><summary>ผลการทดลอง</summary><p>recordpodstatespending/loading/ready/draining/terminated,replicacount/GPUs/queue/latency/qualitygateversion</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-8"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-9" class="source-topic"><span id="source-64-deploy-ai-canonical-9-service" class="legacy-anchor"></span><h3>9. Service</h3>
+<p>A Service gives a stable virtual endpoint to a changing set of Pods selected by labels.</p>
+<p>Common service types:
+- ClusterIP
+- NodePort
+- LoadBalancer</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-9-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>9. Service</h3>
+<p>A Service gives a stable virtual endpoint to a changing set of Pods selected by labels.</p>
+<p>Common service types:
+- ClusterIP
+- NodePort
+- LoadBalancer</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-9-equation"><summary>สมการ</summary><h3>9. Service</h3>
+<p>A Service gives a stable virtual endpoint to a changing set of Pods selected by labels.</p>
+<p>Common service types:
+- ClusterIP
+- NodePort
+- LoadBalancer</p></details><details id="help-topic-9-visual"><summary>ภาพและ shape</summary><h3>9. Service</h3>
+<p>A Service gives a stable virtual endpoint to a changing set of Pods selected by labels.</p>
+<p>Common service types:
+- ClusterIP
+- NodePort
+- LoadBalancer</p></details><details id="help-topic-9-code"><summary>โค้ด</summary><h3>9. Service</h3>
+<p>A Service gives a stable virtual endpoint to a changing set of Pods selected by labels.</p>
+<p>Common service types:
+- ClusterIP
+- NodePort
+- LoadBalancer</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-9-result"><summary>ผลการทดลอง</summary><h3>9. Service</h3>
+<p>A Service gives a stable virtual endpoint to a changing set of Pods selected by labels.</p>
+<p>Common service types:
+- ClusterIP
+- NodePort
+- LoadBalancer</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-9"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-10" class="source-topic"><span id="source-64-deploy-ai-canonical-10-gateway-vs-ingress" class="legacy-anchor"></span><h3>10. Gateway vs Ingress</h3>
+<p>Ingress remains stable but its API is frozen. Kubernetes recommends Gateway API for new feature development.</p>
+<p>For new systems, understand:
+- GatewayClass
+- Gateway
+- HTTPRoute</p>
+<p>while still being able to maintain existing Ingress deployments.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>Gatewayรับlistener/TLS,HTTPRouteจับhost/pathและชี้serviceweights; backendreadiness/timeout/bodylimitsต้องสอดคล้องstreamingLLM</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-10-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Gatewayรับlistener/TLS,HTTPRouteจับhost/pathและชี้serviceweights; backendreadiness/timeout/bodylimitsต้องสอดคล้องstreamingLLM</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-10-equation"><summary>สมการ</summary><p>Gatewayรับlistener/TLS,HTTPRouteจับhost/pathและชี้serviceweights; backendreadiness/timeout/bodylimitsต้องสอดคล้องstreamingLLM</p></details><details id="help-topic-10-visual"><summary>ภาพและ shape</summary><p>Gatewayรับlistener/TLS,HTTPRouteจับhost/pathและชี้serviceweights; backendreadiness/timeout/bodylimitsต้องสอดคล้องstreamingLLM</p></details><details id="help-topic-10-code"><summary>โค้ด</summary><p>Gatewayรับlistener/TLS,HTTPRouteจับhost/pathและชี้serviceweights; backendreadiness/timeout/bodylimitsต้องสอดคล้องstreamingLLM</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-10-result"><summary>ผลการทดลอง</summary><p>Gatewayรับlistener/TLS,HTTPRouteจับhost/pathและชี้serviceweights; backendreadiness/timeout/bodylimitsต้องสอดคล้องstreamingLLM</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-10"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-11" class="source-topic"><span id="source-64-deploy-ai-canonical-11-configmap" class="legacy-anchor"></span><h3>11. ConfigMap</h3>
+<p>Use ConfigMap for non-secret configuration such as:
+- model name
+- log level
+- feature flags
+- timeout defaults</p>
+<p>Configuration changes should be versioned and rollout behavior understood.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>ConfigMapเก็บnonsecretconfig,Secretเก็บcredentialแต่base64ไม่ใช่encryption; restrictRBAC/encrypt-at-restและอย่าบันทึกsecretsในrepo/log</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-11-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>ConfigMapเก็บnonsecretconfig,Secretเก็บcredentialแต่base64ไม่ใช่encryption; restrictRBAC/encrypt-at-restและอย่าบันทึกsecretsในrepo/log</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-11-equation"><summary>สมการ</summary><p>ConfigMapเก็บnonsecretconfig,Secretเก็บcredentialแต่base64ไม่ใช่encryption; restrictRBAC/encrypt-at-restและอย่าบันทึกsecretsในrepo/log</p></details><details id="help-topic-11-visual"><summary>ภาพและ shape</summary><p>ConfigMapเก็บnonsecretconfig,Secretเก็บcredentialแต่base64ไม่ใช่encryption; restrictRBAC/encrypt-at-restและอย่าบันทึกsecretsในrepo/log</p></details><details id="help-topic-11-code"><summary>โค้ด</summary><p>ConfigMapเก็บnonsecretconfig,Secretเก็บcredentialแต่base64ไม่ใช่encryption; restrictRBAC/encrypt-at-restและอย่าบันทึกsecretsในrepo/log</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-11-result"><summary>ผลการทดลอง</summary><p>ConfigMapเก็บnonsecretconfig,Secretเก็บcredentialแต่base64ไม่ใช่encryption; restrictRBAC/encrypt-at-restและอย่าบันทึกsecretsในrepo/log</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-11"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-12" class="source-topic"><span id="source-64-deploy-ai-canonical-12-secret" class="legacy-anchor"></span><h3>12. Secret</h3>
+<p>Kubernetes Secret is a mechanism for distributing sensitive values to Pods, but base64 encoding itself is not encryption.</p>
+<p>Use:
+- encryption at rest where available
+- external secret managers where appropriate
+- RBAC least privilege
+- short-lived credentials</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>ConfigMapเก็บnonsecretconfig,Secretเก็บcredentialแต่base64ไม่ใช่encryption; restrictRBAC/encrypt-at-restและอย่าบันทึกsecretsในrepo/log</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-12-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>ConfigMapเก็บnonsecretconfig,Secretเก็บcredentialแต่base64ไม่ใช่encryption; restrictRBAC/encrypt-at-restและอย่าบันทึกsecretsในrepo/log</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-12-equation"><summary>สมการ</summary><p>ConfigMapเก็บnonsecretconfig,Secretเก็บcredentialแต่base64ไม่ใช่encryption; restrictRBAC/encrypt-at-restและอย่าบันทึกsecretsในrepo/log</p></details><details id="help-topic-12-visual"><summary>ภาพและ shape</summary><p>ConfigMapเก็บnonsecretconfig,Secretเก็บcredentialแต่base64ไม่ใช่encryption; restrictRBAC/encrypt-at-restและอย่าบันทึกsecretsในrepo/log</p></details><details id="help-topic-12-code"><summary>โค้ด</summary><p>ConfigMapเก็บnonsecretconfig,Secretเก็บcredentialแต่base64ไม่ใช่encryption; restrictRBAC/encrypt-at-restและอย่าบันทึกsecretsในrepo/log</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-12-result"><summary>ผลการทดลอง</summary><p>ConfigMapเก็บnonsecretconfig,Secretเก็บcredentialแต่base64ไม่ใช่encryption; restrictRBAC/encrypt-at-restและอย่าบันทึกsecretsในrepo/log</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-12"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-13" class="source-topic"><span id="source-64-deploy-ai-canonical-13-probes" class="legacy-anchor"></span><span id="source-64-deploy-ai-canonical-startupprobe" class="legacy-anchor"></span><span id="source-64-deploy-ai-canonical-readinessprobe" class="legacy-anchor"></span><span id="source-64-deploy-ai-canonical-livenessprobe" class="legacy-anchor"></span><h3>13. Probes</h3>
+<h4>startupProbe</h4>
+<p>Has the slow-loading model/runtime completed startup?</p>
+<h4>readinessProbe</h4>
+<p>Can this Pod receive traffic now?</p>
+<h4>livenessProbe</h4>
+<p>Is the process stuck enough that restart may help?</p>
+<p>Do not make probes run expensive generation requests.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>startupให้เวลาloadmodel,readinessกันtrafficก่อนwarm,livenessตรวจprocessdeadlockอย่างเบา; livenessไม่ควรล้มเพียงเพราะqueuebusy</p><p>readinessdelay0→warmup-completeคงrollout/load; reportcoldrequesterrors/TTFTและtime-to-readyไม่แก้modelพร้อมกัน</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-13-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>startupให้เวลาloadmodel,readinessกันtrafficก่อนwarm,livenessตรวจprocessdeadlockอย่างเบา; livenessไม่ควรล้มเพียงเพราะqueuebusy</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-13-equation"><summary>สมการ</summary><p>startupให้เวลาloadmodel,readinessกันtrafficก่อนwarm,livenessตรวจprocessdeadlockอย่างเบา; livenessไม่ควรล้มเพียงเพราะqueuebusy</p></details><details id="help-topic-13-visual"><summary>ภาพและ shape</summary><p>startupให้เวลาloadmodel,readinessกันtrafficก่อนwarm,livenessตรวจprocessdeadlockอย่างเบา; livenessไม่ควรล้มเพียงเพราะqueuebusy</p></details><details id="help-topic-13-code"><summary>โค้ด</summary><p>startupให้เวลาloadmodel,readinessกันtrafficก่อนwarm,livenessตรวจprocessdeadlockอย่างเบา; livenessไม่ควรล้มเพียงเพราะqueuebusy</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-13-result"><summary>ผลการทดลอง</summary><p>startupให้เวลาloadmodel,readinessกันtrafficก่อนwarm,livenessตรวจprocessdeadlockอย่างเบา; livenessไม่ควรล้มเพียงเพราะqueuebusy</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-13"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-14" class="source-topic"><span id="source-64-deploy-ai-canonical-14-gpu-scheduling" class="legacy-anchor"></span><h3>14. GPU Scheduling</h3>
+<p>GPU nodes need vendor drivers and a device plugin. GPUs are exposed as integer extended resources and are not overcommitted like ordinary CPU.</p>
+<p>Example concept:</p>
+<pre><code class="language-yaml">resources:
+  limits:
+    nvidia.com/gpu: 1
+</code></pre>
+<p>Node labels/affinity can select GPU type or memory class.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>examplepodresourcesrequests/limits <code>nvidia.com/gpu: 1</code>; nodeต้องมีdeviceplugin/runtimeและavailableGPUจริง CPUvalidationYAMLไม่ยืนยันGPUdeploy</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-14-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>examplepodresourcesrequests/limits <code>nvidia.com/gpu: 1</code>; nodeต้องมีdeviceplugin/runtimeและavailableGPUจริง CPUvalidationYAMLไม่ยืนยันGPUdeploy</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-14-equation"><summary>สมการ</summary><p>examplepodresourcesrequests/limits <code>nvidia.com/gpu: 1</code>; nodeต้องมีdeviceplugin/runtimeและavailableGPUจริง CPUvalidationYAMLไม่ยืนยันGPUdeploy</p></details><details id="help-topic-14-visual"><summary>ภาพและ shape</summary><p>examplepodresourcesrequests/limits <code>nvidia.com/gpu: 1</code>; nodeต้องมีdeviceplugin/runtimeและavailableGPUจริง CPUvalidationYAMLไม่ยืนยันGPUdeploy</p></details><details id="help-topic-14-code"><summary>โค้ด</summary><p>examplepodresourcesrequests/limits <code>nvidia.com/gpu: 1</code>; nodeต้องมีdeviceplugin/runtimeและavailableGPUจริง CPUvalidationYAMLไม่ยืนยันGPUdeploy</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-14-result"><summary>ผลการทดลอง</summary><p>examplepodresourcesrequests/limits <code>nvidia.com/gpu: 1</code>; nodeต้องมีdeviceplugin/runtimeและavailableGPUจริง CPUvalidationYAMLไม่ยืนยันGPUdeploy</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-14"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-15" class="source-topic"><span id="source-64-deploy-ai-canonical-15-rolling-update" class="legacy-anchor"></span><h3>15. Rolling Update</h3>
+<p>For desired replicas R:</p>
+<pre><code class="language-text">max total Pods during rollout
+≈ R + maxSurge
+
+minimum available
+≈ R - maxUnavailable
+</code></pre>
+<p>Percentages are resolved by Kubernetes according to rollout rules; capacity planning must include the transient surge.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>desired4,maxSurge25%=1จึงpeak5pods,maxUnavailable25%=1จึงminimumavailable3; GPUcapacityต้องรองรับsurgeหรือrolloutติดpending</p><p>desired4surge1ต้อง5GPUหากpodละ1และoldpodsยังอยู่; clusterมี4GPUrolloutอาจรอจึงต้องsurge0หรือเพิ่มcapacityตามavailabilitypolicy</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-15-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>desired4,maxSurge25%=1จึงpeak5pods,maxUnavailable25%=1จึงminimumavailable3; GPUcapacityต้องรองรับsurgeหรือrolloutติดpending</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-15-equation"><summary>สมการ</summary><p>desired4,maxSurge25%=1จึงpeak5pods,maxUnavailable25%=1จึงminimumavailable3; GPUcapacityต้องรองรับsurgeหรือrolloutติดpending</p></details><details id="help-topic-15-visual"><summary>ภาพและ shape</summary><p>desired4,maxSurge25%=1จึงpeak5pods,maxUnavailable25%=1จึงminimumavailable3; GPUcapacityต้องรองรับsurgeหรือrolloutติดpending</p></details><details id="help-topic-15-code"><summary>โค้ด</summary><p>desired4,maxSurge25%=1จึงpeak5pods,maxUnavailable25%=1จึงminimumavailable3; GPUcapacityต้องรองรับsurgeหรือrolloutติดpending</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-15-result"><summary>ผลการทดลอง</summary><p>desired4,maxSurge25%=1จึงpeak5pods,maxUnavailable25%=1จึงminimumavailable3; GPUcapacityต้องรองรับsurgeหรือrolloutติดpending</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-15"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-16" class="source-topic"><span id="source-64-deploy-ai-canonical-16-rollout-safety" class="legacy-anchor"></span><h3>16. Rollout Safety</h3>
+<p>Before promoting a new model/image:
+- startup succeeds
+- readiness passes
+- error rate acceptable
+- latency/SLO acceptable
+- model-quality gate passes</p>
+<p>Deployment health alone does not prove model quality.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>gatesเช่นp95≤500ms,error≤1%,quality≥baseline−.02,minN100; failanyrequiredgateหยุดpromote/rollbackไปknowndigestพร้อมaudit</p><p>ดูhealthHTTP200อย่างเดียวไม่ยืนยันmodelquality; canaryต้องsamepromptmixและenoughsamplesก่อนpromote ไม่ใช้metricaverageซ่อนtailfailure</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-16-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>gatesเช่นp95≤500ms,error≤1%,quality≥baseline−.02,minN100; failanyrequiredgateหยุดpromote/rollbackไปknowndigestพร้อมaudit</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-16-equation"><summary>สมการ</summary><p>gatesเช่นp95≤500ms,error≤1%,quality≥baseline−.02,minN100; failanyrequiredgateหยุดpromote/rollbackไปknowndigestพร้อมaudit</p></details><details id="help-topic-16-visual"><summary>ภาพและ shape</summary><p>gatesเช่นp95≤500ms,error≤1%,quality≥baseline−.02,minN100; failanyrequiredgateหยุดpromote/rollbackไปknowndigestพร้อมaudit</p></details><details id="help-topic-16-code"><summary>โค้ด</summary><p>gatesเช่นp95≤500ms,error≤1%,quality≥baseline−.02,minN100; failanyrequiredgateหยุดpromote/rollbackไปknowndigestพร้อมaudit</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-16-result"><summary>ผลการทดลอง</summary><p>gatesเช่นp95≤500ms,error≤1%,quality≥baseline−.02,minN100; failanyrequiredgateหยุดpromote/rollbackไปknowndigestพร้อมaudit</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-16"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-17" class="source-topic"><span id="source-64-deploy-ai-canonical-17-hpa" class="legacy-anchor"></span><h3>17. HPA</h3>
+<p>HorizontalPodAutoscaler adjusts replica count based on observed metrics.</p>
+<p>Current stable API:</p>
+<pre><code class="language-yaml">apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+</code></pre>
+<p>For AI serving, CPU alone is often a weak scaling signal. Consider queue depth, running requests, tokens/sec, latency or other custom/external metrics.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>queue-depthmetric perpodtarget10,observedtotal50,current4ให้desiredceil(50/10)=5ตามsimplifieddesign; includeCPU/GPUloadingtimeและscale-downstabilization</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-17-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>queue-depthmetric perpodtarget10,observedtotal50,current4ให้desiredceil(50/10)=5ตามsimplifieddesign; includeCPU/GPUloadingtimeและscale-downstabilization</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-17-equation"><summary>สมการ</summary><p>queue-depthmetric perpodtarget10,observedtotal50,current4ให้desiredceil(50/10)=5ตามsimplifieddesign; includeCPU/GPUloadingtimeและscale-downstabilization</p></details><details id="help-topic-17-visual"><summary>ภาพและ shape</summary><p>queue-depthmetric perpodtarget10,observedtotal50,current4ให้desiredceil(50/10)=5ตามsimplifieddesign; includeCPU/GPUloadingtimeและscale-downstabilization</p></details><details id="help-topic-17-code"><summary>โค้ด</summary><p>queue-depthmetric perpodtarget10,observedtotal50,current4ให้desiredceil(50/10)=5ตามsimplifieddesign; includeCPU/GPUloadingtimeและscale-downstabilization</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-17-result"><summary>ผลการทดลอง</summary><p>queue-depthmetric perpodtarget10,observedtotal50,current4ให้desiredceil(50/10)=5ตามsimplifieddesign; includeCPU/GPUloadingtimeและscale-downstabilization</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-17"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-18" class="source-topic"><span id="source-64-deploy-ai-canonical-18-hpa-control-loop" class="legacy-anchor"></span><h3>18. HPA Control Loop</h3>
+<p>Conceptually for a metric:</p>
+<pre><code class="language-text">desiredReplicas
+≈
+ceil(
+currentReplicas
+× currentMetric / targetMetric
+)
+</code></pre>
+<p>Real HPA behavior also includes readiness handling, tolerance and stabilization.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>queue-depthmetric perpodtarget10,observedtotal50,current4ให้desiredceil(50/10)=5ตามsimplifieddesign; includeCPU/GPUloadingtimeและscale-downstabilization</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-18-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>queue-depthmetric perpodtarget10,observedtotal50,current4ให้desiredceil(50/10)=5ตามsimplifieddesign; includeCPU/GPUloadingtimeและscale-downstabilization</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-18-equation"><summary>สมการ</summary><p>queue-depthmetric perpodtarget10,observedtotal50,current4ให้desiredceil(50/10)=5ตามsimplifieddesign; includeCPU/GPUloadingtimeและscale-downstabilization</p></details><details id="help-topic-18-visual"><summary>ภาพและ shape</summary><p>queue-depthmetric perpodtarget10,observedtotal50,current4ให้desiredceil(50/10)=5ตามsimplifieddesign; includeCPU/GPUloadingtimeและscale-downstabilization</p></details><details id="help-topic-18-code"><summary>โค้ด</summary><p>queue-depthmetric perpodtarget10,observedtotal50,current4ให้desiredceil(50/10)=5ตามsimplifieddesign; includeCPU/GPUloadingtimeและscale-downstabilization</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-18-result"><summary>ผลการทดลอง</summary><p>queue-depthmetric perpodtarget10,observedtotal50,current4ให้desiredceil(50/10)=5ตามsimplifieddesign; includeCPU/GPUloadingtimeและscale-downstabilization</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-18"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-19" class="source-topic"><span id="source-64-deploy-ai-canonical-19-scale-to-zero" class="legacy-anchor"></span><h3>19. Scale-to-Zero</h3>
+<p>Scale-to-zero has special metric/runtime requirements and adds cold-start cost. GPU model-loading time can make aggressive scale-to-zero unsuitable for latency-sensitive services.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-19-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>19. Scale-to-Zero</h3>
+<p>Scale-to-zero has special metric/runtime requirements and adds cold-start cost. GPU model-loading time can make aggressive scale-to-zero unsuitable for latency-sensitive services.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-19-equation"><summary>สมการ</summary><h3>19. Scale-to-Zero</h3>
+<p>Scale-to-zero has special metric/runtime requirements and adds cold-start cost. GPU model-loading time can make aggressive scale-to-zero unsuitable for latency-sensitive services.</p></details><details id="help-topic-19-visual"><summary>ภาพและ shape</summary><h3>19. Scale-to-Zero</h3>
+<p>Scale-to-zero has special metric/runtime requirements and adds cold-start cost. GPU model-loading time can make aggressive scale-to-zero unsuitable for latency-sensitive services.</p></details><details id="help-topic-19-code"><summary>โค้ด</summary><h3>19. Scale-to-Zero</h3>
+<p>Scale-to-zero has special metric/runtime requirements and adds cold-start cost. GPU model-loading time can make aggressive scale-to-zero unsuitable for latency-sensitive services.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-19-result"><summary>ผลการทดลอง</summary><h3>19. Scale-to-Zero</h3>
+<p>Scale-to-zero has special metric/runtime requirements and adds cold-start cost. GPU model-loading time can make aggressive scale-to-zero unsuitable for latency-sensitive services.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-19"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-20" class="source-topic"><span id="source-64-deploy-ai-canonical-20-cluster-autoscaling" class="legacy-anchor"></span><h3>20. Cluster Autoscaling</h3>
+<p>HPA creates demand for Pods; node autoscaling creates/removes compute nodes.</p>
+<p>For scarce GPUs, account for:
+- provisioning delay
+- device availability
+- image/model download time
+- quota</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-20-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>20. Cluster Autoscaling</h3>
+<p>HPA creates demand for Pods; node autoscaling creates/removes compute nodes.</p>
+<p>For scarce GPUs, account for:
+- provisioning delay
+- device availability
+- image/model download time
+- quota</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-20-equation"><summary>สมการ</summary><h3>20. Cluster Autoscaling</h3>
+<p>HPA creates demand for Pods; node autoscaling creates/removes compute nodes.</p>
+<p>For scarce GPUs, account for:
+- provisioning delay
+- device availability
+- image/model download time
+- quota</p></details><details id="help-topic-20-visual"><summary>ภาพและ shape</summary><h3>20. Cluster Autoscaling</h3>
+<p>HPA creates demand for Pods; node autoscaling creates/removes compute nodes.</p>
+<p>For scarce GPUs, account for:
+- provisioning delay
+- device availability
+- image/model download time
+- quota</p></details><details id="help-topic-20-code"><summary>โค้ด</summary><h3>20. Cluster Autoscaling</h3>
+<p>HPA creates demand for Pods; node autoscaling creates/removes compute nodes.</p>
+<p>For scarce GPUs, account for:
+- provisioning delay
+- device availability
+- image/model download time
+- quota</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-20-result"><summary>ผลการทดลอง</summary><h3>20. Cluster Autoscaling</h3>
+<p>HPA creates demand for Pods; node autoscaling creates/removes compute nodes.</p>
+<p>For scarce GPUs, account for:
+- provisioning delay
+- device availability
+- image/model download time
+- quota</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-20"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-21" class="source-topic"><span id="source-64-deploy-ai-canonical-21-canary" class="legacy-anchor"></span><h3>21. Canary</h3>
+<p>Route a small share of traffic to a candidate.</p>
+<p>Compare:
+- error rate
+- TTFT / p99
+- model-quality metrics
+- resource use</p>
+<p>Automatic rollback should use explicit gates.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>5%of2000=100expectedcanary,remaining1900champion; randomroutingต้องmeasureactualcounts/CIไม่บังคับexact100เว้นdeterministicassignment</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-21-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>5%of2000=100expectedcanary,remaining1900champion; randomroutingต้องmeasureactualcounts/CIไม่บังคับexact100เว้นdeterministicassignment</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-21-equation"><summary>สมการ</summary><p>5%of2000=100expectedcanary,remaining1900champion; randomroutingต้องmeasureactualcounts/CIไม่บังคับexact100เว้นdeterministicassignment</p></details><details id="help-topic-21-visual"><summary>ภาพและ shape</summary><p>5%of2000=100expectedcanary,remaining1900champion; randomroutingต้องmeasureactualcounts/CIไม่บังคับexact100เว้นdeterministicassignment</p></details><details id="help-topic-21-code"><summary>โค้ด</summary><p>5%of2000=100expectedcanary,remaining1900champion; randomroutingต้องmeasureactualcounts/CIไม่บังคับexact100เว้นdeterministicassignment</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-21-result"><summary>ผลการทดลอง</summary><p>5%of2000=100expectedcanary,remaining1900champion; randomroutingต้องmeasureactualcounts/CIไม่บังคับexact100เว้นdeterministicassignment</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-21"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-22" class="source-topic"><span id="source-64-deploy-ai-canonical-22-blue-green" class="legacy-anchor"></span><h3>22. Blue-Green</h3>
+<p>Run old and new stacks side by side and switch traffic.</p>
+<p>Pros:
+- fast rollback</p>
+<p>Cons:
+- temporarily doubles expensive capacity</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-22-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>22. Blue-Green</h3>
+<p>Run old and new stacks side by side and switch traffic.</p>
+<p>Pros:
+- fast rollback</p>
+<p>Cons:
+- temporarily doubles expensive capacity</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-22-equation"><summary>สมการ</summary><h3>22. Blue-Green</h3>
+<p>Run old and new stacks side by side and switch traffic.</p>
+<p>Pros:
+- fast rollback</p>
+<p>Cons:
+- temporarily doubles expensive capacity</p></details><details id="help-topic-22-visual"><summary>ภาพและ shape</summary><h3>22. Blue-Green</h3>
+<p>Run old and new stacks side by side and switch traffic.</p>
+<p>Pros:
+- fast rollback</p>
+<p>Cons:
+- temporarily doubles expensive capacity</p></details><details id="help-topic-22-code"><summary>โค้ด</summary><h3>22. Blue-Green</h3>
+<p>Run old and new stacks side by side and switch traffic.</p>
+<p>Pros:
+- fast rollback</p>
+<p>Cons:
+- temporarily doubles expensive capacity</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-22-result"><summary>ผลการทดลอง</summary><h3>22. Blue-Green</h3>
+<p>Run old and new stacks side by side and switch traffic.</p>
+<p>Pros:
+- fast rollback</p>
+<p>Cons:
+- temporarily doubles expensive capacity</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-22"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-23" class="source-topic"><span id="source-64-deploy-ai-canonical-23-cloud-building-blocks" class="legacy-anchor"></span><h3>23. Cloud Building Blocks</h3>
+<p>Most clouds provide equivalents of:
+- image registry
+- managed Kubernetes
+- object storage
+- load balancer
+- secret manager
+- monitoring/logging
+- GPU node pools</p>
+<p>Learn concepts before provider-specific buttons.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-23-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>23. Cloud Building Blocks</h3>
+<p>Most clouds provide equivalents of:
+- image registry
+- managed Kubernetes
+- object storage
+- load balancer
+- secret manager
+- monitoring/logging
+- GPU node pools</p>
+<p>Learn concepts before provider-specific buttons.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-23-equation"><summary>สมการ</summary><h3>23. Cloud Building Blocks</h3>
+<p>Most clouds provide equivalents of:
+- image registry
+- managed Kubernetes
+- object storage
+- load balancer
+- secret manager
+- monitoring/logging
+- GPU node pools</p>
+<p>Learn concepts before provider-specific buttons.</p></details><details id="help-topic-23-visual"><summary>ภาพและ shape</summary><h3>23. Cloud Building Blocks</h3>
+<p>Most clouds provide equivalents of:
+- image registry
+- managed Kubernetes
+- object storage
+- load balancer
+- secret manager
+- monitoring/logging
+- GPU node pools</p>
+<p>Learn concepts before provider-specific buttons.</p></details><details id="help-topic-23-code"><summary>โค้ด</summary><h3>23. Cloud Building Blocks</h3>
+<p>Most clouds provide equivalents of:
+- image registry
+- managed Kubernetes
+- object storage
+- load balancer
+- secret manager
+- monitoring/logging
+- GPU node pools</p>
+<p>Learn concepts before provider-specific buttons.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-23-result"><summary>ผลการทดลอง</summary><h3>23. Cloud Building Blocks</h3>
+<p>Most clouds provide equivalents of:
+- image registry
+- managed Kubernetes
+- object storage
+- load balancer
+- secret manager
+- monitoring/logging
+- GPU node pools</p>
+<p>Learn concepts before provider-specific buttons.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-23"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-24" class="source-topic"><span id="source-64-deploy-ai-canonical-24-stateful-dependencies" class="legacy-anchor"></span><h3>24. Stateful Dependencies</h3>
+<p>Model servers should generally avoid storing critical state on local ephemeral disks.</p>
+<p>Externalize:
+- model artifacts
+- experiment metadata
+- datasets
+- vector indexes where required</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-24-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>24. Stateful Dependencies</h3>
+<p>Model servers should generally avoid storing critical state on local ephemeral disks.</p>
+<p>Externalize:
+- model artifacts
+- experiment metadata
+- datasets
+- vector indexes where required</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-24-equation"><summary>สมการ</summary><h3>24. Stateful Dependencies</h3>
+<p>Model servers should generally avoid storing critical state on local ephemeral disks.</p>
+<p>Externalize:
+- model artifacts
+- experiment metadata
+- datasets
+- vector indexes where required</p></details><details id="help-topic-24-visual"><summary>ภาพและ shape</summary><h3>24. Stateful Dependencies</h3>
+<p>Model servers should generally avoid storing critical state on local ephemeral disks.</p>
+<p>Externalize:
+- model artifacts
+- experiment metadata
+- datasets
+- vector indexes where required</p></details><details id="help-topic-24-code"><summary>โค้ด</summary><h3>24. Stateful Dependencies</h3>
+<p>Model servers should generally avoid storing critical state on local ephemeral disks.</p>
+<p>Externalize:
+- model artifacts
+- experiment metadata
+- datasets
+- vector indexes where required</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-24-result"><summary>ผลการทดลอง</summary><h3>24. Stateful Dependencies</h3>
+<p>Model servers should generally avoid storing critical state on local ephemeral disks.</p>
+<p>Externalize:
+- model artifacts
+- experiment metadata
+- datasets
+- vector indexes where required</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-24"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-25" class="source-topic"><span id="source-64-deploy-ai-canonical-25-graceful-termination" class="legacy-anchor"></span><h3>25. Graceful Termination</h3>
+<p>On termination:
+1. mark unready
+2. stop new traffic
+3. drain/cancel active requests
+4. flush telemetry
+5. exit before termination grace period</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-25-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>25. Graceful Termination</h3>
+<p>On termination:
+1. mark unready
+2. stop new traffic
+3. drain/cancel active requests
+4. flush telemetry
+5. exit before termination grace period</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-25-equation"><summary>สมการ</summary><h3>25. Graceful Termination</h3>
+<p>On termination:
+1. mark unready
+2. stop new traffic
+3. drain/cancel active requests
+4. flush telemetry
+5. exit before termination grace period</p></details><details id="help-topic-25-visual"><summary>ภาพและ shape</summary><h3>25. Graceful Termination</h3>
+<p>On termination:
+1. mark unready
+2. stop new traffic
+3. drain/cancel active requests
+4. flush telemetry
+5. exit before termination grace period</p></details><details id="help-topic-25-code"><summary>โค้ด</summary><h3>25. Graceful Termination</h3>
+<p>On termination:
+1. mark unready
+2. stop new traffic
+3. drain/cancel active requests
+4. flush telemetry
+5. exit before termination grace period</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-25-result"><summary>ผลการทดลอง</summary><h3>25. Graceful Termination</h3>
+<p>On termination:
+1. mark unready
+2. stop new traffic
+3. drain/cancel active requests
+4. flush telemetry
+5. exit before termination grace period</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-25"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-26" class="source-topic"><span id="source-64-deploy-ai-canonical-26-deployment-math" class="legacy-anchor"></span><h3>26. Deployment Math</h3>
+<p>src/deployment_math.py implements:</p>
+<ul>
+<li>desired_replicas_from_metric</li>
+<li>rolling_update_bounds</li>
+<li>canary_request_counts</li>
+<li>availability</li>
+<li>capacity_with_headroom</li>
+<li>gpu_pool_capacity</li>
+</ul><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>GPU8ตัว,1GPU/pod,usableheadroom2ตัวให้max6activepodsถ้าmemory/modelต่อGPUfit; multiGPU2/podให้3podsตามbudgetเดียว</p><p>deploymentcapacityคิดpods·GPU/requestedmemory,rollouttimeขึ้นกับload/drain/scheduling; controlplaneYAMLsizeไม่บอกmodelthroughput</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-26-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>GPU8ตัว,1GPU/pod,usableheadroom2ตัวให้max6activepodsถ้าmemory/modelต่อGPUfit; multiGPU2/podให้3podsตามbudgetเดียว</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-26-equation"><summary>สมการ</summary><p>GPU8ตัว,1GPU/pod,usableheadroom2ตัวให้max6activepodsถ้าmemory/modelต่อGPUfit; multiGPU2/podให้3podsตามbudgetเดียว</p></details><details id="help-topic-26-visual"><summary>ภาพและ shape</summary><p>GPU8ตัว,1GPU/pod,usableheadroom2ตัวให้max6activepodsถ้าmemory/modelต่อGPUfit; multiGPU2/podให้3podsตามbudgetเดียว</p></details><details id="help-topic-26-code"><summary>โค้ด</summary><p>GPU8ตัว,1GPU/pod,usableheadroom2ตัวให้max6activepodsถ้าmemory/modelต่อGPUfit; multiGPU2/podให้3podsตามbudgetเดียว</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-26-result"><summary>ผลการทดลอง</summary><p>GPU8ตัว,1GPU/pod,usableheadroom2ตัวให้max6activepodsถ้าmemory/modelต่อGPUfit; multiGPU2/podให้3podsตามbudgetเดียว</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-26"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-27" class="source-topic"><span id="source-64-deploy-ai-canonical-27-example-manifests" class="legacy-anchor"></span><h3>27. Example Manifests</h3>
+<p>The chapter includes example Docker/Kubernetes artifacts. They use placeholder image names and no real credentials.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>manifestpinsdigests,probesแยกถูก,resourcebudgetไม่เกินcapacityและrollbackgatesdeterministic; noactualclusterdeployถือเป็นstaticvalidationเท่านั้น</p><p>validateYAMLschemaและsimulateprobe/rollouttransitionsด้วยfakeclock; actualGateway/GPUintegrationต้องแยกnot_runหากไม่มีcluster</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-27-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>manifestpinsdigests,probesแยกถูก,resourcebudgetไม่เกินcapacityและrollbackgatesdeterministic; noactualclusterdeployถือเป็นstaticvalidationเท่านั้น</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-27-equation"><summary>สมการ</summary><p>manifestpinsdigests,probesแยกถูก,resourcebudgetไม่เกินcapacityและrollbackgatesdeterministic; noactualclusterdeployถือเป็นstaticvalidationเท่านั้น</p></details><details id="help-topic-27-visual"><summary>ภาพและ shape</summary><p>manifestpinsdigests,probesแยกถูก,resourcebudgetไม่เกินcapacityและrollbackgatesdeterministic; noactualclusterdeployถือเป็นstaticvalidationเท่านั้น</p></details><details id="help-topic-27-code"><summary>โค้ด</summary><p>manifestpinsdigests,probesแยกถูก,resourcebudgetไม่เกินcapacityและrollbackgatesdeterministic; noactualclusterdeployถือเป็นstaticvalidationเท่านั้น</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-27-result"><summary>ผลการทดลอง</summary><p>manifestpinsdigests,probesแยกถูก,resourcebudgetไม่เกินcapacityและrollbackgatesdeterministic; noactualclusterdeployถือเป็นstaticvalidationเท่านั้น</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-27"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-28" class="source-topic"><span id="source-64-deploy-ai-canonical-28-common-mistakes" class="legacy-anchor"></span><h3>28. Common Mistakes</h3>
+<ol>
+<li>latest tag used as rollback identity</li>
+<li>secret baked into image</li>
+<li>liveness starts before model has loaded</li>
+<li>readiness checks process instead of serving capability</li>
+<li>GPU limit omitted</li>
+<li>HPA based only on misleading CPU utilization</li>
+<li>rollout surge exceeds GPU quota</li>
+<li>image/model download time ignored</li>
+<li>deployment health mistaken for model quality</li>
+<li>no rollback trigger</li>
+</ol><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-28-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>28. Common Mistakes</h3>
+<ol>
+<li>latest tag used as rollback identity</li>
+<li>secret baked into image</li>
+<li>liveness starts before model has loaded</li>
+<li>readiness checks process instead of serving capability</li>
+<li>GPU limit omitted</li>
+<li>HPA based only on misleading CPU utilization</li>
+<li>rollout surge exceeds GPU quota</li>
+<li>image/model download time ignored</li>
+<li>deployment health mistaken for model quality</li>
+<li>no rollback trigger</li>
+</ol><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-28-equation"><summary>สมการ</summary><h3>28. Common Mistakes</h3>
+<ol>
+<li>latest tag used as rollback identity</li>
+<li>secret baked into image</li>
+<li>liveness starts before model has loaded</li>
+<li>readiness checks process instead of serving capability</li>
+<li>GPU limit omitted</li>
+<li>HPA based only on misleading CPU utilization</li>
+<li>rollout surge exceeds GPU quota</li>
+<li>image/model download time ignored</li>
+<li>deployment health mistaken for model quality</li>
+<li>no rollback trigger</li>
+</ol></details><details id="help-topic-28-visual"><summary>ภาพและ shape</summary><h3>28. Common Mistakes</h3>
+<ol>
+<li>latest tag used as rollback identity</li>
+<li>secret baked into image</li>
+<li>liveness starts before model has loaded</li>
+<li>readiness checks process instead of serving capability</li>
+<li>GPU limit omitted</li>
+<li>HPA based only on misleading CPU utilization</li>
+<li>rollout surge exceeds GPU quota</li>
+<li>image/model download time ignored</li>
+<li>deployment health mistaken for model quality</li>
+<li>no rollback trigger</li>
+</ol></details><details id="help-topic-28-code"><summary>โค้ด</summary><h3>28. Common Mistakes</h3>
+<ol>
+<li>latest tag used as rollback identity</li>
+<li>secret baked into image</li>
+<li>liveness starts before model has loaded</li>
+<li>readiness checks process instead of serving capability</li>
+<li>GPU limit omitted</li>
+<li>HPA based only on misleading CPU utilization</li>
+<li>rollout surge exceeds GPU quota</li>
+<li>image/model download time ignored</li>
+<li>deployment health mistaken for model quality</li>
+<li>no rollback trigger</li>
+</ol><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-28-result"><summary>ผลการทดลอง</summary><h3>28. Common Mistakes</h3>
+<ol>
+<li>latest tag used as rollback identity</li>
+<li>secret baked into image</li>
+<li>liveness starts before model has loaded</li>
+<li>readiness checks process instead of serving capability</li>
+<li>GPU limit omitted</li>
+<li>HPA based only on misleading CPU utilization</li>
+<li>rollout surge exceeds GPU quota</li>
+<li>image/model download time ignored</li>
+<li>deployment health mistaken for model quality</li>
+<li>no rollback trigger</li>
+</ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-28"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-29" class="source-topic"><span id="source-64-deploy-ai-canonical-29-exercises-mini-project" class="legacy-anchor"></span><h3>29. Exercises / Mini Project</h3>
+<ul>
+<li><a href="../64-deploy-ai/exercises/README.md">Exercises</a></li>
+<li><a href="../64-deploy-ai/solutions/README.md">Solutions</a></li>
+<li><a href="../64-deploy-ai/mini-project/README.md">Mini Project</a></li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-29-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>29. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-29-equation"><summary>สมการ</summary><h3>29. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-29-visual"><summary>ภาพและ shape</summary><h3>29. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-29-code"><summary>โค้ด</summary><h3>29. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-29-result"><summary>ผลการทดลอง</summary><h3>29. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-29"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-30" class="source-topic"><span id="source-64-deploy-ai-canonical-30-checklist" class="legacy-anchor"></span><h3>30. Checklist</h3>
+<ul>
+<li>[ ] API contract</li>
+<li>[ ] immutable container</li>
+<li>[ ] requests/limits</li>
+<li>[ ] probes</li>
+<li>[ ] Deployment / Service</li>
+<li>[ ] GPU resource</li>
+<li>[ ] ConfigMap / Secret</li>
+<li>[ ] Gateway / Ingress</li>
+<li>[ ] HPA</li>
+<li>[ ] rolling/canary</li>
+<li>[ ] cloud building blocks</li>
+<li>[ ] rollback</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-30-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>30. Checklist</h3>
+<ul>
+<li>[ ] API contract</li>
+<li>[ ] immutable container</li>
+<li>[ ] requests/limits</li>
+<li>[ ] probes</li>
+<li>[ ] Deployment / Service</li>
+<li>[ ] GPU resource</li>
+<li>[ ] ConfigMap / Secret</li>
+<li>[ ] Gateway / Ingress</li>
+<li>[ ] HPA</li>
+<li>[ ] rolling/canary</li>
+<li>[ ] cloud building blocks</li>
+<li>[ ] rollback</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-30-equation"><summary>สมการ</summary><h3>30. Checklist</h3>
+<ul>
+<li>[ ] API contract</li>
+<li>[ ] immutable container</li>
+<li>[ ] requests/limits</li>
+<li>[ ] probes</li>
+<li>[ ] Deployment / Service</li>
+<li>[ ] GPU resource</li>
+<li>[ ] ConfigMap / Secret</li>
+<li>[ ] Gateway / Ingress</li>
+<li>[ ] HPA</li>
+<li>[ ] rolling/canary</li>
+<li>[ ] cloud building blocks</li>
+<li>[ ] rollback</li>
+</ul></details><details id="help-topic-30-visual"><summary>ภาพและ shape</summary><h3>30. Checklist</h3>
+<ul>
+<li>[ ] API contract</li>
+<li>[ ] immutable container</li>
+<li>[ ] requests/limits</li>
+<li>[ ] probes</li>
+<li>[ ] Deployment / Service</li>
+<li>[ ] GPU resource</li>
+<li>[ ] ConfigMap / Secret</li>
+<li>[ ] Gateway / Ingress</li>
+<li>[ ] HPA</li>
+<li>[ ] rolling/canary</li>
+<li>[ ] cloud building blocks</li>
+<li>[ ] rollback</li>
+</ul></details><details id="help-topic-30-code"><summary>โค้ด</summary><h3>30. Checklist</h3>
+<ul>
+<li>[ ] API contract</li>
+<li>[ ] immutable container</li>
+<li>[ ] requests/limits</li>
+<li>[ ] probes</li>
+<li>[ ] Deployment / Service</li>
+<li>[ ] GPU resource</li>
+<li>[ ] ConfigMap / Secret</li>
+<li>[ ] Gateway / Ingress</li>
+<li>[ ] HPA</li>
+<li>[ ] rolling/canary</li>
+<li>[ ] cloud building blocks</li>
+<li>[ ] rollback</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-30-result"><summary>ผลการทดลอง</summary><h3>30. Checklist</h3>
+<ul>
+<li>[ ] API contract</li>
+<li>[ ] immutable container</li>
+<li>[ ] requests/limits</li>
+<li>[ ] probes</li>
+<li>[ ] Deployment / Service</li>
+<li>[ ] GPU resource</li>
+<li>[ ] ConfigMap / Secret</li>
+<li>[ ] Gateway / Ingress</li>
+<li>[ ] HPA</li>
+<li>[ ] rolling/canary</li>
+<li>[ ] cloud building blocks</li>
+<li>[ ] rollback</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-30"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-31" class="source-topic"><span id="source-64-deploy-ai-canonical-31-whats-next" class="legacy-anchor"></span><span id="source-64-deploy-ai-canonical-64-deploy-ai-ai-deployment" class="legacy-anchor"></span><h3>31. What's Next</h3>
+<p>Chapter 65 manages experiments, artifacts, model promotion and production monitoring across the ML lifecycle.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-31-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>31. What's Next</h3>
+<p>Chapter 65 manages experiments, artifacts, model promotion and production monitoring across the ML lifecycle.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-31-equation"><summary>สมการ</summary><h3>31. What's Next</h3>
+<p>Chapter 65 manages experiments, artifacts, model promotion and production monitoring across the ML lifecycle.</p></details><details id="help-topic-31-visual"><summary>ภาพและ shape</summary><h3>31. What's Next</h3>
+<p>Chapter 65 manages experiments, artifacts, model promotion and production monitoring across the ML lifecycle.</p></details><details id="help-topic-31-code"><summary>โค้ด</summary><h3>31. What's Next</h3>
+<p>Chapter 65 manages experiments, artifacts, model promotion and production monitoring across the ML lifecycle.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-31-result"><summary>ผลการทดลอง</summary><h3>31. What's Next</h3>
+<p>Chapter 65 manages experiments, artifacts, model promotion and production monitoring across the ML lifecycle.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-31"> อ่านหัวข้อนี้แล้ว</label></section><details><summary>รายละเอียดเพิ่มเติมและข้อกำหนดของ local lab</summary><h3>64-deploy-ai — AI Deployment</h3>
+<p><strong>Prerequisites:</strong> Complete 63-llm-serving; be able to trace array/tensor shapes, separate train/validation/test data, and explain the core objective of the current chapter.</p>
+<p><strong>Mental model:</strong> Treat AI Deployment as a pipeline: input representation → central mechanism → objective/state update → observable output. At every boundary, state shape/state, allowed information flow, and the invariant that should remain true.</p>
+<p><strong>Code walkthrough:</strong> Read public API first, then input checks, state/shape transformations, numerical core, returned values and tests. Connect each important code block to the equation or algorithm in the chapter README.</p>
+<p><strong>Visualization / inspection:</strong> Use a tiny case. Inspect intermediate values, distributions, norms, scores, states or trajectories appropriate to AI Deployment; do not rely only on the final metric.</p>
+<p><strong>Experiment:</strong> Run a baseline, one controlled parameter change, one edge case and one repeated seeded comparison. Record seed, environment, data version, configuration and metric.</p>
+<p><strong>Limitations:</strong> List at least one assumption, one data-related limitation, one numerical/optimization limitation and one scaling limitation for AI Deployment.</p>
+<p><strong>Analysis workflow:</strong> Check inputs → preprocessing → shapes/state → finite numerical values → objective/update → evaluation protocol. The earliest unexpected state is more informative than a downstream metric.</p>
+<p><strong>Performance:</strong> Identify the dominant time and memory terms and measure them on the local learning run before attempting optimization.</p>
+<p><strong>Production perspective:</strong> Define input validation, artifact/configuration versioning, quality and resource measurements, staged release criteria and a way to return to the previous known-good artifact.</p>
+<p><strong>Research perspective:</strong> State a falsifiable hypothesis, baseline, one-factor change, metric, repeated-run plan when stochastic, and how negative results will be recorded.</p>
+<p><strong>Interview questions:</strong>
+1. Explain AI Deployment from first principles without naming a library API.
+2. Trace one input through the central mechanism and give the important intermediate shapes/state.
+3. Name the strongest assumption and a case where it fails.
+4. State the dominant compute/memory cost.
+5. Describe how you would validate a new implementation against a trusted baseline.</p>
+<p><strong>Summary / exit condition:</strong> You may move on when you can explain, derive or trace, implement, test, analyze, measure and evaluate AI Deployment, and when the chapter mini-project plus twenty total exercises are complete.</p></details></section><section id="objective-evidence" class="canonical-section"><h2>พิสูจน์ความสามารถทีละ objective</h2><p>ทำกรณีใหม่ก่อนเปิด reference แล้วบันทึกงานด้านล่าง ให้ผู้ตรวจใช้ rubric ตรวจคำอธิบาย ผลคำนวณ โค้ด และข้อจำกัด บันทึกเก็บในเบราว์เซอร์เครื่องนี้ กดส่งออกเพื่อสำรองหรือส่งให้ผู้ตรวจ เว็บไม่ได้รันโค้ดหรือตัดสินผลงานแทนผู้ตรวจ</p><button type="button" class="secondary-button" data-export-evidence>ส่งออกหลักฐานบทนี้เป็น JSON</button><p role="status" id="evidence-export-status"></p><details id="ch64-objective-01" class="objective-proof"><summary>package an AI service into an immutable container</summary><p>package an AI service into an immutable container: ใช้กรณีในหัวข้อ Immutable Artifacts, Runtime Image เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch64-evidence-01"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch64-evidence-01-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch64-evidence-01-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch64-evidence-01-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch64-evidence-01-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch64-evidence-01-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch64-evidence-01-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch64-evidence-01-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch64-evidence-01-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>imagebuildtaggitSHAและpinimagedigest; tagเดียวถูกoverwriteได้จึงdeploydigest@sha256 พร้อมsource/config/modelartifacthash</p><h3>4. Immutable Artifacts</h3>
+<p>Production deployment should identify exact:
+- source commit
+- model revision
+- tokenizer/config
+- container digest
+- dependency lock</p>
+<p>A mutable tag such as latest is insufficient for reproducible rollback.</p>
+<h3>6. Runtime Image</h3>
+<p>Prefer:
+- non-root user
+- minimal packages
+- pinned dependencies
+- explicit entrypoint
+- read-only configuration where possible
+- no embedded credentials</p>
+<p>Do not bake cloud tokens, API keys or model-registry secrets into the image.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch64-objective-02" class="objective-proof"><summary>understand Docker layers and image reproducibility</summary><p>understand Docker layers and image reproducibility: ใช้กรณีในหัวข้อ Docker Image Layers เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch64-evidence-02"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch64-evidence-02-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch64-evidence-02-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch64-evidence-02-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch64-evidence-02-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch64-evidence-02-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch64-evidence-02-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch64-evidence-02-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch64-evidence-02-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>5. Docker Image Layers</h3>
+<p>Container builds form cacheable layers. Put slowly changing dependency installation before frequently changing source files when practical.</p>
+<p>Use multi-stage builds when build-time tooling does not belong in the runtime image.</p><h3>5. Docker Image Layers</h3>
+<p>Container builds form cacheable layers. Put slowly changing dependency installation before frequently changing source files when practical.</p>
+<p>Use multi-stage builds when build-time tooling does not belong in the runtime image.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch64-objective-03" class="objective-proof"><summary>separate build-time and runtime dependencies</summary><p>separate build-time and runtime dependencies: ใช้กรณีในหัวข้อ API Layer, Runtime Image, Container Resources เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch64-evidence-03"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch64-evidence-03-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch64-evidence-03-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch64-evidence-03-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch64-evidence-03-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch64-evidence-03-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch64-evidence-03-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch64-evidence-03-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch64-evidence-03-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>4. Immutable Artifacts</h3>
+<p>Production deployment should identify exact:
+- source commit
+- model revision
+- tokenizer/config
+- container digest
+- dependency lock</p>
+<p>A mutable tag such as latest is insufficient for reproducible rollback.</p>
+<h3>6. Runtime Image</h3>
+<p>Prefer:
+- non-root user
+- minimal packages
+- pinned dependencies
+- explicit entrypoint
+- read-only configuration where possible
+- no embedded credentials</p>
+<p>Do not bake cloud tokens, API keys or model-registry secrets into the image.</p><h3>3. API Layer</h3>
+<p>A model server should expose a stable contract rather than leaking framework internals.</p>
+<p>Typical API responsibilities:
+- request validation
+- model/version selection
+- authentication/authorization
+- timeouts and cancellation
+- response schema
+- health/readiness
+- tracing / metrics</p>
+<h3>6. Runtime Image</h3>
+<p>Prefer:
+- non-root user
+- minimal packages
+- pinned dependencies
+- explicit entrypoint
+- read-only configuration where possible
+- no embedded credentials</p>
+<p>Do not bake cloud tokens, API keys or model-registry secrets into the image.</p>
+<h3>7. Container Resources</h3>
+<p>Define CPU and memory requests/limits based on measurements.</p>
+<p>For GPU workloads, Kubernetes exposes vendor devices through device plugins. A typical NVIDIA resource is <code>nvidia.com/gpu</code>.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch64-objective-04" class="objective-proof"><summary>design health, readiness and startup probes</summary><p>design health, readiness and startup probes: ใช้กรณีในหัวข้อ Probes เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch64-evidence-04"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch64-evidence-04-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch64-evidence-04-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch64-evidence-04-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch64-evidence-04-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch64-evidence-04-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch64-evidence-04-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch64-evidence-04-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch64-evidence-04-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>startupให้เวลาloadmodel,readinessกันtrafficก่อนwarm,livenessตรวจprocessdeadlockอย่างเบา; livenessไม่ควรล้มเพียงเพราะqueuebusy</p><h3>13. Probes</h3>
+<h4>startupProbe</h4>
+<p>Has the slow-loading model/runtime completed startup?</p>
+<h4>readinessProbe</h4>
+<p>Can this Pod receive traffic now?</p>
+<h4>livenessProbe</h4>
+<p>Is the process stuck enough that restart may help?</p>
+<p>Do not make probes run expensive generation requests.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch64-objective-05" class="objective-proof"><summary>understand Deployment / ReplicaSet / Pod / Service</summary><p>understand Deployment / ReplicaSet / Pod / Service: ใช้กรณีในหัวข้อ Kubernetes Object Model, Service เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch64-evidence-05"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch64-evidence-05-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch64-evidence-05-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch64-evidence-05-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch64-evidence-05-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch64-evidence-05-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch64-evidence-05-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch64-evidence-05-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch64-evidence-05-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>recordpodstatespending/loading/ready/draining/terminated,replicacount/GPUs/queue/latency/qualitygateversion</p><h3>8. Kubernetes Object Model</h3>
+<pre><code class="language-text">Deployment
+↓ manages
+ReplicaSet
+↓ manages
+Pods
+
+Service
+↓ stable discovery/load balancing
+Pods
+</code></pre>
+<p>Deployments support declarative rollout and rollback of stateless workloads.</p>
+<h3>9. Service</h3>
+<p>A Service gives a stable virtual endpoint to a changing set of Pods selected by labels.</p>
+<p>Common service types:
+- ClusterIP
+- NodePort
+- LoadBalancer</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch64-objective-06" class="objective-proof"><summary>request GPU resources correctly</summary><p>request GPU resources correctly: ใช้กรณีในหัวข้อ GPU Scheduling เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch64-evidence-06"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch64-evidence-06-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch64-evidence-06-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch64-evidence-06-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch64-evidence-06-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch64-evidence-06-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch64-evidence-06-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch64-evidence-06-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch64-evidence-06-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>examplepodresourcesrequests/limits <code>nvidia.com/gpu: 1</code>; nodeต้องมีdeviceplugin/runtimeและavailableGPUจริง CPUvalidationYAMLไม่ยืนยันGPUdeploy</p><h3>14. GPU Scheduling</h3>
+<p>GPU nodes need vendor drivers and a device plugin. GPUs are exposed as integer extended resources and are not overcommitted like ordinary CPU.</p>
+<p>Example concept:</p>
+<pre><code class="language-yaml">resources:
+  limits:
+    nvidia.com/gpu: 1
+</code></pre>
+<p>Node labels/affinity can select GPU type or memory class.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch64-objective-07" class="objective-proof"><summary>use ConfigMap and Secret appropriately</summary><p>use ConfigMap and Secret appropriately: ใช้กรณีในหัวข้อ ConfigMap, Secret เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch64-evidence-07"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch64-evidence-07-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch64-evidence-07-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch64-evidence-07-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch64-evidence-07-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch64-evidence-07-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch64-evidence-07-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch64-evidence-07-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch64-evidence-07-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>ConfigMapเก็บnonsecretconfig,Secretเก็บcredentialแต่base64ไม่ใช่encryption; restrictRBAC/encrypt-at-restและอย่าบันทึกsecretsในrepo/log</p><h3>11. ConfigMap</h3>
+<p>Use ConfigMap for non-secret configuration such as:
+- model name
+- log level
+- feature flags
+- timeout defaults</p>
+<p>Configuration changes should be versioned and rollout behavior understood.</p>
+<h3>12. Secret</h3>
+<p>Kubernetes Secret is a mechanism for distributing sensitive values to Pods, but base64 encoding itself is not encryption.</p>
+<p>Use:
+- encryption at rest where available
+- external secret managers where appropriate
+- RBAC least privilege
+- short-lived credentials</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch64-objective-08" class="objective-proof"><summary>reason about Gateway / Ingress</summary><p>reason about Gateway / Ingress: ใช้กรณีในหัวข้อ Gateway vs Ingress เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch64-evidence-08"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch64-evidence-08-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch64-evidence-08-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch64-evidence-08-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch64-evidence-08-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch64-evidence-08-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch64-evidence-08-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch64-evidence-08-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch64-evidence-08-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>Gatewayรับlistener/TLS,HTTPRouteจับhost/pathและชี้serviceweights; backendreadiness/timeout/bodylimitsต้องสอดคล้องstreamingLLM</p><h3>10. Gateway vs Ingress</h3>
+<p>Ingress remains stable but its API is frozen. Kubernetes recommends Gateway API for new feature development.</p>
+<p>For new systems, understand:
+- GatewayClass
+- Gateway
+- HTTPRoute</p>
+<p>while still being able to maintain existing Ingress deployments.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch64-objective-09" class="objective-proof"><summary>calculate rolling-update capacity</summary><p>calculate rolling-update capacity: ใช้กรณีในหัวข้อ Rolling Update, Rollout Safety เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch64-evidence-09"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch64-evidence-09-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch64-evidence-09-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch64-evidence-09-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch64-evidence-09-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch64-evidence-09-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch64-evidence-09-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch64-evidence-09-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch64-evidence-09-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>desired4,maxSurge25%=1จึงpeak5pods,maxUnavailable25%=1จึงminimumavailable3; GPUcapacityต้องรองรับsurgeหรือrolloutติดpending</p><h3>15. Rolling Update</h3>
+<p>For desired replicas R:</p>
+<pre><code class="language-text">max total Pods during rollout
+≈ R + maxSurge
+
+minimum available
+≈ R - maxUnavailable
+</code></pre>
+<p>Percentages are resolved by Kubernetes according to rollout rules; capacity planning must include the transient surge.</p>
+<h3>16. Rollout Safety</h3>
+<p>Before promoting a new model/image:
+- startup succeeds
+- readiness passes
+- error rate acceptable
+- latency/SLO acceptable
+- model-quality gate passes</p>
+<p>Deployment health alone does not prove model quality.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch64-objective-10" class="objective-proof"><summary>understand HPA and custom metrics</summary><p>understand HPA and custom metrics: ใช้กรณีในหัวข้อ HPA, HPA Control Loop, Scale-to-Zero, Cluster Autoscaling เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch64-evidence-10"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch64-evidence-10-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch64-evidence-10-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch64-evidence-10-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch64-evidence-10-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch64-evidence-10-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch64-evidence-10-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch64-evidence-10-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch64-evidence-10-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>queue-depthmetric perpodtarget10,observedtotal50,current4ให้desiredceil(50/10)=5ตามsimplifieddesign; includeCPU/GPUloadingtimeและscale-downstabilization</p><h3>17. HPA</h3>
+<p>HorizontalPodAutoscaler adjusts replica count based on observed metrics.</p>
+<p>Current stable API:</p>
+<pre><code class="language-yaml">apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+</code></pre>
+<p>For AI serving, CPU alone is often a weak scaling signal. Consider queue depth, running requests, tokens/sec, latency or other custom/external metrics.</p>
+<h3>18. HPA Control Loop</h3>
+<p>Conceptually for a metric:</p>
+<pre><code class="language-text">desiredReplicas
+≈
+ceil(
+currentReplicas
+× currentMetric / targetMetric
+)
+</code></pre>
+<p>Real HPA behavior also includes readiness handling, tolerance and stabilization.</p>
+<h3>19. Scale-to-Zero</h3>
+<p>Scale-to-zero has special metric/runtime requirements and adds cold-start cost. GPU model-loading time can make aggressive scale-to-zero unsuitable for latency-sensitive services.</p>
+<h3>20. Cluster Autoscaling</h3>
+<p>HPA creates demand for Pods; node autoscaling creates/removes compute nodes.</p>
+<p>For scarce GPUs, account for:
+- provisioning delay
+- device availability
+- image/model download time
+- quota</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch64-objective-11" class="objective-proof"><summary>design canary/blue-green rollouts</summary><p>design canary/blue-green rollouts: ใช้กรณีในหัวข้อ Canary, Blue-Green เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch64-evidence-11"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch64-evidence-11-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch64-evidence-11-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch64-evidence-11-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch64-evidence-11-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch64-evidence-11-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch64-evidence-11-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch64-evidence-11-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch64-evidence-11-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>5%of2000=100expectedcanary,remaining1900champion; randomroutingต้องmeasureactualcounts/CIไม่บังคับexact100เว้นdeterministicassignment</p><h3>21. Canary</h3>
+<p>Route a small share of traffic to a candidate.</p>
+<p>Compare:
+- error rate
+- TTFT / p99
+- model-quality metrics
+- resource use</p>
+<p>Automatic rollback should use explicit gates.</p>
+<h3>22. Blue-Green</h3>
+<p>Run old and new stacks side by side and switch traffic.</p>
+<p>Pros:
+- fast rollback</p>
+<p>Cons:
+- temporarily doubles expensive capacity</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch64-objective-12" class="objective-proof"><summary>reason about cloud load balancers and registries</summary><p>reason about cloud load balancers and registries: ใช้กรณีในหัวข้อ Cloud Building Blocks, Stateful Dependencies เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch64-evidence-12"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch64-evidence-12-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch64-evidence-12-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch64-evidence-12-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch64-evidence-12-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch64-evidence-12-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch64-evidence-12-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch64-evidence-12-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch64-evidence-12-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>23. Cloud Building Blocks</h3>
+<p>Most clouds provide equivalents of:
+- image registry
+- managed Kubernetes
+- object storage
+- load balancer
+- secret manager
+- monitoring/logging
+- GPU node pools</p>
+<p>Learn concepts before provider-specific buttons.</p>
+<h3>24. Stateful Dependencies</h3>
+<p>Model servers should generally avoid storing critical state on local ephemeral disks.</p>
+<p>Externalize:
+- model artifacts
+- experiment metadata
+- datasets
+- vector indexes where required</p><h3>23. Cloud Building Blocks</h3>
+<p>Most clouds provide equivalents of:
+- image registry
+- managed Kubernetes
+- object storage
+- load balancer
+- secret manager
+- monitoring/logging
+- GPU node pools</p>
+<p>Learn concepts before provider-specific buttons.</p>
+<h3>24. Stateful Dependencies</h3>
+<p>Model servers should generally avoid storing critical state on local ephemeral disks.</p>
+<p>Externalize:
+- model artifacts
+- experiment metadata
+- datasets
+- vector indexes where required</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch64-objective-13" class="objective-proof"><summary>define rollback and disaster-recovery criteria</summary><p>define rollback and disaster-recovery criteria: ใช้กรณีในหัวข้อ Graceful Termination, Deployment Math, Example Manifests เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch64-evidence-13"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch64-evidence-13-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch64-evidence-13-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch64-evidence-13-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch64-evidence-13-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch64-evidence-13-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch64-evidence-13-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch64-evidence-13-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch64-evidence-13-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>GPU8ตัว,1GPU/pod,usableheadroom2ตัวให้max6activepodsถ้าmemory/modelต่อGPUfit; multiGPU2/podให้3podsตามbudgetเดียว</p><h3>25. Graceful Termination</h3>
+<p>On termination:
+1. mark unready
+2. stop new traffic
+3. drain/cancel active requests
+4. flush telemetry
+5. exit before termination grace period</p>
+<h3>26. Deployment Math</h3>
+<p>src/deployment_math.py implements:</p>
+<ul>
+<li>desired_replicas_from_metric</li>
+<li>rolling_update_bounds</li>
+<li>canary_request_counts</li>
+<li>availability</li>
+<li>capacity_with_headroom</li>
+<li>gpu_pool_capacity</li>
+</ul>
+<h3>27. Example Manifests</h3>
+<p>The chapter includes example Docker/Kubernetes artifacts. They use placeholder image names and no real credentials.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details></section><section id="implementation" class="canonical-section"><h2>Implementation และ tests ที่รันบนเครื่องได้</h2><details><summary>64-deploy-ai/src/deployment_math.py</summary><pre><code>&quot;&quot;&quot;Deployment, rollout, autoscaling and GPU-capacity calculations.&quot;&quot;&quot;
+
+from __future__ import annotations
+
+import math
+
+
+def desired_replicas_from_metric(
+    *,
+    current_replicas: int,
+    current_metric: float,
+    target_metric: float,
+    min_replicas: int = 1,
+    max_replicas: int = 100,
+) -&gt; int:
+    if current_replicas &lt; 0:
+        raise ValueError(&quot;current_replicas must be non-negative&quot;)
+    if current_metric &lt; 0:
+        raise ValueError(&quot;current_metric must be non-negative&quot;)
+    if target_metric &lt;= 0:
+        raise ValueError(&quot;target_metric must be positive&quot;)
+    if min_replicas &lt; 0 or max_replicas &lt; min_replicas:
+        raise ValueError(&quot;invalid replica bounds&quot;)
+
+    raw = math.ceil(
+        current_replicas * current_metric / target_metric
+    )
+    return int(min(max(raw, min_replicas), max_replicas))
+
+
+def rolling_update_bounds(
+    *,
+    desired_replicas: int,
+    max_surge: int,
+    max_unavailable: int,
+) -&gt; dict[str, int]:
+    if desired_replicas &lt; 0:
+        raise ValueError(&quot;desired_replicas must be non-negative&quot;)
+    if max_surge &lt; 0 or max_unavailable &lt; 0:
+        raise ValueError(&quot;rollout values must be non-negative&quot;)
+    if (
+        desired_replicas &gt; 0
+        and max_surge == 0
+        and max_unavailable == 0
+    ):
+        raise ValueError(
+            &quot;rollout cannot have zero surge and zero unavailable&quot;
+        )
+
+    return {
+        &quot;max_total_pods&quot;: desired_replicas + max_surge,
+        &quot;min_available_pods&quot;: max(
+            0,
+            desired_replicas - max_unavailable,
+        ),
+    }
+
+
+def canary_request_counts(
+    total_requests: int,
+    *,
+    canary_fraction: float,
+) -&gt; tuple[int, int]:
+    if total_requests &lt; 0:
+        raise ValueError(&quot;total_requests must be non-negative&quot;)
+    if not 0.0 &lt;= canary_fraction &lt;= 1.0:
+        raise ValueError(&quot;canary_fraction must lie in [0,1]&quot;)
+
+    canary = int(round(total_requests * canary_fraction))
+    stable = total_requests - canary
+    return stable, canary
+
+
+def availability(
+    *,
+    successful_requests: int,
+    total_requests: int,
+) -&gt; float:
+    if total_requests &lt;= 0:
+        raise ValueError(&quot;total_requests must be positive&quot;)
+    if not 0 &lt;= successful_requests &lt;= total_requests:
+        raise ValueError(&quot;successful_requests out of range&quot;)
+
+    return float(successful_requests / total_requests)
+
+
+def capacity_with_headroom(
+    *,
+    replicas: int,
+    sustainable_rps_per_replica: float,
+    target_utilization: float,
+) -&gt; float:
+    if replicas &lt; 0:
+        raise ValueError(&quot;replicas must be non-negative&quot;)
+    if sustainable_rps_per_replica &lt; 0:
+        raise ValueError(&quot;capacity must be non-negative&quot;)
+    if not 0.0 &lt; target_utilization &lt;= 1.0:
+        raise ValueError(&quot;target_utilization must lie in (0,1]&quot;)
+
+    return float(
+        replicas
+        * sustainable_rps_per_replica
+        * target_utilization
+    )
+
+
+def gpu_pool_capacity(
+    *,
+    nodes: int,
+    gpus_per_node: int,
+    gpus_per_replica: int,
+    reserved_gpus: int = 0,
+) -&gt; int:
+    values = [
+        nodes,
+        gpus_per_node,
+        gpus_per_replica,
+        reserved_gpus,
+    ]
+    if any(value &lt; 0 for value in values):
+        raise ValueError(&quot;counts must be non-negative&quot;)
+    if gpus_per_replica &lt;= 0:
+        raise ValueError(&quot;gpus_per_replica must be positive&quot;)
+
+    available = nodes * gpus_per_node - reserved_gpus
+    if available &lt; 0:
+        raise ValueError(&quot;reserved_gpus exceeds pool&quot;)
+
+    return int(available // gpus_per_replica)
+</code></pre></details><details><summary>64-deploy-ai/tests/test_deployment_math.py</summary><pre><code>from pathlib import Path
+import importlib.util
+
+
+MODULE_PATH = Path(__file__).parents[1] / &quot;src&quot; / &quot;deployment_math.py&quot;
+SPEC = importlib.util.spec_from_file_location(&quot;deployment_math_course&quot;, MODULE_PATH)
+assert SPEC and SPEC.loader
+mod = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(mod)
+
+
+def test_hpa_style_replica_math() -&gt; None:
+    assert mod.desired_replicas_from_metric(
+        current_replicas=4,
+        current_metric=80,
+        target_metric=50,
+        min_replicas=2,
+        max_replicas=10,
+    ) == 7
+
+
+def test_rollout_bounds() -&gt; None:
+    report = mod.rolling_update_bounds(
+        desired_replicas=4,
+        max_surge=1,
+        max_unavailable=1,
+    )
+    assert report[&quot;max_total_pods&quot;] == 5
+    assert report[&quot;min_available_pods&quot;] == 3
+
+
+def test_canary_counts() -&gt; None:
+    stable, canary = mod.canary_request_counts(
+        1000,
+        canary_fraction=0.05,
+    )
+    assert stable == 950
+    assert canary == 50
+
+
+def test_capacity_headroom() -&gt; None:
+    assert mod.capacity_with_headroom(
+        replicas=3,
+        sustainable_rps_per_replica=10,
+        target_utilization=0.7,
+    ) == 21.0
+
+
+def test_gpu_pool_capacity() -&gt; None:
+    assert mod.gpu_pool_capacity(
+        nodes=3,
+        gpus_per_node=4,
+        gpus_per_replica=1,
+        reserved_gpus=2,
+    ) == 10
+</code></pre></details></section><section id="glossary" class="canonical-section"><h2>อภิธานศัพท์ — คำไทย ความหมาย และข้อควรตรวจ</h2><dl><dt>tensor</dt><dd>เทนเซอร์: ชุดตัวเลขที่มีแกน เช่น scalar ไม่มีแกน, vector หนึ่งแกน, matrix สองแกน; shape บอกขนาดแต่ละแกน ไม่บอกความหมายของแกนจนกว่าจะระบุ</dd><dt>shape</dt><dd>รูปทรงข้อมูล: (B,T,d) หมายถึง batch × เวลา/ตำแหน่ง × features; ใช้ชื่อแกนกำกับเสมอ การ transpose เปลี่ยนแกนแต่ไม่ใช่แค่เปลี่ยนชื่อ</dd><dt>batch</dt><dd>กลุ่มตัวอย่างที่คำนวณร่วมกันหนึ่งครั้ง; B คือจำนวนตัวอย่าง ไม่ใช่จำนวน features หรือจำนวน optimizer updates</dd><dt>weight w / θ</dt><dd>น้ำหนักหรือพารามิเตอร์ที่โมเดลใช้คำนวณ; แก้ด้วยมือทำ forward ใหม่ ส่วน optimizer ต้องรับ gradient แล้วกด update จึงแก้ state</dd><dt>bias b</dt><dd>ค่าคงที่ที่บวกกับผลเชิงเส้น; regression scalar bias เพิ่ม Δ ทำให้ prediction ทุกจุดเพิ่ม Δ เท่ากัน</dd><dt>prediction ŷ</dt><dd>ค่าที่โมเดลทำนายจาก input และพารามิเตอร์ปัจจุบัน; เครื่องหมายหมวกแยกจาก target y ที่มาจากข้อมูล</dd><dt>residual e</dt><dd>ความคลาดเคลื่อน ในเว็บนี้นิยาม prediction − target; บางตำราใช้เครื่องหมายกลับกัน จึงต้องตรวจนิยามก่อนเทียบสูตร gradient</dd><dt>MSE</dt><dd>mean squared error = ผลรวม residual กำลังสองหารจำนวนรายการที่ระบุ; มีหน่วยเป็น target ยกกำลังสอง และการใช้ sum แทน mean เปลี่ยน scale gradient</dd><dt>loss L / objective J</dt><dd>จำนวนที่ optimizer ต้องการลด; objective อาจรวม data loss และ regularization จึงต้องดูองค์ประกอบและ reduction ให้ตรง implementation</dd><dt>gradient ∇ / ∂</dt><dd>เวกเตอร์ของ partial derivatives บอกอัตราเปลี่ยน loss ต่อพารามิเตอร์แต่ละตัว; ∂ ใช้เมื่อเปลี่ยนตัวหนึ่งโดยตรึงตัวอื่น</dd><dt>chain rule</dt><dd>กฎลูกโซ่: คูณอนุพันธ์ตามเส้นทาง และบวก contribution จากทุกเส้นทางที่มารวมกัน ใช้ย้อนจาก loss ถึง weights</dd><dt>learning rate η</dt><dd>ขนาดตัวคูณ gradient ใน update θnew=θ−ηg; η≥0, ศูนย์หมายถึงไม่มีการขยับพารามิเตอร์ ก้าวใหญ่เกินอาจ diverge</dd><dt>regularization λ</dt><dd>ตัวคูณค่าลงโทษ ต้อง λ≥0 ตามนิยามการลงโทษ; Ridge λΣw² เพิ่ม gradient 2λw โดยบท Regression นี้ไม่ลงโทษ bias</dd><dt>baseline</dt><dd>สถานะอ้างอิงที่ตรึงไว้สำหรับเทียบ; ต้องเก็บ snapshot ไม่อ้าง object ปัจจุบันที่แก้ตามไปด้วย</dd><dt>invariant</dt><dd>คุณสมบัติที่กลไกต้องรักษา เช่น probability รวม1, shape สอดคล้อง, queue ไม่เกิน capacity; ใช้ tests ตรวจได้มากกว่าดูภาพสวย</dd><dt>optimizer state</dt><dd>ความจำของอัลกอริทึม เช่น velocity, moments และ completed updates; คืนเฉพาะ weights ยังไม่เท่ากับเริ่มการฝึกใหม่ทั้งหมด</dd><dt>finite difference</dt><dd>ประมาณ derivative ด้วย [f(x+h)−f(x−h)]/(2h); h&gt;0, ใช้ smooth point และลองหลาย h เพื่อแยก truncation error จาก roundoff</dd><dt>softmax</dt><dd>แปลง logits เป็นความน่าจะเป็นตามแกนที่กำหนด; ลบ max ก่อน exp เพื่อความเสถียร และ fully masked row ต้องมีนโยบายชัดเจน</dd><dt>logit</dt><dd>คะแนนก่อน sigmoid/softmax ไม่ใช่ probability; อาจเป็นจำนวนจริงติดลบหรือเกิน1ได้ จึงห้ามส่งให้ loss ที่คาด probability โดยไม่แปลง</dd><dt>temperature τ / T</dt><dd>ตัวหาร logits ก่อน softmax; ต้องเป็นบวก ค่าเล็กทำ distribution แหลมขึ้น โดยไม่เท่ากับ retrain weights</dd><dt>mask</dt><dd>ตัวกำหนดตำแหน่งที่อ่านหรือคิด loss ได้; causal mask ปิดอนาคต, padding mask ปิดข้อมูลเติม, loss mask เลือก target แต่ละอย่างคนละหน้าที่</dd><dt>Q / K / V</dt><dd>query ใช้ค้นข้อมูล, key ใช้จับคู่ query, value เป็นข้อมูลที่ถูกถัวเฉลี่ย; เป็น learned projections ของ representation ไม่ใช่ป้ายความหมายตายตัว</dd><dt>head</dt><dd>ส่วนของ feature representation ที่ทำ attention แยกกัน แล้ว concat/project กลับ; ต้องตรวจ d_model หารจำนวน heads ลงตัว</dd><dt>ε-neighborhood</dt><dd>เพื่อนบ้านทั้งหมดที่มีระยะไม่เกิน ε รวมจุดตัวเองใน DBSCAN นี้; ε มีหน่วยเดียวกับพิกัด ไม่ใช่จำนวน k ที่ใช้โหวต</dd><dt>core / border / noise</dt><dd>DBSCAN core มีเพื่อนบ้านรวมตัวเองถึง min_samples; border อยู่ใกล้ core แต่เพื่อนบ้านไม่ถึง; noise ไม่ถูกเชื่อมกับ core cluster ใด</dd><dt>bootstrap</dt><dd>สุ่ม observations แบบ replacement ขนาดเท่าเดิมซ้ำหลายครั้งแล้วคำนวณ statistic ใหม่; seed ทำให้ตรวจซ้ำได้ แต่ไม่แก้สมมติฐาน IID ที่ผิด</dd><dt>confidence interval</dt><dd>ช่วงที่สร้างด้วย procedure ที่มี coverage ตามสมมติฐาน; ช่วงหนึ่งที่ได้แล้วไม่ใช่ posterior probability ของ parameter และ sample เล็กยังไม่แน่นอนมาก</dd><dt>validation / test</dt><dd>validation ใช้เลือกโมเดล/ค่าตั้ง ส่วน test ใช้ประเมินหลัง freeze การตัดสินใจ; fit preprocessing/tokenizer จาก test เป็น leakage</dd><dt>leakage</dt><dd>ข้อมูลที่ควรยังไม่รู้ไหลเข้า training/การเลือกโมเดล เช่น future feature หรือเอกสารซ้ำข้าม split ทำให้ metric ดูดีเกินการใช้งานจริง</dd><dt>queue / capacity</dt><dd>queue คือรายการรอ, capacity การให้บริการรวม = workers × service rate ตามแบบจำลอง; เพิ่ม timeout ไม่เพิ่มกำลังประมวลผล</dd><dt>state transition</dt><dd>การเปลี่ยนสถานะเมื่อเกิดเหตุการณ์ที่อนุญาต เช่น queued→active→done; ต้องระบุ guard, side effect และเหตุผลเมื่อ transition ถูกปฏิเสธ</dd><dt>latency / throughput</dt><dd>latency คือเวลาต่อคำขอ, throughput คือปริมาณงานต่อหน่วยเวลา; batching อาจเพิ่ม throughput แต่เพิ่มเวลารอ จึงต้องวัดทั้งคู่</dd><dt>idempotency</dt><dd>ทำคำขอ business operation เดิมซ้ำแล้ว side effect เกิดครั้งเดียวตาม key และ transaction protocol; ไม่ได้รับประกันจากการใช้ UUID ใหม่ทุก attempt</dd><dt>local lab</dt><dd>โปรแกรม Python และ tests ที่ผู้เรียนรันบนเครื่อง; เว็บเก็บเพียงคำยืนยันของผู้เรียน การผ่าน tests ของโค้ดต้นแบบไม่ใช่ผลตรวจโค้ดผู้เรียน</dd></dl></section></article>
+<section id="practice" class="practice-section"><span class="eyebrow">PRACTICE · DEBUG · BUILD</span><h2>พิสูจน์ด้วยการลงมือทำ</h2><div id="web-checks"></div><div class="retry-actions"><button class="secondary-button" id="retry-checks">เริ่มทำโจทย์ในเว็บใหม่</button><button class="text-button" id="undo-retry" hidden>คืนผลก่อนเริ่มใหม่</button></div><div id="exercise-content"><h2>แบบฝึก 20 ข้อ — เฉลยเฉพาะข้อ</h2><p>ทำคำตอบก่อนเปิด hints; โจทย์ปลายเปิดให้ใช้ตัวอย่างคำตอบและหลักฐานราย objective ตรวจงานจริง</p><section id="exercise-1" class="exercise-item"><h3>ข้อ 1</h3><p>Build an immutable image tagged by commit SHA.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Immutable Artifacts: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): imagebuildtaggitSHAและpinimagedigest; tagเดียวถู…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: imagebuildtaggitSHAและpinimagedigest; tagเดียวถูกoverwriteได้จึงdeploydigest@sha256 พร…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>imagebuildtaggitSHAและpinimagedigest; tagเดียวถูกoverwriteได้จึงdeploydigest@sha256 พร้อมsource/config/modelartifacthash</p><p>อ้างอิง: <a href="#chapter-64/section/topic-4">Immutable Artifacts</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch64-exercise-01"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-2" class="exercise-item"><h3>ข้อ 2</h3><p>Create separate startup/readiness/liveness probes.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Probes: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): startupให้เวลาloadmodel,readinessกันtrafficก่อนwar…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: startupให้เวลาloadmodel,readinessกันtrafficก่อนwarm,livenessตรวจprocessdeadlockอย่างเบา; l…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>startupให้เวลาloadmodel,readinessกันtrafficก่อนwarm,livenessตรวจprocessdeadlockอย่างเบา; livenessไม่ควรล้มเพียงเพราะqueuebusy</p><p>อ้างอิง: <a href="#chapter-64/section/topic-13">Probes</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch64-exercise-02"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-3" class="exercise-item"><h3>ข้อ 3</h3><p>Calculate rolling-update surge capacity.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Rolling Update: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): desired4,maxSurge25%=1จึงpeak5pods,maxUnavailable…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: desired4,maxSurge25%=1จึงpeak5pods,maxUnavailable25%=1จึงminimumavailable3; GPUcapacityต…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>desired4,maxSurge25%=1จึงpeak5pods,maxUnavailable25%=1จึงminimumavailable3; GPUcapacityต้องรองรับsurgeหรือrolloutติดpending</p><p>อ้างอิง: <a href="#chapter-64/section/topic-15">Rolling Update</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch64-exercise-03"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-4" class="exercise-item"><h3>ข้อ 4</h3><p>Add a GPU resource request to a copy of the example Deployment.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ GPU Scheduling: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): examplepodresourcesrequests/limits <code>nvidia.com/gpu: 1</code>; …</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: examplepodresourcesrequests/limits <code>nvidia.com/gpu: 1</code>; nodeต้องมีdeviceplugin/runtimeและavailableGPU…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>examplepodresourcesrequests/limits <code>nvidia.com/gpu: 1</code>; nodeต้องมีdeviceplugin/runtimeและavailableGPUจริง CPUvalidationYAMLไม่ยืนยันGPUdeploy</p><p>อ้างอิง: <a href="#chapter-64/section/topic-14">GPU Scheduling</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch64-exercise-04"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-5" class="exercise-item"><h3>ข้อ 5</h3><p>Convert a CPU HPA example into a queue-depth custom-metric design.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ HPA, HPA Control Loop: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): queue-depthmetric perpodtarget10,observedtotal50,current4ให้…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: queue-depthmetric perpodtarget10,observedtotal50,current4ให้desiredceil(50/10)=5ตามsimplifieddesign; includeC…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>queue-depthmetric perpodtarget10,observedtotal50,current4ให้desiredceil(50/10)=5ตามsimplifieddesign; includeCPU/GPUloadingtimeและscale-downstabilization</p><p>อ้างอิง: <a href="#chapter-64/section/topic-17">HPA</a>, <a href="#chapter-64/section/topic-18">HPA Control Loop</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch64-exercise-05"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-6" class="exercise-item"><h3>ข้อ 6</h3><p>Explain ConfigMap vs Secret.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ ConfigMap, Secret: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ConfigMapเก็บnonsecretconfig,Secretเก็บcredentialแต่b…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ConfigMapเก็บnonsecretconfig,Secretเก็บcredentialแต่base64ไม่ใช่encryption; restrictRBAC/encrypt…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ConfigMapเก็บnonsecretconfig,Secretเก็บcredentialแต่base64ไม่ใช่encryption; restrictRBAC/encrypt-at-restและอย่าบันทึกsecretsในrepo/log</p><p>อ้างอิง: <a href="#chapter-64/section/topic-11">ConfigMap</a>, <a href="#chapter-64/section/topic-12">Secret</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch64-exercise-06"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-7" class="exercise-item"><h3>ข้อ 7</h3><p>Design a Gateway/HTTPRoute front door.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Gateway vs Ingress: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): Gatewayรับlistener/TLS,HTTPRouteจับhost/pathและชี้…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: Gatewayรับlistener/TLS,HTTPRouteจับhost/pathและชี้serviceweights; backendreadiness/timeout…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>Gatewayรับlistener/TLS,HTTPRouteจับhost/pathและชี้serviceweights; backendreadiness/timeout/bodylimitsต้องสอดคล้องstreamingLLM</p><p>อ้างอิง: <a href="#chapter-64/section/topic-10">Gateway vs Ingress</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch64-exercise-07"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-8" class="exercise-item"><h3>ข้อ 8</h3><p>Calculate canary request counts.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Canary: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): 5%of2000=100expectedcanary,remaining1900champion; ran…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: 5%of2000=100expectedcanary,remaining1900champion; randomroutingต้องmeasureactualcounts/CIไม่บัง…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>5%of2000=100expectedcanary,remaining1900champion; randomroutingต้องmeasureactualcounts/CIไม่บังคับexact100เว้นdeterministicassignment</p><p>อ้างอิง: <a href="#chapter-64/section/topic-21">Canary</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch64-exercise-08"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-9" class="exercise-item"><h3>ข้อ 9</h3><p>Design rollback gates for latency + model quality.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Rollout Safety: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): gatesเช่นp95≤500ms,error≤1%,quality≥baseline−.02…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: gatesเช่นp95≤500ms,error≤1%,quality≥baseline−.02,minN100; failanyrequiredgateหยุดpromo…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>gatesเช่นp95≤500ms,error≤1%,quality≥baseline−.02,minN100; failanyrequiredgateหยุดpromote/rollbackไปknowndigestพร้อมaudit</p><p>อ้างอิง: <a href="#chapter-64/section/topic-16">Rollout Safety</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch64-exercise-09"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-10" class="exercise-item"><h3>ข้อ 10</h3><p>Estimate GPU pool replica capacity.</p>
+<p>Challenge:
+- deploy the toy service to a local Kubernetes cluster
+- perform a rolling update and observe readiness/termination behavior</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Deployment Math: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): GPU8ตัว,1GPU/pod,usableheadroom2ตัวให้max6act…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: GPU8ตัว,1GPU/pod,usableheadroom2ตัวให้max6activepodsถ้าmemory/modelต่อGPUfit; mul…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>GPU8ตัว,1GPU/pod,usableheadroom2ตัวให้max6activepodsถ้าmemory/modelต่อGPUfit; multiGPU2/podให้3podsตามbudgetเดียว</p><p>อ้างอิง: <a href="#chapter-64/section/topic-26">Deployment Math</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch64-exercise-10"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-11" class="exercise-item"><h3>ข้อ 11</h3><p>Reproduce one central calculation from AI Deployment using a tiny hand-checkable input.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Rolling Update: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): desired4surge1ต้อง5GPUหากpodละ1และoldpodsยังอยู่; …</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: desired4surge1ต้อง5GPUหากpodละ1และoldpodsยังอยู่; clusterมี4GPUrolloutอาจรอจึงต้องsurge0หร…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>desired4surge1ต้อง5GPUหากpodละ1และoldpodsยังอยู่; clusterมี4GPUrolloutอาจรอจึงต้องsurge0หรือเพิ่มcapacityตามavailabilitypolicy</p><p>อ้างอิง: <a href="#chapter-64/section/topic-15">Rolling Update</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch64-exercise-11"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-12" class="exercise-item"><h3>ข้อ 12</h3><p>Write a deterministic test that verifies the most important invariant in AI Deployment.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Example Manifests: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): manifestpinsdigests,probesแยกถูก,resourcebudgetไม่เกินcapa…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: manifestpinsdigests,probesแยกถูก,resourcebudgetไม่เกินcapacityและrollbackgatesdeterministic; noactualclu…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>manifestpinsdigests,probesแยกถูก,resourcebudgetไม่เกินcapacityและrollbackgatesdeterministic; noactualclusterdeployถือเป็นstaticvalidationเท่านั้น</p><p>อ้างอิง: <a href="#chapter-64/section/topic-27">Example Manifests</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch64-exercise-12"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-13" class="exercise-item"><h3>ข้อ 13</h3><p>Compare two meaningful configurations while keeping data and seed fixed.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Rolling Update: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): surge0/1คงcapacity/startup/requestload; simulatorreporta…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: surge0/1คงcapacity/startup/requestload; simulatorreportavailability/pendingdurationและSLO ไม่เรียกsimu…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>surge0/1คงcapacity/startup/requestload; simulatorreportavailability/pendingdurationและSLO ไม่เรียกsimulationว่าพิสูจน์Kubernetesproductionแล้ว</p><p>อ้างอิง: <a href="#chapter-64/section/topic-15">Rolling Update</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch64-exercise-13"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-14" class="exercise-item"><h3>ข้อ 14</h3><p>Record intermediate shapes, ranges, and one quality metric for a tiny end-to-end run.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Kubernetes Object Model: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): recordpodstatespending/loading/ready/drain…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: recordpodstatespending/loading/ready/draining/terminated,replicacount/GPUs/qu…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>recordpodstatespending/loading/ready/draining/terminated,replicacount/GPUs/queue/latency/qualitygateversion</p><p>อ้างอิง: <a href="#chapter-64/section/topic-8">Kubernetes Object Model</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch64-exercise-14"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-15" class="exercise-item"><h3>ข้อ 15</h3><p>Explain one evaluation mistake that could make a AI Deployment result look better than it really is.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Rollout Safety: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ดูhealthHTTP200อย่างเดียวไม่ยืนยันmodelquality; canar…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ดูhealthHTTP200อย่างเดียวไม่ยืนยันmodelquality; canaryต้องsamepromptmixและenoughsamplesก่อนprom…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ดูhealthHTTP200อย่างเดียวไม่ยืนยันmodelquality; canaryต้องsamepromptmixและenoughsamplesก่อนpromote ไม่ใช้metricaverageซ่อนtailfailure</p><p>อ้างอิง: <a href="#chapter-64/section/topic-16">Rollout Safety</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch64-exercise-15"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-16" class="exercise-item"><h3>ข้อ 16</h3><p>State the dominant time and memory complexity for the main operation in AI Deployment.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Deployment Math: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): deploymentcapacityคิดpods·GPU/requestedmemory,rollo…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: deploymentcapacityคิดpods·GPU/requestedmemory,rollouttimeขึ้นกับload/drain/scheduling; contr…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>deploymentcapacityคิดpods·GPU/requestedmemory,rollouttimeขึ้นกับload/drain/scheduling; controlplaneYAMLsizeไม่บอกmodelthroughput</p><p>อ้างอิง: <a href="#chapter-64/section/topic-26">Deployment Math</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch64-exercise-16"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-17" class="exercise-item"><h3>ข้อ 17</h3><p>Compare a from-scratch result with a trusted implementation using identical inputs and settings.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Example Manifests: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): validateYAMLschemaและsimulateprobe/rollouttransiti…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: validateYAMLschemaและsimulateprobe/rollouttransitionsด้วยfakeclock; actualGateway/GPUinteg…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>validateYAMLschemaและsimulateprobe/rollouttransitionsด้วยfakeclock; actualGateway/GPUintegrationต้องแยกnot_runหากไม่มีcluster</p><p>อ้างอิง: <a href="#chapter-64/section/topic-27">Example Manifests</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch64-exercise-17"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-18" class="exercise-item"><h3>ข้อ 18</h3><p>Run a one-factor ablation and report the measured change over repeated runs when randomness matters.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Probes: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): readinessdelay0→warmup-completeคงrollout/loa…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: readinessdelay0→warmup-completeคงrollout/load; reportcoldrequesterrors/TTFTและt…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>readinessdelay0→warmup-completeคงrollout/load; reportcoldrequesterrors/TTFTและtime-to-readyไม่แก้modelพร้อมกัน</p><p>อ้างอิง: <a href="#chapter-64/section/topic-13">Probes</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch64-exercise-18"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-19" class="exercise-item"><h3>ข้อ 19</h3><p>Design a small reproducibility record containing seed, code version, data version, configuration, and metric.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Example Manifests: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): manifest มีimage/model/configdigests/cluster-runtime/…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: manifest มีimage/model/configdigests/cluster-runtime/deviceplugin/probes/resource/rollout/HPA/Ga…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>manifest มีimage/model/configdigests/cluster-runtime/deviceplugin/probes/resource/rollout/HPA/Gateway/trafficseed/gates/rollbacktarget</p><p>อ้างอิง: <a href="#chapter-64/section/topic-27">Example Manifests</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch64-exercise-19"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-20" class="exercise-item"><h3>ข้อ 20</h3><p>Propose one falsifiable research question for AI Deployment and specify the baseline, changed factor, and acceptance metric.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Rollout Safety: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ทดลอง“warmupreadinessลดcoldstartp95≥30%โดยrolloutav…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ทดลอง“warmupreadinessลดcoldstartp95≥30%โดยrolloutavailable≥3/4”; baselineearlyready,fixedsta…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ทดลอง“warmupreadinessลดcoldstartp95≥30%โดยrolloutavailable≥3/4”; baselineearlyready,fixedstartuptraceในsimulationก่อนclustertrial</p><p>อ้างอิง: <a href="#chapter-64/section/topic-16">Rollout Safety</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch64-exercise-20"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section></div><div id="local-lab-content"><section id="local-lab"><h2>Local lab: Python 3.12 บน CPU</h2><p>รันจาก repository root; ใช้ Python 3.12 แยก environment สำหรับ framework ตาม requirements ของชุดบท</p><pre><code>python3.12 -m venv .venv-course
+source .venv-course/bin/activate
+python -m pip install -r requirements-batch22.txt pytest
+(cd 64-deploy-ai &amp;&amp; python -m pytest tests -q -rs)</code></pre><p>ผลที่คาดหวัง: required tests ผ่านและไม่มี required test ถูก skip; GPU/integrations ที่ยังไม่รันต้องระบุแยก Python 3.15 ที่มากับเครื่องอาจใช้กับ framework wheels เหล่านี้ไม่ได้</p><h2>Mini Project — Kubernetes AI API</h2>
+<p>Containerize a tiny inference API and deploy it with:
+- immutable image tag
+- Deployment + Service
+- startup/readiness/liveness probes
+- ConfigMap
+- no hard-coded secrets
+- resource requests/limits
+- HPA
+- graceful termination
+- canary rollout plan</p>
+<p>Record model revision, image digest, manifest commit and rollback criteria.</p><h2>Batch 22 Integration Project — Production ML Lifecycle Lab</h2>
+<p>Batch 22 connects data engineering, MLOps governance and deployment planning.</p>
+<h3>Part A — Data Pipeline</h3>
+<pre><code class="language-text">raw events
+↓
+data contract validation
+↓
+deduplicate latest version
+↓
+partition planning
+↓
+lineage fingerprint
+</code></pre>
+<p>Outputs:
+- validation errors
+- input/output record counts
+- partitions
+- lineage fingerprint</p>
+<h3>Part B — MLOps Promotion</h3>
+<pre><code class="language-text">code + data + config
+↓
+run fingerprint
+↓
+candidate metrics
+↓
+promotion gates
+↓
+registry alias update
+</code></pre>
+<p>Also computes a drift diagnostic using PSI.</p>
+<h3>Part C — Deployment Plan</h3>
+<pre><code class="language-text">current replicas + load
+↓
+HPA-style desired replica math
+↓
+rolling-update surge bound
+↓
+GPU pool capacity check
+↓
+5% canary split
+</code></pre>
+<h3>Part D — Full Lifecycle Gate</h3>
+<p>A rollout is allowed only when:</p>
+<pre><code class="language-text">data contract passes
+AND
+model promotion gate passes
+AND
+rollout fits GPU capacity
+</code></pre>
+<p>This deliberately demonstrates that deployment readiness is more than "the container starts".</p>
+<h3>Run</h3>
+<pre><code class="language-bash">python integration-project-batch22/src/production_ml_lifecycle_lab.py --mode data
+python integration-project-batch22/src/production_ml_lifecycle_lab.py --mode mlops
+python integration-project-batch22/src/production_ml_lifecycle_lab.py --mode deploy
+python integration-project-batch22/src/production_ml_lifecycle_lab.py --mode full
+</code></pre>
+<h3>Optional Ecosystem Labs</h3>
+<p>MLflow:</p>
+<pre><code class="language-bash">python -m pip install -r requirements-batch22-mlops.txt
+</code></pre>
+<p>PyArrow:</p>
+<pre><code class="language-bash">python -m pip install -r requirements-batch22-data.txt
+</code></pre>
+<h3>Required Extensions</h3>
+<ol>
+<li>persist a real MLflow run</li>
+<li>register a model version and alias</li>
+<li>write a real partitioned Parquet snapshot</li>
+<li>inspect row-group metadata</li>
+<li>add delayed-label production metrics</li>
+<li>add drift/data-quality alert policies</li>
+<li>generate Kubernetes manifests from immutable artifact IDs</li>
+<li>add canary quality+latency rollback gates</li>
+<li>implement backfill lineage</li>
+<li>rehearse a rollback to a previous champion</li>
+</ol></section></div><label class="local-confirm"><input type="checkbox" id="local-lab-confirm"> ฉันรัน local lab และตรวจผลตาม rubric ด้วยตัวเองแล้ว</label><p class="local-note">สถานะนี้เป็นคำยืนยันของผู้เรียน เว็บไม่ได้รันหรือตรวจ Python บนเครื่องแทนคุณ</p></section>
+<section id="mastery-review" class="practice-section"><h2>หลักฐานตามเกณฑ์การเรียนรู้</h2><p>ทุก objective ต้องแสดงหลักฐานอธิบาย ทำนาย คำนวณ อ่าน shape/state debug และประยุกต์ พร้อมกรณีใหม่ ผลรัน source ผู้เรียนจริง และการประเมินซ้ำ เกณฑ์นี้ไม่รับประกันความเข้าใจทุกสถานการณ์ เปิด JavaScript เพื่อดูรายการที่ยังขาดและนำเข้ารายงานผู้ตรวจ</p></section><section class="coverage-section"><h2>แผนที่สิ่งที่เรียน → สิ่งที่ต้องแสดงให้ได้</h2><div id="coverage-table"></div></section><footer><span>ZERO TO ELITE AI ENGINEER · LEARNING STUDIO</span><span>อ่าน · derive · implement · debug · experiment · build</span></footer></div></main><noscript><style>.workbench,.sidebar,.reading-route,.lesson-toc,.mastery-status,#web-checks{display:none}main{margin-left:0}</style>อ่านเนื้อหา HTML ได้ตามปกติ เปิด JavaScript เพื่อใช้ห้องทดลองและตรวจคำตอบ</noscript></body></html>

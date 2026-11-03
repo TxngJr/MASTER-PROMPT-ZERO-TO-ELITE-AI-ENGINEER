@@ -1,0 +1,1344 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="บทเรียน AI Engineer ภาษาไทย พร้อมคณิตศาสตร์ทีละขั้นและห้องทดลองที่คำนวณจริง"><title>Time Series: ใช้อดีตให้ตรงกับเวลาพยากรณ์ · AI Engineer Studio</title><link rel="stylesheet" href="../visual-lab/assets/styles.css"><link rel="stylesheet" href="../visual-lab/assets/course.css"><script defer src="../visual-lab/assets/lessons.js"></script><script defer src="../visual-lab/assets/chapter-meta.js"></script><script defer src="../visual-lab/assets/course-math.js"></script><script defer src="../visual-lab/assets/course-models.js"></script><script defer src="../visual-lab/assets/course-models-v3.js"></script><script defer src="../visual-lab/assets/course-assessment.js"></script><script defer src="../visual-lab/assets/course-mastery.js"></script><script defer src="../visual-lab/assets/course-catalog.js"></script><script defer src="../visual-lab/assets/book-content.js"></script><script defer src="../visual-lab/assets/course-render.js"></script><script defer src="../visual-lab/assets/course-mastery-panel.js"></script><script defer src="../visual-lab/assets/quality-report.js"></script><script defer src="../visual-lab/assets/course-app.js"></script></head>
+<body data-chapter="17" data-root="../"><a class="skip-link" href="#main">ข้ามไปบทเรียน</a>
+<aside class="sidebar" id="sidebar" aria-label="เลือกบทเรียน"><a class="brand" href="../visual-lab/index.html"><span class="brand-mark">ai</span><span>AI ENGINEER<small>LEARN · DERIVE · BUILD</small></span></a><div class="sidebar-intro">อ่านให้เข้าใจ · คำนวณให้เห็น · เขียนให้เป็น</div><label class="search-box"><input id="search" type="search" placeholder="ค้นหาบท / attention" aria-label="ค้นหาบทเรียน"></label><label class="filter-label" for="phase-filter">เส้นทางการเรียน <span id="nav-count"></span></label><select id="phase-filter"><option value="">ทุก Phase</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option></select><nav id="chapter-list" class="chapter-list" aria-label="รายชื่อบท"></nav><div class="course-progress"><div><span>ผ่านโจทย์ในเว็บ</span><strong id="progress-count">0 / 80</strong></div><progress id="course-progress" max="80" value="0" aria-label="บทที่ผ่านโจทย์"></progress><a id="resume-link" href="#chapter-1">อ่านต่อจากเดิม →</a></div></aside>
+<button class="nav-backdrop" id="nav-backdrop" aria-label="ปิดเมนู" hidden></button>
+<main id="main" tabindex="-1"><header class="topbar"><div><button id="nav-toggle" class="icon-button mobile-menu" aria-label="เปิดเมนูบทเรียน" aria-expanded="false" aria-controls="sidebar">☰</button><span id="breadcrumb"></span></div><span class="local-badge"><i></i> คำนวณในเครื่อง · ไม่มี API</span></header><div class="content">
+<div class="chapter-navigation"><label for="chapter-select" class="sr-only">เลือกบทเรียน</label><select id="chapter-select"></select><div class="chapter-arrows"><button id="prev-chapter" class="icon-button" aria-label="บทก่อนหน้า">←</button><button id="next-chapter" class="icon-button" aria-label="บทถัดไป">→</button></div></div>
+<section class="chapter-hero"><div><p id="chapter-kicker" class="eyebrow"></p><h1 id="chapter-title">Time Series: ใช้อดีตให้ตรงกับเวลาพยากรณ์</h1><p class="english-title" id="chapter-english"></p></div><span class="hero-symbol">f(x) ↗</span></section>
+<p id="quality-status" class="quality-status"></p><div id="mastery-status" class="mastery-status"></div><div class="reading-route"><a href="#chapter-17/section/overview">01 อ่านบทเรียน</a><a href="#workbench">02 ทดลองสมการ</a><a href="#practice">03 ฝึกและตรวจงาน</a><a href="#mastery-review">04 หลักฐานตามเกณฑ์</a></div>
+<nav id="lesson-toc" class="lesson-toc" aria-label="สารบัญบท"></nav>
+<section id="overview" class="course-overview"><span class="eyebrow">THE LEARNING CONTRACT</span><h2>เรียนบทนี้แล้วต้องทำอะไรได้</h2><p id="chapter-purpose"></p><div id="chapter-objectives"></div><div class="learning-hint">ทำนาย → เปลี่ยนทีละค่า → ตรวจตัวเลข → อธิบายเหตุผล → เขียนด้วย Python เอง</div></section>
+<section class="workbench lab-card" id="workbench" aria-label="ห้องทดลองคำนวณจริง"><div class="card-header"><div><span class="live-dot"></span><span class="eyebrow">COMPUTATION WORKBENCH</span></div><span class="simulation-label">ทุกภาพใช้ผลคำนวณชุดเดียวกัน</span></div><div class="lab-top"><label for="lab-select">เลือกกลไกที่ต้องการทดลอง</label><select id="lab-select"></select><p id="lab-question"></p></div><div class="workbench-grid"><div class="viz-column"><div class="compare-labels"><span>เส้นทึบ: ปัจจุบัน</span><span>เส้นประ: baseline ที่ตรึงไว้</span></div><div id="simulation" class="simulation"></div><div id="metrics" class="metrics"></div><div id="baseline-diff" class="baseline-diff"></div><div class="playback"><div class="playback-buttons"><button class="primary-button" id="update-once">อัปเดตหนึ่งก้าว</button><button class="secondary-button" id="train-many">▶ ฝึก 30 ก้าว</button><button class="icon-button" id="back-state" aria-label="ย้อนประวัติ">↶</button><button class="icon-button" id="forward-state" aria-label="ประวัติถัดไป">↷</button></div></div><div class="lab-secondary-actions"><button id="pin-baseline" class="text-button">ตรึง baseline ปัจจุบัน</button><button id="reset-lab" class="text-button">คืนค่าเริ่มต้น</button><button id="download-state" class="text-button">บันทึกผล JSON</button><span id="history-status"></span></div><p id="simulation-note" class="simulation-note"></p><p class="lab-error" id="lab-error" role="alert" hidden></p></div><div class="controls-column"><h3>เปลี่ยนทีละตัว แล้วสังเกตผล</h3><div id="lab-controls"></div><p class="control-note">แก้ weight ด้วยมือจะคำนวณ forward ใหม่; optimizer เปลี่ยน weights เมื่อกดอัปเดตเท่านั้น</p></div></div>
+<div class="trace-section"><div class="trace-toolbar"><h3>เดินสมการทีละ operation</h3><div><button id="trace-prev" class="icon-button" aria-label="operation ก่อนหน้า">←</button><button id="play-trace" class="secondary-button" aria-pressed="false">▶ เล่น flow</button><button id="trace-next" class="icon-button" aria-label="operation ถัดไป">→</button><span id="stage-counter"></span></div></div><label class="motion-control"><input id="reduce-motion" type="checkbox"> ลดภาพเคลื่อนไหว (หยุดการเล่นที่ค้างอยู่)</label><div id="operation-steps" class="operation-steps"></div><div id="flow-diagram" class="flow-diagram"></div><div id="active-operation" class="active-operation" aria-live="polite"></div><p class="control-note">ตัวเลขบนภาพปัดเศษเพื่อให้อ่านง่าย; บันทึก JSON เพื่อดูค่าที่ใช้คำนวณเต็ม precision</p><details open><summary>ตารางค่าระหว่างทาง — ตรวจด้วยมือได้</summary><div id="result-table"></div></details><div id="tensor-tables" class="tensor-tables"></div><details id="surface-details"><summary>ดู loss surface และเส้นทางของ w₁,b (ตรึง controls อื่น)</summary><div id="surface-chart"></div><p>surface คำนวณ objective ปัจจุบันโดยตรึง degree, penalty, ข้อมูล และ weights อื่น เส้นทางแสดงเฉพาะ snapshots ที่ค่าเหล่านี้ตรงกัน; นอกช่วง w=[−1,5], b=[−2,4] ให้ตรวจค่าจริงใน history</p></details><details><summary>ประวัติการเปลี่ยนค่า</summary><div id="history-table"></div></details></div></section>
+<article id="chapter-article" class="chapter-article"><section id="mechanism-1" class="teaching-section"><span class="section-kicker">CHAPTER 17 · ภาพ → สมการ → โค้ด</span><h2>1. เวลาทำให้ข้อมูลไม่ exchangeable</h2><h3>โจทย์และเหตุผล</h3><p>shuffle อาจให้อนาคตช่วยอธิบายอดีตโดยไม่ตั้งใจ สร้าง lags จากสิ่งที่รู้ ณ เวลาทำนาย และใช้ walk-forward validation ตาม deployment horizon</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Explain autocorrelation.</p><p>ACF lag k คือcorr(yₜ,yₜ₋ₖ); คาบ7มักมีpeakที่7,14; trendทำacfสูงยาวโดยไม่ได้แปลว่าARorderสูง</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>weight: recurrent / AR coefficient,initial=0.8; inputScale: input scale,initial=1; horizon: steps,initial=5; mode: recurrence,initial=ar</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = 1; ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</li><li>ŷ_(t+1)=aŷ_t = 0.32768000000000014; weights ใช้ซ้ำทุกเวลา; RNN มี nonlinear state ส่วน AR ในภาพไม่มี input innovation</li><li>finite / normalized / bounded = 0.32768000000000014; เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="sequence-ar-1---forecast-จาก-pred">เปิดการทดลองนี้</a><p class="failure-box">MAPEหารศูนย์เมื่อyจริง0; ใช้MAE/MASEหรือmaskที่ประกาศ; logtransformต้องy&gt;0และinvertforecastพร้อมอธิบายbias; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>ACF lag k คือcorr(yₜ,yₜ₋ₖ); คาบ7มักมีpeakที่7,14; trendทำacfสูงยาวโดยไม่ได้แปลว่าARorderสูง</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-1-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = 1<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>ŷ_(t+1)=aŷ_t</code> = 0.32768000000000014<p>weights ใช้ซ้ำทุกเวลา; RNN มี nonlinear state ส่วน AR ในภาพไม่มี input innovation</p></li><li><code>finite / normalized / bounded</code> = 0.32768000000000014<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-1-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>shape / range</code> = 1<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>ŷ_(t+1)=aŷ_t</code> = 0.32768000000000014<p>weights ใช้ซ้ำทุกเวลา; RNN มี nonlinear state ส่วน AR ในภาพไม่มี input innovation</p></li><li><code>finite / normalized / bounded</code> = 0.32768000000000014<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-1-code"><summary>โค้ด</summary><p>ACF lag k คือcorr(yₜ,yₜ₋ₖ); คาบ7มักมีpeakที่7,14; trendทำacfสูงยาวโดยไม่ได้แปลว่าARorderสูง</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-1-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = 1<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>ŷ_(t+1)=aŷ_t</code> = 0.32768000000000014<p>weights ใช้ซ้ำทุกเวลา; RNN มี nonlinear state ส่วน AR ในภาพไม่มี input innovation</p></li><li><code>finite / normalized / bounded</code> = 0.32768000000000014<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-1"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-2" class="teaching-section"><span class="section-kicker">CHAPTER 17 · ภาพ → สมการ → โค้ด</span><h2>2. recursive forecast สะสมความคลาดเคลื่อน</h2><h3>โจทย์และเหตุผล</h3><p>ใน AR(1) ไม่มี intercept/noise ภาพให้ ŷ_(t+h)=a^h y_t จึงหดเมื่อ |a|&lt;1 และโตเมื่อ |a|&gt;1 การใช้ actual อนาคตเป็น lag ระหว่างประเมินจะทำให้โจทย์ง่ายผิดจาก production</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Implement a small from-scratch example of trend.</p><p><code>t=np.arange(len(y)); slope=np.sum((t-t.mean())*(y-y.mean()))/np.sum((t-t.mean())**2)</code>; y=[1,3,5] ได้slope2,intercept1</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>weight: recurrent / AR coefficient,initial=1.2; inputScale: input scale,initial=1; horizon: steps,initial=5; mode: recurrence,initial=ar</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = 1; ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</li><li>ŷ_(t+1)=aŷ_t = 2.48832; weights ใช้ซ้ำทุกเวลา; RNN มี nonlinear state ส่วน AR ในภาพไม่มี input innovation</li><li>finite / normalized / bounded = 2.48832; เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="sequence-coefficient-ท--ทำให--rol">เปิดการทดลองนี้</a><p class="failure-box">MAPEหารศูนย์เมื่อyจริง0; ใช้MAE/MASEหรือmaskที่ประกาศ; logtransformต้องy&gt;0และinvertforecastพร้อมอธิบายbias; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p><code>t=np.arange(len(y)); slope=np.sum((t-t.mean())*(y-y.mean()))/np.sum((t-t.mean())**2)</code>; y=[1,3,5] ได้slope2,intercept1</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-2-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = 1<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>ŷ_(t+1)=aŷ_t</code> = 2.48832<p>weights ใช้ซ้ำทุกเวลา; RNN มี nonlinear state ส่วน AR ในภาพไม่มี input innovation</p></li><li><code>finite / normalized / bounded</code> = 2.48832<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-2-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>shape / range</code> = 1<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>ŷ_(t+1)=aŷ_t</code> = 2.48832<p>weights ใช้ซ้ำทุกเวลา; RNN มี nonlinear state ส่วน AR ในภาพไม่มี input innovation</p></li><li><code>finite / normalized / bounded</code> = 2.48832<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-2-code"><summary>โค้ด</summary><p><code>t=np.arange(len(y)); slope=np.sum((t-t.mean())*(y-y.mean()))/np.sum((t-t.mean())**2)</code>; y=[1,3,5] ได้slope2,intercept1</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-2-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = 1<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>ŷ_(t+1)=aŷ_t</code> = 2.48832<p>weights ใช้ซ้ำทุกเวลา; RNN มี nonlinear state ส่วน AR ในภาพไม่มี input innovation</p></li><li><code>finite / normalized / bounded</code> = 2.48832<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-2"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-3" class="teaching-section"><span class="section-kicker">CHAPTER 17 · ภาพ → สมการ → โค้ด</span><h2>3. baseline และฤดูกาลต้องตรวจ</h2><h3>โจทย์และเหตุผล</h3><p>naive/seasonal naive เป็นคู่เทียบสำคัญ residuals ที่ยังมี autocorrelation บอกว่าโครงสร้างเวลาเหลืออยู่ รายงานผลแยก horizon และอย่าแก้ missing ด้วยข้อมูลอนาคตที่ยังไม่เห็น</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Explain the tradeoff introduced by walk-forward validation.</p><p>walk-forwardรักษาเวลาจริงแต่fitหลายครั้งแพง; expandingใช้ข้อมูลมากขึ้น,rollingปรับตัวต่อdriftได้แต่ทิ้งอดีต; horizon/gapต้องตรงการใช้งาน</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>trainPercent: train (%),initial=70; outlier: held-out outlier,initial=20; impute: missing replacement,initial=3; leak: fit statistics on,initial=train</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = [1, 2, null, 4, 5, 6, 7, 8, 9, 20]; ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</li><li>z=(x−μ_fit)/σ_fit = 4; เปลี่ยน held-out outlier ไม่ควรเปลี่ยน μ_train; all-data mode จงใจสาธิต leakage</li><li>finite / normalized / bounded = 4; เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="data-split-แบบเวลาและ-fitted-">เปิดการทดลองนี้</a><p class="failure-box">MAPEหารศูนย์เมื่อyจริง0; ใช้MAE/MASEหรือmaskที่ประกาศ; logtransformต้องy&gt;0และinvertforecastพร้อมอธิบายbias; missing replacement เป็นค่าที่เลือกเพื่อสอน; local lab เปรียบเทียบ imputer ที่ fit จาก train จริง</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>walk-forwardรักษาเวลาจริงแต่fitหลายครั้งแพง; expandingใช้ข้อมูลมากขึ้น,rollingปรับตัวต่อdriftได้แต่ทิ้งอดีต; horizon/gapต้องตรงการใช้งาน</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-3-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = [1, 2, null, 4, 5, 6, 7, 8, 9, 20]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>z=(x−μ_fit)/σ_fit</code> = 4<p>เปลี่ยน held-out outlier ไม่ควรเปลี่ยน μ_train; all-data mode จงใจสาธิต leakage</p></li><li><code>finite / normalized / bounded</code> = 4<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-3-visual"><summary>ภาพและ shape</summary><p>missing replacement เป็นค่าที่เลือกเพื่อสอน; local lab เปรียบเทียบ imputer ที่ fit จาก train จริง</p><ol><li><code>shape / range</code> = [1, 2, null, 4, 5, 6, 7, 8, 9, 20]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>z=(x−μ_fit)/σ_fit</code> = 4<p>เปลี่ยน held-out outlier ไม่ควรเปลี่ยน μ_train; all-data mode จงใจสาธิต leakage</p></li><li><code>finite / normalized / bounded</code> = 4<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-3-code"><summary>โค้ด</summary><p>walk-forwardรักษาเวลาจริงแต่fitหลายครั้งแพง; expandingใช้ข้อมูลมากขึ้น,rollingปรับตัวต่อdriftได้แต่ทิ้งอดีต; horizon/gapต้องตรงการใช้งาน</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-3-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = [1, 2, null, 4, 5, 6, 7, 8, 9, 20]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>z=(x−μ_fit)/σ_fit</code> = 4<p>เปลี่ยน held-out outlier ไม่ควรเปลี่ยน μ_train; all-data mode จงใจสาธิต leakage</p></li><li><code>finite / normalized / bounded</code> = 4<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-3"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="reference" class="canonical-section"><h2>เนื้อหาครบทุกหัวข้อ พร้อมแผนที่ objective</h2><nav class="source-toc"><a href="#chapter-17/section/topic-1">1. Why Time Series Is Different</a> <a href="#chapter-17/section/topic-2">2. Learning Objectives</a> <a href="#chapter-17/section/topic-3">3. Components</a> <a href="#chapter-17/section/topic-4">4. Frequency</a> <a href="#chapter-17/section/topic-5">5. Naive Baseline</a> <a href="#chapter-17/section/topic-6">6. Seasonal Naive</a> <a href="#chapter-17/section/topic-7">7. Forecast Horizon</a> <a href="#chapter-17/section/topic-8">8. Autocorrelation</a> <a href="#chapter-17/section/topic-9">9. Stationarity</a> <a href="#chapter-17/section/topic-10">10. Differencing</a> <a href="#chapter-17/section/topic-11">11. AR(p)</a> <a href="#chapter-17/section/topic-12">12. MA(q)</a> <a href="#chapter-17/section/topic-13">13. ARMA</a> <a href="#chapter-17/section/topic-14">14. ARIMA</a> <a href="#chapter-17/section/topic-15">15. SARIMA</a> <a href="#chapter-17/section/topic-16">16. Lag Matrix</a> <a href="#chapter-17/section/topic-17">17. From-Scratch AutoRegression</a> <a href="#chapter-17/section/topic-18">18. One-Step vs Recursive Forecast</a> <a href="#chapter-17/section/topic-19">19. Direct Multi-Horizon</a> <a href="#chapter-17/section/topic-20">20. Rolling Features</a> <a href="#chapter-17/section/topic-21">21. Walk-Forward Validation</a> <a href="#chapter-17/section/topic-22">22. Metrics</a> <a href="#chapter-17/section/topic-23">23. Prediction Intervals</a> <a href="#chapter-17/section/topic-24">24. Prophet</a> <a href="#chapter-17/section/topic-25">25. ML Forecasting</a> <a href="#chapter-17/section/topic-26">26. DL Forecasting</a> <a href="#chapter-17/section/topic-27">27. Exogenous Variables</a> <a href="#chapter-17/section/topic-28">28. Leakage Examples</a> <a href="#chapter-17/section/topic-29">29. Common Mistakes</a> <a href="#chapter-17/section/topic-30">30. Exercises / Project</a> <a href="#chapter-17/section/topic-31">31. Checklist</a> <a href="#chapter-17/section/topic-32">32. What&#x27;s Next</a> </nav><section id="topic-1" class="source-topic"><span id="source-17-time-series-canonical-chapter-17-time-series-forecasting" class="legacy-anchor"></span><span id="source-17-time-series-canonical-1-why-time-series-is-different" class="legacy-anchor"></span><h3>1. Why Time Series Is Different</h3>
+<p>Time series มี order:</p>
+<pre><code class="language-text">past → present → future
+</code></pre>
+<p>sample ไม่ exchangeable เหมือน tabular IID setting</p>
+<p>ถ้า shuffle ก่อน split:</p>
+<pre><code class="language-text">future → training
+past   → validation
+</code></pre>
+<p>model อาจเห็นข้อมูลอนาคตทางอ้อม</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>1. Why Time Series Is Different</h3>
+<p>Time series มี order:</p>
+<pre><code class="language-text">past → present → future
+</code></pre>
+<p>sample ไม่ exchangeable เหมือน tabular IID setting</p>
+<p>ถ้า shuffle ก่อน split:</p>
+<pre><code class="language-text">future → training
+past   → validation
+</code></pre>
+<p>model อาจเห็นข้อมูลอนาคตทางอ้อม</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-1-equation"><summary>สมการ</summary><h3>1. Why Time Series Is Different</h3>
+<p>Time series มี order:</p>
+<pre><code class="language-text">past → present → future
+</code></pre>
+<p>sample ไม่ exchangeable เหมือน tabular IID setting</p>
+<p>ถ้า shuffle ก่อน split:</p>
+<pre><code class="language-text">future → training
+past   → validation
+</code></pre>
+<p>model อาจเห็นข้อมูลอนาคตทางอ้อม</p></details><details id="help-topic-1-visual"><summary>ภาพและ shape</summary><h3>1. Why Time Series Is Different</h3>
+<p>Time series มี order:</p>
+<pre><code class="language-text">past → present → future
+</code></pre>
+<p>sample ไม่ exchangeable เหมือน tabular IID setting</p>
+<p>ถ้า shuffle ก่อน split:</p>
+<pre><code class="language-text">future → training
+past   → validation
+</code></pre>
+<p>model อาจเห็นข้อมูลอนาคตทางอ้อม</p></details><details id="help-topic-1-code"><summary>โค้ด</summary><h3>1. Why Time Series Is Different</h3>
+<p>Time series มี order:</p>
+<pre><code class="language-text">past → present → future
+</code></pre>
+<p>sample ไม่ exchangeable เหมือน tabular IID setting</p>
+<p>ถ้า shuffle ก่อน split:</p>
+<pre><code class="language-text">future → training
+past   → validation
+</code></pre>
+<p>model อาจเห็นข้อมูลอนาคตทางอ้อม</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-1-result"><summary>ผลการทดลอง</summary><h3>1. Why Time Series Is Different</h3>
+<p>Time series มี order:</p>
+<pre><code class="language-text">past → present → future
+</code></pre>
+<p>sample ไม่ exchangeable เหมือน tabular IID setting</p>
+<p>ถ้า shuffle ก่อน split:</p>
+<pre><code class="language-text">future → training
+past   → validation
+</code></pre>
+<p>model อาจเห็นข้อมูลอนาคตทางอ้อม</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-1"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-2" class="source-topic"><span id="source-17-time-series-canonical-2-learning-objectives" class="legacy-anchor"></span><h3>2. Learning Objectives</h3>
+<p>เมื่อจบบทนี้คุณควร:</p>
+<ul>
+<li>define timestamp/index/frequency</li>
+<li>inspect trend / seasonality / noise</li>
+<li>build naive and seasonal-naive baselines</li>
+<li>calculate lag features</li>
+<li>calculate rolling features without leakage</li>
+<li>explain autocorrelation</li>
+<li>explain stationarity</li>
+<li>understand differencing</li>
+<li>explain AR / MA / ARMA / ARIMA / SARIMA</li>
+<li>implement autoregression from scratch</li>
+<li>use statsmodels ARIMA</li>
+<li>understand walk-forward validation</li>
+<li>explain Prophet components</li>
+<li>explain ML/DL forecasting framing</li>
+<li>choose forecasting metrics carefully</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>2. Learning Objectives</h3>
+<p>เมื่อจบบทนี้คุณควร:</p>
+<ul>
+<li>define timestamp/index/frequency</li>
+<li>inspect trend / seasonality / noise</li>
+<li>build naive and seasonal-naive baselines</li>
+<li>calculate lag features</li>
+<li>calculate rolling features without leakage</li>
+<li>explain autocorrelation</li>
+<li>explain stationarity</li>
+<li>understand differencing</li>
+<li>explain AR / MA / ARMA / ARIMA / SARIMA</li>
+<li>implement autoregression from scratch</li>
+<li>use statsmodels ARIMA</li>
+<li>understand walk-forward validation</li>
+<li>explain Prophet components</li>
+<li>explain ML/DL forecasting framing</li>
+<li>choose forecasting metrics carefully</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-2-equation"><summary>สมการ</summary><h3>2. Learning Objectives</h3>
+<p>เมื่อจบบทนี้คุณควร:</p>
+<ul>
+<li>define timestamp/index/frequency</li>
+<li>inspect trend / seasonality / noise</li>
+<li>build naive and seasonal-naive baselines</li>
+<li>calculate lag features</li>
+<li>calculate rolling features without leakage</li>
+<li>explain autocorrelation</li>
+<li>explain stationarity</li>
+<li>understand differencing</li>
+<li>explain AR / MA / ARMA / ARIMA / SARIMA</li>
+<li>implement autoregression from scratch</li>
+<li>use statsmodels ARIMA</li>
+<li>understand walk-forward validation</li>
+<li>explain Prophet components</li>
+<li>explain ML/DL forecasting framing</li>
+<li>choose forecasting metrics carefully</li>
+</ul></details><details id="help-topic-2-visual"><summary>ภาพและ shape</summary><h3>2. Learning Objectives</h3>
+<p>เมื่อจบบทนี้คุณควร:</p>
+<ul>
+<li>define timestamp/index/frequency</li>
+<li>inspect trend / seasonality / noise</li>
+<li>build naive and seasonal-naive baselines</li>
+<li>calculate lag features</li>
+<li>calculate rolling features without leakage</li>
+<li>explain autocorrelation</li>
+<li>explain stationarity</li>
+<li>understand differencing</li>
+<li>explain AR / MA / ARMA / ARIMA / SARIMA</li>
+<li>implement autoregression from scratch</li>
+<li>use statsmodels ARIMA</li>
+<li>understand walk-forward validation</li>
+<li>explain Prophet components</li>
+<li>explain ML/DL forecasting framing</li>
+<li>choose forecasting metrics carefully</li>
+</ul></details><details id="help-topic-2-code"><summary>โค้ด</summary><h3>2. Learning Objectives</h3>
+<p>เมื่อจบบทนี้คุณควร:</p>
+<ul>
+<li>define timestamp/index/frequency</li>
+<li>inspect trend / seasonality / noise</li>
+<li>build naive and seasonal-naive baselines</li>
+<li>calculate lag features</li>
+<li>calculate rolling features without leakage</li>
+<li>explain autocorrelation</li>
+<li>explain stationarity</li>
+<li>understand differencing</li>
+<li>explain AR / MA / ARMA / ARIMA / SARIMA</li>
+<li>implement autoregression from scratch</li>
+<li>use statsmodels ARIMA</li>
+<li>understand walk-forward validation</li>
+<li>explain Prophet components</li>
+<li>explain ML/DL forecasting framing</li>
+<li>choose forecasting metrics carefully</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-2-result"><summary>ผลการทดลอง</summary><h3>2. Learning Objectives</h3>
+<p>เมื่อจบบทนี้คุณควร:</p>
+<ul>
+<li>define timestamp/index/frequency</li>
+<li>inspect trend / seasonality / noise</li>
+<li>build naive and seasonal-naive baselines</li>
+<li>calculate lag features</li>
+<li>calculate rolling features without leakage</li>
+<li>explain autocorrelation</li>
+<li>explain stationarity</li>
+<li>understand differencing</li>
+<li>explain AR / MA / ARMA / ARIMA / SARIMA</li>
+<li>implement autoregression from scratch</li>
+<li>use statsmodels ARIMA</li>
+<li>understand walk-forward validation</li>
+<li>explain Prophet components</li>
+<li>explain ML/DL forecasting framing</li>
+<li>choose forecasting metrics carefully</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-2"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-3" class="source-topic"><span id="source-17-time-series-canonical-3-components" class="legacy-anchor"></span><span id="source-17-time-series-canonical-trend" class="legacy-anchor"></span><span id="source-17-time-series-canonical-seasonality" class="legacy-anchor"></span><span id="source-17-time-series-canonical-cycles" class="legacy-anchor"></span><span id="source-17-time-series-canonical-noise" class="legacy-anchor"></span><h3>3. Components</h3>
+<h4>Trend</h4>
+<p>long-term direction</p>
+<h4>Seasonality</h4>
+<p>repeating pattern with known-ish period</p>
+<h4>Cycles</h4>
+<p>longer irregular oscillations</p>
+<h4>Noise</h4>
+<p>unexplained variation</p>
+<p>conceptual:</p>
+<pre><code class="language-text">y_t = trend_t + seasonal_t + residual_t
+</code></pre>
+<p>หรือ multiplicative formulation ในบาง data</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>trend คือระดับเฉลี่ยที่เปลี่ยนตามเวลา เช่น yₜ=2t+10 ไม่ใช่seasonalityเพราะไม่มีการวนรอบคงที่</p><p>seasonality คือpatternซ้ำตามคาบ เช่น [1,3,1,3,...] คาบ2; ต่างจากcycleเศรษฐกิจที่ระยะเวลาขึ้นลงไม่ตายตัว</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>trend คือระดับเฉลี่ยที่เปลี่ยนตามเวลา เช่น yₜ=2t+10 ไม่ใช่seasonalityเพราะไม่มีการวนรอบคงที่</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-3-equation"><summary>สมการ</summary><p>trend คือระดับเฉลี่ยที่เปลี่ยนตามเวลา เช่น yₜ=2t+10 ไม่ใช่seasonalityเพราะไม่มีการวนรอบคงที่</p></details><details id="help-topic-3-visual"><summary>ภาพและ shape</summary><p>trend คือระดับเฉลี่ยที่เปลี่ยนตามเวลา เช่น yₜ=2t+10 ไม่ใช่seasonalityเพราะไม่มีการวนรอบคงที่</p></details><details id="help-topic-3-code"><summary>โค้ด</summary><p>trend คือระดับเฉลี่ยที่เปลี่ยนตามเวลา เช่น yₜ=2t+10 ไม่ใช่seasonalityเพราะไม่มีการวนรอบคงที่</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-3-result"><summary>ผลการทดลอง</summary><p>trend คือระดับเฉลี่ยที่เปลี่ยนตามเวลา เช่น yₜ=2t+10 ไม่ใช่seasonalityเพราะไม่มีการวนรอบคงที่</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-3"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-4" class="source-topic"><span id="source-17-time-series-canonical-4-frequency" class="legacy-anchor"></span><h3>4. Frequency</h3>
+<p>DatetimeIndex ควรมี frequency semantics</p>
+<p>ตัวอย่าง:
+- hourly
+- daily
+- weekly
+- monthly</p>
+<p>missing timestamps ต้องแยกจาก missing values</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-4-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>4. Frequency</h3>
+<p>DatetimeIndex ควรมี frequency semantics</p>
+<p>ตัวอย่าง:
+- hourly
+- daily
+- weekly
+- monthly</p>
+<p>missing timestamps ต้องแยกจาก missing values</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-4-equation"><summary>สมการ</summary><h3>4. Frequency</h3>
+<p>DatetimeIndex ควรมี frequency semantics</p>
+<p>ตัวอย่าง:
+- hourly
+- daily
+- weekly
+- monthly</p>
+<p>missing timestamps ต้องแยกจาก missing values</p></details><details id="help-topic-4-visual"><summary>ภาพและ shape</summary><h3>4. Frequency</h3>
+<p>DatetimeIndex ควรมี frequency semantics</p>
+<p>ตัวอย่าง:
+- hourly
+- daily
+- weekly
+- monthly</p>
+<p>missing timestamps ต้องแยกจาก missing values</p></details><details id="help-topic-4-code"><summary>โค้ด</summary><h3>4. Frequency</h3>
+<p>DatetimeIndex ควรมี frequency semantics</p>
+<p>ตัวอย่าง:
+- hourly
+- daily
+- weekly
+- monthly</p>
+<p>missing timestamps ต้องแยกจาก missing values</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-4-result"><summary>ผลการทดลอง</summary><h3>4. Frequency</h3>
+<p>DatetimeIndex ควรมี frequency semantics</p>
+<p>ตัวอย่าง:
+- hourly
+- daily
+- weekly
+- monthly</p>
+<p>missing timestamps ต้องแยกจาก missing values</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-4"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-5" class="source-topic"><span id="source-17-time-series-canonical-5-naive-baseline" class="legacy-anchor"></span><h3>5. Naive Baseline</h3>
+<p>one-step:</p>
+<pre><code class="language-text">ŷ_t = y_(t-1)
+</code></pre>
+<p>ถ้า model ชนะ naive ไม่ได้ ต้อง debug ก่อน</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-5-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>5. Naive Baseline</h3>
+<p>one-step:</p>
+<pre><code class="language-text">ŷ_t = y_(t-1)
+</code></pre>
+<p>ถ้า model ชนะ naive ไม่ได้ ต้อง debug ก่อน</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-5-equation"><summary>สมการ</summary><h3>5. Naive Baseline</h3>
+<p>one-step:</p>
+<pre><code class="language-text">ŷ_t = y_(t-1)
+</code></pre>
+<p>ถ้า model ชนะ naive ไม่ได้ ต้อง debug ก่อน</p></details><details id="help-topic-5-visual"><summary>ภาพและ shape</summary><h3>5. Naive Baseline</h3>
+<p>one-step:</p>
+<pre><code class="language-text">ŷ_t = y_(t-1)
+</code></pre>
+<p>ถ้า model ชนะ naive ไม่ได้ ต้อง debug ก่อน</p></details><details id="help-topic-5-code"><summary>โค้ด</summary><h3>5. Naive Baseline</h3>
+<p>one-step:</p>
+<pre><code class="language-text">ŷ_t = y_(t-1)
+</code></pre>
+<p>ถ้า model ชนะ naive ไม่ได้ ต้อง debug ก่อน</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-5-result"><summary>ผลการทดลอง</summary><h3>5. Naive Baseline</h3>
+<p>one-step:</p>
+<pre><code class="language-text">ŷ_t = y_(t-1)
+</code></pre>
+<p>ถ้า model ชนะ naive ไม่ได้ ต้อง debug ก่อน</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-5"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-6" class="source-topic"><span id="source-17-time-series-canonical-6-seasonal-naive" class="legacy-anchor"></span><h3>6. Seasonal Naive</h3>
+<p>ถ้า season length = s:</p>
+<pre><code class="language-text">ŷ_t = y_(t-s)
+</code></pre>
+<p>ตัวอย่าง daily data with weekly seasonality:</p>
+<pre><code class="language-text">s = 7
+</code></pre><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-6-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>6. Seasonal Naive</h3>
+<p>ถ้า season length = s:</p>
+<pre><code class="language-text">ŷ_t = y_(t-s)
+</code></pre>
+<p>ตัวอย่าง daily data with weekly seasonality:</p>
+<pre><code class="language-text">s = 7
+</code></pre><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-6-equation"><summary>สมการ</summary><h3>6. Seasonal Naive</h3>
+<p>ถ้า season length = s:</p>
+<pre><code class="language-text">ŷ_t = y_(t-s)
+</code></pre>
+<p>ตัวอย่าง daily data with weekly seasonality:</p>
+<pre><code class="language-text">s = 7
+</code></pre></details><details id="help-topic-6-visual"><summary>ภาพและ shape</summary><h3>6. Seasonal Naive</h3>
+<p>ถ้า season length = s:</p>
+<pre><code class="language-text">ŷ_t = y_(t-s)
+</code></pre>
+<p>ตัวอย่าง daily data with weekly seasonality:</p>
+<pre><code class="language-text">s = 7
+</code></pre></details><details id="help-topic-6-code"><summary>โค้ด</summary><h3>6. Seasonal Naive</h3>
+<p>ถ้า season length = s:</p>
+<pre><code class="language-text">ŷ_t = y_(t-s)
+</code></pre>
+<p>ตัวอย่าง daily data with weekly seasonality:</p>
+<pre><code class="language-text">s = 7
+</code></pre><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-6-result"><summary>ผลการทดลอง</summary><h3>6. Seasonal Naive</h3>
+<p>ถ้า season length = s:</p>
+<pre><code class="language-text">ŷ_t = y_(t-s)
+</code></pre>
+<p>ตัวอย่าง daily data with weekly seasonality:</p>
+<pre><code class="language-text">s = 7
+</code></pre><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-6"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-7" class="source-topic"><span id="source-17-time-series-canonical-7-forecast-horizon" class="legacy-anchor"></span><h3>7. Forecast Horizon</h3>
+<p>อย่าพูดว่า model “ดี” โดยไม่ระบุ horizon</p>
+<pre><code class="language-text">h = 1
+h = 24
+h = 30
+</code></pre>
+<p>ความยากต่างกัน</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-7-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>7. Forecast Horizon</h3>
+<p>อย่าพูดว่า model “ดี” โดยไม่ระบุ horizon</p>
+<pre><code class="language-text">h = 1
+h = 24
+h = 30
+</code></pre>
+<p>ความยากต่างกัน</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-7-equation"><summary>สมการ</summary><h3>7. Forecast Horizon</h3>
+<p>อย่าพูดว่า model “ดี” โดยไม่ระบุ horizon</p>
+<pre><code class="language-text">h = 1
+h = 24
+h = 30
+</code></pre>
+<p>ความยากต่างกัน</p></details><details id="help-topic-7-visual"><summary>ภาพและ shape</summary><h3>7. Forecast Horizon</h3>
+<p>อย่าพูดว่า model “ดี” โดยไม่ระบุ horizon</p>
+<pre><code class="language-text">h = 1
+h = 24
+h = 30
+</code></pre>
+<p>ความยากต่างกัน</p></details><details id="help-topic-7-code"><summary>โค้ด</summary><h3>7. Forecast Horizon</h3>
+<p>อย่าพูดว่า model “ดี” โดยไม่ระบุ horizon</p>
+<pre><code class="language-text">h = 1
+h = 24
+h = 30
+</code></pre>
+<p>ความยากต่างกัน</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-7-result"><summary>ผลการทดลอง</summary><h3>7. Forecast Horizon</h3>
+<p>อย่าพูดว่า model “ดี” โดยไม่ระบุ horizon</p>
+<pre><code class="language-text">h = 1
+h = 24
+h = 30
+</code></pre>
+<p>ความยากต่างกัน</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-7"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-8" class="source-topic"><span id="source-17-time-series-canonical-8-autocorrelation" class="legacy-anchor"></span><h3>8. Autocorrelation</h3>
+<p>ACF lag k:</p>
+<pre><code class="language-text">corr(y_t, y_(t-k))
+</code></pre>
+<p>ช่วยดู dependence across lags</p>
+<p>PACF พยายามวัด direct association ของ lag k หลัง account intermediate lags</p>
+<p>ใช้เป็น diagnostic ไม่ใช่ automatic truth</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>ACF lag k คือcorr(yₜ,yₜ₋ₖ); คาบ7มักมีpeakที่7,14; trendทำacfสูงยาวโดยไม่ได้แปลว่าARorderสูง</p><p>positive lag1ทำ persistencebaselineสมเหตุผล แต่acfจากtrendปลอมได้; ตรวจdifferencedseriesและPACFก่อนเลือกlags</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-8-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>ACF lag k คือcorr(yₜ,yₜ₋ₖ); คาบ7มักมีpeakที่7,14; trendทำacfสูงยาวโดยไม่ได้แปลว่าARorderสูง</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-8-equation"><summary>สมการ</summary><p>ACF lag k คือcorr(yₜ,yₜ₋ₖ); คาบ7มักมีpeakที่7,14; trendทำacfสูงยาวโดยไม่ได้แปลว่าARorderสูง</p></details><details id="help-topic-8-visual"><summary>ภาพและ shape</summary><p>ACF lag k คือcorr(yₜ,yₜ₋ₖ); คาบ7มักมีpeakที่7,14; trendทำacfสูงยาวโดยไม่ได้แปลว่าARorderสูง</p></details><details id="help-topic-8-code"><summary>โค้ด</summary><p>ACF lag k คือcorr(yₜ,yₜ₋ₖ); คาบ7มักมีpeakที่7,14; trendทำacfสูงยาวโดยไม่ได้แปลว่าARorderสูง</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-8-result"><summary>ผลการทดลอง</summary><p>ACF lag k คือcorr(yₜ,yₜ₋ₖ); คาบ7มักมีpeakที่7,14; trendทำacfสูงยาวโดยไม่ได้แปลว่าARorderสูง</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-8"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-9" class="source-topic"><span id="source-17-time-series-canonical-9-stationarity" class="legacy-anchor"></span><h3>9. Stationarity</h3>
+<p>weak stationarity โดยย่อ:
+- mean ไม่เปลี่ยนตามเวลา
+- variance คงที่
+- covariance ขึ้นกับ lag มากกว่า absolute time</p>
+<p>ARIMA classical theory พึ่ง stationarity หลัง differencing สำหรับ ARMA component</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>weak stationarity ต้องmean,varคงที่และcovขึ้นกับlagไม่ขึ้นกับเวลา; randomwalkไม่stationaryแม้incrementstationary; ADFเป็นหลักฐานจำกัดไม่ใช่พิสูจน์</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-9-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>weak stationarity ต้องmean,varคงที่และcovขึ้นกับlagไม่ขึ้นกับเวลา; randomwalkไม่stationaryแม้incrementstationary; ADFเป็นหลักฐานจำกัดไม่ใช่พิสูจน์</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-9-equation"><summary>สมการ</summary><p>weak stationarity ต้องmean,varคงที่และcovขึ้นกับlagไม่ขึ้นกับเวลา; randomwalkไม่stationaryแม้incrementstationary; ADFเป็นหลักฐานจำกัดไม่ใช่พิสูจน์</p></details><details id="help-topic-9-visual"><summary>ภาพและ shape</summary><p>weak stationarity ต้องmean,varคงที่และcovขึ้นกับlagไม่ขึ้นกับเวลา; randomwalkไม่stationaryแม้incrementstationary; ADFเป็นหลักฐานจำกัดไม่ใช่พิสูจน์</p></details><details id="help-topic-9-code"><summary>โค้ด</summary><p>weak stationarity ต้องmean,varคงที่และcovขึ้นกับlagไม่ขึ้นกับเวลา; randomwalkไม่stationaryแม้incrementstationary; ADFเป็นหลักฐานจำกัดไม่ใช่พิสูจน์</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-9-result"><summary>ผลการทดลอง</summary><p>weak stationarity ต้องmean,varคงที่และcovขึ้นกับlagไม่ขึ้นกับเวลา; randomwalkไม่stationaryแม้incrementstationary; ADFเป็นหลักฐานจำกัดไม่ใช่พิสูจน์</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-9"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-10" class="source-topic"><span id="source-17-time-series-canonical-10-differencing" class="legacy-anchor"></span><h3>10. Differencing</h3>
+<p>first difference:</p>
+<pre><code class="language-text">Δy_t = y_t - y_(t-1)
+</code></pre>
+<p>second difference:</p>
+<pre><code class="language-text">Δ²y_t = Δy_t - Δy_(t-1)
+</code></pre>
+<p>อย่า difference มากเกิน เพราะ signal อาจถูกทำลาย</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>ใช้firstdifference <code>np.diff([1,3,6,10])</code> ได้[2,3,4]และrollingmean/varตรวจความคงที่; differencingเป็นการแปลงที่ช่วย ไม่ได้รับประกันstationarityทุกชุด</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-10-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>ใช้firstdifference <code>np.diff([1,3,6,10])</code> ได้[2,3,4]และrollingmean/varตรวจความคงที่; differencingเป็นการแปลงที่ช่วย ไม่ได้รับประกันstationarityทุกชุด</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-10-equation"><summary>สมการ</summary><p>ใช้firstdifference <code>np.diff([1,3,6,10])</code> ได้[2,3,4]และrollingmean/varตรวจความคงที่; differencingเป็นการแปลงที่ช่วย ไม่ได้รับประกันstationarityทุกชุด</p></details><details id="help-topic-10-visual"><summary>ภาพและ shape</summary><p>ใช้firstdifference <code>np.diff([1,3,6,10])</code> ได้[2,3,4]และrollingmean/varตรวจความคงที่; differencingเป็นการแปลงที่ช่วย ไม่ได้รับประกันstationarityทุกชุด</p></details><details id="help-topic-10-code"><summary>โค้ด</summary><p>ใช้firstdifference <code>np.diff([1,3,6,10])</code> ได้[2,3,4]และrollingmean/varตรวจความคงที่; differencingเป็นการแปลงที่ช่วย ไม่ได้รับประกันstationarityทุกชุด</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-10-result"><summary>ผลการทดลอง</summary><p>ใช้firstdifference <code>np.diff([1,3,6,10])</code> ได้[2,3,4]และrollingmean/varตรวจความคงที่; differencingเป็นการแปลงที่ช่วย ไม่ได้รับประกันstationarityทุกชุด</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-10"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-11" class="source-topic"><span id="source-17-time-series-canonical-11-arp" class="legacy-anchor"></span><h3>11. AR(p)</h3>
+<p>Autoregressive model:</p>
+<pre><code class="language-text">y_t
+=
+c
++
+φ₁ y_(t-1)
++
+...
++
+φ_p y_(t-p)
++
+ε_t
+</code></pre>
+<p>มันคือ regression บน lagged target</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>ARIMAเชิงเส้นอาจพลาดnonlinear/covariateและstructuralbreak; residualยังมีACFหรือforecastbiasเป็นสัญญาณตรวจ ไม่แก้ด้วยเพิ่มpอย่างเดียว</p><p>timestamps→resample/missingpolicy→lags/difference→fitpast→predictfuture→inverttransform→evaluatehorizon; อย่าใช้forecastสะสมเป็นobservedlagโดยไม่ระบุrecursiveforecast</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-11-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>ARIMAเชิงเส้นอาจพลาดnonlinear/covariateและstructuralbreak; residualยังมีACFหรือforecastbiasเป็นสัญญาณตรวจ ไม่แก้ด้วยเพิ่มpอย่างเดียว</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-11-equation"><summary>สมการ</summary><p>ARIMAเชิงเส้นอาจพลาดnonlinear/covariateและstructuralbreak; residualยังมีACFหรือforecastbiasเป็นสัญญาณตรวจ ไม่แก้ด้วยเพิ่มpอย่างเดียว</p></details><details id="help-topic-11-visual"><summary>ภาพและ shape</summary><p>ARIMAเชิงเส้นอาจพลาดnonlinear/covariateและstructuralbreak; residualยังมีACFหรือforecastbiasเป็นสัญญาณตรวจ ไม่แก้ด้วยเพิ่มpอย่างเดียว</p></details><details id="help-topic-11-code"><summary>โค้ด</summary><p>ARIMAเชิงเส้นอาจพลาดnonlinear/covariateและstructuralbreak; residualยังมีACFหรือforecastbiasเป็นสัญญาณตรวจ ไม่แก้ด้วยเพิ่มpอย่างเดียว</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-11-result"><summary>ผลการทดลอง</summary><p>ARIMAเชิงเส้นอาจพลาดnonlinear/covariateและstructuralbreak; residualยังมีACFหรือforecastbiasเป็นสัญญาณตรวจ ไม่แก้ด้วยเพิ่มpอย่างเดียว</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-11"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-12" class="source-topic"><span id="source-17-time-series-canonical-12-maq" class="legacy-anchor"></span><h3>12. MA(q)</h3>
+<p>Moving Average ใน ARIMA หมายถึง error terms:</p>
+<pre><code class="language-text">y_t
+=
+μ
++
+ε_t
++
+θ₁ ε_(t-1)
++
+...
++
+θ_q ε_(t-q)
+</code></pre>
+<p>ไม่ใช่ rolling arithmetic average แบบทั่วไป</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>ARIMAเชิงเส้นอาจพลาดnonlinear/covariateและstructuralbreak; residualยังมีACFหรือforecastbiasเป็นสัญญาณตรวจ ไม่แก้ด้วยเพิ่มpอย่างเดียว</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-12-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>ARIMAเชิงเส้นอาจพลาดnonlinear/covariateและstructuralbreak; residualยังมีACFหรือforecastbiasเป็นสัญญาณตรวจ ไม่แก้ด้วยเพิ่มpอย่างเดียว</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-12-equation"><summary>สมการ</summary><p>ARIMAเชิงเส้นอาจพลาดnonlinear/covariateและstructuralbreak; residualยังมีACFหรือforecastbiasเป็นสัญญาณตรวจ ไม่แก้ด้วยเพิ่มpอย่างเดียว</p></details><details id="help-topic-12-visual"><summary>ภาพและ shape</summary><p>ARIMAเชิงเส้นอาจพลาดnonlinear/covariateและstructuralbreak; residualยังมีACFหรือforecastbiasเป็นสัญญาณตรวจ ไม่แก้ด้วยเพิ่มpอย่างเดียว</p></details><details id="help-topic-12-code"><summary>โค้ด</summary><p>ARIMAเชิงเส้นอาจพลาดnonlinear/covariateและstructuralbreak; residualยังมีACFหรือforecastbiasเป็นสัญญาณตรวจ ไม่แก้ด้วยเพิ่มpอย่างเดียว</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-12-result"><summary>ผลการทดลอง</summary><p>ARIMAเชิงเส้นอาจพลาดnonlinear/covariateและstructuralbreak; residualยังมีACFหรือforecastbiasเป็นสัญญาณตรวจ ไม่แก้ด้วยเพิ่มpอย่างเดียว</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-12"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-13" class="source-topic"><span id="source-17-time-series-canonical-13-arma" class="legacy-anchor"></span><h3>13. ARMA</h3>
+<p>combine AR + MA สำหรับ stationary series</p>
+<pre><code class="language-text">ARMA(p,q)
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>ARIMAเชิงเส้นอาจพลาดnonlinear/covariateและstructuralbreak; residualยังมีACFหรือforecastbiasเป็นสัญญาณตรวจ ไม่แก้ด้วยเพิ่มpอย่างเดียว</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-13-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>ARIMAเชิงเส้นอาจพลาดnonlinear/covariateและstructuralbreak; residualยังมีACFหรือforecastbiasเป็นสัญญาณตรวจ ไม่แก้ด้วยเพิ่มpอย่างเดียว</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-13-equation"><summary>สมการ</summary><p>ARIMAเชิงเส้นอาจพลาดnonlinear/covariateและstructuralbreak; residualยังมีACFหรือforecastbiasเป็นสัญญาณตรวจ ไม่แก้ด้วยเพิ่มpอย่างเดียว</p></details><details id="help-topic-13-visual"><summary>ภาพและ shape</summary><p>ARIMAเชิงเส้นอาจพลาดnonlinear/covariateและstructuralbreak; residualยังมีACFหรือforecastbiasเป็นสัญญาณตรวจ ไม่แก้ด้วยเพิ่มpอย่างเดียว</p></details><details id="help-topic-13-code"><summary>โค้ด</summary><p>ARIMAเชิงเส้นอาจพลาดnonlinear/covariateและstructuralbreak; residualยังมีACFหรือforecastbiasเป็นสัญญาณตรวจ ไม่แก้ด้วยเพิ่มpอย่างเดียว</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-13-result"><summary>ผลการทดลอง</summary><p>ARIMAเชิงเส้นอาจพลาดnonlinear/covariateและstructuralbreak; residualยังมีACFหรือforecastbiasเป็นสัญญาณตรวจ ไม่แก้ด้วยเพิ่มpอย่างเดียว</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-13"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-14" class="source-topic"><span id="source-17-time-series-canonical-14-arima" class="legacy-anchor"></span><h3>14. ARIMA</h3>
+<pre><code class="language-text">ARIMA(p,d,q)
+</code></pre>
+<ul>
+<li>p = AR order</li>
+<li>d = differencing order</li>
+<li>q = MA order</li>
+</ul>
+<p>statsmodels current ARIMA interface ยังใช้ order=(p,d,q)</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>ARIMAเชิงเส้นอาจพลาดnonlinear/covariateและstructuralbreak; residualยังมีACFหรือforecastbiasเป็นสัญญาณตรวจ ไม่แก้ด้วยเพิ่มpอย่างเดียว</p><p>วัดfit/forecastต่อoriginแยกกัน; lagmatrixO(nL)memory,naiveforecastO(h); ARIMAcomplexityขึ้นกับsolver/orders จึงต้องrecordp,d,q,iterations</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-14-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>ARIMAเชิงเส้นอาจพลาดnonlinear/covariateและstructuralbreak; residualยังมีACFหรือforecastbiasเป็นสัญญาณตรวจ ไม่แก้ด้วยเพิ่มpอย่างเดียว</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-14-equation"><summary>สมการ</summary><p>ARIMAเชิงเส้นอาจพลาดnonlinear/covariateและstructuralbreak; residualยังมีACFหรือforecastbiasเป็นสัญญาณตรวจ ไม่แก้ด้วยเพิ่มpอย่างเดียว</p></details><details id="help-topic-14-visual"><summary>ภาพและ shape</summary><p>ARIMAเชิงเส้นอาจพลาดnonlinear/covariateและstructuralbreak; residualยังมีACFหรือforecastbiasเป็นสัญญาณตรวจ ไม่แก้ด้วยเพิ่มpอย่างเดียว</p></details><details id="help-topic-14-code"><summary>โค้ด</summary><p>ARIMAเชิงเส้นอาจพลาดnonlinear/covariateและstructuralbreak; residualยังมีACFหรือforecastbiasเป็นสัญญาณตรวจ ไม่แก้ด้วยเพิ่มpอย่างเดียว</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-14-result"><summary>ผลการทดลอง</summary><p>ARIMAเชิงเส้นอาจพลาดnonlinear/covariateและstructuralbreak; residualยังมีACFหรือforecastbiasเป็นสัญญาณตรวจ ไม่แก้ด้วยเพิ่มpอย่างเดียว</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-14"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-15" class="source-topic"><span id="source-17-time-series-canonical-15-sarima" class="legacy-anchor"></span><h3>15. SARIMA</h3>
+<p>seasonal extension:</p>
+<pre><code class="language-text">(p,d,q) × (P,D,Q,s)
+</code></pre>
+<p>statsmodels ARIMA interface รองรับ seasonal_order ด้วย</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>ARIMAเชิงเส้นอาจพลาดnonlinear/covariateและstructuralbreak; residualยังมีACFหรือforecastbiasเป็นสัญญาณตรวจ ไม่แก้ด้วยเพิ่มpอย่างเดียว</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-15-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>ARIMAเชิงเส้นอาจพลาดnonlinear/covariateและstructuralbreak; residualยังมีACFหรือforecastbiasเป็นสัญญาณตรวจ ไม่แก้ด้วยเพิ่มpอย่างเดียว</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-15-equation"><summary>สมการ</summary><p>ARIMAเชิงเส้นอาจพลาดnonlinear/covariateและstructuralbreak; residualยังมีACFหรือforecastbiasเป็นสัญญาณตรวจ ไม่แก้ด้วยเพิ่มpอย่างเดียว</p></details><details id="help-topic-15-visual"><summary>ภาพและ shape</summary><p>ARIMAเชิงเส้นอาจพลาดnonlinear/covariateและstructuralbreak; residualยังมีACFหรือforecastbiasเป็นสัญญาณตรวจ ไม่แก้ด้วยเพิ่มpอย่างเดียว</p></details><details id="help-topic-15-code"><summary>โค้ด</summary><p>ARIMAเชิงเส้นอาจพลาดnonlinear/covariateและstructuralbreak; residualยังมีACFหรือforecastbiasเป็นสัญญาณตรวจ ไม่แก้ด้วยเพิ่มpอย่างเดียว</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-15-result"><summary>ผลการทดลอง</summary><p>ARIMAเชิงเส้นอาจพลาดnonlinear/covariateและstructuralbreak; residualยังมีACFหรือforecastbiasเป็นสัญญาณตรวจ ไม่แก้ด้วยเพิ่มpอย่างเดียว</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-15"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-16" class="source-topic"><span id="source-17-time-series-canonical-16-lag-matrix" class="legacy-anchor"></span><h3>16. Lag Matrix</h3>
+<p>สำหรับ p=3:</p>
+<pre><code class="language-text">target y_t
+features:
+y_(t-1), y_(t-2), y_(t-3)
+</code></pre>
+<p>ห้ามให้ y_t หรือ future lags หลุดเข้า features</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>featurelagต้องจับคู่ Xₜ=[yₜ₋₁,yₜ₋₂]กับtargetyₜ; shiftผิด1แถวแอบใช้currenttarget ให้เขียนtimestampsทุกcolumnและassertfeature_time&lt;target_time</p><p>timestamps→resample/missingpolicy→lags/difference→fitpast→predictfuture→inverttransform→evaluatehorizon; อย่าใช้forecastสะสมเป็นobservedlagโดยไม่ระบุrecursiveforecast</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-16-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>featurelagต้องจับคู่ Xₜ=[yₜ₋₁,yₜ₋₂]กับtargetyₜ; shiftผิด1แถวแอบใช้currenttarget ให้เขียนtimestampsทุกcolumnและassertfeature_time&lt;target_time</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-16-equation"><summary>สมการ</summary><p>featurelagต้องจับคู่ Xₜ=[yₜ₋₁,yₜ₋₂]กับtargetyₜ; shiftผิด1แถวแอบใช้currenttarget ให้เขียนtimestampsทุกcolumnและassertfeature_time&lt;target_time</p></details><details id="help-topic-16-visual"><summary>ภาพและ shape</summary><p>featurelagต้องจับคู่ Xₜ=[yₜ₋₁,yₜ₋₂]กับtargetyₜ; shiftผิด1แถวแอบใช้currenttarget ให้เขียนtimestampsทุกcolumnและassertfeature_time&lt;target_time</p></details><details id="help-topic-16-code"><summary>โค้ด</summary><p>featurelagต้องจับคู่ Xₜ=[yₜ₋₁,yₜ₋₂]กับtargetyₜ; shiftผิด1แถวแอบใช้currenttarget ให้เขียนtimestampsทุกcolumnและassertfeature_time&lt;target_time</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-16-result"><summary>ผลการทดลอง</summary><p>featurelagต้องจับคู่ Xₜ=[yₜ₋₁,yₜ₋₂]กับtargetyₜ; shiftผิด1แถวแอบใช้currenttarget ให้เขียนtimestampsทุกcolumnและassertfeature_time&lt;target_time</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-16"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-17" class="source-topic"><span id="source-17-time-series-canonical-17-from-scratch-autoregression" class="legacy-anchor"></span><h3>17. From-Scratch AutoRegression</h3>
+<p>src/autoregression.py มี:
+- make_lag_matrix
+- AutoRegressorOLS
+- recursive forecast
+- MAE/RMSE helpers</p>
+<p>ใช้ least squares เพื่อเชื่อม Regression กับ Time Series</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p><code>t=np.arange(len(y)); slope=np.sum((t-t.mean())*(y-y.mean()))/np.sum((t-t.mean())**2)</code>; y=[1,3,5] ได้slope2,intercept1</p><p>assert slope2สำหรับ[1,3,5],slope0สำหรับ[2,2,2],len&lt;2ต้องreject; forecastt3ได้7 ห้ามrandomsplitลำดับเวลาเพื่อตรวจtrend</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-17-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p><code>t=np.arange(len(y)); slope=np.sum((t-t.mean())*(y-y.mean()))/np.sum((t-t.mean())**2)</code>; y=[1,3,5] ได้slope2,intercept1</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-17-equation"><summary>สมการ</summary><p><code>t=np.arange(len(y)); slope=np.sum((t-t.mean())*(y-y.mean()))/np.sum((t-t.mean())**2)</code>; y=[1,3,5] ได้slope2,intercept1</p></details><details id="help-topic-17-visual"><summary>ภาพและ shape</summary><p><code>t=np.arange(len(y)); slope=np.sum((t-t.mean())*(y-y.mean()))/np.sum((t-t.mean())**2)</code>; y=[1,3,5] ได้slope2,intercept1</p></details><details id="help-topic-17-code"><summary>โค้ด</summary><p><code>t=np.arange(len(y)); slope=np.sum((t-t.mean())*(y-y.mean()))/np.sum((t-t.mean())**2)</code>; y=[1,3,5] ได้slope2,intercept1</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-17-result"><summary>ผลการทดลอง</summary><p><code>t=np.arange(len(y)); slope=np.sum((t-t.mean())*(y-y.mean()))/np.sum((t-t.mean())**2)</code>; y=[1,3,5] ได้slope2,intercept1</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-17"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-18" class="source-topic"><span id="source-17-time-series-canonical-18-one-step-vs-recursive-forecast" class="legacy-anchor"></span><span id="source-17-time-series-canonical-one-step" class="legacy-anchor"></span><span id="source-17-time-series-canonical-recursive-multi-step" class="legacy-anchor"></span><h3>18. One-Step vs Recursive Forecast</h3>
+<h4>One-step</h4>
+<p>ใช้ observed lag ล่าสุดทุกครั้ง</p>
+<h4>Recursive multi-step</h4>
+<p>forecast ก่อนหน้า feed กลับเป็น input</p>
+<p>error จึงสะสม</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-18-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>18. One-Step vs Recursive Forecast</h3>
+<h4>One-step</h4>
+<p>ใช้ observed lag ล่าสุดทุกครั้ง</p>
+<h4>Recursive multi-step</h4>
+<p>forecast ก่อนหน้า feed กลับเป็น input</p>
+<p>error จึงสะสม</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-18-equation"><summary>สมการ</summary><h3>18. One-Step vs Recursive Forecast</h3>
+<h4>One-step</h4>
+<p>ใช้ observed lag ล่าสุดทุกครั้ง</p>
+<h4>Recursive multi-step</h4>
+<p>forecast ก่อนหน้า feed กลับเป็น input</p>
+<p>error จึงสะสม</p></details><details id="help-topic-18-visual"><summary>ภาพและ shape</summary><h3>18. One-Step vs Recursive Forecast</h3>
+<h4>One-step</h4>
+<p>ใช้ observed lag ล่าสุดทุกครั้ง</p>
+<h4>Recursive multi-step</h4>
+<p>forecast ก่อนหน้า feed กลับเป็น input</p>
+<p>error จึงสะสม</p></details><details id="help-topic-18-code"><summary>โค้ด</summary><h3>18. One-Step vs Recursive Forecast</h3>
+<h4>One-step</h4>
+<p>ใช้ observed lag ล่าสุดทุกครั้ง</p>
+<h4>Recursive multi-step</h4>
+<p>forecast ก่อนหน้า feed กลับเป็น input</p>
+<p>error จึงสะสม</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-18-result"><summary>ผลการทดลอง</summary><h3>18. One-Step vs Recursive Forecast</h3>
+<h4>One-step</h4>
+<p>ใช้ observed lag ล่าสุดทุกครั้ง</p>
+<h4>Recursive multi-step</h4>
+<p>forecast ก่อนหน้า feed กลับเป็น input</p>
+<p>error จึงสะสม</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-18"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-19" class="source-topic"><span id="source-17-time-series-canonical-19-direct-multi-horizon" class="legacy-anchor"></span><h3>19. Direct Multi-Horizon</h3>
+<p>สร้าง model แยกสำหรับแต่ละ horizon:</p>
+<pre><code class="language-text">h=1 model
+h=2 model
+...
+</code></pre>
+<p>หรือ multi-output model</p>
+<p>trade-off กับ recursive strategy</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-19-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>19. Direct Multi-Horizon</h3>
+<p>สร้าง model แยกสำหรับแต่ละ horizon:</p>
+<pre><code class="language-text">h=1 model
+h=2 model
+...
+</code></pre>
+<p>หรือ multi-output model</p>
+<p>trade-off กับ recursive strategy</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-19-equation"><summary>สมการ</summary><h3>19. Direct Multi-Horizon</h3>
+<p>สร้าง model แยกสำหรับแต่ละ horizon:</p>
+<pre><code class="language-text">h=1 model
+h=2 model
+...
+</code></pre>
+<p>หรือ multi-output model</p>
+<p>trade-off กับ recursive strategy</p></details><details id="help-topic-19-visual"><summary>ภาพและ shape</summary><h3>19. Direct Multi-Horizon</h3>
+<p>สร้าง model แยกสำหรับแต่ละ horizon:</p>
+<pre><code class="language-text">h=1 model
+h=2 model
+...
+</code></pre>
+<p>หรือ multi-output model</p>
+<p>trade-off กับ recursive strategy</p></details><details id="help-topic-19-code"><summary>โค้ด</summary><h3>19. Direct Multi-Horizon</h3>
+<p>สร้าง model แยกสำหรับแต่ละ horizon:</p>
+<pre><code class="language-text">h=1 model
+h=2 model
+...
+</code></pre>
+<p>หรือ multi-output model</p>
+<p>trade-off กับ recursive strategy</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-19-result"><summary>ผลการทดลอง</summary><h3>19. Direct Multi-Horizon</h3>
+<p>สร้าง model แยกสำหรับแต่ละ horizon:</p>
+<pre><code class="language-text">h=1 model
+h=2 model
+...
+</code></pre>
+<p>หรือ multi-output model</p>
+<p>trade-off กับ recursive strategy</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-19"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-20" class="source-topic"><span id="source-17-time-series-canonical-20-rolling-features" class="legacy-anchor"></span><h3>20. Rolling Features</h3>
+<p>เช่น rolling mean:</p>
+<pre><code class="language-text">mean(y_(t-1),...,y_(t-7))
+</code></pre>
+<p>ต้อง shift ก่อน rolling เพื่อไม่รวม current/future target</p>
+<p>ผิด:</p>
+<pre><code class="language-text">rolling mean includes y_t
+</code></pre>
+<p>ถูก:</p>
+<pre><code class="language-text">shift(1) → rolling(...)
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>timestamps→resample/missingpolicy→lags/difference→fitpast→predictfuture→inverttransform→evaluatehorizon; อย่าใช้forecastสะสมเป็นobservedlagโดยไม่ระบุrecursiveforecast</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-20-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>timestamps→resample/missingpolicy→lags/difference→fitpast→predictfuture→inverttransform→evaluatehorizon; อย่าใช้forecastสะสมเป็นobservedlagโดยไม่ระบุrecursiveforecast</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-20-equation"><summary>สมการ</summary><p>timestamps→resample/missingpolicy→lags/difference→fitpast→predictfuture→inverttransform→evaluatehorizon; อย่าใช้forecastสะสมเป็นobservedlagโดยไม่ระบุrecursiveforecast</p></details><details id="help-topic-20-visual"><summary>ภาพและ shape</summary><p>timestamps→resample/missingpolicy→lags/difference→fitpast→predictfuture→inverttransform→evaluatehorizon; อย่าใช้forecastสะสมเป็นobservedlagโดยไม่ระบุrecursiveforecast</p></details><details id="help-topic-20-code"><summary>โค้ด</summary><p>timestamps→resample/missingpolicy→lags/difference→fitpast→predictfuture→inverttransform→evaluatehorizon; อย่าใช้forecastสะสมเป็นobservedlagโดยไม่ระบุrecursiveforecast</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-20-result"><summary>ผลการทดลอง</summary><p>timestamps→resample/missingpolicy→lags/difference→fitpast→predictfuture→inverttransform→evaluatehorizon; อย่าใช้forecastสะสมเป็นobservedlagโดยไม่ระบุrecursiveforecast</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-20"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-21" class="source-topic"><span id="source-17-time-series-canonical-21-walk-forward-validation" class="legacy-anchor"></span><h3>21. Walk-Forward Validation</h3>
+<p>แทน random K-fold:</p>
+<pre><code class="language-text">Train [1..100] → Validate [101..120]
+Train [1..120] → Validate [121..140]
+Train [1..140] → Validate [141..160]
+</code></pre>
+<p>expanding window</p>
+<p>หรือ rolling window ถ้า old history ไม่ relevant</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>walk-forwardรักษาเวลาจริงแต่fitหลายครั้งแพง; expandingใช้ข้อมูลมากขึ้น,rollingปรับตัวต่อdriftได้แต่ทิ้งอดีต; horizon/gapต้องตรงการใช้งาน</p><p>seed7 สร้างtrend+.5sin(2πt/7)+noise; walkforward horizon7 เปรียบเทียบlastvalue/seasonalnaive/ARIMAด้วยMAEและresidualACF; reportactualmetrics</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-21-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>walk-forwardรักษาเวลาจริงแต่fitหลายครั้งแพง; expandingใช้ข้อมูลมากขึ้น,rollingปรับตัวต่อdriftได้แต่ทิ้งอดีต; horizon/gapต้องตรงการใช้งาน</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-21-equation"><summary>สมการ</summary><p>walk-forwardรักษาเวลาจริงแต่fitหลายครั้งแพง; expandingใช้ข้อมูลมากขึ้น,rollingปรับตัวต่อdriftได้แต่ทิ้งอดีต; horizon/gapต้องตรงการใช้งาน</p></details><details id="help-topic-21-visual"><summary>ภาพและ shape</summary><p>walk-forwardรักษาเวลาจริงแต่fitหลายครั้งแพง; expandingใช้ข้อมูลมากขึ้น,rollingปรับตัวต่อdriftได้แต่ทิ้งอดีต; horizon/gapต้องตรงการใช้งาน</p></details><details id="help-topic-21-code"><summary>โค้ด</summary><p>walk-forwardรักษาเวลาจริงแต่fitหลายครั้งแพง; expandingใช้ข้อมูลมากขึ้น,rollingปรับตัวต่อdriftได้แต่ทิ้งอดีต; horizon/gapต้องตรงการใช้งาน</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-21-result"><summary>ผลการทดลอง</summary><p>walk-forwardรักษาเวลาจริงแต่fitหลายครั้งแพง; expandingใช้ข้อมูลมากขึ้น,rollingปรับตัวต่อdriftได้แต่ทิ้งอดีต; horizon/gapต้องตรงการใช้งาน</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-21"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-22" class="source-topic"><span id="source-17-time-series-canonical-22-metrics" class="legacy-anchor"></span><span id="source-17-time-series-canonical-mae" class="legacy-anchor"></span><span id="source-17-time-series-canonical-rmse" class="legacy-anchor"></span><span id="source-17-time-series-canonical-mape" class="legacy-anchor"></span><span id="source-17-time-series-canonical-smape" class="legacy-anchor"></span><span id="source-17-time-series-canonical-mase" class="legacy-anchor"></span><h3>22. Metrics</h3>
+<h4>MAE</h4>
+<p>units เดิม ตีความง่าย</p>
+<h4>RMSE</h4>
+<p>penalize large errors</p>
+<h4>MAPE</h4>
+<p>มีปัญหาเมื่อ actual ใกล้ 0</p>
+<h4>sMAPE</h4>
+<p>ลดบางปัญหาแต่ยังมี edge cases</p>
+<h4>MASE</h4>
+<p>scale-free เทียบ naive benchmark</p>
+<p>metric ต้องสัมพันธ์ business/domain cost</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>MAPEหารศูนย์เมื่อyจริง0; ใช้MAE/MASEหรือmaskที่ประกาศ; logtransformต้องy&gt;0และinvertforecastพร้อมอธิบายbias</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-22-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>MAPEหารศูนย์เมื่อyจริง0; ใช้MAE/MASEหรือmaskที่ประกาศ; logtransformต้องy&gt;0และinvertforecastพร้อมอธิบายbias</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-22-equation"><summary>สมการ</summary><p>MAPEหารศูนย์เมื่อyจริง0; ใช้MAE/MASEหรือmaskที่ประกาศ; logtransformต้องy&gt;0และinvertforecastพร้อมอธิบายbias</p></details><details id="help-topic-22-visual"><summary>ภาพและ shape</summary><p>MAPEหารศูนย์เมื่อyจริง0; ใช้MAE/MASEหรือmaskที่ประกาศ; logtransformต้องy&gt;0และinvertforecastพร้อมอธิบายbias</p></details><details id="help-topic-22-code"><summary>โค้ด</summary><p>MAPEหารศูนย์เมื่อyจริง0; ใช้MAE/MASEหรือmaskที่ประกาศ; logtransformต้องy&gt;0และinvertforecastพร้อมอธิบายbias</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-22-result"><summary>ผลการทดลอง</summary><p>MAPEหารศูนย์เมื่อyจริง0; ใช้MAE/MASEหรือmaskที่ประกาศ; logtransformต้องy&gt;0และinvertforecastพร้อมอธิบายbias</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-22"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-23" class="source-topic"><span id="source-17-time-series-canonical-23-prediction-intervals" class="legacy-anchor"></span><h3>23. Prediction Intervals</h3>
+<p>point forecast อย่างเดียวไม่บอก uncertainty</p>
+<p>ต้องแยก:
+- confidence in parameter/model
+- forecast uncertainty
+- distribution assumptions</p>
+<p>ARIMA/Prophet บาง APIs ให้ intervals แต่ interpretation ขึ้นกับ model assumptions</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-23-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>23. Prediction Intervals</h3>
+<p>point forecast อย่างเดียวไม่บอก uncertainty</p>
+<p>ต้องแยก:
+- confidence in parameter/model
+- forecast uncertainty
+- distribution assumptions</p>
+<p>ARIMA/Prophet บาง APIs ให้ intervals แต่ interpretation ขึ้นกับ model assumptions</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-23-equation"><summary>สมการ</summary><h3>23. Prediction Intervals</h3>
+<p>point forecast อย่างเดียวไม่บอก uncertainty</p>
+<p>ต้องแยก:
+- confidence in parameter/model
+- forecast uncertainty
+- distribution assumptions</p>
+<p>ARIMA/Prophet บาง APIs ให้ intervals แต่ interpretation ขึ้นกับ model assumptions</p></details><details id="help-topic-23-visual"><summary>ภาพและ shape</summary><h3>23. Prediction Intervals</h3>
+<p>point forecast อย่างเดียวไม่บอก uncertainty</p>
+<p>ต้องแยก:
+- confidence in parameter/model
+- forecast uncertainty
+- distribution assumptions</p>
+<p>ARIMA/Prophet บาง APIs ให้ intervals แต่ interpretation ขึ้นกับ model assumptions</p></details><details id="help-topic-23-code"><summary>โค้ด</summary><h3>23. Prediction Intervals</h3>
+<p>point forecast อย่างเดียวไม่บอก uncertainty</p>
+<p>ต้องแยก:
+- confidence in parameter/model
+- forecast uncertainty
+- distribution assumptions</p>
+<p>ARIMA/Prophet บาง APIs ให้ intervals แต่ interpretation ขึ้นกับ model assumptions</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-23-result"><summary>ผลการทดลอง</summary><h3>23. Prediction Intervals</h3>
+<p>point forecast อย่างเดียวไม่บอก uncertainty</p>
+<p>ต้องแยก:
+- confidence in parameter/model
+- forecast uncertainty
+- distribution assumptions</p>
+<p>ARIMA/Prophet บาง APIs ให้ intervals แต่ interpretation ขึ้นกับ model assumptions</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-23"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-24" class="source-topic"><span id="source-17-time-series-canonical-24-prophet" class="legacy-anchor"></span><h3>24. Prophet</h3>
+<p>Prophet ใช้ additive model components เช่น:
+- trend
+- seasonality
+- holidays/events</p>
+<p>Python API ใช้ dataframe columns:
+- ds = timestamp
+- y = target</p>
+<p>Prophet เหมาะเมื่อมี business-like seasonality/trend/change points แต่ไม่ใช่ winner universal</p>
+<p>ติดตั้ง optional:</p>
+<pre><code class="language-bash">python -m pip install -r requirements-batch06-extras.txt
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>บันทึกtimezone/frequency/missingpolicy/origins/horizon/versions; monitorforecastbiasbyhorizon; ทดลองseasonalnaiveดีกว่าlastvalueในweeklyseriesโดยpairedabsoluteerrors</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-24-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>บันทึกtimezone/frequency/missingpolicy/origins/horizon/versions; monitorforecastbiasbyhorizon; ทดลองseasonalnaiveดีกว่าlastvalueในweeklyseriesโดยpairedabsoluteerrors</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-24-equation"><summary>สมการ</summary><p>บันทึกtimezone/frequency/missingpolicy/origins/horizon/versions; monitorforecastbiasbyhorizon; ทดลองseasonalnaiveดีกว่าlastvalueในweeklyseriesโดยpairedabsoluteerrors</p></details><details id="help-topic-24-visual"><summary>ภาพและ shape</summary><p>บันทึกtimezone/frequency/missingpolicy/origins/horizon/versions; monitorforecastbiasbyhorizon; ทดลองseasonalnaiveดีกว่าlastvalueในweeklyseriesโดยpairedabsoluteerrors</p></details><details id="help-topic-24-code"><summary>โค้ด</summary><p>บันทึกtimezone/frequency/missingpolicy/origins/horizon/versions; monitorforecastbiasbyhorizon; ทดลองseasonalnaiveดีกว่าlastvalueในweeklyseriesโดยpairedabsoluteerrors</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-24-result"><summary>ผลการทดลอง</summary><p>บันทึกtimezone/frequency/missingpolicy/origins/horizon/versions; monitorforecastbiasbyhorizon; ทดลองseasonalnaiveดีกว่าlastvalueในweeklyseriesโดยpairedabsoluteerrors</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-24"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-25" class="source-topic"><span id="source-17-time-series-canonical-25-ml-forecasting" class="legacy-anchor"></span><h3>25. ML Forecasting</h3>
+<p>แปลง time series เป็น supervised table:</p>
+<pre><code class="language-text">lags
+rolling stats
+calendar features
+external regressors
+→ model
+</code></pre>
+<p>models:
+- Linear/Ridge
+- Random Forest
+- Gradient Boosting
+- XGBoost/LightGBM/CatBoost</p>
+<p>ต้อง generate features แบบ causal</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>บันทึกtimezone/frequency/missingpolicy/origins/horizon/versions; monitorforecastbiasbyhorizon; ทดลองseasonalnaiveดีกว่าlastvalueในweeklyseriesโดยpairedabsoluteerrors</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-25-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>บันทึกtimezone/frequency/missingpolicy/origins/horizon/versions; monitorforecastbiasbyhorizon; ทดลองseasonalnaiveดีกว่าlastvalueในweeklyseriesโดยpairedabsoluteerrors</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-25-equation"><summary>สมการ</summary><p>บันทึกtimezone/frequency/missingpolicy/origins/horizon/versions; monitorforecastbiasbyhorizon; ทดลองseasonalnaiveดีกว่าlastvalueในweeklyseriesโดยpairedabsoluteerrors</p></details><details id="help-topic-25-visual"><summary>ภาพและ shape</summary><p>บันทึกtimezone/frequency/missingpolicy/origins/horizon/versions; monitorforecastbiasbyhorizon; ทดลองseasonalnaiveดีกว่าlastvalueในweeklyseriesโดยpairedabsoluteerrors</p></details><details id="help-topic-25-code"><summary>โค้ด</summary><p>บันทึกtimezone/frequency/missingpolicy/origins/horizon/versions; monitorforecastbiasbyhorizon; ทดลองseasonalnaiveดีกว่าlastvalueในweeklyseriesโดยpairedabsoluteerrors</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-25-result"><summary>ผลการทดลอง</summary><p>บันทึกtimezone/frequency/missingpolicy/origins/horizon/versions; monitorforecastbiasbyhorizon; ทดลองseasonalnaiveดีกว่าlastvalueในweeklyseriesโดยpairedabsoluteerrors</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-25"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-26" class="source-topic"><span id="source-17-time-series-canonical-26-dl-forecasting" class="legacy-anchor"></span><h3>26. DL Forecasting</h3>
+<p>แนวคิด:
+- MLP on lag windows
+- RNN/LSTM/GRU
+- Temporal CNN
+- Transformers</p>
+<p>แต่ deep model ไม่ได้ชนะเสมอโดยเฉพาะ data น้อย</p>
+<p>Chapter 18 จะเริ่ม neural foundations ก่อน</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>บันทึกtimezone/frequency/missingpolicy/origins/horizon/versions; monitorforecastbiasbyhorizon; ทดลองseasonalnaiveดีกว่าlastvalueในweeklyseriesโดยpairedabsoluteerrors</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-26-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>บันทึกtimezone/frequency/missingpolicy/origins/horizon/versions; monitorforecastbiasbyhorizon; ทดลองseasonalnaiveดีกว่าlastvalueในweeklyseriesโดยpairedabsoluteerrors</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-26-equation"><summary>สมการ</summary><p>บันทึกtimezone/frequency/missingpolicy/origins/horizon/versions; monitorforecastbiasbyhorizon; ทดลองseasonalnaiveดีกว่าlastvalueในweeklyseriesโดยpairedabsoluteerrors</p></details><details id="help-topic-26-visual"><summary>ภาพและ shape</summary><p>บันทึกtimezone/frequency/missingpolicy/origins/horizon/versions; monitorforecastbiasbyhorizon; ทดลองseasonalnaiveดีกว่าlastvalueในweeklyseriesโดยpairedabsoluteerrors</p></details><details id="help-topic-26-code"><summary>โค้ด</summary><p>บันทึกtimezone/frequency/missingpolicy/origins/horizon/versions; monitorforecastbiasbyhorizon; ทดลองseasonalnaiveดีกว่าlastvalueในweeklyseriesโดยpairedabsoluteerrors</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-26-result"><summary>ผลการทดลอง</summary><p>บันทึกtimezone/frequency/missingpolicy/origins/horizon/versions; monitorforecastbiasbyhorizon; ทดลองseasonalnaiveดีกว่าlastvalueในweeklyseriesโดยpairedabsoluteerrors</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-26"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-27" class="source-topic"><span id="source-17-time-series-canonical-27-exogenous-variables" class="legacy-anchor"></span><h3>27. Exogenous Variables</h3>
+<p>external regressors:
+- weather
+- promotions
+- price
+- holidays</p>
+<p>ถามสำคัญ:</p>
+<blockquote>
+<p>ตอน forecast future เรารู้ feature นี้จริงไหม?</p>
+</blockquote>
+<p>ถ้าไม่รู้ ต้อง forecast exogenous variable หรือใช้ scenario assumptions</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-27-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>27. Exogenous Variables</h3>
+<p>external regressors:
+- weather
+- promotions
+- price
+- holidays</p>
+<p>ถามสำคัญ:</p>
+<blockquote>
+<p>ตอน forecast future เรารู้ feature นี้จริงไหม?</p>
+</blockquote>
+<p>ถ้าไม่รู้ ต้อง forecast exogenous variable หรือใช้ scenario assumptions</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-27-equation"><summary>สมการ</summary><h3>27. Exogenous Variables</h3>
+<p>external regressors:
+- weather
+- promotions
+- price
+- holidays</p>
+<p>ถามสำคัญ:</p>
+<blockquote>
+<p>ตอน forecast future เรารู้ feature นี้จริงไหม?</p>
+</blockquote>
+<p>ถ้าไม่รู้ ต้อง forecast exogenous variable หรือใช้ scenario assumptions</p></details><details id="help-topic-27-visual"><summary>ภาพและ shape</summary><h3>27. Exogenous Variables</h3>
+<p>external regressors:
+- weather
+- promotions
+- price
+- holidays</p>
+<p>ถามสำคัญ:</p>
+<blockquote>
+<p>ตอน forecast future เรารู้ feature นี้จริงไหม?</p>
+</blockquote>
+<p>ถ้าไม่รู้ ต้อง forecast exogenous variable หรือใช้ scenario assumptions</p></details><details id="help-topic-27-code"><summary>โค้ด</summary><h3>27. Exogenous Variables</h3>
+<p>external regressors:
+- weather
+- promotions
+- price
+- holidays</p>
+<p>ถามสำคัญ:</p>
+<blockquote>
+<p>ตอน forecast future เรารู้ feature นี้จริงไหม?</p>
+</blockquote>
+<p>ถ้าไม่รู้ ต้อง forecast exogenous variable หรือใช้ scenario assumptions</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-27-result"><summary>ผลการทดลอง</summary><h3>27. Exogenous Variables</h3>
+<p>external regressors:
+- weather
+- promotions
+- price
+- holidays</p>
+<p>ถามสำคัญ:</p>
+<blockquote>
+<p>ตอน forecast future เรารู้ feature นี้จริงไหม?</p>
+</blockquote>
+<p>ถ้าไม่รู้ ต้อง forecast exogenous variable หรือใช้ scenario assumptions</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-27"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-28" class="source-topic"><span id="source-17-time-series-canonical-28-leakage-examples" class="legacy-anchor"></span><h3>28. Leakage Examples</h3>
+<ol>
+<li>random split</li>
+<li>future rolling window</li>
+<li>global scaler fit full timeline</li>
+<li>future target-derived feature</li>
+<li>revision data ที่ตอนอดีตยังไม่รู้</li>
+<li>exogenous future value ที่ production ไม่มี</li>
+</ol><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-28-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>28. Leakage Examples</h3>
+<ol>
+<li>random split</li>
+<li>future rolling window</li>
+<li>global scaler fit full timeline</li>
+<li>future target-derived feature</li>
+<li>revision data ที่ตอนอดีตยังไม่รู้</li>
+<li>exogenous future value ที่ production ไม่มี</li>
+</ol><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-28-equation"><summary>สมการ</summary><h3>28. Leakage Examples</h3>
+<ol>
+<li>random split</li>
+<li>future rolling window</li>
+<li>global scaler fit full timeline</li>
+<li>future target-derived feature</li>
+<li>revision data ที่ตอนอดีตยังไม่รู้</li>
+<li>exogenous future value ที่ production ไม่มี</li>
+</ol></details><details id="help-topic-28-visual"><summary>ภาพและ shape</summary><h3>28. Leakage Examples</h3>
+<ol>
+<li>random split</li>
+<li>future rolling window</li>
+<li>global scaler fit full timeline</li>
+<li>future target-derived feature</li>
+<li>revision data ที่ตอนอดีตยังไม่รู้</li>
+<li>exogenous future value ที่ production ไม่มี</li>
+</ol></details><details id="help-topic-28-code"><summary>โค้ด</summary><h3>28. Leakage Examples</h3>
+<ol>
+<li>random split</li>
+<li>future rolling window</li>
+<li>global scaler fit full timeline</li>
+<li>future target-derived feature</li>
+<li>revision data ที่ตอนอดีตยังไม่รู้</li>
+<li>exogenous future value ที่ production ไม่มี</li>
+</ol><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-28-result"><summary>ผลการทดลอง</summary><h3>28. Leakage Examples</h3>
+<ol>
+<li>random split</li>
+<li>future rolling window</li>
+<li>global scaler fit full timeline</li>
+<li>future target-derived feature</li>
+<li>revision data ที่ตอนอดีตยังไม่รู้</li>
+<li>exogenous future value ที่ production ไม่มี</li>
+</ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-28"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-29" class="source-topic"><span id="source-17-time-series-canonical-29-common-mistakes" class="legacy-anchor"></span><h3>29. Common Mistakes</h3>
+<ol>
+<li>no naive baseline</li>
+<li>random train_test_split</li>
+<li>MAPE near zero</li>
+<li>difference blindly</li>
+<li>assume ACF implies causality</li>
+<li>tune on final future test</li>
+<li>use future exogenous information</li>
+<li>report one horizon only without saying h</li>
+<li>fit scaler on full timeline</li>
+<li>ignore regime changes</li>
+</ol><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-29-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>29. Common Mistakes</h3>
+<ol>
+<li>no naive baseline</li>
+<li>random train_test_split</li>
+<li>MAPE near zero</li>
+<li>difference blindly</li>
+<li>assume ACF implies causality</li>
+<li>tune on final future test</li>
+<li>use future exogenous information</li>
+<li>report one horizon only without saying h</li>
+<li>fit scaler on full timeline</li>
+<li>ignore regime changes</li>
+</ol><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-29-equation"><summary>สมการ</summary><h3>29. Common Mistakes</h3>
+<ol>
+<li>no naive baseline</li>
+<li>random train_test_split</li>
+<li>MAPE near zero</li>
+<li>difference blindly</li>
+<li>assume ACF implies causality</li>
+<li>tune on final future test</li>
+<li>use future exogenous information</li>
+<li>report one horizon only without saying h</li>
+<li>fit scaler on full timeline</li>
+<li>ignore regime changes</li>
+</ol></details><details id="help-topic-29-visual"><summary>ภาพและ shape</summary><h3>29. Common Mistakes</h3>
+<ol>
+<li>no naive baseline</li>
+<li>random train_test_split</li>
+<li>MAPE near zero</li>
+<li>difference blindly</li>
+<li>assume ACF implies causality</li>
+<li>tune on final future test</li>
+<li>use future exogenous information</li>
+<li>report one horizon only without saying h</li>
+<li>fit scaler on full timeline</li>
+<li>ignore regime changes</li>
+</ol></details><details id="help-topic-29-code"><summary>โค้ด</summary><h3>29. Common Mistakes</h3>
+<ol>
+<li>no naive baseline</li>
+<li>random train_test_split</li>
+<li>MAPE near zero</li>
+<li>difference blindly</li>
+<li>assume ACF implies causality</li>
+<li>tune on final future test</li>
+<li>use future exogenous information</li>
+<li>report one horizon only without saying h</li>
+<li>fit scaler on full timeline</li>
+<li>ignore regime changes</li>
+</ol><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-29-result"><summary>ผลการทดลอง</summary><h3>29. Common Mistakes</h3>
+<ol>
+<li>no naive baseline</li>
+<li>random train_test_split</li>
+<li>MAPE near zero</li>
+<li>difference blindly</li>
+<li>assume ACF implies causality</li>
+<li>tune on final future test</li>
+<li>use future exogenous information</li>
+<li>report one horizon only without saying h</li>
+<li>fit scaler on full timeline</li>
+<li>ignore regime changes</li>
+</ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-29"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-30" class="source-topic"><span id="source-17-time-series-canonical-30-exercises-project" class="legacy-anchor"></span><h3>30. Exercises / Project</h3>
+<ul>
+<li><a href="../17-time-series/exercises/README.md">Exercises</a></li>
+<li><a href="../17-time-series/solutions/README.md">Solutions</a></li>
+<li><a href="../17-time-series/mini-project/README.md">Mini Project</a></li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-30-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>30. Exercises / Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-30-equation"><summary>สมการ</summary><h3>30. Exercises / Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-30-visual"><summary>ภาพและ shape</summary><h3>30. Exercises / Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-30-code"><summary>โค้ด</summary><h3>30. Exercises / Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-30-result"><summary>ผลการทดลอง</summary><h3>30. Exercises / Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-30"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-31" class="source-topic"><span id="source-17-time-series-canonical-31-checklist" class="legacy-anchor"></span><h3>31. Checklist</h3>
+<ul>
+<li>[ ] trend/seasonality</li>
+<li>[ ] naive baselines</li>
+<li>[ ] lags</li>
+<li>[ ] ACF/PACF</li>
+<li>[ ] stationarity</li>
+<li>[ ] differencing</li>
+<li>[ ] ARIMA/SARIMA</li>
+<li>[ ] walk-forward</li>
+<li>[ ] metrics</li>
+<li>[ ] Prophet concepts</li>
+<li>[ ] ML/DL framing</li>
+<li>[ ] no future leakage</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-31-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>31. Checklist</h3>
+<ul>
+<li>[ ] trend/seasonality</li>
+<li>[ ] naive baselines</li>
+<li>[ ] lags</li>
+<li>[ ] ACF/PACF</li>
+<li>[ ] stationarity</li>
+<li>[ ] differencing</li>
+<li>[ ] ARIMA/SARIMA</li>
+<li>[ ] walk-forward</li>
+<li>[ ] metrics</li>
+<li>[ ] Prophet concepts</li>
+<li>[ ] ML/DL framing</li>
+<li>[ ] no future leakage</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-31-equation"><summary>สมการ</summary><h3>31. Checklist</h3>
+<ul>
+<li>[ ] trend/seasonality</li>
+<li>[ ] naive baselines</li>
+<li>[ ] lags</li>
+<li>[ ] ACF/PACF</li>
+<li>[ ] stationarity</li>
+<li>[ ] differencing</li>
+<li>[ ] ARIMA/SARIMA</li>
+<li>[ ] walk-forward</li>
+<li>[ ] metrics</li>
+<li>[ ] Prophet concepts</li>
+<li>[ ] ML/DL framing</li>
+<li>[ ] no future leakage</li>
+</ul></details><details id="help-topic-31-visual"><summary>ภาพและ shape</summary><h3>31. Checklist</h3>
+<ul>
+<li>[ ] trend/seasonality</li>
+<li>[ ] naive baselines</li>
+<li>[ ] lags</li>
+<li>[ ] ACF/PACF</li>
+<li>[ ] stationarity</li>
+<li>[ ] differencing</li>
+<li>[ ] ARIMA/SARIMA</li>
+<li>[ ] walk-forward</li>
+<li>[ ] metrics</li>
+<li>[ ] Prophet concepts</li>
+<li>[ ] ML/DL framing</li>
+<li>[ ] no future leakage</li>
+</ul></details><details id="help-topic-31-code"><summary>โค้ด</summary><h3>31. Checklist</h3>
+<ul>
+<li>[ ] trend/seasonality</li>
+<li>[ ] naive baselines</li>
+<li>[ ] lags</li>
+<li>[ ] ACF/PACF</li>
+<li>[ ] stationarity</li>
+<li>[ ] differencing</li>
+<li>[ ] ARIMA/SARIMA</li>
+<li>[ ] walk-forward</li>
+<li>[ ] metrics</li>
+<li>[ ] Prophet concepts</li>
+<li>[ ] ML/DL framing</li>
+<li>[ ] no future leakage</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-31-result"><summary>ผลการทดลอง</summary><h3>31. Checklist</h3>
+<ul>
+<li>[ ] trend/seasonality</li>
+<li>[ ] naive baselines</li>
+<li>[ ] lags</li>
+<li>[ ] ACF/PACF</li>
+<li>[ ] stationarity</li>
+<li>[ ] differencing</li>
+<li>[ ] ARIMA/SARIMA</li>
+<li>[ ] walk-forward</li>
+<li>[ ] metrics</li>
+<li>[ ] Prophet concepts</li>
+<li>[ ] ML/DL framing</li>
+<li>[ ] no future leakage</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-31"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-32" class="source-topic"><span id="source-17-time-series-canonical-32-whats-next" class="legacy-anchor"></span><span id="source-17-time-series-canonical-17-time-series-time-series" class="legacy-anchor"></span><h3>32. What's Next</h3>
+<p>Chapter 18 จะสร้าง neuron, perceptron, linear layer, activations และ MLP forward pass จากศูนย์</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-32-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>32. What's Next</h3>
+<p>Chapter 18 จะสร้าง neuron, perceptron, linear layer, activations และ MLP forward pass จากศูนย์</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-32-equation"><summary>สมการ</summary><h3>32. What's Next</h3>
+<p>Chapter 18 จะสร้าง neuron, perceptron, linear layer, activations และ MLP forward pass จากศูนย์</p></details><details id="help-topic-32-visual"><summary>ภาพและ shape</summary><h3>32. What's Next</h3>
+<p>Chapter 18 จะสร้าง neuron, perceptron, linear layer, activations และ MLP forward pass จากศูนย์</p></details><details id="help-topic-32-code"><summary>โค้ด</summary><h3>32. What's Next</h3>
+<p>Chapter 18 จะสร้าง neuron, perceptron, linear layer, activations และ MLP forward pass จากศูนย์</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-32-result"><summary>ผลการทดลอง</summary><h3>32. What's Next</h3>
+<p>Chapter 18 จะสร้าง neuron, perceptron, linear layer, activations และ MLP forward pass จากศูนย์</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-32"> อ่านหัวข้อนี้แล้ว</label></section><details><summary>รายละเอียดเพิ่มเติมและข้อกำหนดของ local lab</summary><h3>17-time-series — Time Series</h3>
+<p><strong>Prerequisites:</strong> Complete 16-anomaly-detection; be able to trace array/tensor shapes, separate train/validation/test data, and explain the core objective of the current chapter.</p>
+<p><strong>Mental model:</strong> Treat Time Series as a pipeline: input representation → central mechanism → objective/state update → observable output. At every boundary, state shape/state, allowed information flow, and the invariant that should remain true.</p>
+<p><strong>Code walkthrough:</strong> Read public API first, then input checks, state/shape transformations, numerical core, returned values and tests. Connect each important code block to the equation or algorithm in the chapter README.</p>
+<p><strong>Visualization / inspection:</strong> Use a tiny case. Inspect intermediate values, distributions, norms, scores, states or trajectories appropriate to Time Series; do not rely only on the final metric.</p>
+<p><strong>Experiment:</strong> Run a baseline, one controlled parameter change, one edge case and one repeated seeded comparison. Record seed, environment, data version, configuration and metric.</p>
+<p><strong>Limitations:</strong> List at least one assumption, one data-related limitation, one numerical/optimization limitation and one scaling limitation for Time Series.</p>
+<p><strong>Analysis workflow:</strong> Check inputs → preprocessing → shapes/state → finite numerical values → objective/update → evaluation protocol. The earliest unexpected state is more informative than a downstream metric.</p>
+<p><strong>Performance:</strong> Identify the dominant time and memory terms and measure them on the local learning run before attempting optimization.</p>
+<p><strong>Production perspective:</strong> Define input validation, artifact/configuration versioning, quality and resource measurements, staged release criteria and a way to return to the previous known-good artifact.</p>
+<p><strong>Research perspective:</strong> State a falsifiable hypothesis, baseline, one-factor change, metric, repeated-run plan when stochastic, and how negative results will be recorded.</p>
+<p><strong>Interview questions:</strong>
+1. Explain Time Series from first principles without naming a library API.
+2. Trace one input through the central mechanism and give the important intermediate shapes/state.
+3. Name the strongest assumption and a case where it fails.
+4. State the dominant compute/memory cost.
+5. Describe how you would validate a new implementation against a trusted baseline.</p>
+<p><strong>Summary / exit condition:</strong> You may move on when you can explain, derive or trace, implement, test, analyze, measure and evaluate Time Series, and when the chapter mini-project plus twenty total exercises are complete.</p></details></section><section id="objective-evidence" class="canonical-section"><h2>พิสูจน์ความสามารถทีละ objective</h2><p>ทำกรณีใหม่ก่อนเปิด reference แล้วบันทึกงานด้านล่าง ให้ผู้ตรวจใช้ rubric ตรวจคำอธิบาย ผลคำนวณ โค้ด และข้อจำกัด บันทึกเก็บในเบราว์เซอร์เครื่องนี้ กดส่งออกเพื่อสำรองหรือส่งให้ผู้ตรวจ เว็บไม่ได้รันโค้ดหรือตัดสินผลงานแทนผู้ตรวจ</p><button type="button" class="secondary-button" data-export-evidence>ส่งออกหลักฐานบทนี้เป็น JSON</button><p role="status" id="evidence-export-status"></p><details id="ch17-objective-01" class="objective-proof"><summary>define timestamp/index/frequency</summary><p>define timestamp/index/frequency: ใช้กรณีในหัวข้อ Frequency เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch17-evidence-01"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch17-evidence-01-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch17-evidence-01-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch17-evidence-01-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch17-evidence-01-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch17-evidence-01-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch17-evidence-01-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch17-evidence-01-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch17-evidence-01-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>4. Frequency</h3>
+<p>DatetimeIndex ควรมี frequency semantics</p>
+<p>ตัวอย่าง:
+- hourly
+- daily
+- weekly
+- monthly</p>
+<p>missing timestamps ต้องแยกจาก missing values</p><h3>4. Frequency</h3>
+<p>DatetimeIndex ควรมี frequency semantics</p>
+<p>ตัวอย่าง:
+- hourly
+- daily
+- weekly
+- monthly</p>
+<p>missing timestamps ต้องแยกจาก missing values</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch17-objective-02" class="objective-proof"><summary>inspect trend / seasonality / noise</summary><p>inspect trend / seasonality / noise: ใช้กรณีในหัวข้อ Components เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch17-evidence-02"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch17-evidence-02-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch17-evidence-02-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch17-evidence-02-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch17-evidence-02-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch17-evidence-02-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch17-evidence-02-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch17-evidence-02-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch17-evidence-02-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>trend คือระดับเฉลี่ยที่เปลี่ยนตามเวลา เช่น yₜ=2t+10 ไม่ใช่seasonalityเพราะไม่มีการวนรอบคงที่</p><h3>3. Components</h3>
+<h4>Trend</h4>
+<p>long-term direction</p>
+<h4>Seasonality</h4>
+<p>repeating pattern with known-ish period</p>
+<h4>Cycles</h4>
+<p>longer irregular oscillations</p>
+<h4>Noise</h4>
+<p>unexplained variation</p>
+<p>conceptual:</p>
+<pre><code class="language-text">y_t = trend_t + seasonal_t + residual_t
+</code></pre>
+<p>หรือ multiplicative formulation ในบาง data</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch17-objective-03" class="objective-proof"><summary>build naive and seasonal-naive baselines</summary><p>build naive and seasonal-naive baselines: ใช้กรณีในหัวข้อ Naive Baseline, Seasonal Naive เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch17-evidence-03"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch17-evidence-03-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch17-evidence-03-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch17-evidence-03-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch17-evidence-03-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch17-evidence-03-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch17-evidence-03-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch17-evidence-03-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch17-evidence-03-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>5. Naive Baseline</h3>
+<p>one-step:</p>
+<pre><code class="language-text">ŷ_t = y_(t-1)
+</code></pre>
+<p>ถ้า model ชนะ naive ไม่ได้ ต้อง debug ก่อน</p>
+<h3>6. Seasonal Naive</h3>
+<p>ถ้า season length = s:</p>
+<pre><code class="language-text">ŷ_t = y_(t-s)
+</code></pre>
+<p>ตัวอย่าง daily data with weekly seasonality:</p>
+<pre><code class="language-text">s = 7
+</code></pre><h3>5. Naive Baseline</h3>
+<p>one-step:</p>
+<pre><code class="language-text">ŷ_t = y_(t-1)
+</code></pre>
+<p>ถ้า model ชนะ naive ไม่ได้ ต้อง debug ก่อน</p>
+<h3>6. Seasonal Naive</h3>
+<p>ถ้า season length = s:</p>
+<pre><code class="language-text">ŷ_t = y_(t-s)
+</code></pre>
+<p>ตัวอย่าง daily data with weekly seasonality:</p>
+<pre><code class="language-text">s = 7
+</code></pre></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch17-objective-04" class="objective-proof"><summary>calculate lag features</summary><p>calculate lag features: ใช้กรณีในหัวข้อ Lag Matrix เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch17-evidence-04"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch17-evidence-04-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch17-evidence-04-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch17-evidence-04-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch17-evidence-04-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch17-evidence-04-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch17-evidence-04-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch17-evidence-04-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch17-evidence-04-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>featurelagต้องจับคู่ Xₜ=[yₜ₋₁,yₜ₋₂]กับtargetyₜ; shiftผิด1แถวแอบใช้currenttarget ให้เขียนtimestampsทุกcolumnและassertfeature_time&lt;target_time</p><h3>16. Lag Matrix</h3>
+<p>สำหรับ p=3:</p>
+<pre><code class="language-text">target y_t
+features:
+y_(t-1), y_(t-2), y_(t-3)
+</code></pre>
+<p>ห้ามให้ y_t หรือ future lags หลุดเข้า features</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch17-objective-05" class="objective-proof"><summary>calculate rolling features without leakage</summary><p>calculate rolling features without leakage: ใช้กรณีในหัวข้อ Rolling Features เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch17-evidence-05"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch17-evidence-05-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch17-evidence-05-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch17-evidence-05-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch17-evidence-05-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch17-evidence-05-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch17-evidence-05-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch17-evidence-05-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch17-evidence-05-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>timestamps→resample/missingpolicy→lags/difference→fitpast→predictfuture→inverttransform→evaluatehorizon; อย่าใช้forecastสะสมเป็นobservedlagโดยไม่ระบุrecursiveforecast</p><h3>20. Rolling Features</h3>
+<p>เช่น rolling mean:</p>
+<pre><code class="language-text">mean(y_(t-1),...,y_(t-7))
+</code></pre>
+<p>ต้อง shift ก่อน rolling เพื่อไม่รวม current/future target</p>
+<p>ผิด:</p>
+<pre><code class="language-text">rolling mean includes y_t
+</code></pre>
+<p>ถูก:</p>
+<pre><code class="language-text">shift(1) → rolling(...)
+</code></pre></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch17-objective-06" class="objective-proof"><summary>explain autocorrelation</summary><p>explain autocorrelation: ใช้กรณีในหัวข้อ Autocorrelation เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch17-evidence-06"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch17-evidence-06-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch17-evidence-06-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch17-evidence-06-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch17-evidence-06-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch17-evidence-06-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch17-evidence-06-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch17-evidence-06-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch17-evidence-06-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>ACF lag k คือcorr(yₜ,yₜ₋ₖ); คาบ7มักมีpeakที่7,14; trendทำacfสูงยาวโดยไม่ได้แปลว่าARorderสูง</p><h3>8. Autocorrelation</h3>
+<p>ACF lag k:</p>
+<pre><code class="language-text">corr(y_t, y_(t-k))
+</code></pre>
+<p>ช่วยดู dependence across lags</p>
+<p>PACF พยายามวัด direct association ของ lag k หลัง account intermediate lags</p>
+<p>ใช้เป็น diagnostic ไม่ใช่ automatic truth</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch17-objective-07" class="objective-proof"><summary>explain stationarity</summary><p>explain stationarity: ใช้กรณีในหัวข้อ Stationarity เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch17-evidence-07"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch17-evidence-07-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch17-evidence-07-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch17-evidence-07-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch17-evidence-07-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch17-evidence-07-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch17-evidence-07-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch17-evidence-07-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch17-evidence-07-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>weak stationarity ต้องmean,varคงที่และcovขึ้นกับlagไม่ขึ้นกับเวลา; randomwalkไม่stationaryแม้incrementstationary; ADFเป็นหลักฐานจำกัดไม่ใช่พิสูจน์</p><h3>9. Stationarity</h3>
+<p>weak stationarity โดยย่อ:
+- mean ไม่เปลี่ยนตามเวลา
+- variance คงที่
+- covariance ขึ้นกับ lag มากกว่า absolute time</p>
+<p>ARIMA classical theory พึ่ง stationarity หลัง differencing สำหรับ ARMA component</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch17-objective-08" class="objective-proof"><summary>understand differencing</summary><p>understand differencing: ใช้กรณีในหัวข้อ Differencing เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch17-evidence-08"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch17-evidence-08-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch17-evidence-08-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch17-evidence-08-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch17-evidence-08-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch17-evidence-08-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch17-evidence-08-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch17-evidence-08-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch17-evidence-08-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>ใช้firstdifference <code>np.diff([1,3,6,10])</code> ได้[2,3,4]และrollingmean/varตรวจความคงที่; differencingเป็นการแปลงที่ช่วย ไม่ได้รับประกันstationarityทุกชุด</p><h3>10. Differencing</h3>
+<p>first difference:</p>
+<pre><code class="language-text">Δy_t = y_t - y_(t-1)
+</code></pre>
+<p>second difference:</p>
+<pre><code class="language-text">Δ²y_t = Δy_t - Δy_(t-1)
+</code></pre>
+<p>อย่า difference มากเกิน เพราะ signal อาจถูกทำลาย</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch17-objective-09" class="objective-proof"><summary>explain AR / MA / ARMA / ARIMA / SARIMA</summary><p>explain AR / MA / ARMA / ARIMA / SARIMA: ใช้กรณีในหัวข้อ AR(p), MA(q), ARMA, ARIMA, SARIMA เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch17-evidence-09"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch17-evidence-09-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch17-evidence-09-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch17-evidence-09-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch17-evidence-09-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch17-evidence-09-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch17-evidence-09-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch17-evidence-09-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch17-evidence-09-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>ARIMAเชิงเส้นอาจพลาดnonlinear/covariateและstructuralbreak; residualยังมีACFหรือforecastbiasเป็นสัญญาณตรวจ ไม่แก้ด้วยเพิ่มpอย่างเดียว</p><h3>11. AR(p)</h3>
+<p>Autoregressive model:</p>
+<pre><code class="language-text">y_t
+=
+c
++
+φ₁ y_(t-1)
++
+...
++
+φ_p y_(t-p)
++
+ε_t
+</code></pre>
+<p>มันคือ regression บน lagged target</p>
+<h3>12. MA(q)</h3>
+<p>Moving Average ใน ARIMA หมายถึง error terms:</p>
+<pre><code class="language-text">y_t
+=
+μ
++
+ε_t
++
+θ₁ ε_(t-1)
++
+...
++
+θ_q ε_(t-q)
+</code></pre>
+<p>ไม่ใช่ rolling arithmetic average แบบทั่วไป</p>
+<h3>13. ARMA</h3>
+<p>combine AR + MA สำหรับ stationary series</p>
+<pre><code class="language-text">ARMA(p,q)
+</code></pre>
+<h3>14. ARIMA</h3>
+<pre><code class="language-text">ARIMA(p,d,q)
+</code></pre>
+<ul>
+<li>p = AR order</li>
+<li>d = differencing order</li>
+<li>q = MA order</li>
+</ul>
+<p>statsmodels current ARIMA interface ยังใช้ order=(p,d,q)</p>
+<h3>15. SARIMA</h3>
+<p>seasonal extension:</p>
+<pre><code class="language-text">(p,d,q) × (P,D,Q,s)
+</code></pre>
+<p>statsmodels ARIMA interface รองรับ seasonal_order ด้วย</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch17-objective-10" class="objective-proof"><summary>implement autoregression from scratch</summary><p>implement autoregression from scratch: ใช้กรณีในหัวข้อ From-Scratch AutoRegression เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch17-evidence-10"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch17-evidence-10-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch17-evidence-10-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch17-evidence-10-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch17-evidence-10-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch17-evidence-10-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch17-evidence-10-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch17-evidence-10-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch17-evidence-10-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p><code>t=np.arange(len(y)); slope=np.sum((t-t.mean())*(y-y.mean()))/np.sum((t-t.mean())**2)</code>; y=[1,3,5] ได้slope2,intercept1</p><h3>17. From-Scratch AutoRegression</h3>
+<p>src/autoregression.py มี:
+- make_lag_matrix
+- AutoRegressorOLS
+- recursive forecast
+- MAE/RMSE helpers</p>
+<p>ใช้ least squares เพื่อเชื่อม Regression กับ Time Series</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch17-objective-11" class="objective-proof"><summary>use statsmodels ARIMA</summary><p>use statsmodels ARIMA: ใช้กรณีในหัวข้อ ARIMA เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch17-evidence-11"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch17-evidence-11-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch17-evidence-11-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch17-evidence-11-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch17-evidence-11-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch17-evidence-11-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch17-evidence-11-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch17-evidence-11-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch17-evidence-11-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>ARIMAเชิงเส้นอาจพลาดnonlinear/covariateและstructuralbreak; residualยังมีACFหรือforecastbiasเป็นสัญญาณตรวจ ไม่แก้ด้วยเพิ่มpอย่างเดียว</p><h3>14. ARIMA</h3>
+<pre><code class="language-text">ARIMA(p,d,q)
+</code></pre>
+<ul>
+<li>p = AR order</li>
+<li>d = differencing order</li>
+<li>q = MA order</li>
+</ul>
+<p>statsmodels current ARIMA interface ยังใช้ order=(p,d,q)</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch17-objective-12" class="objective-proof"><summary>understand walk-forward validation</summary><p>understand walk-forward validation: ใช้กรณีในหัวข้อ Walk-Forward Validation เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch17-evidence-12"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch17-evidence-12-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch17-evidence-12-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch17-evidence-12-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch17-evidence-12-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch17-evidence-12-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch17-evidence-12-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch17-evidence-12-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch17-evidence-12-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>walk-forwardรักษาเวลาจริงแต่fitหลายครั้งแพง; expandingใช้ข้อมูลมากขึ้น,rollingปรับตัวต่อdriftได้แต่ทิ้งอดีต; horizon/gapต้องตรงการใช้งาน</p><h3>21. Walk-Forward Validation</h3>
+<p>แทน random K-fold:</p>
+<pre><code class="language-text">Train [1..100] → Validate [101..120]
+Train [1..120] → Validate [121..140]
+Train [1..140] → Validate [141..160]
+</code></pre>
+<p>expanding window</p>
+<p>หรือ rolling window ถ้า old history ไม่ relevant</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch17-objective-13" class="objective-proof"><summary>explain Prophet components</summary><p>explain Prophet components: ใช้กรณีในหัวข้อ Prophet เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch17-evidence-13"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch17-evidence-13-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch17-evidence-13-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch17-evidence-13-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch17-evidence-13-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch17-evidence-13-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch17-evidence-13-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch17-evidence-13-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch17-evidence-13-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>บันทึกtimezone/frequency/missingpolicy/origins/horizon/versions; monitorforecastbiasbyhorizon; ทดลองseasonalnaiveดีกว่าlastvalueในweeklyseriesโดยpairedabsoluteerrors</p><h3>24. Prophet</h3>
+<p>Prophet ใช้ additive model components เช่น:
+- trend
+- seasonality
+- holidays/events</p>
+<p>Python API ใช้ dataframe columns:
+- ds = timestamp
+- y = target</p>
+<p>Prophet เหมาะเมื่อมี business-like seasonality/trend/change points แต่ไม่ใช่ winner universal</p>
+<p>ติดตั้ง optional:</p>
+<pre><code class="language-bash">python -m pip install -r requirements-batch06-extras.txt
+</code></pre></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch17-objective-14" class="objective-proof"><summary>explain ML/DL forecasting framing</summary><p>explain ML/DL forecasting framing: ใช้กรณีในหัวข้อ ML Forecasting, DL Forecasting เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch17-evidence-14"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch17-evidence-14-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch17-evidence-14-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch17-evidence-14-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch17-evidence-14-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch17-evidence-14-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch17-evidence-14-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch17-evidence-14-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch17-evidence-14-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>บันทึกtimezone/frequency/missingpolicy/origins/horizon/versions; monitorforecastbiasbyhorizon; ทดลองseasonalnaiveดีกว่าlastvalueในweeklyseriesโดยpairedabsoluteerrors</p><h3>25. ML Forecasting</h3>
+<p>แปลง time series เป็น supervised table:</p>
+<pre><code class="language-text">lags
+rolling stats
+calendar features
+external regressors
+→ model
+</code></pre>
+<p>models:
+- Linear/Ridge
+- Random Forest
+- Gradient Boosting
+- XGBoost/LightGBM/CatBoost</p>
+<p>ต้อง generate features แบบ causal</p>
+<h3>26. DL Forecasting</h3>
+<p>แนวคิด:
+- MLP on lag windows
+- RNN/LSTM/GRU
+- Temporal CNN
+- Transformers</p>
+<p>แต่ deep model ไม่ได้ชนะเสมอโดยเฉพาะ data น้อย</p>
+<p>Chapter 18 จะเริ่ม neural foundations ก่อน</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch17-objective-15" class="objective-proof"><summary>choose forecasting metrics carefully</summary><p>choose forecasting metrics carefully: ใช้กรณีในหัวข้อ Metrics เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch17-evidence-15"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch17-evidence-15-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch17-evidence-15-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch17-evidence-15-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch17-evidence-15-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch17-evidence-15-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch17-evidence-15-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch17-evidence-15-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch17-evidence-15-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>MAPEหารศูนย์เมื่อyจริง0; ใช้MAE/MASEหรือmaskที่ประกาศ; logtransformต้องy&gt;0และinvertforecastพร้อมอธิบายbias</p><h3>22. Metrics</h3>
+<h4>MAE</h4>
+<p>units เดิม ตีความง่าย</p>
+<h4>RMSE</h4>
+<p>penalize large errors</p>
+<h4>MAPE</h4>
+<p>มีปัญหาเมื่อ actual ใกล้ 0</p>
+<h4>sMAPE</h4>
+<p>ลดบางปัญหาแต่ยังมี edge cases</p>
+<h4>MASE</h4>
+<p>scale-free เทียบ naive benchmark</p>
+<p>metric ต้องสัมพันธ์ business/domain cost</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details></section><section id="implementation" class="canonical-section"><h2>Implementation และ tests ที่รันบนเครื่องได้</h2><details><summary>17-time-series/src/autoregression.py</summary><pre><code>&quot;&quot;&quot;Autoregressive forecasting primitives implemented with NumPy.&quot;&quot;&quot;
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+import numpy as np
+
+
+def make_lag_matrix(
+    series: np.ndarray,
+    n_lags: int,
+) -&gt; tuple[np.ndarray, np.ndarray]:
+    y = np.asarray(series, dtype=float).reshape(-1)
+    if y.size &lt;= n_lags:
+        raise ValueError(&quot;series must be longer than n_lags&quot;)
+    if n_lags &lt;= 0:
+        raise ValueError(&quot;n_lags must be positive&quot;)
+    if not np.all(np.isfinite(y)):
+        raise ValueError(&quot;series must be finite&quot;)
+
+    X = np.array(
+        [
+            y[index - n_lags : index][::-1]
+            for index in range(n_lags, len(y))
+        ],
+        dtype=float,
+    )
+    target = y[n_lags:].copy()
+    return X, target
+
+
+@dataclass
+class AutoRegressorOLS:
+    n_lags: int = 5
+    intercept_: float | None = None
+    coef_: np.ndarray | None = None
+    history_: np.ndarray | None = None
+
+    def fit(self, series: np.ndarray) -&gt; &quot;AutoRegressorOLS&quot;:
+        X, y = make_lag_matrix(series, self.n_lags)
+        design = np.column_stack([np.ones(len(X)), X])
+        theta, *_ = np.linalg.lstsq(design, y, rcond=None)
+
+        self.intercept_ = float(theta[0])
+        self.coef_ = theta[1:].copy()
+        self.history_ = np.asarray(series, dtype=float).reshape(-1).copy()
+        return self
+
+    def predict_from_lags(self, lag_rows: np.ndarray) -&gt; np.ndarray:
+        if self.intercept_ is None or self.coef_ is None:
+            raise RuntimeError(&quot;fit before prediction&quot;)
+        X = np.asarray(lag_rows, dtype=float)
+        if X.ndim == 1:
+            X = X.reshape(1, -1)
+        if X.ndim != 2 or X.shape[1] != self.n_lags:
+            raise ValueError(&quot;lag feature shape mismatch&quot;)
+        return X @ self.coef_ + self.intercept_
+
+    def forecast(self, horizon: int) -&gt; np.ndarray:
+        if self.history_ is None:
+            raise RuntimeError(&quot;fit before forecast&quot;)
+        if horizon &lt;= 0:
+            raise ValueError(&quot;horizon must be positive&quot;)
+
+        history = self.history_.tolist()
+        output: list[float] = []
+
+        for _ in range(horizon):
+            lags = np.asarray(history[-self.n_lags :][::-1], dtype=float)
+            value = float(self.predict_from_lags(lags)[0])
+            history.append(value)
+            output.append(value)
+
+        return np.asarray(output)
+
+
+def naive_forecast(history: np.ndarray, horizon: int) -&gt; np.ndarray:
+    y = np.asarray(history, dtype=float).reshape(-1)
+    if y.size == 0 or horizon &lt;= 0:
+        raise ValueError(&quot;history non-empty and horizon positive required&quot;)
+    return np.full(horizon, y[-1], dtype=float)
+
+
+def seasonal_naive_forecast(
+    history: np.ndarray,
+    horizon: int,
+    season_length: int,
+) -&gt; np.ndarray:
+    y = np.asarray(history, dtype=float).reshape(-1)
+    if season_length &lt;= 0 or y.size &lt; season_length:
+        raise ValueError(&quot;invalid season_length&quot;)
+    if horizon &lt;= 0:
+        raise ValueError(&quot;horizon must be positive&quot;)
+
+    pattern = y[-season_length:]
+    return np.asarray(
+        [pattern[index % season_length] for index in range(horizon)],
+        dtype=float,
+    )
+
+
+def mae(y_true: np.ndarray, y_pred: np.ndarray) -&gt; float:
+    a = np.asarray(y_true, dtype=float).reshape(-1)
+    b = np.asarray(y_pred, dtype=float).reshape(-1)
+    if a.shape != b.shape or a.size == 0:
+        raise ValueError(&quot;equal non-empty shapes required&quot;)
+    return float(np.mean(np.abs(a - b)))
+
+
+def rmse(y_true: np.ndarray, y_pred: np.ndarray) -&gt; float:
+    a = np.asarray(y_true, dtype=float).reshape(-1)
+    b = np.asarray(y_pred, dtype=float).reshape(-1)
+    if a.shape != b.shape or a.size == 0:
+        raise ValueError(&quot;equal non-empty shapes required&quot;)
+    return float(np.sqrt(np.mean((a - b) ** 2)))
+</code></pre></details><details><summary>17-time-series/tests/test_autoregression.py</summary><pre><code>from pathlib import Path
+import importlib.util
+import sys
+
+import numpy as np
+from statsmodels.tsa.arima.model import ARIMA
+
+
+MODULE_PATH = Path(__file__).parents[1] / &quot;src&quot; / &quot;autoregression.py&quot;
+SPEC = importlib.util.spec_from_file_location(&quot;autoregression_course&quot;, MODULE_PATH)
+assert SPEC and SPEC.loader
+mod = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = mod
+SPEC.loader.exec_module(mod)
+
+
+def test_lag_matrix_has_expected_order() -&gt; None:
+    X, y = mod.make_lag_matrix(np.array([1, 2, 3, 4, 5], dtype=float), 2)
+    np.testing.assert_allclose(X, [[2, 1], [3, 2], [4, 3]])
+    np.testing.assert_allclose(y, [3, 4, 5])
+
+
+def test_autoregression_learns_ar1_process() -&gt; None:
+    rng = np.random.default_rng(4)
+    values = [0.5]
+    for _ in range(600):
+        values.append(0.8 * values[-1] + rng.normal(0, 0.03))
+
+    series = np.asarray(values)
+    model = mod.AutoRegressorOLS(n_lags=1).fit(series)
+
+    assert abs(model.coef_[0] - 0.8) &lt; 0.08
+
+
+def test_forecast_is_recursive_and_finite() -&gt; None:
+    series = np.sin(np.linspace(0, 8, 200))
+    model = mod.AutoRegressorOLS(n_lags=8).fit(series)
+    forecast = model.forecast(12)
+
+    assert forecast.shape == (12,)
+    assert np.all(np.isfinite(forecast))
+
+
+def test_statsmodels_arima_current_api_runs() -&gt; None:
+    rng = np.random.default_rng(2)
+    values = [0.0]
+    for _ in range(150):
+        values.append(0.6 * values[-1] + rng.normal(0, 0.2))
+    series = np.asarray(values)
+
+    fit = ARIMA(series, order=(1, 0, 0)).fit()
+    forecast = fit.forecast(steps=5)
+
+    assert len(forecast) == 5
+    assert np.all(np.isfinite(forecast))
+</code></pre></details></section><section id="glossary" class="canonical-section"><h2>อภิธานศัพท์ — คำไทย ความหมาย และข้อควรตรวจ</h2><dl><dt>tensor</dt><dd>เทนเซอร์: ชุดตัวเลขที่มีแกน เช่น scalar ไม่มีแกน, vector หนึ่งแกน, matrix สองแกน; shape บอกขนาดแต่ละแกน ไม่บอกความหมายของแกนจนกว่าจะระบุ</dd><dt>shape</dt><dd>รูปทรงข้อมูล: (B,T,d) หมายถึง batch × เวลา/ตำแหน่ง × features; ใช้ชื่อแกนกำกับเสมอ การ transpose เปลี่ยนแกนแต่ไม่ใช่แค่เปลี่ยนชื่อ</dd><dt>batch</dt><dd>กลุ่มตัวอย่างที่คำนวณร่วมกันหนึ่งครั้ง; B คือจำนวนตัวอย่าง ไม่ใช่จำนวน features หรือจำนวน optimizer updates</dd><dt>weight w / θ</dt><dd>น้ำหนักหรือพารามิเตอร์ที่โมเดลใช้คำนวณ; แก้ด้วยมือทำ forward ใหม่ ส่วน optimizer ต้องรับ gradient แล้วกด update จึงแก้ state</dd><dt>bias b</dt><dd>ค่าคงที่ที่บวกกับผลเชิงเส้น; regression scalar bias เพิ่ม Δ ทำให้ prediction ทุกจุดเพิ่ม Δ เท่ากัน</dd><dt>prediction ŷ</dt><dd>ค่าที่โมเดลทำนายจาก input และพารามิเตอร์ปัจจุบัน; เครื่องหมายหมวกแยกจาก target y ที่มาจากข้อมูล</dd><dt>residual e</dt><dd>ความคลาดเคลื่อน ในเว็บนี้นิยาม prediction − target; บางตำราใช้เครื่องหมายกลับกัน จึงต้องตรวจนิยามก่อนเทียบสูตร gradient</dd><dt>MSE</dt><dd>mean squared error = ผลรวม residual กำลังสองหารจำนวนรายการที่ระบุ; มีหน่วยเป็น target ยกกำลังสอง และการใช้ sum แทน mean เปลี่ยน scale gradient</dd><dt>loss L / objective J</dt><dd>จำนวนที่ optimizer ต้องการลด; objective อาจรวม data loss และ regularization จึงต้องดูองค์ประกอบและ reduction ให้ตรง implementation</dd><dt>gradient ∇ / ∂</dt><dd>เวกเตอร์ของ partial derivatives บอกอัตราเปลี่ยน loss ต่อพารามิเตอร์แต่ละตัว; ∂ ใช้เมื่อเปลี่ยนตัวหนึ่งโดยตรึงตัวอื่น</dd><dt>chain rule</dt><dd>กฎลูกโซ่: คูณอนุพันธ์ตามเส้นทาง และบวก contribution จากทุกเส้นทางที่มารวมกัน ใช้ย้อนจาก loss ถึง weights</dd><dt>learning rate η</dt><dd>ขนาดตัวคูณ gradient ใน update θnew=θ−ηg; η≥0, ศูนย์หมายถึงไม่มีการขยับพารามิเตอร์ ก้าวใหญ่เกินอาจ diverge</dd><dt>regularization λ</dt><dd>ตัวคูณค่าลงโทษ ต้อง λ≥0 ตามนิยามการลงโทษ; Ridge λΣw² เพิ่ม gradient 2λw โดยบท Regression นี้ไม่ลงโทษ bias</dd><dt>baseline</dt><dd>สถานะอ้างอิงที่ตรึงไว้สำหรับเทียบ; ต้องเก็บ snapshot ไม่อ้าง object ปัจจุบันที่แก้ตามไปด้วย</dd><dt>invariant</dt><dd>คุณสมบัติที่กลไกต้องรักษา เช่น probability รวม1, shape สอดคล้อง, queue ไม่เกิน capacity; ใช้ tests ตรวจได้มากกว่าดูภาพสวย</dd><dt>optimizer state</dt><dd>ความจำของอัลกอริทึม เช่น velocity, moments และ completed updates; คืนเฉพาะ weights ยังไม่เท่ากับเริ่มการฝึกใหม่ทั้งหมด</dd><dt>finite difference</dt><dd>ประมาณ derivative ด้วย [f(x+h)−f(x−h)]/(2h); h&gt;0, ใช้ smooth point และลองหลาย h เพื่อแยก truncation error จาก roundoff</dd><dt>softmax</dt><dd>แปลง logits เป็นความน่าจะเป็นตามแกนที่กำหนด; ลบ max ก่อน exp เพื่อความเสถียร และ fully masked row ต้องมีนโยบายชัดเจน</dd><dt>logit</dt><dd>คะแนนก่อน sigmoid/softmax ไม่ใช่ probability; อาจเป็นจำนวนจริงติดลบหรือเกิน1ได้ จึงห้ามส่งให้ loss ที่คาด probability โดยไม่แปลง</dd><dt>temperature τ / T</dt><dd>ตัวหาร logits ก่อน softmax; ต้องเป็นบวก ค่าเล็กทำ distribution แหลมขึ้น โดยไม่เท่ากับ retrain weights</dd><dt>mask</dt><dd>ตัวกำหนดตำแหน่งที่อ่านหรือคิด loss ได้; causal mask ปิดอนาคต, padding mask ปิดข้อมูลเติม, loss mask เลือก target แต่ละอย่างคนละหน้าที่</dd><dt>Q / K / V</dt><dd>query ใช้ค้นข้อมูล, key ใช้จับคู่ query, value เป็นข้อมูลที่ถูกถัวเฉลี่ย; เป็น learned projections ของ representation ไม่ใช่ป้ายความหมายตายตัว</dd><dt>head</dt><dd>ส่วนของ feature representation ที่ทำ attention แยกกัน แล้ว concat/project กลับ; ต้องตรวจ d_model หารจำนวน heads ลงตัว</dd><dt>ε-neighborhood</dt><dd>เพื่อนบ้านทั้งหมดที่มีระยะไม่เกิน ε รวมจุดตัวเองใน DBSCAN นี้; ε มีหน่วยเดียวกับพิกัด ไม่ใช่จำนวน k ที่ใช้โหวต</dd><dt>core / border / noise</dt><dd>DBSCAN core มีเพื่อนบ้านรวมตัวเองถึง min_samples; border อยู่ใกล้ core แต่เพื่อนบ้านไม่ถึง; noise ไม่ถูกเชื่อมกับ core cluster ใด</dd><dt>bootstrap</dt><dd>สุ่ม observations แบบ replacement ขนาดเท่าเดิมซ้ำหลายครั้งแล้วคำนวณ statistic ใหม่; seed ทำให้ตรวจซ้ำได้ แต่ไม่แก้สมมติฐาน IID ที่ผิด</dd><dt>confidence interval</dt><dd>ช่วงที่สร้างด้วย procedure ที่มี coverage ตามสมมติฐาน; ช่วงหนึ่งที่ได้แล้วไม่ใช่ posterior probability ของ parameter และ sample เล็กยังไม่แน่นอนมาก</dd><dt>validation / test</dt><dd>validation ใช้เลือกโมเดล/ค่าตั้ง ส่วน test ใช้ประเมินหลัง freeze การตัดสินใจ; fit preprocessing/tokenizer จาก test เป็น leakage</dd><dt>leakage</dt><dd>ข้อมูลที่ควรยังไม่รู้ไหลเข้า training/การเลือกโมเดล เช่น future feature หรือเอกสารซ้ำข้าม split ทำให้ metric ดูดีเกินการใช้งานจริง</dd><dt>queue / capacity</dt><dd>queue คือรายการรอ, capacity การให้บริการรวม = workers × service rate ตามแบบจำลอง; เพิ่ม timeout ไม่เพิ่มกำลังประมวลผล</dd><dt>state transition</dt><dd>การเปลี่ยนสถานะเมื่อเกิดเหตุการณ์ที่อนุญาต เช่น queued→active→done; ต้องระบุ guard, side effect และเหตุผลเมื่อ transition ถูกปฏิเสธ</dd><dt>latency / throughput</dt><dd>latency คือเวลาต่อคำขอ, throughput คือปริมาณงานต่อหน่วยเวลา; batching อาจเพิ่ม throughput แต่เพิ่มเวลารอ จึงต้องวัดทั้งคู่</dd><dt>idempotency</dt><dd>ทำคำขอ business operation เดิมซ้ำแล้ว side effect เกิดครั้งเดียวตาม key และ transaction protocol; ไม่ได้รับประกันจากการใช้ UUID ใหม่ทุก attempt</dd><dt>local lab</dt><dd>โปรแกรม Python และ tests ที่ผู้เรียนรันบนเครื่อง; เว็บเก็บเพียงคำยืนยันของผู้เรียน การผ่าน tests ของโค้ดต้นแบบไม่ใช่ผลตรวจโค้ดผู้เรียน</dd></dl></section></article>
+<section id="practice" class="practice-section"><span class="eyebrow">PRACTICE · DEBUG · BUILD</span><h2>พิสูจน์ด้วยการลงมือทำ</h2><div id="web-checks"></div><div class="retry-actions"><button class="secondary-button" id="retry-checks">เริ่มทำโจทย์ในเว็บใหม่</button><button class="text-button" id="undo-retry" hidden>คืนผลก่อนเริ่มใหม่</button></div><div id="exercise-content"><h2>แบบฝึก 20 ข้อ — เฉลยเฉพาะข้อ</h2><p>ทำคำตอบก่อนเปิด hints; โจทย์ปลายเปิดให้ใช้ตัวอย่างคำตอบและหลักฐานราย objective ตรวจงานจริง</p><section id="exercise-1" class="exercise-item"><h3>ข้อ 1</h3><p>Define trend.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Components: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): trend คือระดับเฉลี่ยที่เปลี่ยนตามเวล…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: trend คือระดับเฉลี่ยที่เปลี่ยนตามเวลา เช่น yₜ=2t+10 ไม่ใช่seasonal…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>trend คือระดับเฉลี่ยที่เปลี่ยนตามเวลา เช่น yₜ=2t+10 ไม่ใช่seasonalityเพราะไม่มีการวนรอบคงที่</p><p>อ้างอิง: <a href="#chapter-17/section/topic-3">Components</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch17-exercise-01"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-2" class="exercise-item"><h3>ข้อ 2</h3><p>Define seasonality with a small example.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Components: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): seasonality คือpatternซ้ำตามคาบ เช่น [1,3…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: seasonality คือpatternซ้ำตามคาบ เช่น [1,3,1,3,...] คาบ2; ต่างจากcycleเศรษฐ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>seasonality คือpatternซ้ำตามคาบ เช่น [1,3,1,3,...] คาบ2; ต่างจากcycleเศรษฐกิจที่ระยะเวลาขึ้นลงไม่ตายตัว</p><p>อ้างอิง: <a href="#chapter-17/section/topic-3">Components</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch17-exercise-02"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-3" class="exercise-item"><h3>ข้อ 3</h3><p>Explain stationarity.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Stationarity: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): weak stationarity ต้องmean,varคงที่และcovขึ้นกับlagไม่ขึ้น…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: weak stationarity ต้องmean,varคงที่และcovขึ้นกับlagไม่ขึ้นกับเวลา; randomwalkไม่stationaryแม้incrementsta…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>weak stationarity ต้องmean,varคงที่และcovขึ้นกับlagไม่ขึ้นกับเวลา; randomwalkไม่stationaryแม้incrementstationary; ADFเป็นหลักฐานจำกัดไม่ใช่พิสูจน์</p><p>อ้างอิง: <a href="#chapter-17/section/topic-9">Stationarity</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch17-exercise-03"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-4" class="exercise-item"><h3>ข้อ 4</h3><p>Explain autocorrelation.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Autocorrelation: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ACF lag k คือcorr(yₜ,yₜ₋ₖ); คาบ7มักม…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ACF lag k คือcorr(yₜ,yₜ₋ₖ); คาบ7มักมีpeakที่7,14; trendทำacfสูงยา…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ACF lag k คือcorr(yₜ,yₜ₋ₖ); คาบ7มักมีpeakที่7,14; trendทำacfสูงยาวโดยไม่ได้แปลว่าARorderสูง</p><p>อ้างอิง: <a href="#chapter-17/section/topic-8">Autocorrelation</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch17-exercise-04"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-5" class="exercise-item"><h3>ข้อ 5</h3><p>Compare trend and seasonality.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Components: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): trendแยกด้วยระดับที่เคลื่อนไปเรื่อย ส่วนseasonalit…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: trendแยกด้วยระดับที่เคลื่อนไปเรื่อย ส่วนseasonalityลบด้วย seasonal difference yₜ−yₜ₋ₘ; [1,…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>trendแยกด้วยระดับที่เคลื่อนไปเรื่อย ส่วนseasonalityลบด้วย seasonal difference yₜ−yₜ₋ₘ; [1,2,3,4] ordinarydifferenceได้[1,1,1]</p><p>อ้างอิง: <a href="#chapter-17/section/topic-3">Components</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch17-exercise-05"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-6" class="exercise-item"><h3>ข้อ 6</h3><p>Explain how autocorrelation changes model behavior.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Autocorrelation: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): positive lag1ทำ persistencebaselineสมเหตุผล…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: positive lag1ทำ persistencebaselineสมเหตุผล แต่acfจากtrendปลอมได้; ตรวจdiffer…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>positive lag1ทำ persistencebaselineสมเหตุผล แต่acfจากtrendปลอมได้; ตรวจdifferencedseriesและPACFก่อนเลือกlags</p><p>อ้างอิง: <a href="#chapter-17/section/topic-8">Autocorrelation</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch17-exercise-06"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-7" class="exercise-item"><h3>ข้อ 7</h3><p>Explain a common limitation involving ARIMA.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ AR(p), MA(q), ARMA, ARIMA, SARIMA: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ARIMAเชิงเส้นอาจพลาดnonlinear/covariateและstructural…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ARIMAเชิงเส้นอาจพลาดnonlinear/covariateและstructuralbreak; residualยังมีACFหรือforecastbiasเป็น…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ARIMAเชิงเส้นอาจพลาดnonlinear/covariateและstructuralbreak; residualยังมีACFหรือforecastbiasเป็นสัญญาณตรวจ ไม่แก้ด้วยเพิ่มpอย่างเดียว</p><p>อ้างอิง: <a href="#chapter-17/section/topic-11">AR(p)</a>, <a href="#chapter-17/section/topic-12">MA(q)</a>, <a href="#chapter-17/section/topic-13">ARMA</a>, <a href="#chapter-17/section/topic-14">ARIMA</a>, <a href="#chapter-17/section/topic-15">SARIMA</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch17-exercise-07"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-8" class="exercise-item"><h3>ข้อ 8</h3><p>Explain the tradeoff introduced by walk-forward validation.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Walk-Forward Validation: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): walk-forwardรักษาเวลาจริงแต่fitหลายครั้งแพง; expanding…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: walk-forwardรักษาเวลาจริงแต่fitหลายครั้งแพง; expandingใช้ข้อมูลมากขึ้น,rollingปรับตัวต่อdriftได้แ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>walk-forwardรักษาเวลาจริงแต่fitหลายครั้งแพง; expandingใช้ข้อมูลมากขึ้น,rollingปรับตัวต่อdriftได้แต่ทิ้งอดีต; horizon/gapต้องตรงการใช้งาน</p><p>อ้างอิง: <a href="#chapter-17/section/topic-21">Walk-Forward Validation</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch17-exercise-08"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-9" class="exercise-item"><h3>ข้อ 9</h3><p>Implement a small from-scratch example of trend.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ From-Scratch AutoRegression: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): `t=np.arange(len(y)); slope=np.sum((t-t.mean())…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: `t=np.arange(len(y)); slope=np.sum((t-t.mean())*(y-y.mean()))/np.sum((t-t.mean())**2…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p><code>t=np.arange(len(y)); slope=np.sum((t-t.mean())*(y-y.mean()))/np.sum((t-t.mean())**2)</code>; y=[1,3,5] ได้slope2,intercept1</p><p>อ้างอิง: <a href="#chapter-17/section/topic-17">From-Scratch AutoRegression</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch17-exercise-09"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-10" class="exercise-item"><h3>ข้อ 10</h3><p>Add deterministic tests for Exercise 9.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ From-Scratch AutoRegression: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): assert slope2สำหรับ[1,3,5],slope0สำหรับ[2,2,2]…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: assert slope2สำหรับ[1,3,5],slope0สำหรับ[2,2,2],len&lt;2ต้องreject; forecastt3ได้7 ห้ามr…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>assert slope2สำหรับ[1,3,5],slope0สำหรับ[2,2,2],len&lt;2ต้องreject; forecastt3ได้7 ห้ามrandomsplitลำดับเวลาเพื่อตรวจtrend</p><p>อ้างอิง: <a href="#chapter-17/section/topic-17">From-Scratch AutoRegression</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch17-exercise-10"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-11" class="exercise-item"><h3>ข้อ 11</h3><p>Implement the main computation behind stationarity.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Differencing: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ใช้firstdifference <code>np.diff([1,3,6,10])</code> ได้[2,3,4]และrolli…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ใช้firstdifference <code>np.diff([1,3,6,10])</code> ได้[2,3,4]และrollingmean/varตรวจความคงที่; differencingเป็นการแปล…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ใช้firstdifference <code>np.diff([1,3,6,10])</code> ได้[2,3,4]และrollingmean/varตรวจความคงที่; differencingเป็นการแปลงที่ช่วย ไม่ได้รับประกันstationarityทุกชุด</p><p>อ้างอิง: <a href="#chapter-17/section/topic-10">Differencing</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch17-exercise-11"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-12" class="exercise-item"><h3>ข้อ 12</h3><p>Run a small seeded experiment using seasonality, autocorrelation, and walk-forward validation.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Components, Autocorrelation, Walk-Forward Validation: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): seed7 สร้างtrend+.5sin(2πt/7)+noise; walkforward horizon…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: seed7 สร้างtrend+.5sin(2πt/7)+noise; walkforward horizon7 เปรียบเทียบlastvalue/seasonalnaive/ARIMAด้…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>seed7 สร้างtrend+.5sin(2πt/7)+noise; walkforward horizon7 เปรียบเทียบlastvalue/seasonalnaive/ARIMAด้วยMAEและresidualACF; reportactualmetrics</p><p>อ้างอิง: <a href="#chapter-17/section/topic-3">Components</a>, <a href="#chapter-17/section/topic-8">Autocorrelation</a>, <a href="#chapter-17/section/topic-21">Walk-Forward Validation</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch17-exercise-12"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-13" class="exercise-item"><h3>ข้อ 13</h3><p>Explain a common shape or data mismatch for this topic.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Lag Matrix: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): featurelagต้องจับคู่ Xₜ=[yₜ₋₁,yₜ₋₂]กับtargetyₜ; shiftผิด…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: featurelagต้องจับคู่ Xₜ=[yₜ₋₁,yₜ₋₂]กับtargetyₜ; shiftผิด1แถวแอบใช้currenttarget ให้เขียนtimestampsทุ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>featurelagต้องจับคู่ Xₜ=[yₜ₋₁,yₜ₋₂]กับtargetyₜ; shiftผิด1แถวแอบใช้currenttarget ให้เขียนtimestampsทุกcolumnและassertfeature_time&lt;target_time</p><p>อ้างอิง: <a href="#chapter-17/section/topic-16">Lag Matrix</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch17-exercise-13"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-14" class="exercise-item"><h3>ข้อ 14</h3><p>Explain one numerical-stability concern.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Metrics: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): MAPEหารศูนย์เมื่อyจริง0; ใช้MAE/MASEหรือma…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: MAPEหารศูนย์เมื่อyจริง0; ใช้MAE/MASEหรือmaskที่ประกาศ; logtransformต้องy&gt;0แล…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>MAPEหารศูนย์เมื่อyจริง0; ใช้MAE/MASEหรือmaskที่ประกาศ; logtransformต้องy&gt;0และinvertforecastพร้อมอธิบายbias</p><p>อ้างอิง: <a href="#chapter-17/section/topic-22">Metrics</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch17-exercise-14"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-15" class="exercise-item"><h3>ข้อ 15</h3><p>Explain the correct train, validation, and test workflow.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Walk-Forward Validation: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): sorttime→trainpast→validationfuture→testlast; rollingfe…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: sorttime→trainpast→validationfuture→testlast; rollingfeaturesต้องshiftก่อนrolling; scalersfittrainแล…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>sorttime→trainpast→validationfuture→testlast; rollingfeaturesต้องshiftก่อนrolling; scalersfittrainและretrainตามข้อมูลที่มีจริงในแต่ละorigin</p><p>อ้างอิง: <a href="#chapter-17/section/topic-21">Walk-Forward Validation</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch17-exercise-15"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-16" class="exercise-item"><h3>ข้อ 16</h3><p>Measure runtime and memory of the main computation.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ ARIMA: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): วัดfit/forecastต่อoriginแยกกัน; lagmatrixO(nL)memory,n…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: วัดfit/forecastต่อoriginแยกกัน; lagmatrixO(nL)memory,naiveforecastO(h); ARIMAcomplexityขึ้นกับsolv…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>วัดfit/forecastต่อoriginแยกกัน; lagmatrixO(nL)memory,naiveforecastO(h); ARIMAcomplexityขึ้นกับsolver/orders จึงต้องrecordp,d,q,iterations</p><p>อ้างอิง: <a href="#chapter-17/section/topic-14">ARIMA</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch17-exercise-16"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-17" class="exercise-item"><h3>ข้อ 17</h3><p>Derive the main input-to-output algorithm for Time Series.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ AR(p), Lag Matrix, Rolling Features, Walk-Forward Validation: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): timestamps→resample/missingpolicy→lags/difference→fitpast→predictf…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: timestamps→resample/missingpolicy→lags/difference→fitpast→predictfuture→inverttransform→evaluatehorizon; อย่าใช้forecas…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>timestamps→resample/missingpolicy→lags/difference→fitpast→predictfuture→inverttransform→evaluatehorizon; อย่าใช้forecastสะสมเป็นobservedlagโดยไม่ระบุrecursiveforecast</p><p>อ้างอิง: <a href="#chapter-17/section/topic-11">AR(p)</a>, <a href="#chapter-17/section/topic-16">Lag Matrix</a>, <a href="#chapter-17/section/topic-20">Rolling Features</a>, <a href="#chapter-17/section/topic-21">Walk-Forward Validation</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch17-exercise-17"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-18" class="exercise-item"><h3>ข้อ 18</h3><p>Compare a scratch implementation with a trusted library on identical data.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ ARIMA: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): scratchAR1OLSเทียบ statsmodels.AutoReg(lags=1,trend='c')…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: scratchAR1OLSเทียบ statsmodels.AutoReg(lags=1,trend='c')ด้วยholdbackเดียวกันและtrainingwindowเดียว; f…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>scratchAR1OLSเทียบ statsmodels.AutoReg(lags=1,trend='c')ด้วยholdbackเดียวกันและtrainingwindowเดียว; forecastcoefficientsควรใกล้ภายในtolerance</p><p>อ้างอิง: <a href="#chapter-17/section/topic-14">ARIMA</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch17-exercise-18"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-19" class="exercise-item"><h3>ข้อ 19</h3><p>Compare a baseline with a controlled change involving ARIMA.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ AR(p): ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): คงsplit/horizon เปรียบเทียบARIMA(1,0,0)กับ(1,1…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: คงsplit/horizon เปรียบเทียบARIMA(1,0,0)กับ(1,1,0); reportwalkforwardMAEและresidual…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>คงsplit/horizon เปรียบเทียบARIMA(1,0,0)กับ(1,1,0); reportwalkforwardMAEและresidualACFไม่เลือกด้วยtrainAICอย่างเดียว</p><p>อ้างอิง: <a href="#chapter-17/section/topic-11">AR(p)</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch17-exercise-19"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-20" class="exercise-item"><h3>ข้อ 20</h3><p>Summarize validation, reproducibility, monitoring, and one open research question.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Prophet, ML Forecasting, DL Forecasting: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): บันทึกtimezone/frequency/missingpolicy/origins/horizon/versions; m…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: บันทึกtimezone/frequency/missingpolicy/origins/horizon/versions; monitorforecastbiasbyhorizon; ทดลองseasonalnaiveดีกว่…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>บันทึกtimezone/frequency/missingpolicy/origins/horizon/versions; monitorforecastbiasbyhorizon; ทดลองseasonalnaiveดีกว่าlastvalueในweeklyseriesโดยpairedabsoluteerrors</p><p>อ้างอิง: <a href="#chapter-17/section/topic-24">Prophet</a>, <a href="#chapter-17/section/topic-25">ML Forecasting</a>, <a href="#chapter-17/section/topic-26">DL Forecasting</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch17-exercise-20"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section></div><div id="local-lab-content"><section id="local-lab"><h2>Local lab: Python 3.12 บน CPU</h2><p>รันจาก repository root; ใช้ Python 3.12 แยก environment สำหรับ framework ตาม requirements ของชุดบท</p><pre><code>python3.12 -m venv .venv-course
+source .venv-course/bin/activate
+python -m pip install -r requirements-batch06.txt pytest
+(cd 17-time-series &amp;&amp; python -m pytest tests -q -rs)</code></pre><p>ผลที่คาดหวัง: required tests ผ่านและไม่มี required test ถูก skip; GPU/integrations ที่ยังไม่รันต้องระบุแยก Python 3.15 ที่มากับเครื่องอาจใช้กับ framework wheels เหล่านี้ไม่ได้</p><h2>Mini Project — Forecasting Benchmark</h2>
+<p>Generate or use a dated series with:
+- trend
+- weekly seasonality
+- noise
+- optional anomalies</p>
+<p>Compare:
+1. naive
+2. seasonal naive
+3. from-scratch AR
+4. statsmodels ARIMA
+5. gradient boosting on lag/calendar features
+6. optional Prophet</p>
+<p>Protocol:
+- chronological train/validation/test
+- no full-series scaler
+- tune only validation
+- report horizon
+- MAE/RMSE
+- runtime
+- forecast plot
+- residual diagnostics</p>
+<p>Explain which assumptions each model makes.</p><h2>Batch 06 Integration Project — Anomaly-Aware Forecasting &amp; Neural Baseline Lab</h2>
+<p>รวม Chapters 16–18:</p>
+<pre><code class="language-text">time series
+   ↓
+chronological split
+   ↓
+causal anomaly features
+   ↓
+IsolationForest fit on TRAIN only
+   ↓
+lag-window supervised dataset
+   ↓
+Seasonal Naive
+Linear Autoregression
+MLPRegressor
+   ↓
+validation RMSE
+   ↓
+model selection
+   ↓
+final future test
+</code></pre>
+<h3>Goal</h3>
+<p>แยก 3 งานให้ชัด:</p>
+<ol>
+<li><strong>Detection</strong> — จุดไหนดูผิดปกติ?</li>
+<li><strong>Forecasting</strong> — ค่าถัดไปควรเป็นเท่าไร?</li>
+<li><strong>Neural Representation</strong> — MLP ใช้ lag window อย่างไร?</li>
+</ol>
+<p>Anomaly detector ไม่ได้ลบข้อมูลโดยอัตโนมัติ; project เพียงรายงาน scores/flags และวัดว่ามี anomalies กระจายตรงไหน</p>
+<h3>Run</h3>
+<pre><code class="language-bash">source .venv/bin/activate
+python -m pip install -r requirements-batch06.txt
+
+python integration-project-batch06/src/forecasting_neural_lab.py   --output-dir reports/batch06   --seed 42
+</code></pre>
+<h3>Models</h3>
+<ul>
+<li>seasonal naive baseline</li>
+<li>linear autoregression on lag features</li>
+<li>MLPRegressor on lag features</li>
+</ul>
+<h3>Leakage Rules</h3>
+<ul>
+<li>chronological split only</li>
+<li>anomaly detector fit on training timeline only</li>
+<li>lag row at time t uses values before t only</li>
+<li>StandardScaler lives inside the MLP Pipeline</li>
+<li>validation selects model</li>
+<li>final test is evaluated once</li>
+</ul>
+<h3>Required Extensions</h3>
+<ol>
+<li>add statsmodels ARIMA candidate</li>
+<li>optional Prophet candidate</li>
+<li>rolling-origin evaluation</li>
+<li>multi-step recursive forecast</li>
+<li>contextual anomaly detector using hour/day features</li>
+<li>compare anomaly-removal vs robust training carefully</li>
+<li>add prediction intervals</li>
+<li>MLP hidden-layer sweep</li>
+<li>anomaly-aware loss weighting</li>
+<li>regime-shift scenario</li>
+</ol>
+<h3>Mastery Questions</h3>
+<ul>
+<li>ทำไม anomaly detector fit full timeline จึง leak?</li>
+<li>ทำไม anomaly ไม่ควรถูกลบอัตโนมัติ?</li>
+<li>one-step lag evaluation ต่างจาก recursive multi-step อย่างไร?</li>
+<li>MLP training ใช้ backprop แม้ Chapter 18 ยังไม่ derive อย่างไร?</li>
+<li>validation/test chronology สำคัญอย่างไร?</li>
+</ul></section></div><label class="local-confirm"><input type="checkbox" id="local-lab-confirm"> ฉันรัน local lab และตรวจผลตาม rubric ด้วยตัวเองแล้ว</label><p class="local-note">สถานะนี้เป็นคำยืนยันของผู้เรียน เว็บไม่ได้รันหรือตรวจ Python บนเครื่องแทนคุณ</p></section>
+<section id="mastery-review" class="practice-section"><h2>หลักฐานตามเกณฑ์การเรียนรู้</h2><p>ทุก objective ต้องแสดงหลักฐานอธิบาย ทำนาย คำนวณ อ่าน shape/state debug และประยุกต์ พร้อมกรณีใหม่ ผลรัน source ผู้เรียนจริง และการประเมินซ้ำ เกณฑ์นี้ไม่รับประกันความเข้าใจทุกสถานการณ์ เปิด JavaScript เพื่อดูรายการที่ยังขาดและนำเข้ารายงานผู้ตรวจ</p></section><section class="coverage-section"><h2>แผนที่สิ่งที่เรียน → สิ่งที่ต้องแสดงให้ได้</h2><div id="coverage-table"></div></section><footer><span>ZERO TO ELITE AI ENGINEER · LEARNING STUDIO</span><span>อ่าน · derive · implement · debug · experiment · build</span></footer></div></main><noscript><style>.workbench,.sidebar,.reading-route,.lesson-toc,.mastery-status,#web-checks{display:none}main{margin-left:0}</style>อ่านเนื้อหา HTML ได้ตามปกติ เปิด JavaScript เพื่อใช้ห้องทดลองและตรวจคำตอบ</noscript></body></html>

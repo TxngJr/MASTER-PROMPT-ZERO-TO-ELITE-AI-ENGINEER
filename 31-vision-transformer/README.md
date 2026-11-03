@@ -1,5 +1,11 @@
 # Chapter 31 — Vision Transformer (ViT)
 
+## Interactive Animation Lab
+
+[เปิดภาพจำลองของบทนี้](animation.html) · [เลือกจากทั้ง 80 บท](../visual-lab/index.html)
+
+ดู flow ทีละขั้น → ทดลองเปลี่ยนค่า → อ่านสมการและโค้ด → ตอบคำถามเช็กความเข้าใจ แล้วกลับมาทำแบบฝึกหัดในบทนี้
+
 ## 1. Why Treat an Image as a Sequence?
 
 A CNN processes local neighborhoods with convolution.

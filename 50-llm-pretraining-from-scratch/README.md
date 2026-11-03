@@ -1,5 +1,11 @@
 # Chapter 50 — LLM Pretraining From Scratch
 
+## Interactive Animation Lab
+
+[เปิดภาพจำลองของบทนี้](animation.html) · [เลือกจากทั้ง 80 บท](../visual-lab/index.html)
+
+ดู flow ทีละขั้น → ทดลองเปลี่ยนค่า → อ่านสมการและโค้ด → ตอบคำถามเช็กความเข้าใจ แล้วกลับมาทำแบบฝึกหัดในบทนี้
+
 ## 1. Goal
 
 Pretraining teaches a decoder-only language model to predict the next token over a large corpus.

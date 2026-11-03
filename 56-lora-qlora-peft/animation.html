@@ -1,0 +1,1417 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="บทเรียน AI Engineer ภาษาไทย พร้อมคณิตศาสตร์ทีละขั้นและห้องทดลองที่คำนวณจริง"><title>LoRA/QLoRA: เรียน delta weights แทนแก้ฐานทั้งหมด · AI Engineer Studio</title><link rel="stylesheet" href="../visual-lab/assets/styles.css"><link rel="stylesheet" href="../visual-lab/assets/course.css"><script defer src="../visual-lab/assets/lessons.js"></script><script defer src="../visual-lab/assets/chapter-meta.js"></script><script defer src="../visual-lab/assets/course-math.js"></script><script defer src="../visual-lab/assets/course-models.js"></script><script defer src="../visual-lab/assets/course-models-v3.js"></script><script defer src="../visual-lab/assets/course-assessment.js"></script><script defer src="../visual-lab/assets/course-mastery.js"></script><script defer src="../visual-lab/assets/course-catalog.js"></script><script defer src="../visual-lab/assets/book-content.js"></script><script defer src="../visual-lab/assets/course-render.js"></script><script defer src="../visual-lab/assets/course-mastery-panel.js"></script><script defer src="../visual-lab/assets/quality-report.js"></script><script defer src="../visual-lab/assets/course-app.js"></script></head>
+<body data-chapter="56" data-root="../"><a class="skip-link" href="#main">ข้ามไปบทเรียน</a>
+<aside class="sidebar" id="sidebar" aria-label="เลือกบทเรียน"><a class="brand" href="../visual-lab/index.html"><span class="brand-mark">ai</span><span>AI ENGINEER<small>LEARN · DERIVE · BUILD</small></span></a><div class="sidebar-intro">อ่านให้เข้าใจ · คำนวณให้เห็น · เขียนให้เป็น</div><label class="search-box"><input id="search" type="search" placeholder="ค้นหาบท / attention" aria-label="ค้นหาบทเรียน"></label><label class="filter-label" for="phase-filter">เส้นทางการเรียน <span id="nav-count"></span></label><select id="phase-filter"><option value="">ทุก Phase</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option></select><nav id="chapter-list" class="chapter-list" aria-label="รายชื่อบท"></nav><div class="course-progress"><div><span>ผ่านโจทย์ในเว็บ</span><strong id="progress-count">0 / 80</strong></div><progress id="course-progress" max="80" value="0" aria-label="บทที่ผ่านโจทย์"></progress><a id="resume-link" href="#chapter-1">อ่านต่อจากเดิม →</a></div></aside>
+<button class="nav-backdrop" id="nav-backdrop" aria-label="ปิดเมนู" hidden></button>
+<main id="main" tabindex="-1"><header class="topbar"><div><button id="nav-toggle" class="icon-button mobile-menu" aria-label="เปิดเมนูบทเรียน" aria-expanded="false" aria-controls="sidebar">☰</button><span id="breadcrumb"></span></div><span class="local-badge"><i></i> คำนวณในเครื่อง · ไม่มี API</span></header><div class="content">
+<div class="chapter-navigation"><label for="chapter-select" class="sr-only">เลือกบทเรียน</label><select id="chapter-select"></select><div class="chapter-arrows"><button id="prev-chapter" class="icon-button" aria-label="บทก่อนหน้า">←</button><button id="next-chapter" class="icon-button" aria-label="บทถัดไป">→</button></div></div>
+<section class="chapter-hero"><div><p id="chapter-kicker" class="eyebrow"></p><h1 id="chapter-title">LoRA/QLoRA: เรียน delta weights แทนแก้ฐานทั้งหมด</h1><p class="english-title" id="chapter-english"></p></div><span class="hero-symbol">f(x) ↗</span></section>
+<p id="quality-status" class="quality-status"></p><div id="mastery-status" class="mastery-status"></div><div class="reading-route"><a href="#chapter-56/section/overview">01 อ่านบทเรียน</a><a href="#workbench">02 ทดลองสมการ</a><a href="#practice">03 ฝึกและตรวจงาน</a><a href="#mastery-review">04 หลักฐานตามเกณฑ์</a></div>
+<nav id="lesson-toc" class="lesson-toc" aria-label="สารบัญบท"></nav>
+<section id="overview" class="course-overview"><span class="eyebrow">THE LEARNING CONTRACT</span><h2>เรียนบทนี้แล้วต้องทำอะไรได้</h2><p id="chapter-purpose"></p><div id="chapter-objectives"></div><div class="learning-hint">ทำนาย → เปลี่ยนทีละค่า → ตรวจตัวเลข → อธิบายเหตุผล → เขียนด้วย Python เอง</div></section>
+<section class="workbench lab-card" id="workbench" aria-label="ห้องทดลองคำนวณจริง"><div class="card-header"><div><span class="live-dot"></span><span class="eyebrow">COMPUTATION WORKBENCH</span></div><span class="simulation-label">ทุกภาพใช้ผลคำนวณชุดเดียวกัน</span></div><div class="lab-top"><label for="lab-select">เลือกกลไกที่ต้องการทดลอง</label><select id="lab-select"></select><p id="lab-question"></p></div><div class="workbench-grid"><div class="viz-column"><div class="compare-labels"><span>เส้นทึบ: ปัจจุบัน</span><span>เส้นประ: baseline ที่ตรึงไว้</span></div><div id="simulation" class="simulation"></div><div id="metrics" class="metrics"></div><div id="baseline-diff" class="baseline-diff"></div><div class="playback"><div class="playback-buttons"><button class="primary-button" id="update-once">อัปเดตหนึ่งก้าว</button><button class="secondary-button" id="train-many">▶ ฝึก 30 ก้าว</button><button class="icon-button" id="back-state" aria-label="ย้อนประวัติ">↶</button><button class="icon-button" id="forward-state" aria-label="ประวัติถัดไป">↷</button></div></div><div class="lab-secondary-actions"><button id="pin-baseline" class="text-button">ตรึง baseline ปัจจุบัน</button><button id="reset-lab" class="text-button">คืนค่าเริ่มต้น</button><button id="download-state" class="text-button">บันทึกผล JSON</button><span id="history-status"></span></div><p id="simulation-note" class="simulation-note"></p><p class="lab-error" id="lab-error" role="alert" hidden></p></div><div class="controls-column"><h3>เปลี่ยนทีละตัว แล้วสังเกตผล</h3><div id="lab-controls"></div><p class="control-note">แก้ weight ด้วยมือจะคำนวณ forward ใหม่; optimizer เปลี่ยน weights เมื่อกดอัปเดตเท่านั้น</p></div></div>
+<div class="trace-section"><div class="trace-toolbar"><h3>เดินสมการทีละ operation</h3><div><button id="trace-prev" class="icon-button" aria-label="operation ก่อนหน้า">←</button><button id="play-trace" class="secondary-button" aria-pressed="false">▶ เล่น flow</button><button id="trace-next" class="icon-button" aria-label="operation ถัดไป">→</button><span id="stage-counter"></span></div></div><label class="motion-control"><input id="reduce-motion" type="checkbox"> ลดภาพเคลื่อนไหว (หยุดการเล่นที่ค้างอยู่)</label><div id="operation-steps" class="operation-steps"></div><div id="flow-diagram" class="flow-diagram"></div><div id="active-operation" class="active-operation" aria-live="polite"></div><p class="control-note">ตัวเลขบนภาพปัดเศษเพื่อให้อ่านง่าย; บันทึก JSON เพื่อดูค่าที่ใช้คำนวณเต็ม precision</p><details open><summary>ตารางค่าระหว่างทาง — ตรวจด้วยมือได้</summary><div id="result-table"></div></details><div id="tensor-tables" class="tensor-tables"></div><details id="surface-details"><summary>ดู loss surface และเส้นทางของ w₁,b (ตรึง controls อื่น)</summary><div id="surface-chart"></div><p>surface คำนวณ objective ปัจจุบันโดยตรึง degree, penalty, ข้อมูล และ weights อื่น เส้นทางแสดงเฉพาะ snapshots ที่ค่าเหล่านี้ตรงกัน; นอกช่วง w=[−1,5], b=[−2,4] ให้ตรวจค่าจริงใน history</p></details><details><summary>ประวัติการเปลี่ยนค่า</summary><div id="history-table"></div></details></div></section>
+<article id="chapter-article" class="chapter-article"><section id="mechanism-1" class="teaching-section"><span class="section-kicker">CHAPTER 56 · ภาพ → สมการ → โค้ด</span><h2>1. LoRA เพิ่ม low-rank update</h2><h3>โจทย์และเหตุผล</h3><p>A มี shape (r,Din), B=(Dout,r) จึง BA มี shape เดียวกับ W และ trainable count=r(Din+Dout) scale alpha/r เปลี่ยนขนาด delta โดยไม่เพิ่มจำนวน parameters</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Implement A/B low-rank updates.</p><p>conventionW(dout,din),A(r,din),B(dout,r),ΔW=(α/r)BA; inputx(din),outputWx+(α/r)B(Ax)</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>rank: adapter rank,initial=2; a: A scale,initial=1; b: B scale (initial 0),initial=0; alpha: LoRA alpha,initial=2; target: target output0,initial=2; eta: learning rate,initial=0.1</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = &quot;W=I₄, A=(r,4), B=(4,r)&quot;; กำหนดความหมายและหน่วยของ input ก่อนทดลอง</li><li>W_eff=W+(α/r)BA; y=W_eff x = [1, -1, 0.5, 0]; A/B scales คุม matrices ที่มี pattern คงที่; local lab ฝึก entries ทั้ง matrix อย่างอิสระ</li><li>normal / boundary / comparison = [1, -1, 0.5, 0]; ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="lora-frozen-w---scaled-ba">เปิดการทดลองนี้</a><p class="failure-box">ใช้adapterกับbaseคนละrevisionแม้shapeเท่ากันอาจผลเสีย; evaluationต้องpinbase/quantconfigและfreezeheldoutไม่เลือกbestseed; tied-scale adapter demonstration: update ฝึกสอง scales เพื่อเห็น gradient; parameter count แสดงของ full untied A,B</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>conventionW(dout,din),A(r,din),B(dout,r),ΔW=(α/r)BA; inputx(din),outputWx+(α/r)B(Ax)</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-1-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = &quot;W=I₄, A=(r,4), B=(4,r)&quot;<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>W_eff=W+(α/r)BA; y=W_eff x</code> = [1, -1, 0.5, 0]<p>A/B scales คุม matrices ที่มี pattern คงที่; local lab ฝึก entries ทั้ง matrix อย่างอิสระ</p></li><li><code>normal / boundary / comparison</code> = [1, -1, 0.5, 0]<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-1-visual"><summary>ภาพและ shape</summary><p>tied-scale adapter demonstration: update ฝึกสอง scales เพื่อเห็น gradient; parameter count แสดงของ full untied A,B</p><ol><li><code>shape / range</code> = &quot;W=I₄, A=(r,4), B=(4,r)&quot;<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>W_eff=W+(α/r)BA; y=W_eff x</code> = [1, -1, 0.5, 0]<p>A/B scales คุม matrices ที่มี pattern คงที่; local lab ฝึก entries ทั้ง matrix อย่างอิสระ</p></li><li><code>normal / boundary / comparison</code> = [1, -1, 0.5, 0]<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-1-code"><summary>โค้ด</summary><p>conventionW(dout,din),A(r,din),B(dout,r),ΔW=(α/r)BA; inputx(din),outputWx+(α/r)B(Ax)</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-1-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = &quot;W=I₄, A=(r,4), B=(4,r)&quot;<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>W_eff=W+(α/r)BA; y=W_eff x</code> = [1, -1, 0.5, 0]<p>A/B scales คุม matrices ที่มี pattern คงที่; local lab ฝึก entries ทั้ง matrix อย่างอิสระ</p></li><li><code>normal / boundary / comparison</code> = [1, -1, 0.5, 0]<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-1"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-2" class="teaching-section"><span class="section-kicker">CHAPTER 56 · ภาพ → สมการ → โค้ด</span><h2>2. initialization มีผลกับ gradients</h2><h3>โจทย์และเหตุผล</h3><p>ถ้า B เริ่มศูนย์แต่ A ไม่ศูนย์ output ยังเท่าฐานและ gradient ถึง B ได้ ส่วน A อาจยังไม่ขยับก้าวแรก ภาพใช้สอง tied scales ให้เห็น algebra และ gradients; local lab ฝึกทุก matrix entry</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Verify B=0 makes the initial adapter a no-op.</p><p>B0ทำBA0แม้Aสุ่ม จึงinitialoutputเท่าbase; firstgradientdAอาจ0แต่dBไม่จำเป็น0 ต้องไม่ตั้งA/Bทั้งคู่0จนgradientติด</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>rank: adapter rank,initial=3; a: A scale,initial=1; b: B scale (initial 0),initial=0; alpha: LoRA alpha,initial=6; target: target output0,initial=2; eta: learning rate,initial=0.1</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = &quot;W=I₄, A=(r,4), B=(4,r)&quot;; กำหนดความหมายและหน่วยของ input ก่อนทดลอง</li><li>W_eff=W+(α/r)BA; y=W_eff x = [1, -1, 0.5, 0]; A/B scales คุม matrices ที่มี pattern คงที่; local lab ฝึก entries ทั้ง matrix อย่างอิสระ</li><li>normal / boundary / comparison = [1, -1, 0.5, 0]; ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="lora-rank-alpha-เปล--ยนขนาดแล">เปิดการทดลองนี้</a><p class="failure-box">ใช้adapterกับbaseคนละrevisionแม้shapeเท่ากันอาจผลเสีย; evaluationต้องpinbase/quantconfigและfreezeheldoutไม่เลือกbestseed; tied-scale adapter demonstration: update ฝึกสอง scales เพื่อเห็น gradient; parameter count แสดงของ full untied A,B</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>B0ทำBA0แม้Aสุ่ม จึงinitialoutputเท่าbase; firstgradientdAอาจ0แต่dBไม่จำเป็น0 ต้องไม่ตั้งA/Bทั้งคู่0จนgradientติด</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-2-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = &quot;W=I₄, A=(r,4), B=(4,r)&quot;<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>W_eff=W+(α/r)BA; y=W_eff x</code> = [1, -1, 0.5, 0]<p>A/B scales คุม matrices ที่มี pattern คงที่; local lab ฝึก entries ทั้ง matrix อย่างอิสระ</p></li><li><code>normal / boundary / comparison</code> = [1, -1, 0.5, 0]<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-2-visual"><summary>ภาพและ shape</summary><p>tied-scale adapter demonstration: update ฝึกสอง scales เพื่อเห็น gradient; parameter count แสดงของ full untied A,B</p><ol><li><code>shape / range</code> = &quot;W=I₄, A=(r,4), B=(4,r)&quot;<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>W_eff=W+(α/r)BA; y=W_eff x</code> = [1, -1, 0.5, 0]<p>A/B scales คุม matrices ที่มี pattern คงที่; local lab ฝึก entries ทั้ง matrix อย่างอิสระ</p></li><li><code>normal / boundary / comparison</code> = [1, -1, 0.5, 0]<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-2-code"><summary>โค้ด</summary><p>B0ทำBA0แม้Aสุ่ม จึงinitialoutputเท่าbase; firstgradientdAอาจ0แต่dBไม่จำเป็น0 ต้องไม่ตั้งA/Bทั้งคู่0จนgradientติด</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-2-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = &quot;W=I₄, A=(r,4), B=(4,r)&quot;<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>W_eff=W+(α/r)BA; y=W_eff x</code> = [1, -1, 0.5, 0]<p>A/B scales คุม matrices ที่มี pattern คงที่; local lab ฝึก entries ทั้ง matrix อย่างอิสระ</p></li><li><code>normal / boundary / comparison</code> = [1, -1, 0.5, 0]<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-2"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-3" class="teaching-section"><span class="section-kicker">CHAPTER 56 · ภาพ → สมการ → โค้ด</span><h2>3. QLoRA ไม่ได้ทำทุกอย่างเป็น 4-bit</h2><h3>โจทย์และเหตุผล</h3><p>base weights เก็บแบบ quantized แต่ dequantization compute, adapters, activations และ optimizer states ใช้ dtypes อื่น ตรวจ compatibility ของ base/version ก่อน merge และวัด quality/memory แยก</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Merge/unmerge adapters numerically.</p><p>mergedW=W+sBAแล้วforwardต้องallcloseunmerged; unmergeลบsameΔWครั้งเดียว,ห้ามmergeซ้ำและอย่าแก้A/Bขณะถือmergedweightsโดยไม่track</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>bits: weight bits,initial=4; range: calibration max absolute,initial=1; value: weight value,initial=0.37; channels: independent channels,initial=1</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = 0.37; กำหนดความหมายและหน่วยของ input ก่อนทดลอง</li><li>s=maxAbs/qmax; q=clip(round(w/s)); ŵ=sq = 0.42857142857142855; clipping เกิดเมื่อ abs(w)&gt;calibration range; channels คูณ scale metadata ที่ต้องเก็บแยก</li><li>normal / boundary / comparison = 0.42857142857142855; ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="quantization-quantized-base-ของ-qlora">เปิดการทดลองนี้</a><p class="failure-box">ใช้adapterกับbaseคนละrevisionแม้shapeเท่ากันอาจผลเสีย; evaluationต้องpinbase/quantconfigและfreezeheldoutไม่เลือกbestseed; payload คิดขั้นต่ำไม่รวม metadata; 1 FP32 scales เพิ่ม 4 bytes; ตัวอย่างใช้ shared scale เดียวเพื่อแยก rounding effect</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>mergedW=W+sBAแล้วforwardต้องallcloseunmerged; unmergeลบsameΔWครั้งเดียว,ห้ามmergeซ้ำและอย่าแก้A/Bขณะถือmergedweightsโดยไม่track</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-3-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = 0.37<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>s=maxAbs/qmax; q=clip(round(w/s)); ŵ=sq</code> = 0.42857142857142855<p>clipping เกิดเมื่อ abs(w)&gt;calibration range; channels คูณ scale metadata ที่ต้องเก็บแยก</p></li><li><code>normal / boundary / comparison</code> = 0.42857142857142855<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-3-visual"><summary>ภาพและ shape</summary><p>payload คิดขั้นต่ำไม่รวม metadata; 1 FP32 scales เพิ่ม 4 bytes; ตัวอย่างใช้ shared scale เดียวเพื่อแยก rounding effect</p><ol><li><code>shape / range</code> = 0.37<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>s=maxAbs/qmax; q=clip(round(w/s)); ŵ=sq</code> = 0.42857142857142855<p>clipping เกิดเมื่อ abs(w)&gt;calibration range; channels คูณ scale metadata ที่ต้องเก็บแยก</p></li><li><code>normal / boundary / comparison</code> = 0.42857142857142855<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-3-code"><summary>โค้ด</summary><p>mergedW=W+sBAแล้วforwardต้องallcloseunmerged; unmergeลบsameΔWครั้งเดียว,ห้ามmergeซ้ำและอย่าแก้A/Bขณะถือmergedweightsโดยไม่track</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-3-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = 0.37<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>s=maxAbs/qmax; q=clip(round(w/s)); ŵ=sq</code> = 0.42857142857142855<p>clipping เกิดเมื่อ abs(w)&gt;calibration range; channels คูณ scale metadata ที่ต้องเก็บแยก</p></li><li><code>normal / boundary / comparison</code> = 0.42857142857142855<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-3"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="reference" class="canonical-section"><h2>เนื้อหาครบทุกหัวข้อ พร้อมแผนที่ objective</h2><nav class="source-toc"><a href="#chapter-56/section/topic-1">1. Why PEFT?</a> <a href="#chapter-56/section/topic-2">2. Learning Objectives</a> <a href="#chapter-56/section/topic-3">3. LoRA Core Idea</a> <a href="#chapter-56/section/topic-4">4. Parameter Count</a> <a href="#chapter-56/section/topic-5">5. Scaling Alpha</a> <a href="#chapter-56/section/topic-6">6. Initialization</a> <a href="#chapter-56/section/topic-7">7. LoRA Dropout</a> <a href="#chapter-56/section/topic-8">8. Target Modules</a> <a href="#chapter-56/section/topic-9">9. Query/Value-Only vs All-Linear</a> <a href="#chapter-56/section/topic-10">10. Trainable Ratio</a> <a href="#chapter-56/section/topic-11">11. Adapter Checkpoint</a> <a href="#chapter-56/section/topic-12">12. Merge</a> <a href="#chapter-56/section/topic-13">13. Unmerge</a> <a href="#chapter-56/section/topic-14">14. Multiple Adapters</a> <a href="#chapter-56/section/topic-15">15. PEFT Family</a> <a href="#chapter-56/section/topic-16">16. QLoRA</a> <a href="#chapter-56/section/topic-17">17. 4-bit Base Weights</a> <a href="#chapter-56/section/topic-18">18. NF4</a> <a href="#chapter-56/section/topic-19">19. Double Quantization</a> <a href="#chapter-56/section/topic-20">20. Compute Dtype</a> <a href="#chapter-56/section/topic-21">21. Optimizer State</a> <a href="#chapter-56/section/topic-22">22. Memory Decomposition</a> <a href="#chapter-56/section/topic-23">23. Gradient Checkpointing</a> <a href="#chapter-56/section/topic-24">24. Adapter Rank</a> <a href="#chapter-56/section/topic-25">25. Current Hugging Face PEFT</a> <a href="#chapter-56/section/topic-26">26. Base Compatibility</a> <a href="#chapter-56/section/topic-27">27. From Scratch</a> <a href="#chapter-56/section/topic-28">28. Common Mistakes</a> <a href="#chapter-56/section/topic-29">29. Exercises / Mini Project</a> <a href="#chapter-56/section/topic-30">30. Checklist</a> <a href="#chapter-56/section/topic-31">31. What&#x27;s Next</a> </nav><section id="topic-1" class="source-topic"><span id="source-56-lora-qlora-peft-canonical-chapter-56-lora-qlora-peft" class="legacy-anchor"></span><span id="source-56-lora-qlora-peft-canonical-1-why-peft" class="legacy-anchor"></span><h3>1. Why PEFT?</h3>
+<p>Full fine-tuning stores gradients and optimizer state for every trainable weight.</p>
+<p>Parameter-Efficient Fine-Tuning (PEFT) adapts a model while training a much smaller parameter subset.</p>
+<pre><code class="language-text">large pretrained model
+↓ frozen mostly/all
+small trainable adaptation parameters
+↓
+task-adapted model
+</code></pre><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>1. Why PEFT?</h3>
+<p>Full fine-tuning stores gradients and optimizer state for every trainable weight.</p>
+<p>Parameter-Efficient Fine-Tuning (PEFT) adapts a model while training a much smaller parameter subset.</p>
+<pre><code class="language-text">large pretrained model
+↓ frozen mostly/all
+small trainable adaptation parameters
+↓
+task-adapted model
+</code></pre><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-1-equation"><summary>สมการ</summary><h3>1. Why PEFT?</h3>
+<p>Full fine-tuning stores gradients and optimizer state for every trainable weight.</p>
+<p>Parameter-Efficient Fine-Tuning (PEFT) adapts a model while training a much smaller parameter subset.</p>
+<pre><code class="language-text">large pretrained model
+↓ frozen mostly/all
+small trainable adaptation parameters
+↓
+task-adapted model
+</code></pre></details><details id="help-topic-1-visual"><summary>ภาพและ shape</summary><h3>1. Why PEFT?</h3>
+<p>Full fine-tuning stores gradients and optimizer state for every trainable weight.</p>
+<p>Parameter-Efficient Fine-Tuning (PEFT) adapts a model while training a much smaller parameter subset.</p>
+<pre><code class="language-text">large pretrained model
+↓ frozen mostly/all
+small trainable adaptation parameters
+↓
+task-adapted model
+</code></pre></details><details id="help-topic-1-code"><summary>โค้ด</summary><h3>1. Why PEFT?</h3>
+<p>Full fine-tuning stores gradients and optimizer state for every trainable weight.</p>
+<p>Parameter-Efficient Fine-Tuning (PEFT) adapts a model while training a much smaller parameter subset.</p>
+<pre><code class="language-text">large pretrained model
+↓ frozen mostly/all
+small trainable adaptation parameters
+↓
+task-adapted model
+</code></pre><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-1-result"><summary>ผลการทดลอง</summary><h3>1. Why PEFT?</h3>
+<p>Full fine-tuning stores gradients and optimizer state for every trainable weight.</p>
+<p>Parameter-Efficient Fine-Tuning (PEFT) adapts a model while training a much smaller parameter subset.</p>
+<pre><code class="language-text">large pretrained model
+↓ frozen mostly/all
+small trainable adaptation parameters
+↓
+task-adapted model
+</code></pre><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-1"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-2" class="source-topic"><span id="source-56-lora-qlora-peft-canonical-2-learning-objectives" class="legacy-anchor"></span><h3>2. Learning Objectives</h3>
+<p>You should be able to:</p>
+<ul>
+<li>derive LoRA's low-rank update</li>
+<li>calculate LoRA parameter counts</li>
+<li>explain rank, alpha and dropout</li>
+<li>initialize LoRA as a no-op</li>
+<li>choose target modules</li>
+<li>merge/unmerge adapters</li>
+<li>explain PEFT memory savings</li>
+<li>distinguish LoRA from full fine-tuning</li>
+<li>explain QLoRA correctly</li>
+<li>understand frozen 4-bit base weights</li>
+<li>explain NF4 / double-quantization concepts</li>
+<li>understand adapter checkpointing</li>
+<li>use current PEFT LoraConfig concepts</li>
+<li>reason about adapter composition and limitations</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>2. Learning Objectives</h3>
+<p>You should be able to:</p>
+<ul>
+<li>derive LoRA's low-rank update</li>
+<li>calculate LoRA parameter counts</li>
+<li>explain rank, alpha and dropout</li>
+<li>initialize LoRA as a no-op</li>
+<li>choose target modules</li>
+<li>merge/unmerge adapters</li>
+<li>explain PEFT memory savings</li>
+<li>distinguish LoRA from full fine-tuning</li>
+<li>explain QLoRA correctly</li>
+<li>understand frozen 4-bit base weights</li>
+<li>explain NF4 / double-quantization concepts</li>
+<li>understand adapter checkpointing</li>
+<li>use current PEFT LoraConfig concepts</li>
+<li>reason about adapter composition and limitations</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-2-equation"><summary>สมการ</summary><h3>2. Learning Objectives</h3>
+<p>You should be able to:</p>
+<ul>
+<li>derive LoRA's low-rank update</li>
+<li>calculate LoRA parameter counts</li>
+<li>explain rank, alpha and dropout</li>
+<li>initialize LoRA as a no-op</li>
+<li>choose target modules</li>
+<li>merge/unmerge adapters</li>
+<li>explain PEFT memory savings</li>
+<li>distinguish LoRA from full fine-tuning</li>
+<li>explain QLoRA correctly</li>
+<li>understand frozen 4-bit base weights</li>
+<li>explain NF4 / double-quantization concepts</li>
+<li>understand adapter checkpointing</li>
+<li>use current PEFT LoraConfig concepts</li>
+<li>reason about adapter composition and limitations</li>
+</ul></details><details id="help-topic-2-visual"><summary>ภาพและ shape</summary><h3>2. Learning Objectives</h3>
+<p>You should be able to:</p>
+<ul>
+<li>derive LoRA's low-rank update</li>
+<li>calculate LoRA parameter counts</li>
+<li>explain rank, alpha and dropout</li>
+<li>initialize LoRA as a no-op</li>
+<li>choose target modules</li>
+<li>merge/unmerge adapters</li>
+<li>explain PEFT memory savings</li>
+<li>distinguish LoRA from full fine-tuning</li>
+<li>explain QLoRA correctly</li>
+<li>understand frozen 4-bit base weights</li>
+<li>explain NF4 / double-quantization concepts</li>
+<li>understand adapter checkpointing</li>
+<li>use current PEFT LoraConfig concepts</li>
+<li>reason about adapter composition and limitations</li>
+</ul></details><details id="help-topic-2-code"><summary>โค้ด</summary><h3>2. Learning Objectives</h3>
+<p>You should be able to:</p>
+<ul>
+<li>derive LoRA's low-rank update</li>
+<li>calculate LoRA parameter counts</li>
+<li>explain rank, alpha and dropout</li>
+<li>initialize LoRA as a no-op</li>
+<li>choose target modules</li>
+<li>merge/unmerge adapters</li>
+<li>explain PEFT memory savings</li>
+<li>distinguish LoRA from full fine-tuning</li>
+<li>explain QLoRA correctly</li>
+<li>understand frozen 4-bit base weights</li>
+<li>explain NF4 / double-quantization concepts</li>
+<li>understand adapter checkpointing</li>
+<li>use current PEFT LoraConfig concepts</li>
+<li>reason about adapter composition and limitations</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-2-result"><summary>ผลการทดลอง</summary><h3>2. Learning Objectives</h3>
+<p>You should be able to:</p>
+<ul>
+<li>derive LoRA's low-rank update</li>
+<li>calculate LoRA parameter counts</li>
+<li>explain rank, alpha and dropout</li>
+<li>initialize LoRA as a no-op</li>
+<li>choose target modules</li>
+<li>merge/unmerge adapters</li>
+<li>explain PEFT memory savings</li>
+<li>distinguish LoRA from full fine-tuning</li>
+<li>explain QLoRA correctly</li>
+<li>understand frozen 4-bit base weights</li>
+<li>explain NF4 / double-quantization concepts</li>
+<li>understand adapter checkpointing</li>
+<li>use current PEFT LoraConfig concepts</li>
+<li>reason about adapter composition and limitations</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-2"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-3" class="source-topic"><span id="source-56-lora-qlora-peft-canonical-3-lora-core-idea" class="legacy-anchor"></span><h3>3. LoRA Core Idea</h3>
+<p>For frozen linear weight:</p>
+<pre><code class="language-text">W ∈ R^(out × in)
+</code></pre>
+<p>instead of updating W directly, learn:</p>
+<pre><code class="language-text">ΔW = B A
+</code></pre>
+<p>where:</p>
+<pre><code class="language-text">A ∈ R^(r × in)
+B ∈ R^(out × r)
+r &lt;&lt; min(in,out)
+</code></pre>
+<p>Forward:</p>
+<pre><code class="language-text">y =
+Wx
++
+(alpha / r) B A x
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>conventionW(dout,din),A(r,din),B(dout,r),ΔW=(α/r)BA; inputx(din),outputWx+(α/r)B(Ax)</p><p>din=dout2,r1,α1,A=[1,0],B=[2,3]ᵀให้ΔW=[[2,0],[3,0]]; x[1,2]adapteroutput[2,3]</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>conventionW(dout,din),A(r,din),B(dout,r),ΔW=(α/r)BA; inputx(din),outputWx+(α/r)B(Ax)</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-3-equation"><summary>สมการ</summary><p>conventionW(dout,din),A(r,din),B(dout,r),ΔW=(α/r)BA; inputx(din),outputWx+(α/r)B(Ax)</p></details><details id="help-topic-3-visual"><summary>ภาพและ shape</summary><p>conventionW(dout,din),A(r,din),B(dout,r),ΔW=(α/r)BA; inputx(din),outputWx+(α/r)B(Ax)</p></details><details id="help-topic-3-code"><summary>โค้ด</summary><p>conventionW(dout,din),A(r,din),B(dout,r),ΔW=(α/r)BA; inputx(din),outputWx+(α/r)B(Ax)</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-3-result"><summary>ผลการทดลอง</summary><p>conventionW(dout,din),A(r,din),B(dout,r),ΔW=(α/r)BA; inputx(din),outputWx+(α/r)B(Ax)</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-3"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-4" class="source-topic"><span id="source-56-lora-qlora-peft-canonical-4-parameter-count" class="legacy-anchor"></span><h3>4. Parameter Count</h3>
+<p>Full linear matrix:</p>
+<pre><code class="language-text">out * in
+</code></pre>
+<p>LoRA adapter:</p>
+<pre><code class="language-text">r * in
++
+out * r
+
+=
+r(in + out)
+</code></pre>
+<p>Example:</p>
+<pre><code class="language-text">in = out = 4096
+r = 8
+
+full:
+16,777,216 parameters
+
+LoRA:
+65,536 parameters
+</code></pre>
+<p>for that matrix.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>r(din+dout)=8192r; r4/8/16/64ให้32768/65536/131072/524288 เทียบbase16777216parameters ไม่รวมbias/scaling</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-4-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>r(din+dout)=8192r; r4/8/16/64ให้32768/65536/131072/524288 เทียบbase16777216parameters ไม่รวมbias/scaling</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-4-equation"><summary>สมการ</summary><p>r(din+dout)=8192r; r4/8/16/64ให้32768/65536/131072/524288 เทียบbase16777216parameters ไม่รวมbias/scaling</p></details><details id="help-topic-4-visual"><summary>ภาพและ shape</summary><p>r(din+dout)=8192r; r4/8/16/64ให้32768/65536/131072/524288 เทียบbase16777216parameters ไม่รวมbias/scaling</p></details><details id="help-topic-4-code"><summary>โค้ด</summary><p>r(din+dout)=8192r; r4/8/16/64ให้32768/65536/131072/524288 เทียบbase16777216parameters ไม่รวมbias/scaling</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-4-result"><summary>ผลการทดลอง</summary><p>r(din+dout)=8192r; r4/8/16/64ให้32768/65536/131072/524288 เทียบbase16777216parameters ไม่รวมbias/scaling</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-4"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-5" class="source-topic"><span id="source-56-lora-qlora-peft-canonical-5-scaling-alpha" class="legacy-anchor"></span><h3>5. Scaling Alpha</h3>
+<p>Common LoRA scale:</p>
+<pre><code class="language-text">scale =
+alpha / r
+</code></pre>
+<p>Alpha controls update magnitude independently from rank.</p>
+<p>Some modern variants use different scaling; always document the chosen formulation.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>conventionW(dout,din),A(r,din),B(dout,r),ΔW=(α/r)BA; inputx(din),outputWx+(α/r)B(Ax)</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-5-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>conventionW(dout,din),A(r,din),B(dout,r),ΔW=(α/r)BA; inputx(din),outputWx+(α/r)B(Ax)</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-5-equation"><summary>สมการ</summary><p>conventionW(dout,din),A(r,din),B(dout,r),ΔW=(α/r)BA; inputx(din),outputWx+(α/r)B(Ax)</p></details><details id="help-topic-5-visual"><summary>ภาพและ shape</summary><p>conventionW(dout,din),A(r,din),B(dout,r),ΔW=(α/r)BA; inputx(din),outputWx+(α/r)B(Ax)</p></details><details id="help-topic-5-code"><summary>โค้ด</summary><p>conventionW(dout,din),A(r,din),B(dout,r),ΔW=(α/r)BA; inputx(din),outputWx+(α/r)B(Ax)</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-5-result"><summary>ผลการทดลอง</summary><p>conventionW(dout,din),A(r,din),B(dout,r),ΔW=(α/r)BA; inputx(din),outputWx+(α/r)B(Ax)</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-5"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-6" class="source-topic"><span id="source-56-lora-qlora-peft-canonical-6-initialization" class="legacy-anchor"></span><h3>6. Initialization</h3>
+<p>A common initialization:
+- A random
+- B zero</p>
+<p>Then initially:</p>
+<pre><code class="language-text">BA = 0
+</code></pre>
+<p>so the adapter begins as an identity/no-op relative to the base model.</p>
+<p>Current PEFT defaults also initialize adapters so they initially do not change the base model's output.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>B0ทำBA0แม้Aสุ่ม จึงinitialoutputเท่าbase; firstgradientdAอาจ0แต่dBไม่จำเป็น0 ต้องไม่ตั้งA/Bทั้งคู่0จนgradientติด</p><p>B0no-op,merged/unmergedallclose,frozenbaseunchanged,metadatawrongbasefailsและshapesrconsistent; toleranceตามdtypeหลังmerge</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-6-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>B0ทำBA0แม้Aสุ่ม จึงinitialoutputเท่าbase; firstgradientdAอาจ0แต่dBไม่จำเป็น0 ต้องไม่ตั้งA/Bทั้งคู่0จนgradientติด</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-6-equation"><summary>สมการ</summary><p>B0ทำBA0แม้Aสุ่ม จึงinitialoutputเท่าbase; firstgradientdAอาจ0แต่dBไม่จำเป็น0 ต้องไม่ตั้งA/Bทั้งคู่0จนgradientติด</p></details><details id="help-topic-6-visual"><summary>ภาพและ shape</summary><p>B0ทำBA0แม้Aสุ่ม จึงinitialoutputเท่าbase; firstgradientdAอาจ0แต่dBไม่จำเป็น0 ต้องไม่ตั้งA/Bทั้งคู่0จนgradientติด</p></details><details id="help-topic-6-code"><summary>โค้ด</summary><p>B0ทำBA0แม้Aสุ่ม จึงinitialoutputเท่าbase; firstgradientdAอาจ0แต่dBไม่จำเป็น0 ต้องไม่ตั้งA/Bทั้งคู่0จนgradientติด</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-6-result"><summary>ผลการทดลอง</summary><p>B0ทำBA0แม้Aสุ่ม จึงinitialoutputเท่าbase; firstgradientdAอาจ0แต่dBไม่จำเป็น0 ต้องไม่ตั้งA/Bทั้งคู่0จนgradientติด</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-6"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-7" class="source-topic"><span id="source-56-lora-qlora-peft-canonical-7-lora-dropout" class="legacy-anchor"></span><h3>7. LoRA Dropout</h3>
+<p>Dropout can be applied to adapter input during training.</p>
+<p>This regularizes adapter updates.</p>
+<p>Inference normally disables dropout.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-7-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>7. LoRA Dropout</h3>
+<p>Dropout can be applied to adapter input during training.</p>
+<p>This regularizes adapter updates.</p>
+<p>Inference normally disables dropout.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-7-equation"><summary>สมการ</summary><h3>7. LoRA Dropout</h3>
+<p>Dropout can be applied to adapter input during training.</p>
+<p>This regularizes adapter updates.</p>
+<p>Inference normally disables dropout.</p></details><details id="help-topic-7-visual"><summary>ภาพและ shape</summary><h3>7. LoRA Dropout</h3>
+<p>Dropout can be applied to adapter input during training.</p>
+<p>This regularizes adapter updates.</p>
+<p>Inference normally disables dropout.</p></details><details id="help-topic-7-code"><summary>โค้ด</summary><h3>7. LoRA Dropout</h3>
+<p>Dropout can be applied to adapter input during training.</p>
+<p>This regularizes adapter updates.</p>
+<p>Inference normally disables dropout.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-7-result"><summary>ผลการทดลอง</summary><h3>7. LoRA Dropout</h3>
+<p>Dropout can be applied to adapter input during training.</p>
+<p>This regularizes adapter updates.</p>
+<p>Inference normally disables dropout.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-7"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-8" class="source-topic"><span id="source-56-lora-qlora-peft-canonical-8-target-modules" class="legacy-anchor"></span><h3>8. Target Modules</h3>
+<p>Common transformer targets:
+- q_proj
+- k_proj
+- v_proj
+- o_proj
+- gate/up/down MLP projections</p>
+<p>Which modules are best depends on:
+- architecture
+- task
+- rank
+- memory budget</p>
+<p>Current PEFT can target explicit module names or broader selections such as all linear modules for QLoRA-style training.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>targetnamedmodulesq_proj/v_projในtinyTransformer,wrapLinearให้basefrozenและA/Bregistered; asserttrainableIDsเฉพาะadapters</p><p>recordx(B,din),Ax(B,r),BAx(B,dout),base/adapteroutput,gradnormA/BและvalNLL; basegradientต้องNone</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-8-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>targetnamedmodulesq_proj/v_projในtinyTransformer,wrapLinearให้basefrozenและA/Bregistered; asserttrainableIDsเฉพาะadapters</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-8-equation"><summary>สมการ</summary><p>targetnamedmodulesq_proj/v_projในtinyTransformer,wrapLinearให้basefrozenและA/Bregistered; asserttrainableIDsเฉพาะadapters</p></details><details id="help-topic-8-visual"><summary>ภาพและ shape</summary><p>targetnamedmodulesq_proj/v_projในtinyTransformer,wrapLinearให้basefrozenและA/Bregistered; asserttrainableIDsเฉพาะadapters</p></details><details id="help-topic-8-code"><summary>โค้ด</summary><p>targetnamedmodulesq_proj/v_projในtinyTransformer,wrapLinearให้basefrozenและA/Bregistered; asserttrainableIDsเฉพาะadapters</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-8-result"><summary>ผลการทดลอง</summary><p>targetnamedmodulesq_proj/v_projในtinyTransformer,wrapLinearให้basefrozenและA/Bregistered; asserttrainableIDsเฉพาะadapters</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-8"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-9" class="source-topic"><span id="source-56-lora-qlora-peft-canonical-9-queryvalue-only-vs-all-linear" class="legacy-anchor"></span><h3>9. Query/Value-Only vs All-Linear</h3>
+<p>Original/simple recipes often adapt a small attention subset.</p>
+<p>QLoRA-style PEFT commonly targets all linear layers.</p>
+<p>Trade-off:
+- more target layers → more capacity
+- more trainable adapter parameters</p>
+<p>Benchmark rather than assume.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>q/v-onlyมีfewertrainablesส่วนall-linearรวมFFN/O/Kเพิ่มcapacityและmemory; samebase/split/budgetcomparequalityและparamsไม่สรุปallดีกว่าแน่</p><p>q/v→alllinearคงrank/data/initseed; reportquality-per-trainableparameterและlatency/memoryหลายruns ไม่อ้างparameterbudgetเท่ากัน</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-9-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>q/v-onlyมีfewertrainablesส่วนall-linearรวมFFN/O/Kเพิ่มcapacityและmemory; samebase/split/budgetcomparequalityและparamsไม่สรุปallดีกว่าแน่</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-9-equation"><summary>สมการ</summary><p>q/v-onlyมีfewertrainablesส่วนall-linearรวมFFN/O/Kเพิ่มcapacityและmemory; samebase/split/budgetcomparequalityและparamsไม่สรุปallดีกว่าแน่</p></details><details id="help-topic-9-visual"><summary>ภาพและ shape</summary><p>q/v-onlyมีfewertrainablesส่วนall-linearรวมFFN/O/Kเพิ่มcapacityและmemory; samebase/split/budgetcomparequalityและparamsไม่สรุปallดีกว่าแน่</p></details><details id="help-topic-9-code"><summary>โค้ด</summary><p>q/v-onlyมีfewertrainablesส่วนall-linearรวมFFN/O/Kเพิ่มcapacityและmemory; samebase/split/budgetcomparequalityและparamsไม่สรุปallดีกว่าแน่</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-9-result"><summary>ผลการทดลอง</summary><p>q/v-onlyมีfewertrainablesส่วนall-linearรวมFFN/O/Kเพิ่มcapacityและmemory; samebase/split/budgetcomparequalityและparamsไม่สรุปallดีกว่าแน่</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-9"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-10" class="source-topic"><span id="source-56-lora-qlora-peft-canonical-10-trainable-ratio" class="legacy-anchor"></span><h3>10. Trainable Ratio</h3>
+<p>For base P and adapters A:</p>
+<pre><code class="language-text">trainable_ratio =
+A / (P + A)
+</code></pre>
+<p>Often far below 1%.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>ratio=r(din+dout)/(din·dout+r(din+dout))หากdenominatorรวมadapter; รายงานbase-onlyratioแยกไม่สลับนิยาม</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-10-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>ratio=r(din+dout)/(din·dout+r(din+dout))หากdenominatorรวมadapter; รายงานbase-onlyratioแยกไม่สลับนิยาม</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-10-equation"><summary>สมการ</summary><p>ratio=r(din+dout)/(din·dout+r(din+dout))หากdenominatorรวมadapter; รายงานbase-onlyratioแยกไม่สลับนิยาม</p></details><details id="help-topic-10-visual"><summary>ภาพและ shape</summary><p>ratio=r(din+dout)/(din·dout+r(din+dout))หากdenominatorรวมadapter; รายงานbase-onlyratioแยกไม่สลับนิยาม</p></details><details id="help-topic-10-code"><summary>โค้ด</summary><p>ratio=r(din+dout)/(din·dout+r(din+dout))หากdenominatorรวมadapter; รายงานbase-onlyratioแยกไม่สลับนิยาม</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-10-result"><summary>ผลการทดลอง</summary><p>ratio=r(din+dout)/(din·dout+r(din+dout))หากdenominatorรวมadapter; รายงานbase-onlyratioแยกไม่สลับนิยาม</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-10"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-11" class="source-topic"><span id="source-56-lora-qlora-peft-canonical-11-adapter-checkpoint" class="legacy-anchor"></span><h3>11. Adapter Checkpoint</h3>
+<p>LoRA checkpoint stores:
+- adapter configuration
+- A matrices
+- B matrices
+- optional extra trainable modules</p>
+<p>It usually does <strong>not</strong> contain the complete frozen base model.</p>
+<p>Therefore deployment needs:
+- compatible base model
+- compatible adapter</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>manifest มีbasehash/tokenizer/targetIDs/r/α/scaling/init/quantcodebook/compute-dtype/seed/trainingdatahash/adapterdigest</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-11-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>manifest มีbasehash/tokenizer/targetIDs/r/α/scaling/init/quantcodebook/compute-dtype/seed/trainingdatahash/adapterdigest</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-11-equation"><summary>สมการ</summary><p>manifest มีbasehash/tokenizer/targetIDs/r/α/scaling/init/quantcodebook/compute-dtype/seed/trainingdatahash/adapterdigest</p></details><details id="help-topic-11-visual"><summary>ภาพและ shape</summary><p>manifest มีbasehash/tokenizer/targetIDs/r/α/scaling/init/quantcodebook/compute-dtype/seed/trainingdatahash/adapterdigest</p></details><details id="help-topic-11-code"><summary>โค้ด</summary><p>manifest มีbasehash/tokenizer/targetIDs/r/α/scaling/init/quantcodebook/compute-dtype/seed/trainingdatahash/adapterdigest</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-11-result"><summary>ผลการทดลอง</summary><p>manifest มีbasehash/tokenizer/targetIDs/r/α/scaling/init/quantcodebook/compute-dtype/seed/trainingdatahash/adapterdigest</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-11"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-12" class="source-topic"><span id="source-56-lora-qlora-peft-canonical-12-merge" class="legacy-anchor"></span><h3>12. Merge</h3>
+<p>At inference:</p>
+<pre><code class="language-text">W_merged =
+W
++
+(alpha/r)BA
+</code></pre>
+<p>Then the adapter path can be removed for a plain merged linear layer.</p>
+<p>Benefits:
+- no adapter matmul overhead</p>
+<p>Trade-off:
+- loses easy adapter switching unless original base is retained</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>mergedW=W+sBAแล้วforwardต้องallcloseunmerged; unmergeลบsameΔWครั้งเดียว,ห้ามmergeซ้ำและอย่าแก้A/Bขณะถือmergedweightsโดยไม่track</p><p>B0no-op,merged/unmergedallclose,frozenbaseunchanged,metadatawrongbasefailsและshapesrconsistent; toleranceตามdtypeหลังmerge</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-12-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>mergedW=W+sBAแล้วforwardต้องallcloseunmerged; unmergeลบsameΔWครั้งเดียว,ห้ามmergeซ้ำและอย่าแก้A/Bขณะถือmergedweightsโดยไม่track</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-12-equation"><summary>สมการ</summary><p>mergedW=W+sBAแล้วforwardต้องallcloseunmerged; unmergeลบsameΔWครั้งเดียว,ห้ามmergeซ้ำและอย่าแก้A/Bขณะถือmergedweightsโดยไม่track</p></details><details id="help-topic-12-visual"><summary>ภาพและ shape</summary><p>mergedW=W+sBAแล้วforwardต้องallcloseunmerged; unmergeลบsameΔWครั้งเดียว,ห้ามmergeซ้ำและอย่าแก้A/Bขณะถือmergedweightsโดยไม่track</p></details><details id="help-topic-12-code"><summary>โค้ด</summary><p>mergedW=W+sBAแล้วforwardต้องallcloseunmerged; unmergeลบsameΔWครั้งเดียว,ห้ามmergeซ้ำและอย่าแก้A/Bขณะถือmergedweightsโดยไม่track</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-12-result"><summary>ผลการทดลอง</summary><p>mergedW=W+sBAแล้วforwardต้องallcloseunmerged; unmergeลบsameΔWครั้งเดียว,ห้ามmergeซ้ำและอย่าแก้A/Bขณะถือmergedweightsโดยไม่track</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-12"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-13" class="source-topic"><span id="source-56-lora-qlora-peft-canonical-13-unmerge" class="legacy-anchor"></span><h3>13. Unmerge</h3>
+<p>If the original base weight is preserved:</p>
+<pre><code class="language-text">W =
+W_merged
+-
+scale * BA
+</code></pre>
+<p>Repeated merge/unmerge should avoid accumulating numerical error unnecessarily.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>mergedW=W+sBAแล้วforwardต้องallcloseunmerged; unmergeลบsameΔWครั้งเดียว,ห้ามmergeซ้ำและอย่าแก้A/Bขณะถือmergedweightsโดยไม่track</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-13-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>mergedW=W+sBAแล้วforwardต้องallcloseunmerged; unmergeลบsameΔWครั้งเดียว,ห้ามmergeซ้ำและอย่าแก้A/Bขณะถือmergedweightsโดยไม่track</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-13-equation"><summary>สมการ</summary><p>mergedW=W+sBAแล้วforwardต้องallcloseunmerged; unmergeลบsameΔWครั้งเดียว,ห้ามmergeซ้ำและอย่าแก้A/Bขณะถือmergedweightsโดยไม่track</p></details><details id="help-topic-13-visual"><summary>ภาพและ shape</summary><p>mergedW=W+sBAแล้วforwardต้องallcloseunmerged; unmergeลบsameΔWครั้งเดียว,ห้ามmergeซ้ำและอย่าแก้A/Bขณะถือmergedweightsโดยไม่track</p></details><details id="help-topic-13-code"><summary>โค้ด</summary><p>mergedW=W+sBAแล้วforwardต้องallcloseunmerged; unmergeลบsameΔWครั้งเดียว,ห้ามmergeซ้ำและอย่าแก้A/Bขณะถือmergedweightsโดยไม่track</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-13-result"><summary>ผลการทดลอง</summary><p>mergedW=W+sBAแล้วforwardต้องallcloseunmerged; unmergeลบsameΔWครั้งเดียว,ห้ามmergeซ้ำและอย่าแก้A/Bขณะถือmergedweightsโดยไม่track</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-13"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-14" class="source-topic"><span id="source-56-lora-qlora-peft-canonical-14-multiple-adapters" class="legacy-anchor"></span><h3>14. Multiple Adapters</h3>
+<p>One base model can host:
+- task A adapter
+- task B adapter
+- domain adapter</p>
+<p>This is operationally cheaper than storing separate full-model checkpoints.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-14-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>14. Multiple Adapters</h3>
+<p>One base model can host:
+- task A adapter
+- task B adapter
+- domain adapter</p>
+<p>This is operationally cheaper than storing separate full-model checkpoints.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-14-equation"><summary>สมการ</summary><h3>14. Multiple Adapters</h3>
+<p>One base model can host:
+- task A adapter
+- task B adapter
+- domain adapter</p>
+<p>This is operationally cheaper than storing separate full-model checkpoints.</p></details><details id="help-topic-14-visual"><summary>ภาพและ shape</summary><h3>14. Multiple Adapters</h3>
+<p>One base model can host:
+- task A adapter
+- task B adapter
+- domain adapter</p>
+<p>This is operationally cheaper than storing separate full-model checkpoints.</p></details><details id="help-topic-14-code"><summary>โค้ด</summary><h3>14. Multiple Adapters</h3>
+<p>One base model can host:
+- task A adapter
+- task B adapter
+- domain adapter</p>
+<p>This is operationally cheaper than storing separate full-model checkpoints.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-14-result"><summary>ผลการทดลอง</summary><h3>14. Multiple Adapters</h3>
+<p>One base model can host:
+- task A adapter
+- task B adapter
+- domain adapter</p>
+<p>This is operationally cheaper than storing separate full-model checkpoints.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-14"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-15" class="source-topic"><span id="source-56-lora-qlora-peft-canonical-15-peft-family" class="legacy-anchor"></span><h3>15. PEFT Family</h3>
+<p>Beyond LoRA:
+- prefix tuning
+- prompt tuning
+- IA3
+- adapters
+- newer low-rank variants</p>
+<p>The shared idea is reducing trainable state.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-15-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>15. PEFT Family</h3>
+<p>Beyond LoRA:
+- prefix tuning
+- prompt tuning
+- IA3
+- adapters
+- newer low-rank variants</p>
+<p>The shared idea is reducing trainable state.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-15-equation"><summary>สมการ</summary><h3>15. PEFT Family</h3>
+<p>Beyond LoRA:
+- prefix tuning
+- prompt tuning
+- IA3
+- adapters
+- newer low-rank variants</p>
+<p>The shared idea is reducing trainable state.</p></details><details id="help-topic-15-visual"><summary>ภาพและ shape</summary><h3>15. PEFT Family</h3>
+<p>Beyond LoRA:
+- prefix tuning
+- prompt tuning
+- IA3
+- adapters
+- newer low-rank variants</p>
+<p>The shared idea is reducing trainable state.</p></details><details id="help-topic-15-code"><summary>โค้ด</summary><h3>15. PEFT Family</h3>
+<p>Beyond LoRA:
+- prefix tuning
+- prompt tuning
+- IA3
+- adapters
+- newer low-rank variants</p>
+<p>The shared idea is reducing trainable state.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-15-result"><summary>ผลการทดลอง</summary><h3>15. PEFT Family</h3>
+<p>Beyond LoRA:
+- prefix tuning
+- prompt tuning
+- IA3
+- adapters
+- newer low-rank variants</p>
+<p>The shared idea is reducing trainable state.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-15"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-16" class="source-topic"><span id="source-56-lora-qlora-peft-canonical-16-qlora" class="legacy-anchor"></span><h3>16. QLoRA</h3>
+<p>QLoRA combines:
+- frozen quantized base model
+- trainable LoRA adapters</p>
+<p>Important:</p>
+<blockquote>
+<p>The base model is quantized for storage/computation efficiency, while adapter parameters remain trainable. QLoRA is not ordinary gradient descent directly updating 4-bit frozen base weights.</p>
+</blockquote><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-16-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>16. QLoRA</h3>
+<p>QLoRA combines:
+- frozen quantized base model
+- trainable LoRA adapters</p>
+<p>Important:</p>
+<blockquote>
+<p>The base model is quantized for storage/computation efficiency, while adapter parameters remain trainable. QLoRA is not ordinary gradient descent directly updating 4-bit frozen base weights.</p>
+</blockquote><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-16-equation"><summary>สมการ</summary><h3>16. QLoRA</h3>
+<p>QLoRA combines:
+- frozen quantized base model
+- trainable LoRA adapters</p>
+<p>Important:</p>
+<blockquote>
+<p>The base model is quantized for storage/computation efficiency, while adapter parameters remain trainable. QLoRA is not ordinary gradient descent directly updating 4-bit frozen base weights.</p>
+</blockquote></details><details id="help-topic-16-visual"><summary>ภาพและ shape</summary><h3>16. QLoRA</h3>
+<p>QLoRA combines:
+- frozen quantized base model
+- trainable LoRA adapters</p>
+<p>Important:</p>
+<blockquote>
+<p>The base model is quantized for storage/computation efficiency, while adapter parameters remain trainable. QLoRA is not ordinary gradient descent directly updating 4-bit frozen base weights.</p>
+</blockquote></details><details id="help-topic-16-code"><summary>โค้ด</summary><h3>16. QLoRA</h3>
+<p>QLoRA combines:
+- frozen quantized base model
+- trainable LoRA adapters</p>
+<p>Important:</p>
+<blockquote>
+<p>The base model is quantized for storage/computation efficiency, while adapter parameters remain trainable. QLoRA is not ordinary gradient descent directly updating 4-bit frozen base weights.</p>
+</blockquote><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-16-result"><summary>ผลการทดลอง</summary><h3>16. QLoRA</h3>
+<p>QLoRA combines:
+- frozen quantized base model
+- trainable LoRA adapters</p>
+<p>Important:</p>
+<blockquote>
+<p>The base model is quantized for storage/computation efficiency, while adapter parameters remain trainable. QLoRA is not ordinary gradient descent directly updating 4-bit frozen base weights.</p>
+</blockquote><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-16"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-17" class="source-topic"><span id="source-56-lora-qlora-peft-canonical-17-4-bit-base-weights" class="legacy-anchor"></span><h3>17. 4-bit Base Weights</h3>
+<p>Conceptually:</p>
+<pre><code class="language-text">FP weight block
+↓ quantize
+4-bit codes + scale metadata
+↓
+dequantize as needed for compute
+</code></pre>
+<p>Actual kernels may fuse dequantization with matrix multiplication.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>codebook16levelsระบุค่าชัดเช่นlinspace(−1,1,16),scale=maxabsW; nearestcode→dequant,reportMSE; generic16levelไม่เท่ากับNF4เสมอ</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-17-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>codebook16levelsระบุค่าชัดเช่นlinspace(−1,1,16),scale=maxabsW; nearestcode→dequant,reportMSE; generic16levelไม่เท่ากับNF4เสมอ</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-17-equation"><summary>สมการ</summary><p>codebook16levelsระบุค่าชัดเช่นlinspace(−1,1,16),scale=maxabsW; nearestcode→dequant,reportMSE; generic16levelไม่เท่ากับNF4เสมอ</p></details><details id="help-topic-17-visual"><summary>ภาพและ shape</summary><p>codebook16levelsระบุค่าชัดเช่นlinspace(−1,1,16),scale=maxabsW; nearestcode→dequant,reportMSE; generic16levelไม่เท่ากับNF4เสมอ</p></details><details id="help-topic-17-code"><summary>โค้ด</summary><p>codebook16levelsระบุค่าชัดเช่นlinspace(−1,1,16),scale=maxabsW; nearestcode→dequant,reportMSE; generic16levelไม่เท่ากับNF4เสมอ</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-17-result"><summary>ผลการทดลอง</summary><p>codebook16levelsระบุค่าชัดเช่นlinspace(−1,1,16),scale=maxabsW; nearestcode→dequant,reportMSE; generic16levelไม่เท่ากับNF4เสมอ</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-17"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-18" class="source-topic"><span id="source-56-lora-qlora-peft-canonical-18-nf4" class="legacy-anchor"></span><h3>18. NF4</h3>
+<p>NormalFloat4 was designed for normally distributed neural-network weights.</p>
+<p>Conceptually:
+- 16 representable levels
+- levels chosen for the weight distribution rather than uniform spacing</p>
+<p>This differs from simple uniform INT4.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-18-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>18. NF4</h3>
+<p>NormalFloat4 was designed for normally distributed neural-network weights.</p>
+<p>Conceptually:
+- 16 representable levels
+- levels chosen for the weight distribution rather than uniform spacing</p>
+<p>This differs from simple uniform INT4.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-18-equation"><summary>สมการ</summary><h3>18. NF4</h3>
+<p>NormalFloat4 was designed for normally distributed neural-network weights.</p>
+<p>Conceptually:
+- 16 representable levels
+- levels chosen for the weight distribution rather than uniform spacing</p>
+<p>This differs from simple uniform INT4.</p></details><details id="help-topic-18-visual"><summary>ภาพและ shape</summary><h3>18. NF4</h3>
+<p>NormalFloat4 was designed for normally distributed neural-network weights.</p>
+<p>Conceptually:
+- 16 representable levels
+- levels chosen for the weight distribution rather than uniform spacing</p>
+<p>This differs from simple uniform INT4.</p></details><details id="help-topic-18-code"><summary>โค้ด</summary><h3>18. NF4</h3>
+<p>NormalFloat4 was designed for normally distributed neural-network weights.</p>
+<p>Conceptually:
+- 16 representable levels
+- levels chosen for the weight distribution rather than uniform spacing</p>
+<p>This differs from simple uniform INT4.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-18-result"><summary>ผลการทดลอง</summary><h3>18. NF4</h3>
+<p>NormalFloat4 was designed for normally distributed neural-network weights.</p>
+<p>Conceptually:
+- 16 representable levels
+- levels chosen for the weight distribution rather than uniform spacing</p>
+<p>This differs from simple uniform INT4.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-18"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-19" class="source-topic"><span id="source-56-lora-qlora-peft-canonical-19-double-quantization" class="legacy-anchor"></span><h3>19. Double Quantization</h3>
+<p>Quantization itself needs scale/constants.</p>
+<p>Double quantization compresses some of those quantization constants too.</p>
+<p>Goal:
+- reduce metadata memory overhead</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-19-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>19. Double Quantization</h3>
+<p>Quantization itself needs scale/constants.</p>
+<p>Double quantization compresses some of those quantization constants too.</p>
+<p>Goal:
+- reduce metadata memory overhead</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-19-equation"><summary>สมการ</summary><h3>19. Double Quantization</h3>
+<p>Quantization itself needs scale/constants.</p>
+<p>Double quantization compresses some of those quantization constants too.</p>
+<p>Goal:
+- reduce metadata memory overhead</p></details><details id="help-topic-19-visual"><summary>ภาพและ shape</summary><h3>19. Double Quantization</h3>
+<p>Quantization itself needs scale/constants.</p>
+<p>Double quantization compresses some of those quantization constants too.</p>
+<p>Goal:
+- reduce metadata memory overhead</p></details><details id="help-topic-19-code"><summary>โค้ด</summary><h3>19. Double Quantization</h3>
+<p>Quantization itself needs scale/constants.</p>
+<p>Double quantization compresses some of those quantization constants too.</p>
+<p>Goal:
+- reduce metadata memory overhead</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-19-result"><summary>ผลการทดลอง</summary><h3>19. Double Quantization</h3>
+<p>Quantization itself needs scale/constants.</p>
+<p>Double quantization compresses some of those quantization constants too.</p>
+<p>Goal:
+- reduce metadata memory overhead</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-19"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-20" class="source-topic"><span id="source-56-lora-qlora-peft-canonical-20-compute-dtype" class="legacy-anchor"></span><h3>20. Compute Dtype</h3>
+<p>4-bit storage does not imply every arithmetic operation is performed in 4-bit.</p>
+<p>Typical QLoRA systems:
+- store base weights in 4-bit form
+- dequantize into BF16/FP16-like compute path
+- train adapters in higher precision</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-20-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>20. Compute Dtype</h3>
+<p>4-bit storage does not imply every arithmetic operation is performed in 4-bit.</p>
+<p>Typical QLoRA systems:
+- store base weights in 4-bit form
+- dequantize into BF16/FP16-like compute path
+- train adapters in higher precision</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-20-equation"><summary>สมการ</summary><h3>20. Compute Dtype</h3>
+<p>4-bit storage does not imply every arithmetic operation is performed in 4-bit.</p>
+<p>Typical QLoRA systems:
+- store base weights in 4-bit form
+- dequantize into BF16/FP16-like compute path
+- train adapters in higher precision</p></details><details id="help-topic-20-visual"><summary>ภาพและ shape</summary><h3>20. Compute Dtype</h3>
+<p>4-bit storage does not imply every arithmetic operation is performed in 4-bit.</p>
+<p>Typical QLoRA systems:
+- store base weights in 4-bit form
+- dequantize into BF16/FP16-like compute path
+- train adapters in higher precision</p></details><details id="help-topic-20-code"><summary>โค้ด</summary><h3>20. Compute Dtype</h3>
+<p>4-bit storage does not imply every arithmetic operation is performed in 4-bit.</p>
+<p>Typical QLoRA systems:
+- store base weights in 4-bit form
+- dequantize into BF16/FP16-like compute path
+- train adapters in higher precision</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-20-result"><summary>ผลการทดลอง</summary><h3>20. Compute Dtype</h3>
+<p>4-bit storage does not imply every arithmetic operation is performed in 4-bit.</p>
+<p>Typical QLoRA systems:
+- store base weights in 4-bit form
+- dequantize into BF16/FP16-like compute path
+- train adapters in higher precision</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-20"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-21" class="source-topic"><span id="source-56-lora-qlora-peft-canonical-21-optimizer-state" class="legacy-anchor"></span><h3>21. Optimizer State</h3>
+<p>Only trainable adapter parameters require ordinary gradient/optimizer state.</p>
+<p>This is a major memory saving compared with full fine-tuning.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>AdamFP32moments2·4bytesต่อtrainableparam; fullFTmoments8P,LoRA8r(din+dout)แต่baseweightsและforwardactivationsยังต้องอยู่</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-21-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>AdamFP32moments2·4bytesต่อtrainableparam; fullFTmoments8P,LoRA8r(din+dout)แต่baseweightsและforwardactivationsยังต้องอยู่</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-21-equation"><summary>สมการ</summary><p>AdamFP32moments2·4bytesต่อtrainableparam; fullFTmoments8P,LoRA8r(din+dout)แต่baseweightsและforwardactivationsยังต้องอยู่</p></details><details id="help-topic-21-visual"><summary>ภาพและ shape</summary><p>AdamFP32moments2·4bytesต่อtrainableparam; fullFTmoments8P,LoRA8r(din+dout)แต่baseweightsและforwardactivationsยังต้องอยู่</p></details><details id="help-topic-21-code"><summary>โค้ด</summary><p>AdamFP32moments2·4bytesต่อtrainableparam; fullFTmoments8P,LoRA8r(din+dout)แต่baseweightsและforwardactivationsยังต้องอยู่</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-21-result"><summary>ผลการทดลอง</summary><p>AdamFP32moments2·4bytesต่อtrainableparam; fullFTmoments8P,LoRA8r(din+dout)แต่baseweightsและforwardactivationsยังต้องอยู่</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-21"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-22" class="source-topic"><span id="source-56-lora-qlora-peft-canonical-22-memory-decomposition" class="legacy-anchor"></span><h3>22. Memory Decomposition</h3>
+<p>Full fine-tuning roughly needs:
+- base parameters
+- gradients
+- optimizer states
+- activations</p>
+<p>QLoRA:
+- quantized frozen base
+- adapter parameters
+- adapter gradients
+- adapter optimizer state
+- activations/dequant buffers</p>
+<p>Activations can still be large.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>AdamFP32moments2·4bytesต่อtrainableparam; fullFTmoments8P,LoRA8r(din+dout)แต่baseweightsและforwardactivationsยังต้องอยู่</p><p>adapterforwardextraO(BTr(din+dout)),stateO(r(din+dout)); mergedinferenceไม่เพิ่มlowrankmatmulsแต่quantizedmergeอาจเพิ่มroundingerror</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-22-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>AdamFP32moments2·4bytesต่อtrainableparam; fullFTmoments8P,LoRA8r(din+dout)แต่baseweightsและforwardactivationsยังต้องอยู่</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-22-equation"><summary>สมการ</summary><p>AdamFP32moments2·4bytesต่อtrainableparam; fullFTmoments8P,LoRA8r(din+dout)แต่baseweightsและforwardactivationsยังต้องอยู่</p></details><details id="help-topic-22-visual"><summary>ภาพและ shape</summary><p>AdamFP32moments2·4bytesต่อtrainableparam; fullFTmoments8P,LoRA8r(din+dout)แต่baseweightsและforwardactivationsยังต้องอยู่</p></details><details id="help-topic-22-code"><summary>โค้ด</summary><p>AdamFP32moments2·4bytesต่อtrainableparam; fullFTmoments8P,LoRA8r(din+dout)แต่baseweightsและforwardactivationsยังต้องอยู่</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-22-result"><summary>ผลการทดลอง</summary><p>AdamFP32moments2·4bytesต่อtrainableparam; fullFTmoments8P,LoRA8r(din+dout)แต่baseweightsและforwardactivationsยังต้องอยู่</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-22"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-23" class="source-topic"><span id="source-56-lora-qlora-peft-canonical-23-gradient-checkpointing" class="legacy-anchor"></span><h3>23. Gradient Checkpointing</h3>
+<p>QLoRA is often combined with activation checkpointing to further reduce memory.</p>
+<p>This trades compute for activation memory.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-23-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>23. Gradient Checkpointing</h3>
+<p>QLoRA is often combined with activation checkpointing to further reduce memory.</p>
+<p>This trades compute for activation memory.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-23-equation"><summary>สมการ</summary><h3>23. Gradient Checkpointing</h3>
+<p>QLoRA is often combined with activation checkpointing to further reduce memory.</p>
+<p>This trades compute for activation memory.</p></details><details id="help-topic-23-visual"><summary>ภาพและ shape</summary><h3>23. Gradient Checkpointing</h3>
+<p>QLoRA is often combined with activation checkpointing to further reduce memory.</p>
+<p>This trades compute for activation memory.</p></details><details id="help-topic-23-code"><summary>โค้ด</summary><h3>23. Gradient Checkpointing</h3>
+<p>QLoRA is often combined with activation checkpointing to further reduce memory.</p>
+<p>This trades compute for activation memory.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-23-result"><summary>ผลการทดลอง</summary><h3>23. Gradient Checkpointing</h3>
+<p>QLoRA is often combined with activation checkpointing to further reduce memory.</p>
+<p>This trades compute for activation memory.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-23"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-24" class="source-topic"><span id="source-56-lora-qlora-peft-canonical-24-adapter-rank" class="legacy-anchor"></span><h3>24. Adapter Rank</h3>
+<p>Low rank:
+- cheaper
+- lower capacity</p>
+<p>High rank:
+- more trainable parameters
+- more adaptation capacity</p>
+<p>Rank is a hyperparameter, not a quality guarantee.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>ratio=r(din+dout)/(din·dout+r(din+dout))หากdenominatorรวมadapter; รายงานbase-onlyratioแยกไม่สลับนิยาม</p><p>rank4/8/16คงbase/targets/α/rpolicy/seed/updates; reportquality/trainableparams/memoryและไม่เปลี่ยนscalingโดยไม่ระบุ</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-24-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>ratio=r(din+dout)/(din·dout+r(din+dout))หากdenominatorรวมadapter; รายงานbase-onlyratioแยกไม่สลับนิยาม</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-24-equation"><summary>สมการ</summary><p>ratio=r(din+dout)/(din·dout+r(din+dout))หากdenominatorรวมadapter; รายงานbase-onlyratioแยกไม่สลับนิยาม</p></details><details id="help-topic-24-visual"><summary>ภาพและ shape</summary><p>ratio=r(din+dout)/(din·dout+r(din+dout))หากdenominatorรวมadapter; รายงานbase-onlyratioแยกไม่สลับนิยาม</p></details><details id="help-topic-24-code"><summary>โค้ด</summary><p>ratio=r(din+dout)/(din·dout+r(din+dout))หากdenominatorรวมadapter; รายงานbase-onlyratioแยกไม่สลับนิยาม</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-24-result"><summary>ผลการทดลอง</summary><p>ratio=r(din+dout)/(din·dout+r(din+dout))หากdenominatorรวมadapter; รายงานbase-onlyratioแยกไม่สลับนิยาม</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-24"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-25" class="source-topic"><span id="source-56-lora-qlora-peft-canonical-25-current-hugging-face-peft" class="legacy-anchor"></span><h3>25. Current Hugging Face PEFT</h3>
+<p>Typical current concepts:</p>
+<pre><code class="language-python">from peft import LoraConfig, get_peft_model
+
+config = LoraConfig(
+    r=16,
+    lora_alpha=32,
+    lora_dropout=0.05,
+    target_modules=[&quot;q_proj&quot;, &quot;v_proj&quot;],
+    task_type=&quot;CAUSAL_LM&quot;,
+)
+
+model = get_peft_model(base_model, config)
+</code></pre>
+<p>For QLoRA-style targeting, current PEFT supports:</p>
+<pre><code class="language-python">target_modules=&quot;all-linear&quot;
+</code></pre>
+<p>Always inspect the actual model's module names/config.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-25-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>25. Current Hugging Face PEFT</h3>
+<p>Typical current concepts:</p>
+<pre><code class="language-python">from peft import LoraConfig, get_peft_model
+
+config = LoraConfig(
+    r=16,
+    lora_alpha=32,
+    lora_dropout=0.05,
+    target_modules=[&quot;q_proj&quot;, &quot;v_proj&quot;],
+    task_type=&quot;CAUSAL_LM&quot;,
+)
+
+model = get_peft_model(base_model, config)
+</code></pre>
+<p>For QLoRA-style targeting, current PEFT supports:</p>
+<pre><code class="language-python">target_modules=&quot;all-linear&quot;
+</code></pre>
+<p>Always inspect the actual model's module names/config.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-25-equation"><summary>สมการ</summary><h3>25. Current Hugging Face PEFT</h3>
+<p>Typical current concepts:</p>
+<pre><code class="language-python">from peft import LoraConfig, get_peft_model
+
+config = LoraConfig(
+    r=16,
+    lora_alpha=32,
+    lora_dropout=0.05,
+    target_modules=[&quot;q_proj&quot;, &quot;v_proj&quot;],
+    task_type=&quot;CAUSAL_LM&quot;,
+)
+
+model = get_peft_model(base_model, config)
+</code></pre>
+<p>For QLoRA-style targeting, current PEFT supports:</p>
+<pre><code class="language-python">target_modules=&quot;all-linear&quot;
+</code></pre>
+<p>Always inspect the actual model's module names/config.</p></details><details id="help-topic-25-visual"><summary>ภาพและ shape</summary><h3>25. Current Hugging Face PEFT</h3>
+<p>Typical current concepts:</p>
+<pre><code class="language-python">from peft import LoraConfig, get_peft_model
+
+config = LoraConfig(
+    r=16,
+    lora_alpha=32,
+    lora_dropout=0.05,
+    target_modules=[&quot;q_proj&quot;, &quot;v_proj&quot;],
+    task_type=&quot;CAUSAL_LM&quot;,
+)
+
+model = get_peft_model(base_model, config)
+</code></pre>
+<p>For QLoRA-style targeting, current PEFT supports:</p>
+<pre><code class="language-python">target_modules=&quot;all-linear&quot;
+</code></pre>
+<p>Always inspect the actual model's module names/config.</p></details><details id="help-topic-25-code"><summary>โค้ด</summary><h3>25. Current Hugging Face PEFT</h3>
+<p>Typical current concepts:</p>
+<pre><code class="language-python">from peft import LoraConfig, get_peft_model
+
+config = LoraConfig(
+    r=16,
+    lora_alpha=32,
+    lora_dropout=0.05,
+    target_modules=[&quot;q_proj&quot;, &quot;v_proj&quot;],
+    task_type=&quot;CAUSAL_LM&quot;,
+)
+
+model = get_peft_model(base_model, config)
+</code></pre>
+<p>For QLoRA-style targeting, current PEFT supports:</p>
+<pre><code class="language-python">target_modules=&quot;all-linear&quot;
+</code></pre>
+<p>Always inspect the actual model's module names/config.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-25-result"><summary>ผลการทดลอง</summary><h3>25. Current Hugging Face PEFT</h3>
+<p>Typical current concepts:</p>
+<pre><code class="language-python">from peft import LoraConfig, get_peft_model
+
+config = LoraConfig(
+    r=16,
+    lora_alpha=32,
+    lora_dropout=0.05,
+    target_modules=[&quot;q_proj&quot;, &quot;v_proj&quot;],
+    task_type=&quot;CAUSAL_LM&quot;,
+)
+
+model = get_peft_model(base_model, config)
+</code></pre>
+<p>For QLoRA-style targeting, current PEFT supports:</p>
+<pre><code class="language-python">target_modules=&quot;all-linear&quot;
+</code></pre>
+<p>Always inspect the actual model's module names/config.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-25"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-26" class="source-topic"><span id="source-56-lora-qlora-peft-canonical-26-base-compatibility" class="legacy-anchor"></span><h3>26. Base Compatibility</h3>
+<p>An adapter is tied to:
+- architecture
+- layer names
+- dimensions
+- base checkpoint/version in practice</p>
+<p>Loading it onto a mismatched base can fail or silently degrade behavior.</p>
+<p>Store base model revision with adapter metadata.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>metadataต้องpinbaserepo/revision/hash,architecture,targetmodules,r,α,dropout,dtype/quantization/tokenizer; sameชื่อน้ำหนักแต่revisionต่างต้องreject</p><p>ใช้adapterกับbaseคนละrevisionแม้shapeเท่ากันอาจผลเสีย; evaluationต้องpinbase/quantconfigและfreezeheldoutไม่เลือกbestseed</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-26-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>metadataต้องpinbaserepo/revision/hash,architecture,targetmodules,r,α,dropout,dtype/quantization/tokenizer; sameชื่อน้ำหนักแต่revisionต่างต้องreject</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-26-equation"><summary>สมการ</summary><p>metadataต้องpinbaserepo/revision/hash,architecture,targetmodules,r,α,dropout,dtype/quantization/tokenizer; sameชื่อน้ำหนักแต่revisionต่างต้องreject</p></details><details id="help-topic-26-visual"><summary>ภาพและ shape</summary><p>metadataต้องpinbaserepo/revision/hash,architecture,targetmodules,r,α,dropout,dtype/quantization/tokenizer; sameชื่อน้ำหนักแต่revisionต่างต้องreject</p></details><details id="help-topic-26-code"><summary>โค้ด</summary><p>metadataต้องpinbaserepo/revision/hash,architecture,targetmodules,r,α,dropout,dtype/quantization/tokenizer; sameชื่อน้ำหนักแต่revisionต่างต้องreject</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-26-result"><summary>ผลการทดลอง</summary><p>metadataต้องpinbaserepo/revision/hash,architecture,targetmodules,r,α,dropout,dtype/quantization/tokenizer; sameชื่อน้ำหนักแต่revisionต่างต้องreject</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-26"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-27" class="source-topic"><span id="source-56-lora-qlora-peft-canonical-27-from-scratch" class="legacy-anchor"></span><h3>27. From Scratch</h3>
+<p>src/lora_numpy.py includes:</p>
+<ul>
+<li>lora_parameter_count</li>
+<li>lora_delta</li>
+<li>lora_forward</li>
+<li>merge_lora</li>
+<li>unmerge_lora</li>
+<li>trainable_fraction</li>
+<li>nearest_codebook_quantize</li>
+</ul>
+<p>The generic codebook quantizer is educational; it is <strong>not</strong> claimed to reproduce production NF4 kernels.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>NumPyWx+sB(Ax)เทียบTorchLinearwrapperfloat64copiedweights; PEFToptionalintegrationต้องเทียบorientation/fan_in_fan_out/scalingด้วย</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-27-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>NumPyWx+sB(Ax)เทียบTorchLinearwrapperfloat64copiedweights; PEFToptionalintegrationต้องเทียบorientation/fan_in_fan_out/scalingด้วย</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-27-equation"><summary>สมการ</summary><p>NumPyWx+sB(Ax)เทียบTorchLinearwrapperfloat64copiedweights; PEFToptionalintegrationต้องเทียบorientation/fan_in_fan_out/scalingด้วย</p></details><details id="help-topic-27-visual"><summary>ภาพและ shape</summary><p>NumPyWx+sB(Ax)เทียบTorchLinearwrapperfloat64copiedweights; PEFToptionalintegrationต้องเทียบorientation/fan_in_fan_out/scalingด้วย</p></details><details id="help-topic-27-code"><summary>โค้ด</summary><p>NumPyWx+sB(Ax)เทียบTorchLinearwrapperfloat64copiedweights; PEFToptionalintegrationต้องเทียบorientation/fan_in_fan_out/scalingด้วย</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-27-result"><summary>ผลการทดลอง</summary><p>NumPyWx+sB(Ax)เทียบTorchLinearwrapperfloat64copiedweights; PEFToptionalintegrationต้องเทียบorientation/fan_in_fan_out/scalingด้วย</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-27"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-28" class="source-topic"><span id="source-56-lora-qlora-peft-canonical-28-common-mistakes" class="legacy-anchor"></span><h3>28. Common Mistakes</h3>
+<ol>
+<li>accidentally training the frozen base</li>
+<li>wrong matrix orientation for A/B</li>
+<li>forgetting alpha/r scaling</li>
+<li>adapter initialized with nonzero update unintentionally</li>
+<li>target module names do not exist</li>
+<li>comparing trainable params but ignoring activations</li>
+<li>saying QLoRA updates 4-bit base weights directly</li>
+<li>calling uniform INT4 "NF4"</li>
+<li>merging twice</li>
+<li>adapter deployed with wrong base checkpoint</li>
+</ol><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-28-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>28. Common Mistakes</h3>
+<ol>
+<li>accidentally training the frozen base</li>
+<li>wrong matrix orientation for A/B</li>
+<li>forgetting alpha/r scaling</li>
+<li>adapter initialized with nonzero update unintentionally</li>
+<li>target module names do not exist</li>
+<li>comparing trainable params but ignoring activations</li>
+<li>saying QLoRA updates 4-bit base weights directly</li>
+<li>calling uniform INT4 "NF4"</li>
+<li>merging twice</li>
+<li>adapter deployed with wrong base checkpoint</li>
+</ol><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-28-equation"><summary>สมการ</summary><h3>28. Common Mistakes</h3>
+<ol>
+<li>accidentally training the frozen base</li>
+<li>wrong matrix orientation for A/B</li>
+<li>forgetting alpha/r scaling</li>
+<li>adapter initialized with nonzero update unintentionally</li>
+<li>target module names do not exist</li>
+<li>comparing trainable params but ignoring activations</li>
+<li>saying QLoRA updates 4-bit base weights directly</li>
+<li>calling uniform INT4 "NF4"</li>
+<li>merging twice</li>
+<li>adapter deployed with wrong base checkpoint</li>
+</ol></details><details id="help-topic-28-visual"><summary>ภาพและ shape</summary><h3>28. Common Mistakes</h3>
+<ol>
+<li>accidentally training the frozen base</li>
+<li>wrong matrix orientation for A/B</li>
+<li>forgetting alpha/r scaling</li>
+<li>adapter initialized with nonzero update unintentionally</li>
+<li>target module names do not exist</li>
+<li>comparing trainable params but ignoring activations</li>
+<li>saying QLoRA updates 4-bit base weights directly</li>
+<li>calling uniform INT4 "NF4"</li>
+<li>merging twice</li>
+<li>adapter deployed with wrong base checkpoint</li>
+</ol></details><details id="help-topic-28-code"><summary>โค้ด</summary><h3>28. Common Mistakes</h3>
+<ol>
+<li>accidentally training the frozen base</li>
+<li>wrong matrix orientation for A/B</li>
+<li>forgetting alpha/r scaling</li>
+<li>adapter initialized with nonzero update unintentionally</li>
+<li>target module names do not exist</li>
+<li>comparing trainable params but ignoring activations</li>
+<li>saying QLoRA updates 4-bit base weights directly</li>
+<li>calling uniform INT4 "NF4"</li>
+<li>merging twice</li>
+<li>adapter deployed with wrong base checkpoint</li>
+</ol><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-28-result"><summary>ผลการทดลอง</summary><h3>28. Common Mistakes</h3>
+<ol>
+<li>accidentally training the frozen base</li>
+<li>wrong matrix orientation for A/B</li>
+<li>forgetting alpha/r scaling</li>
+<li>adapter initialized with nonzero update unintentionally</li>
+<li>target module names do not exist</li>
+<li>comparing trainable params but ignoring activations</li>
+<li>saying QLoRA updates 4-bit base weights directly</li>
+<li>calling uniform INT4 "NF4"</li>
+<li>merging twice</li>
+<li>adapter deployed with wrong base checkpoint</li>
+</ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-28"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-29" class="source-topic"><span id="source-56-lora-qlora-peft-canonical-29-exercises-mini-project" class="legacy-anchor"></span><h3>29. Exercises / Mini Project</h3>
+<ul>
+<li><a href="../56-lora-qlora-peft/exercises/README.md">Exercises</a></li>
+<li><a href="../56-lora-qlora-peft/solutions/README.md">Solutions</a></li>
+<li><a href="../56-lora-qlora-peft/mini-project/README.md">Mini Project</a></li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-29-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>29. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-29-equation"><summary>สมการ</summary><h3>29. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-29-visual"><summary>ภาพและ shape</summary><h3>29. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-29-code"><summary>โค้ด</summary><h3>29. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-29-result"><summary>ผลการทดลอง</summary><h3>29. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-29"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-30" class="source-topic"><span id="source-56-lora-qlora-peft-canonical-30-checklist" class="legacy-anchor"></span><h3>30. Checklist</h3>
+<ul>
+<li>[ ] low-rank update</li>
+<li>[ ] parameter count</li>
+<li>[ ] alpha/r</li>
+<li>[ ] initialization</li>
+<li>[ ] target modules</li>
+<li>[ ] merge/unmerge</li>
+<li>[ ] PEFT checkpointing</li>
+<li>[ ] QLoRA</li>
+<li>[ ] 4-bit base</li>
+<li>[ ] NF4 concept</li>
+<li>[ ] double quantization</li>
+<li>[ ] memory accounting</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-30-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>30. Checklist</h3>
+<ul>
+<li>[ ] low-rank update</li>
+<li>[ ] parameter count</li>
+<li>[ ] alpha/r</li>
+<li>[ ] initialization</li>
+<li>[ ] target modules</li>
+<li>[ ] merge/unmerge</li>
+<li>[ ] PEFT checkpointing</li>
+<li>[ ] QLoRA</li>
+<li>[ ] 4-bit base</li>
+<li>[ ] NF4 concept</li>
+<li>[ ] double quantization</li>
+<li>[ ] memory accounting</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-30-equation"><summary>สมการ</summary><h3>30. Checklist</h3>
+<ul>
+<li>[ ] low-rank update</li>
+<li>[ ] parameter count</li>
+<li>[ ] alpha/r</li>
+<li>[ ] initialization</li>
+<li>[ ] target modules</li>
+<li>[ ] merge/unmerge</li>
+<li>[ ] PEFT checkpointing</li>
+<li>[ ] QLoRA</li>
+<li>[ ] 4-bit base</li>
+<li>[ ] NF4 concept</li>
+<li>[ ] double quantization</li>
+<li>[ ] memory accounting</li>
+</ul></details><details id="help-topic-30-visual"><summary>ภาพและ shape</summary><h3>30. Checklist</h3>
+<ul>
+<li>[ ] low-rank update</li>
+<li>[ ] parameter count</li>
+<li>[ ] alpha/r</li>
+<li>[ ] initialization</li>
+<li>[ ] target modules</li>
+<li>[ ] merge/unmerge</li>
+<li>[ ] PEFT checkpointing</li>
+<li>[ ] QLoRA</li>
+<li>[ ] 4-bit base</li>
+<li>[ ] NF4 concept</li>
+<li>[ ] double quantization</li>
+<li>[ ] memory accounting</li>
+</ul></details><details id="help-topic-30-code"><summary>โค้ด</summary><h3>30. Checklist</h3>
+<ul>
+<li>[ ] low-rank update</li>
+<li>[ ] parameter count</li>
+<li>[ ] alpha/r</li>
+<li>[ ] initialization</li>
+<li>[ ] target modules</li>
+<li>[ ] merge/unmerge</li>
+<li>[ ] PEFT checkpointing</li>
+<li>[ ] QLoRA</li>
+<li>[ ] 4-bit base</li>
+<li>[ ] NF4 concept</li>
+<li>[ ] double quantization</li>
+<li>[ ] memory accounting</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-30-result"><summary>ผลการทดลอง</summary><h3>30. Checklist</h3>
+<ul>
+<li>[ ] low-rank update</li>
+<li>[ ] parameter count</li>
+<li>[ ] alpha/r</li>
+<li>[ ] initialization</li>
+<li>[ ] target modules</li>
+<li>[ ] merge/unmerge</li>
+<li>[ ] PEFT checkpointing</li>
+<li>[ ] QLoRA</li>
+<li>[ ] 4-bit base</li>
+<li>[ ] NF4 concept</li>
+<li>[ ] double quantization</li>
+<li>[ ] memory accounting</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-30"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-31" class="source-topic"><span id="source-56-lora-qlora-peft-canonical-31-whats-next" class="legacy-anchor"></span><span id="source-56-lora-qlora-peft-canonical-56-lora-qlora-peft-lora-qlora-and-peft" class="legacy-anchor"></span><h3>31. What's Next</h3>
+<p>Chapter 57 applies fine-tuning/PEFT to instruction and chat datasets using supervised fine-tuning.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-31-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>31. What's Next</h3>
+<p>Chapter 57 applies fine-tuning/PEFT to instruction and chat datasets using supervised fine-tuning.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-31-equation"><summary>สมการ</summary><h3>31. What's Next</h3>
+<p>Chapter 57 applies fine-tuning/PEFT to instruction and chat datasets using supervised fine-tuning.</p></details><details id="help-topic-31-visual"><summary>ภาพและ shape</summary><h3>31. What's Next</h3>
+<p>Chapter 57 applies fine-tuning/PEFT to instruction and chat datasets using supervised fine-tuning.</p></details><details id="help-topic-31-code"><summary>โค้ด</summary><h3>31. What's Next</h3>
+<p>Chapter 57 applies fine-tuning/PEFT to instruction and chat datasets using supervised fine-tuning.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-31-result"><summary>ผลการทดลอง</summary><h3>31. What's Next</h3>
+<p>Chapter 57 applies fine-tuning/PEFT to instruction and chat datasets using supervised fine-tuning.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-31"> อ่านหัวข้อนี้แล้ว</label></section><details><summary>รายละเอียดเพิ่มเติมและข้อกำหนดของ local lab</summary><h3>56-lora-qlora-peft — LoRA, QLoRA and PEFT</h3>
+<p><strong>Prerequisites:</strong> Complete 55-fine-tuning; be able to trace array/tensor shapes, separate train/validation/test data, and explain the core objective of the current chapter.</p>
+<p><strong>Mental model:</strong> Treat LoRA, QLoRA and PEFT as a pipeline: input representation → central mechanism → objective/state update → observable output. At every boundary, state shape/state, allowed information flow, and the invariant that should remain true.</p>
+<p><strong>Code walkthrough:</strong> Read public API first, then input checks, state/shape transformations, numerical core, returned values and tests. Connect each important code block to the equation or algorithm in the chapter README.</p>
+<p><strong>Visualization / inspection:</strong> Use a tiny case. Inspect intermediate values, distributions, norms, scores, states or trajectories appropriate to LoRA, QLoRA and PEFT; do not rely only on the final metric.</p>
+<p><strong>Experiment:</strong> Run a baseline, one controlled parameter change, one edge case and one repeated seeded comparison. Record seed, environment, data version, configuration and metric.</p>
+<p><strong>Limitations:</strong> List at least one assumption, one data-related limitation, one numerical/optimization limitation and one scaling limitation for LoRA, QLoRA and PEFT.</p>
+<p><strong>Analysis workflow:</strong> Check inputs → preprocessing → shapes/state → finite numerical values → objective/update → evaluation protocol. The earliest unexpected state is more informative than a downstream metric.</p>
+<p><strong>Performance:</strong> Identify the dominant time and memory terms and measure them on the local learning run before attempting optimization.</p>
+<p><strong>Production perspective:</strong> Define input validation, artifact/configuration versioning, quality and resource measurements, staged release criteria and a way to return to the previous known-good artifact.</p>
+<p><strong>Research perspective:</strong> State a falsifiable hypothesis, baseline, one-factor change, metric, repeated-run plan when stochastic, and how negative results will be recorded.</p>
+<p><strong>Interview questions:</strong>
+1. Explain LoRA, QLoRA and PEFT from first principles without naming a library API.
+2. Trace one input through the central mechanism and give the important intermediate shapes/state.
+3. Name the strongest assumption and a case where it fails.
+4. State the dominant compute/memory cost.
+5. Describe how you would validate a new implementation against a trusted baseline.</p>
+<p><strong>Summary / exit condition:</strong> You may move on when you can explain, derive or trace, implement, test, analyze, measure and evaluate LoRA, QLoRA and PEFT, and when the chapter mini-project plus twenty total exercises are complete.</p></details></section><section id="objective-evidence" class="canonical-section"><h2>พิสูจน์ความสามารถทีละ objective</h2><p>ทำกรณีใหม่ก่อนเปิด reference แล้วบันทึกงานด้านล่าง ให้ผู้ตรวจใช้ rubric ตรวจคำอธิบาย ผลคำนวณ โค้ด และข้อจำกัด บันทึกเก็บในเบราว์เซอร์เครื่องนี้ กดส่งออกเพื่อสำรองหรือส่งให้ผู้ตรวจ เว็บไม่ได้รันโค้ดหรือตัดสินผลงานแทนผู้ตรวจ</p><button type="button" class="secondary-button" data-export-evidence>ส่งออกหลักฐานบทนี้เป็น JSON</button><p role="status" id="evidence-export-status"></p><details id="ch56-objective-01" class="objective-proof"><summary>derive LoRA&#x27;s low-rank update</summary><p>derive LoRA&#x27;s low-rank update: ใช้กรณีในหัวข้อ LoRA Core Idea เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch56-evidence-01"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch56-evidence-01-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch56-evidence-01-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch56-evidence-01-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch56-evidence-01-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch56-evidence-01-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch56-evidence-01-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch56-evidence-01-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch56-evidence-01-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>conventionW(dout,din),A(r,din),B(dout,r),ΔW=(α/r)BA; inputx(din),outputWx+(α/r)B(Ax)</p><h3>3. LoRA Core Idea</h3>
+<p>For frozen linear weight:</p>
+<pre><code class="language-text">W ∈ R^(out × in)
+</code></pre>
+<p>instead of updating W directly, learn:</p>
+<pre><code class="language-text">ΔW = B A
+</code></pre>
+<p>where:</p>
+<pre><code class="language-text">A ∈ R^(r × in)
+B ∈ R^(out × r)
+r &lt;&lt; min(in,out)
+</code></pre>
+<p>Forward:</p>
+<pre><code class="language-text">y =
+Wx
++
+(alpha / r) B A x
+</code></pre></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch56-objective-02" class="objective-proof"><summary>calculate LoRA parameter counts</summary><p>calculate LoRA parameter counts: ใช้กรณีในหัวข้อ Parameter Count เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch56-evidence-02"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch56-evidence-02-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch56-evidence-02-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch56-evidence-02-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch56-evidence-02-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch56-evidence-02-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch56-evidence-02-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch56-evidence-02-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch56-evidence-02-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>r(din+dout)=8192r; r4/8/16/64ให้32768/65536/131072/524288 เทียบbase16777216parameters ไม่รวมbias/scaling</p><h3>4. Parameter Count</h3>
+<p>Full linear matrix:</p>
+<pre><code class="language-text">out * in
+</code></pre>
+<p>LoRA adapter:</p>
+<pre><code class="language-text">r * in
++
+out * r
+
+=
+r(in + out)
+</code></pre>
+<p>Example:</p>
+<pre><code class="language-text">in = out = 4096
+r = 8
+
+full:
+16,777,216 parameters
+
+LoRA:
+65,536 parameters
+</code></pre>
+<p>for that matrix.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch56-objective-03" class="objective-proof"><summary>explain rank, alpha and dropout</summary><p>explain rank, alpha and dropout: ใช้กรณีในหัวข้อ Scaling Alpha, LoRA Dropout, Adapter Rank เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch56-evidence-03"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch56-evidence-03-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch56-evidence-03-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch56-evidence-03-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch56-evidence-03-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch56-evidence-03-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch56-evidence-03-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch56-evidence-03-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch56-evidence-03-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>conventionW(dout,din),A(r,din),B(dout,r),ΔW=(α/r)BA; inputx(din),outputWx+(α/r)B(Ax)</p><h3>5. Scaling Alpha</h3>
+<p>Common LoRA scale:</p>
+<pre><code class="language-text">scale =
+alpha / r
+</code></pre>
+<p>Alpha controls update magnitude independently from rank.</p>
+<p>Some modern variants use different scaling; always document the chosen formulation.</p>
+<h3>7. LoRA Dropout</h3>
+<p>Dropout can be applied to adapter input during training.</p>
+<p>This regularizes adapter updates.</p>
+<p>Inference normally disables dropout.</p>
+<h3>24. Adapter Rank</h3>
+<p>Low rank:
+- cheaper
+- lower capacity</p>
+<p>High rank:
+- more trainable parameters
+- more adaptation capacity</p>
+<p>Rank is a hyperparameter, not a quality guarantee.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch56-objective-04" class="objective-proof"><summary>initialize LoRA as a no-op</summary><p>initialize LoRA as a no-op: ใช้กรณีในหัวข้อ Initialization เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch56-evidence-04"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch56-evidence-04-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch56-evidence-04-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch56-evidence-04-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch56-evidence-04-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch56-evidence-04-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch56-evidence-04-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch56-evidence-04-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch56-evidence-04-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>B0ทำBA0แม้Aสุ่ม จึงinitialoutputเท่าbase; firstgradientdAอาจ0แต่dBไม่จำเป็น0 ต้องไม่ตั้งA/Bทั้งคู่0จนgradientติด</p><h3>6. Initialization</h3>
+<p>A common initialization:
+- A random
+- B zero</p>
+<p>Then initially:</p>
+<pre><code class="language-text">BA = 0
+</code></pre>
+<p>so the adapter begins as an identity/no-op relative to the base model.</p>
+<p>Current PEFT defaults also initialize adapters so they initially do not change the base model's output.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch56-objective-05" class="objective-proof"><summary>choose target modules</summary><p>choose target modules: ใช้กรณีในหัวข้อ Target Modules, Query/Value-Only vs All-Linear เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch56-evidence-05"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch56-evidence-05-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch56-evidence-05-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch56-evidence-05-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch56-evidence-05-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch56-evidence-05-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch56-evidence-05-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch56-evidence-05-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch56-evidence-05-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>targetnamedmodulesq_proj/v_projในtinyTransformer,wrapLinearให้basefrozenและA/Bregistered; asserttrainableIDsเฉพาะadapters</p><h3>8. Target Modules</h3>
+<p>Common transformer targets:
+- q_proj
+- k_proj
+- v_proj
+- o_proj
+- gate/up/down MLP projections</p>
+<p>Which modules are best depends on:
+- architecture
+- task
+- rank
+- memory budget</p>
+<p>Current PEFT can target explicit module names or broader selections such as all linear modules for QLoRA-style training.</p>
+<h3>9. Query/Value-Only vs All-Linear</h3>
+<p>Original/simple recipes often adapt a small attention subset.</p>
+<p>QLoRA-style PEFT commonly targets all linear layers.</p>
+<p>Trade-off:
+- more target layers → more capacity
+- more trainable adapter parameters</p>
+<p>Benchmark rather than assume.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch56-objective-06" class="objective-proof"><summary>merge/unmerge adapters</summary><p>merge/unmerge adapters: ใช้กรณีในหัวข้อ Merge, Unmerge เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch56-evidence-06"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch56-evidence-06-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch56-evidence-06-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch56-evidence-06-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch56-evidence-06-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch56-evidence-06-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch56-evidence-06-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch56-evidence-06-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch56-evidence-06-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>mergedW=W+sBAแล้วforwardต้องallcloseunmerged; unmergeลบsameΔWครั้งเดียว,ห้ามmergeซ้ำและอย่าแก้A/Bขณะถือmergedweightsโดยไม่track</p><h3>12. Merge</h3>
+<p>At inference:</p>
+<pre><code class="language-text">W_merged =
+W
++
+(alpha/r)BA
+</code></pre>
+<p>Then the adapter path can be removed for a plain merged linear layer.</p>
+<p>Benefits:
+- no adapter matmul overhead</p>
+<p>Trade-off:
+- loses easy adapter switching unless original base is retained</p>
+<h3>13. Unmerge</h3>
+<p>If the original base weight is preserved:</p>
+<pre><code class="language-text">W =
+W_merged
+-
+scale * BA
+</code></pre>
+<p>Repeated merge/unmerge should avoid accumulating numerical error unnecessarily.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch56-objective-07" class="objective-proof"><summary>explain PEFT memory savings</summary><p>explain PEFT memory savings: ใช้กรณีในหัวข้อ Optimizer State, Memory Decomposition, Gradient Checkpointing เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch56-evidence-07"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch56-evidence-07-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch56-evidence-07-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch56-evidence-07-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch56-evidence-07-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch56-evidence-07-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch56-evidence-07-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch56-evidence-07-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch56-evidence-07-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>AdamFP32moments2·4bytesต่อtrainableparam; fullFTmoments8P,LoRA8r(din+dout)แต่baseweightsและforwardactivationsยังต้องอยู่</p><h3>21. Optimizer State</h3>
+<p>Only trainable adapter parameters require ordinary gradient/optimizer state.</p>
+<p>This is a major memory saving compared with full fine-tuning.</p>
+<h3>22. Memory Decomposition</h3>
+<p>Full fine-tuning roughly needs:
+- base parameters
+- gradients
+- optimizer states
+- activations</p>
+<p>QLoRA:
+- quantized frozen base
+- adapter parameters
+- adapter gradients
+- adapter optimizer state
+- activations/dequant buffers</p>
+<p>Activations can still be large.</p>
+<h3>23. Gradient Checkpointing</h3>
+<p>QLoRA is often combined with activation checkpointing to further reduce memory.</p>
+<p>This trades compute for activation memory.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch56-objective-08" class="objective-proof"><summary>distinguish LoRA from full fine-tuning</summary><p>distinguish LoRA from full fine-tuning: ใช้กรณีในหัวข้อ Trainable Ratio เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch56-evidence-08"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch56-evidence-08-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch56-evidence-08-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch56-evidence-08-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch56-evidence-08-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch56-evidence-08-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch56-evidence-08-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch56-evidence-08-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch56-evidence-08-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>ratio=r(din+dout)/(din·dout+r(din+dout))หากdenominatorรวมadapter; รายงานbase-onlyratioแยกไม่สลับนิยาม</p><h3>10. Trainable Ratio</h3>
+<p>For base P and adapters A:</p>
+<pre><code class="language-text">trainable_ratio =
+A / (P + A)
+</code></pre>
+<p>Often far below 1%.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch56-objective-09" class="objective-proof"><summary>explain QLoRA correctly</summary><p>explain QLoRA correctly: ใช้กรณีในหัวข้อ QLoRA, Compute Dtype เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch56-evidence-09"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch56-evidence-09-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch56-evidence-09-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch56-evidence-09-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch56-evidence-09-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch56-evidence-09-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch56-evidence-09-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch56-evidence-09-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch56-evidence-09-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>16. QLoRA</h3>
+<p>QLoRA combines:
+- frozen quantized base model
+- trainable LoRA adapters</p>
+<p>Important:</p>
+<blockquote>
+<p>The base model is quantized for storage/computation efficiency, while adapter parameters remain trainable. QLoRA is not ordinary gradient descent directly updating 4-bit frozen base weights.</p>
+</blockquote>
+<h3>20. Compute Dtype</h3>
+<p>4-bit storage does not imply every arithmetic operation is performed in 4-bit.</p>
+<p>Typical QLoRA systems:
+- store base weights in 4-bit form
+- dequantize into BF16/FP16-like compute path
+- train adapters in higher precision</p><h3>16. QLoRA</h3>
+<p>QLoRA combines:
+- frozen quantized base model
+- trainable LoRA adapters</p>
+<p>Important:</p>
+<blockquote>
+<p>The base model is quantized for storage/computation efficiency, while adapter parameters remain trainable. QLoRA is not ordinary gradient descent directly updating 4-bit frozen base weights.</p>
+</blockquote>
+<h3>20. Compute Dtype</h3>
+<p>4-bit storage does not imply every arithmetic operation is performed in 4-bit.</p>
+<p>Typical QLoRA systems:
+- store base weights in 4-bit form
+- dequantize into BF16/FP16-like compute path
+- train adapters in higher precision</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch56-objective-10" class="objective-proof"><summary>understand frozen 4-bit base weights</summary><p>understand frozen 4-bit base weights: ใช้กรณีในหัวข้อ 4-bit Base Weights เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch56-evidence-10"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch56-evidence-10-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch56-evidence-10-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch56-evidence-10-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch56-evidence-10-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch56-evidence-10-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch56-evidence-10-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch56-evidence-10-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch56-evidence-10-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>codebook16levelsระบุค่าชัดเช่นlinspace(−1,1,16),scale=maxabsW; nearestcode→dequant,reportMSE; generic16levelไม่เท่ากับNF4เสมอ</p><h3>17. 4-bit Base Weights</h3>
+<p>Conceptually:</p>
+<pre><code class="language-text">FP weight block
+↓ quantize
+4-bit codes + scale metadata
+↓
+dequantize as needed for compute
+</code></pre>
+<p>Actual kernels may fuse dequantization with matrix multiplication.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch56-objective-11" class="objective-proof"><summary>explain NF4 / double-quantization concepts</summary><p>explain NF4 / double-quantization concepts: ใช้กรณีในหัวข้อ NF4, Double Quantization เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch56-evidence-11"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch56-evidence-11-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch56-evidence-11-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch56-evidence-11-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch56-evidence-11-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch56-evidence-11-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch56-evidence-11-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch56-evidence-11-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch56-evidence-11-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>18. NF4</h3>
+<p>NormalFloat4 was designed for normally distributed neural-network weights.</p>
+<p>Conceptually:
+- 16 representable levels
+- levels chosen for the weight distribution rather than uniform spacing</p>
+<p>This differs from simple uniform INT4.</p>
+<h3>19. Double Quantization</h3>
+<p>Quantization itself needs scale/constants.</p>
+<p>Double quantization compresses some of those quantization constants too.</p>
+<p>Goal:
+- reduce metadata memory overhead</p><h3>18. NF4</h3>
+<p>NormalFloat4 was designed for normally distributed neural-network weights.</p>
+<p>Conceptually:
+- 16 representable levels
+- levels chosen for the weight distribution rather than uniform spacing</p>
+<p>This differs from simple uniform INT4.</p>
+<h3>19. Double Quantization</h3>
+<p>Quantization itself needs scale/constants.</p>
+<p>Double quantization compresses some of those quantization constants too.</p>
+<p>Goal:
+- reduce metadata memory overhead</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch56-objective-12" class="objective-proof"><summary>understand adapter checkpointing</summary><p>understand adapter checkpointing: ใช้กรณีในหัวข้อ Adapter Checkpoint, Base Compatibility เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch56-evidence-12"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch56-evidence-12-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch56-evidence-12-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch56-evidence-12-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch56-evidence-12-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch56-evidence-12-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch56-evidence-12-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch56-evidence-12-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch56-evidence-12-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>metadataต้องpinbaserepo/revision/hash,architecture,targetmodules,r,α,dropout,dtype/quantization/tokenizer; sameชื่อน้ำหนักแต่revisionต่างต้องreject</p><h3>11. Adapter Checkpoint</h3>
+<p>LoRA checkpoint stores:
+- adapter configuration
+- A matrices
+- B matrices
+- optional extra trainable modules</p>
+<p>It usually does <strong>not</strong> contain the complete frozen base model.</p>
+<p>Therefore deployment needs:
+- compatible base model
+- compatible adapter</p>
+<h3>26. Base Compatibility</h3>
+<p>An adapter is tied to:
+- architecture
+- layer names
+- dimensions
+- base checkpoint/version in practice</p>
+<p>Loading it onto a mismatched base can fail or silently degrade behavior.</p>
+<p>Store base model revision with adapter metadata.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch56-objective-13" class="objective-proof"><summary>use current PEFT LoraConfig concepts</summary><p>use current PEFT LoraConfig concepts: ใช้กรณีในหัวข้อ Current Hugging Face PEFT เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch56-evidence-13"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch56-evidence-13-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch56-evidence-13-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch56-evidence-13-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch56-evidence-13-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch56-evidence-13-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch56-evidence-13-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch56-evidence-13-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch56-evidence-13-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>25. Current Hugging Face PEFT</h3>
+<p>Typical current concepts:</p>
+<pre><code class="language-python">from peft import LoraConfig, get_peft_model
+
+config = LoraConfig(
+    r=16,
+    lora_alpha=32,
+    lora_dropout=0.05,
+    target_modules=[&quot;q_proj&quot;, &quot;v_proj&quot;],
+    task_type=&quot;CAUSAL_LM&quot;,
+)
+
+model = get_peft_model(base_model, config)
+</code></pre>
+<p>For QLoRA-style targeting, current PEFT supports:</p>
+<pre><code class="language-python">target_modules=&quot;all-linear&quot;
+</code></pre>
+<p>Always inspect the actual model's module names/config.</p><h3>25. Current Hugging Face PEFT</h3>
+<p>Typical current concepts:</p>
+<pre><code class="language-python">from peft import LoraConfig, get_peft_model
+
+config = LoraConfig(
+    r=16,
+    lora_alpha=32,
+    lora_dropout=0.05,
+    target_modules=[&quot;q_proj&quot;, &quot;v_proj&quot;],
+    task_type=&quot;CAUSAL_LM&quot;,
+)
+
+model = get_peft_model(base_model, config)
+</code></pre>
+<p>For QLoRA-style targeting, current PEFT supports:</p>
+<pre><code class="language-python">target_modules=&quot;all-linear&quot;
+</code></pre>
+<p>Always inspect the actual model's module names/config.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch56-objective-14" class="objective-proof"><summary>reason about adapter composition and limitations</summary><p>reason about adapter composition and limitations: ใช้กรณีในหัวข้อ Multiple Adapters, PEFT Family เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch56-evidence-14"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch56-evidence-14-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch56-evidence-14-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch56-evidence-14-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch56-evidence-14-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch56-evidence-14-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch56-evidence-14-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch56-evidence-14-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch56-evidence-14-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>14. Multiple Adapters</h3>
+<p>One base model can host:
+- task A adapter
+- task B adapter
+- domain adapter</p>
+<p>This is operationally cheaper than storing separate full-model checkpoints.</p>
+<h3>15. PEFT Family</h3>
+<p>Beyond LoRA:
+- prefix tuning
+- prompt tuning
+- IA3
+- adapters
+- newer low-rank variants</p>
+<p>The shared idea is reducing trainable state.</p><h3>14. Multiple Adapters</h3>
+<p>One base model can host:
+- task A adapter
+- task B adapter
+- domain adapter</p>
+<p>This is operationally cheaper than storing separate full-model checkpoints.</p>
+<h3>15. PEFT Family</h3>
+<p>Beyond LoRA:
+- prefix tuning
+- prompt tuning
+- IA3
+- adapters
+- newer low-rank variants</p>
+<p>The shared idea is reducing trainable state.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch56-objective-15" class="objective-proof"><summary>From Scratch</summary><p>From Scratch: ใช้กรณีในหัวข้อ From Scratch เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch56-evidence-15"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch56-evidence-15-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch56-evidence-15-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch56-evidence-15-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch56-evidence-15-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch56-evidence-15-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch56-evidence-15-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch56-evidence-15-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch56-evidence-15-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>NumPyWx+sB(Ax)เทียบTorchLinearwrapperfloat64copiedweights; PEFToptionalintegrationต้องเทียบorientation/fan_in_fan_out/scalingด้วย</p><h3>27. From Scratch</h3>
+<p>src/lora_numpy.py includes:</p>
+<ul>
+<li>lora_parameter_count</li>
+<li>lora_delta</li>
+<li>lora_forward</li>
+<li>merge_lora</li>
+<li>unmerge_lora</li>
+<li>trainable_fraction</li>
+<li>nearest_codebook_quantize</li>
+</ul>
+<p>The generic codebook quantizer is educational; it is <strong>not</strong> claimed to reproduce production NF4 kernels.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details></section><section id="implementation" class="canonical-section"><h2>Implementation และ tests ที่รันบนเครื่องได้</h2><details><summary>56-lora-qlora-peft/src/lora_numpy.py</summary><pre><code>&quot;&quot;&quot;Educational LoRA math and generic codebook quantization.&quot;&quot;&quot;
+
+from __future__ import annotations
+
+import numpy as np
+
+
+def lora_parameter_count(
+    input_features: int,
+    output_features: int,
+    rank: int,
+) -&gt; int:
+    if min(input_features, output_features, rank) &lt;= 0:
+        raise ValueError(&quot;dimensions must be positive&quot;)
+    return int(rank * (input_features + output_features))
+
+
+def lora_delta(
+    a: np.ndarray,
+    b: np.ndarray,
+    *,
+    alpha: float,
+) -&gt; np.ndarray:
+    a_values = np.asarray(a, dtype=float)
+    b_values = np.asarray(b, dtype=float)
+
+    if a_values.ndim != 2 or b_values.ndim != 2:
+        raise ValueError(&quot;A and B must be matrices&quot;)
+    if b_values.shape[1] != a_values.shape[0]:
+        raise ValueError(&quot;rank dimension mismatch&quot;)
+    if alpha &lt; 0:
+        raise ValueError(&quot;alpha must be non-negative&quot;)
+
+    rank = a_values.shape[0]
+    if rank &lt;= 0:
+        raise ValueError(&quot;rank must be positive&quot;)
+
+    return (alpha / rank) * (b_values @ a_values)
+
+
+def lora_forward(
+    x: np.ndarray,
+    weight: np.ndarray,
+    a: np.ndarray,
+    b: np.ndarray,
+    *,
+    alpha: float,
+) -&gt; np.ndarray:
+    values = np.asarray(x, dtype=float)
+    base = np.asarray(weight, dtype=float)
+
+    delta = lora_delta(a, b, alpha=alpha)
+
+    if base.shape != delta.shape:
+        raise ValueError(&quot;base and LoRA delta shape mismatch&quot;)
+    if values.shape[-1] != base.shape[1]:
+        raise ValueError(&quot;input feature mismatch&quot;)
+
+    return values @ (base + delta).T
+
+
+def merge_lora(
+    weight: np.ndarray,
+    a: np.ndarray,
+    b: np.ndarray,
+    *,
+    alpha: float,
+) -&gt; np.ndarray:
+    base = np.asarray(weight, dtype=float)
+    delta = lora_delta(a, b, alpha=alpha)
+
+    if base.shape != delta.shape:
+        raise ValueError(&quot;shape mismatch&quot;)
+    return base + delta
+
+
+def unmerge_lora(
+    merged_weight: np.ndarray,
+    a: np.ndarray,
+    b: np.ndarray,
+    *,
+    alpha: float,
+) -&gt; np.ndarray:
+    merged = np.asarray(merged_weight, dtype=float)
+    delta = lora_delta(a, b, alpha=alpha)
+
+    if merged.shape != delta.shape:
+        raise ValueError(&quot;shape mismatch&quot;)
+    return merged - delta
+
+
+def trainable_fraction(
+    *,
+    base_parameters: int,
+    adapter_parameters: int,
+) -&gt; float:
+    if base_parameters &lt;= 0:
+        raise ValueError(&quot;base_parameters must be positive&quot;)
+    if adapter_parameters &lt; 0:
+        raise ValueError(&quot;adapter_parameters must be non-negative&quot;)
+
+    return float(
+        adapter_parameters
+        / (base_parameters + adapter_parameters)
+    )
+
+
+def nearest_codebook_quantize(
+    values: np.ndarray,
+    codebook: np.ndarray,
+) -&gt; tuple[np.ndarray, np.ndarray]:
+    &quot;&quot;&quot;Quantize each value to nearest codebook level.
+
+    This generic educational routine is not an NF4 implementation.
+    &quot;&quot;&quot;
+    x = np.asarray(values, dtype=float)
+    levels = np.asarray(codebook, dtype=float).reshape(-1)
+
+    if len(levels) &lt; 2:
+        raise ValueError(&quot;codebook needs at least two levels&quot;)
+    if not np.all(np.isfinite(levels)):
+        raise ValueError(&quot;codebook levels must be finite&quot;)
+
+    distances = np.abs(
+        x[..., None] - levels.reshape((1,) * x.ndim + (-1,))
+    )
+    indices = np.argmin(distances, axis=-1)
+    quantized = levels[indices]
+    return quantized, indices.astype(np.int64)
+</code></pre></details><details><summary>56-lora-qlora-peft/tests/test_lora_numpy.py</summary><pre><code>from pathlib import Path
+import importlib.util
+
+import numpy as np
+
+
+MODULE_PATH = Path(__file__).parents[1] / &quot;src&quot; / &quot;lora_numpy.py&quot;
+SPEC = importlib.util.spec_from_file_location(&quot;lora_numpy_course&quot;, MODULE_PATH)
+assert SPEC and SPEC.loader
+mod = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(mod)
+
+
+def test_lora_parameter_count_is_smaller() -&gt; None:
+    full = 4096 * 4096
+    adapter = mod.lora_parameter_count(4096, 4096, 8)
+
+    assert adapter == 65536
+    assert adapter &lt; full
+
+
+def test_zero_b_is_initial_noop() -&gt; None:
+    rng = np.random.default_rng(3)
+    weight = rng.normal(size=(4, 5))
+    a = rng.normal(size=(2, 5))
+    b = np.zeros((4, 2))
+    x = rng.normal(size=(7, 5))
+
+    base = x @ weight.T
+    adapted = mod.lora_forward(
+        x,
+        weight,
+        a,
+        b,
+        alpha=4.0,
+    )
+
+    np.testing.assert_allclose(adapted, base)
+
+
+def test_merge_unmerge_roundtrip() -&gt; None:
+    rng = np.random.default_rng(4)
+    weight = rng.normal(size=(4, 5))
+    a = rng.normal(size=(2, 5))
+    b = rng.normal(size=(4, 2))
+
+    merged = mod.merge_lora(
+        weight,
+        a,
+        b,
+        alpha=8.0,
+    )
+    recovered = mod.unmerge_lora(
+        merged,
+        a,
+        b,
+        alpha=8.0,
+    )
+
+    np.testing.assert_allclose(recovered, weight)
+
+
+def test_trainable_fraction() -&gt; None:
+    fraction = mod.trainable_fraction(
+        base_parameters=1_000_000,
+        adapter_parameters=10_000,
+    )
+    np.testing.assert_allclose(
+        fraction,
+        10_000 / 1_010_000,
+    )
+
+
+def test_generic_codebook_quantizer() -&gt; None:
+    values = np.array([-1.0, -0.2, 0.6, 1.0])
+    codebook = np.array([-1.0, 0.0, 1.0])
+
+    quantized, indices = mod.nearest_codebook_quantize(
+        values,
+        codebook,
+    )
+
+    np.testing.assert_allclose(
+        quantized,
+        [-1.0, 0.0, 1.0, 1.0],
+    )
+    assert indices.dtype == np.int64
+</code></pre></details></section><section id="glossary" class="canonical-section"><h2>อภิธานศัพท์ — คำไทย ความหมาย และข้อควรตรวจ</h2><dl><dt>tensor</dt><dd>เทนเซอร์: ชุดตัวเลขที่มีแกน เช่น scalar ไม่มีแกน, vector หนึ่งแกน, matrix สองแกน; shape บอกขนาดแต่ละแกน ไม่บอกความหมายของแกนจนกว่าจะระบุ</dd><dt>shape</dt><dd>รูปทรงข้อมูล: (B,T,d) หมายถึง batch × เวลา/ตำแหน่ง × features; ใช้ชื่อแกนกำกับเสมอ การ transpose เปลี่ยนแกนแต่ไม่ใช่แค่เปลี่ยนชื่อ</dd><dt>batch</dt><dd>กลุ่มตัวอย่างที่คำนวณร่วมกันหนึ่งครั้ง; B คือจำนวนตัวอย่าง ไม่ใช่จำนวน features หรือจำนวน optimizer updates</dd><dt>weight w / θ</dt><dd>น้ำหนักหรือพารามิเตอร์ที่โมเดลใช้คำนวณ; แก้ด้วยมือทำ forward ใหม่ ส่วน optimizer ต้องรับ gradient แล้วกด update จึงแก้ state</dd><dt>bias b</dt><dd>ค่าคงที่ที่บวกกับผลเชิงเส้น; regression scalar bias เพิ่ม Δ ทำให้ prediction ทุกจุดเพิ่ม Δ เท่ากัน</dd><dt>prediction ŷ</dt><dd>ค่าที่โมเดลทำนายจาก input และพารามิเตอร์ปัจจุบัน; เครื่องหมายหมวกแยกจาก target y ที่มาจากข้อมูล</dd><dt>residual e</dt><dd>ความคลาดเคลื่อน ในเว็บนี้นิยาม prediction − target; บางตำราใช้เครื่องหมายกลับกัน จึงต้องตรวจนิยามก่อนเทียบสูตร gradient</dd><dt>MSE</dt><dd>mean squared error = ผลรวม residual กำลังสองหารจำนวนรายการที่ระบุ; มีหน่วยเป็น target ยกกำลังสอง และการใช้ sum แทน mean เปลี่ยน scale gradient</dd><dt>loss L / objective J</dt><dd>จำนวนที่ optimizer ต้องการลด; objective อาจรวม data loss และ regularization จึงต้องดูองค์ประกอบและ reduction ให้ตรง implementation</dd><dt>gradient ∇ / ∂</dt><dd>เวกเตอร์ของ partial derivatives บอกอัตราเปลี่ยน loss ต่อพารามิเตอร์แต่ละตัว; ∂ ใช้เมื่อเปลี่ยนตัวหนึ่งโดยตรึงตัวอื่น</dd><dt>chain rule</dt><dd>กฎลูกโซ่: คูณอนุพันธ์ตามเส้นทาง และบวก contribution จากทุกเส้นทางที่มารวมกัน ใช้ย้อนจาก loss ถึง weights</dd><dt>learning rate η</dt><dd>ขนาดตัวคูณ gradient ใน update θnew=θ−ηg; η≥0, ศูนย์หมายถึงไม่มีการขยับพารามิเตอร์ ก้าวใหญ่เกินอาจ diverge</dd><dt>regularization λ</dt><dd>ตัวคูณค่าลงโทษ ต้อง λ≥0 ตามนิยามการลงโทษ; Ridge λΣw² เพิ่ม gradient 2λw โดยบท Regression นี้ไม่ลงโทษ bias</dd><dt>baseline</dt><dd>สถานะอ้างอิงที่ตรึงไว้สำหรับเทียบ; ต้องเก็บ snapshot ไม่อ้าง object ปัจจุบันที่แก้ตามไปด้วย</dd><dt>invariant</dt><dd>คุณสมบัติที่กลไกต้องรักษา เช่น probability รวม1, shape สอดคล้อง, queue ไม่เกิน capacity; ใช้ tests ตรวจได้มากกว่าดูภาพสวย</dd><dt>optimizer state</dt><dd>ความจำของอัลกอริทึม เช่น velocity, moments และ completed updates; คืนเฉพาะ weights ยังไม่เท่ากับเริ่มการฝึกใหม่ทั้งหมด</dd><dt>finite difference</dt><dd>ประมาณ derivative ด้วย [f(x+h)−f(x−h)]/(2h); h&gt;0, ใช้ smooth point และลองหลาย h เพื่อแยก truncation error จาก roundoff</dd><dt>softmax</dt><dd>แปลง logits เป็นความน่าจะเป็นตามแกนที่กำหนด; ลบ max ก่อน exp เพื่อความเสถียร และ fully masked row ต้องมีนโยบายชัดเจน</dd><dt>logit</dt><dd>คะแนนก่อน sigmoid/softmax ไม่ใช่ probability; อาจเป็นจำนวนจริงติดลบหรือเกิน1ได้ จึงห้ามส่งให้ loss ที่คาด probability โดยไม่แปลง</dd><dt>temperature τ / T</dt><dd>ตัวหาร logits ก่อน softmax; ต้องเป็นบวก ค่าเล็กทำ distribution แหลมขึ้น โดยไม่เท่ากับ retrain weights</dd><dt>mask</dt><dd>ตัวกำหนดตำแหน่งที่อ่านหรือคิด loss ได้; causal mask ปิดอนาคต, padding mask ปิดข้อมูลเติม, loss mask เลือก target แต่ละอย่างคนละหน้าที่</dd><dt>Q / K / V</dt><dd>query ใช้ค้นข้อมูล, key ใช้จับคู่ query, value เป็นข้อมูลที่ถูกถัวเฉลี่ย; เป็น learned projections ของ representation ไม่ใช่ป้ายความหมายตายตัว</dd><dt>head</dt><dd>ส่วนของ feature representation ที่ทำ attention แยกกัน แล้ว concat/project กลับ; ต้องตรวจ d_model หารจำนวน heads ลงตัว</dd><dt>ε-neighborhood</dt><dd>เพื่อนบ้านทั้งหมดที่มีระยะไม่เกิน ε รวมจุดตัวเองใน DBSCAN นี้; ε มีหน่วยเดียวกับพิกัด ไม่ใช่จำนวน k ที่ใช้โหวต</dd><dt>core / border / noise</dt><dd>DBSCAN core มีเพื่อนบ้านรวมตัวเองถึง min_samples; border อยู่ใกล้ core แต่เพื่อนบ้านไม่ถึง; noise ไม่ถูกเชื่อมกับ core cluster ใด</dd><dt>bootstrap</dt><dd>สุ่ม observations แบบ replacement ขนาดเท่าเดิมซ้ำหลายครั้งแล้วคำนวณ statistic ใหม่; seed ทำให้ตรวจซ้ำได้ แต่ไม่แก้สมมติฐาน IID ที่ผิด</dd><dt>confidence interval</dt><dd>ช่วงที่สร้างด้วย procedure ที่มี coverage ตามสมมติฐาน; ช่วงหนึ่งที่ได้แล้วไม่ใช่ posterior probability ของ parameter และ sample เล็กยังไม่แน่นอนมาก</dd><dt>validation / test</dt><dd>validation ใช้เลือกโมเดล/ค่าตั้ง ส่วน test ใช้ประเมินหลัง freeze การตัดสินใจ; fit preprocessing/tokenizer จาก test เป็น leakage</dd><dt>leakage</dt><dd>ข้อมูลที่ควรยังไม่รู้ไหลเข้า training/การเลือกโมเดล เช่น future feature หรือเอกสารซ้ำข้าม split ทำให้ metric ดูดีเกินการใช้งานจริง</dd><dt>queue / capacity</dt><dd>queue คือรายการรอ, capacity การให้บริการรวม = workers × service rate ตามแบบจำลอง; เพิ่ม timeout ไม่เพิ่มกำลังประมวลผล</dd><dt>state transition</dt><dd>การเปลี่ยนสถานะเมื่อเกิดเหตุการณ์ที่อนุญาต เช่น queued→active→done; ต้องระบุ guard, side effect และเหตุผลเมื่อ transition ถูกปฏิเสธ</dd><dt>latency / throughput</dt><dd>latency คือเวลาต่อคำขอ, throughput คือปริมาณงานต่อหน่วยเวลา; batching อาจเพิ่ม throughput แต่เพิ่มเวลารอ จึงต้องวัดทั้งคู่</dd><dt>idempotency</dt><dd>ทำคำขอ business operation เดิมซ้ำแล้ว side effect เกิดครั้งเดียวตาม key และ transaction protocol; ไม่ได้รับประกันจากการใช้ UUID ใหม่ทุก attempt</dd><dt>local lab</dt><dd>โปรแกรม Python และ tests ที่ผู้เรียนรันบนเครื่อง; เว็บเก็บเพียงคำยืนยันของผู้เรียน การผ่าน tests ของโค้ดต้นแบบไม่ใช่ผลตรวจโค้ดผู้เรียน</dd></dl></section></article>
+<section id="practice" class="practice-section"><span class="eyebrow">PRACTICE · DEBUG · BUILD</span><h2>พิสูจน์ด้วยการลงมือทำ</h2><div id="web-checks"></div><div class="retry-actions"><button class="secondary-button" id="retry-checks">เริ่มทำโจทย์ในเว็บใหม่</button><button class="text-button" id="undo-retry" hidden>คืนผลก่อนเริ่มใหม่</button></div><div id="exercise-content"><h2>แบบฝึก 20 ข้อ — เฉลยเฉพาะข้อ</h2><p>ทำคำตอบก่อนเปิด hints; โจทย์ปลายเปิดให้ใช้ตัวอย่างคำตอบและหลักฐานราย objective ตรวจงานจริง</p><section id="exercise-1" class="exercise-item"><h3>ข้อ 1</h3><p>Derive LoRA parameter count for a 4096×4096 linear layer at ranks 4/8/16/64.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Parameter Count: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): r(din+dout)=8192r; r4/8/16/64ให้32768/655…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: r(din+dout)=8192r; r4/8/16/64ให้32768/65536/131072/524288 เทียบbase1677721…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>r(din+dout)=8192r; r4/8/16/64ให้32768/65536/131072/524288 เทียบbase16777216parameters ไม่รวมbias/scaling</p><p>อ้างอิง: <a href="#chapter-56/section/topic-4">Parameter Count</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch56-exercise-01"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-2" class="exercise-item"><h3>ข้อ 2</h3><p>Implement A/B low-rank updates.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ LoRA Core Idea, Scaling Alpha: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): conventionW(dout,din),A(r,din),B(…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: conventionW(dout,din),A(r,din),B(dout,r),ΔW=(α/r)BA; inputx(…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>conventionW(dout,din),A(r,din),B(dout,r),ΔW=(α/r)BA; inputx(din),outputWx+(α/r)B(Ax)</p><p>อ้างอิง: <a href="#chapter-56/section/topic-3">LoRA Core Idea</a>, <a href="#chapter-56/section/topic-5">Scaling Alpha</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch56-exercise-02"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-3" class="exercise-item"><h3>ข้อ 3</h3><p>Verify B=0 makes the initial adapter a no-op.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Initialization: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): B0ทำBA0แม้Aสุ่ม จึงinitialoutputเท่าbase; fi…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: B0ทำBA0แม้Aสุ่ม จึงinitialoutputเท่าbase; firstgradientdAอาจ0แต่dBไม่จำเป็น0 ต้อ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>B0ทำBA0แม้Aสุ่ม จึงinitialoutputเท่าbase; firstgradientdAอาจ0แต่dBไม่จำเป็น0 ต้องไม่ตั้งA/Bทั้งคู่0จนgradientติด</p><p>อ้างอิง: <a href="#chapter-56/section/topic-6">Initialization</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch56-exercise-03"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-4" class="exercise-item"><h3>ข้อ 4</h3><p>Sweep rank and measure trainable ratio.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Trainable Ratio, Adapter Rank: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ratio=r(din+dout)/(din·dout+r(din+dout))…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ratio=r(din+dout)/(din·dout+r(din+dout))หากdenominatorรวมadapter; รายงาน…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ratio=r(din+dout)/(din·dout+r(din+dout))หากdenominatorรวมadapter; รายงานbase-onlyratioแยกไม่สลับนิยาม</p><p>อ้างอิง: <a href="#chapter-56/section/topic-10">Trainable Ratio</a>, <a href="#chapter-56/section/topic-24">Adapter Rank</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch56-exercise-04"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-5" class="exercise-item"><h3>ข้อ 5</h3><p>Merge/unmerge adapters numerically.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Merge, Unmerge: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): mergedW=W+sBAแล้วforwardต้องallcloseunmerged; unme…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: mergedW=W+sBAแล้วforwardต้องallcloseunmerged; unmergeลบsameΔWครั้งเดียว,ห้ามmergeซ้ำและอย่า…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>mergedW=W+sBAแล้วforwardต้องallcloseunmerged; unmergeลบsameΔWครั้งเดียว,ห้ามmergeซ้ำและอย่าแก้A/Bขณะถือmergedweightsโดยไม่track</p><p>อ้างอิง: <a href="#chapter-56/section/topic-12">Merge</a>, <a href="#chapter-56/section/topic-13">Unmerge</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch56-exercise-05"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-6" class="exercise-item"><h3>ข้อ 6</h3><p>Apply LoRA to attention projections in a tiny transformer.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Target Modules: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): targetnamedmodulesq_proj/v_projในtinyTransformer…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: targetnamedmodulesq_proj/v_projในtinyTransformer,wrapLinearให้basefrozenและA/Bregistere…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>targetnamedmodulesq_proj/v_projในtinyTransformer,wrapLinearให้basefrozenและA/Bregistered; asserttrainableIDsเฉพาะadapters</p><p>อ้างอิง: <a href="#chapter-56/section/topic-8">Target Modules</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch56-exercise-06"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-7" class="exercise-item"><h3>ข้อ 7</h3><p>Compare q/v-only vs all-linear targeting.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Query/Value-Only vs All-Linear: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): q/v-onlyมีfewertrainablesส่วนall-linearรวมFFN/O/Kเพิ่ม…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: q/v-onlyมีfewertrainablesส่วนall-linearรวมFFN/O/Kเพิ่มcapacityและmemory; samebase/split/budgetcom…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>q/v-onlyมีfewertrainablesส่วนall-linearรวมFFN/O/Kเพิ่มcapacityและmemory; samebase/split/budgetcomparequalityและparamsไม่สรุปallดีกว่าแน่</p><p>อ้างอิง: <a href="#chapter-56/section/topic-9">Query/Value-Only vs All-Linear</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch56-exercise-07"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-8" class="exercise-item"><h3>ข้อ 8</h3><p>Estimate full FT vs LoRA optimizer-state memory.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Optimizer State, Memory Decomposition: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): AdamFP32moments2·4bytesต่อtrainableparam; fullFT…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: AdamFP32moments2·4bytesต่อtrainableparam; fullFTmoments8P,LoRA8r(din+dout)แต่baseweigh…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>AdamFP32moments2·4bytesต่อtrainableparam; fullFTmoments8P,LoRA8r(din+dout)แต่baseweightsและforwardactivationsยังต้องอยู่</p><p>อ้างอิง: <a href="#chapter-56/section/topic-21">Optimizer State</a>, <a href="#chapter-56/section/topic-22">Memory Decomposition</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch56-exercise-08"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-9" class="exercise-item"><h3>ข้อ 9</h3><p>Quantize a toy matrix with a generic 16-level codebook and measure error.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ 4-bit Base Weights: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): codebook16levelsระบุค่าชัดเช่นlinspace(−1,1,16),sc…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: codebook16levelsระบุค่าชัดเช่นlinspace(−1,1,16),scale=maxabsW; nearestcode→dequant,reportM…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>codebook16levelsระบุค่าชัดเช่นlinspace(−1,1,16),scale=maxabsW; nearestcode→dequant,reportMSE; generic16levelไม่เท่ากับNF4เสมอ</p><p>อ้างอิง: <a href="#chapter-56/section/topic-17">4-bit Base Weights</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch56-exercise-09"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-10" class="exercise-item"><h3>ข้อ 10</h3><p>Build adapter metadata that pins the base-model revision.</p>
+<p>Challenge:
+- reproduce a PEFT LoraConfig experiment with the optional requirements file
+- compare full fine-tuning and LoRA on the same tiny adaptation task</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Base Compatibility: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): metadataต้องpinbaserepo/revision/hash,architecture,targetm…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: metadataต้องpinbaserepo/revision/hash,architecture,targetmodules,r,α,dropout,dtype/quantization/tokenizer…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>metadataต้องpinbaserepo/revision/hash,architecture,targetmodules,r,α,dropout,dtype/quantization/tokenizer; sameชื่อน้ำหนักแต่revisionต่างต้องreject</p><p>อ้างอิง: <a href="#chapter-56/section/topic-26">Base Compatibility</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch56-exercise-10"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-11" class="exercise-item"><h3>ข้อ 11</h3><p>Reproduce one central calculation from LoRA/QLoRA/PEFT using a tiny hand-checkable input.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ LoRA Core Idea: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): din=dout2,r1,α1,A=[1,0],B=[2,3…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: din=dout2,r1,α1,A=[1,0],B=[2,3]ᵀให้ΔW=[[2,0],[3,0]]; x[…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>din=dout2,r1,α1,A=[1,0],B=[2,3]ᵀให้ΔW=[[2,0],[3,0]]; x[1,2]adapteroutput[2,3]</p><p>อ้างอิง: <a href="#chapter-56/section/topic-3">LoRA Core Idea</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch56-exercise-11"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-12" class="exercise-item"><h3>ข้อ 12</h3><p>Write a deterministic test that verifies the most important invariant in LoRA/QLoRA/PEFT.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Initialization, Merge: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): B0no-op,merged/unmergedallclose,frozenbaseunchan…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: B0no-op,merged/unmergedallclose,frozenbaseunchanged,metadatawrongbasefailsและshapesrcon…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>B0no-op,merged/unmergedallclose,frozenbaseunchanged,metadatawrongbasefailsและshapesrconsistent; toleranceตามdtypeหลังmerge</p><p>อ้างอิง: <a href="#chapter-56/section/topic-6">Initialization</a>, <a href="#chapter-56/section/topic-12">Merge</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch56-exercise-12"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-13" class="exercise-item"><h3>ข้อ 13</h3><p>Compare two meaningful configurations while keeping data and seed fixed.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Adapter Rank: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): rank4/8/16คงbase/targets/α/rpolicy/seed/update…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: rank4/8/16คงbase/targets/α/rpolicy/seed/updates; reportquality/trainableparams/mem…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>rank4/8/16คงbase/targets/α/rpolicy/seed/updates; reportquality/trainableparams/memoryและไม่เปลี่ยนscalingโดยไม่ระบุ</p><p>อ้างอิง: <a href="#chapter-56/section/topic-24">Adapter Rank</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch56-exercise-13"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-14" class="exercise-item"><h3>ข้อ 14</h3><p>Record intermediate shapes, ranges, and one quality metric for a tiny end-to-end run.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Target Modules: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): recordx(B,din),Ax(B,r),BAx(B,dout),bas…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: recordx(B,din),Ax(B,r),BAx(B,dout),base/adapteroutput,gradnormA/Bและv…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>recordx(B,din),Ax(B,r),BAx(B,dout),base/adapteroutput,gradnormA/BและvalNLL; basegradientต้องNone</p><p>อ้างอิง: <a href="#chapter-56/section/topic-8">Target Modules</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch56-exercise-14"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-15" class="exercise-item"><h3>ข้อ 15</h3><p>Explain one evaluation mistake that could make a LoRA/QLoRA/PEFT result look better than it really is.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Base Compatibility: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ใช้adapterกับbaseคนละrevisionแม้shapeเท่ากันอาจผ…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ใช้adapterกับbaseคนละrevisionแม้shapeเท่ากันอาจผลเสีย; evaluationต้องpinbase/quantconf…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ใช้adapterกับbaseคนละrevisionแม้shapeเท่ากันอาจผลเสีย; evaluationต้องpinbase/quantconfigและfreezeheldoutไม่เลือกbestseed</p><p>อ้างอิง: <a href="#chapter-56/section/topic-26">Base Compatibility</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch56-exercise-15"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-16" class="exercise-item"><h3>ข้อ 16</h3><p>State the dominant time and memory complexity for the main operation in LoRA/QLoRA/PEFT.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Memory Decomposition: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): adapterforwardextraO(BTr(din+dout)),stateO(r(din+dou…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: adapterforwardextraO(BTr(din+dout)),stateO(r(din+dout)); mergedinferenceไม่เพิ่มlowrankmatmulsแ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>adapterforwardextraO(BTr(din+dout)),stateO(r(din+dout)); mergedinferenceไม่เพิ่มlowrankmatmulsแต่quantizedmergeอาจเพิ่มroundingerror</p><p>อ้างอิง: <a href="#chapter-56/section/topic-22">Memory Decomposition</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch56-exercise-16"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-17" class="exercise-item"><h3>ข้อ 17</h3><p>Compare a from-scratch result with a trusted implementation using identical inputs and settings.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ From Scratch: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): NumPyWx+sB(Ax)เทียบTorchLinearwrapperfloat64copiedw…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: NumPyWx+sB(Ax)เทียบTorchLinearwrapperfloat64copiedweights; PEFToptionalintegrationต้องเทียบo…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>NumPyWx+sB(Ax)เทียบTorchLinearwrapperfloat64copiedweights; PEFToptionalintegrationต้องเทียบorientation/fan_in_fan_out/scalingด้วย</p><p>อ้างอิง: <a href="#chapter-56/section/topic-27">From Scratch</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch56-exercise-17"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-18" class="exercise-item"><h3>ข้อ 18</h3><p>Run a one-factor ablation and report the measured change over repeated runs when randomness matters.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Query/Value-Only vs All-Linear: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): q/v→alllinearคงrank/data/initseed; reportquality-p…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: q/v→alllinearคงrank/data/initseed; reportquality-per-trainableparameterและlatency/memoryหล…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>q/v→alllinearคงrank/data/initseed; reportquality-per-trainableparameterและlatency/memoryหลายruns ไม่อ้างparameterbudgetเท่ากัน</p><p>อ้างอิง: <a href="#chapter-56/section/topic-9">Query/Value-Only vs All-Linear</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch56-exercise-18"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-19" class="exercise-item"><h3>ข้อ 19</h3><p>Design a small reproducibility record containing seed, code version, data version, configuration, and metric.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Adapter Checkpoint: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): manifest มีbasehash/tokenizer/targetIDs/r/α/scal…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: manifest มีbasehash/tokenizer/targetIDs/r/α/scaling/init/quantcodebook/compute-dtype/s…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>manifest มีbasehash/tokenizer/targetIDs/r/α/scaling/init/quantcodebook/compute-dtype/seed/trainingdatahash/adapterdigest</p><p>อ้างอิง: <a href="#chapter-56/section/topic-11">Adapter Checkpoint</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch56-exercise-19"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-20" class="exercise-item"><h3>ข้อ 20</h3><p>Propose one falsifiable research question for LoRA/QLoRA/PEFT and specify the baseline, changed factor, and acceptance metric.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Adapter Rank: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ทดลอง“rank8คงquality≥99%ของrank16แต่optimi…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ทดลอง“rank8คงquality≥99%ของrank16แต่optimizerbytesครึ่ง”; samebase/task/budg…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ทดลอง“rank8คงquality≥99%ของrank16แต่optimizerbytesครึ่ง”; samebase/task/budget,fixedholdoutmetricและ3seeds</p><p>อ้างอิง: <a href="#chapter-56/section/topic-24">Adapter Rank</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch56-exercise-20"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section></div><div id="local-lab-content"><section id="local-lab"><h2>Local lab: Python 3.12 บน CPU</h2><p>รันจาก repository root; ใช้ Python 3.12 แยก environment สำหรับ framework ตาม requirements ของชุดบท</p><pre><code>python3.12 -m venv .venv-course
+source .venv-course/bin/activate
+python -m pip install -r requirements-batch19.txt pytest
+(cd 56-lora-qlora-peft &amp;&amp; python -m pytest tests -q -rs)</code></pre><p>ผลที่คาดหวัง: required tests ผ่านและไม่มี required test ถูก skip; GPU/integrations ที่ยังไม่รันต้องระบุแยก Python 3.15 ที่มากับเครื่องอาจใช้กับ framework wheels เหล่านี้ไม่ได้</p><h2>Mini Project — Full FT vs LoRA</h2>
+<p>Use the same tiny pretrained model and adaptation dataset.</p>
+<p>Compare:
+- full fine-tuning
+- LoRA q/v-only
+- LoRA all-linear</p>
+<p>Track:
+- total/trainable parameters
+- optimizer-state estimate
+- validation loss
+- adaptation accuracy
+- retained base-task score
+- checkpoint size
+- inference before/after adapter merge</p>
+<p>Optional Hugging Face lab:</p>
+<pre><code class="language-bash">python -m pip install -r requirements-batch19-peft.txt
+</code></pre><h2>Batch 19 Integration Project — Fine-Tuning, LoRA &amp; Instruction SFT</h2>
+<p>Batch 19 compares three adaptation paths under one repository.</p>
+<h3>Part A — Full Fine-Tuning</h3>
+<p>A frozen synthetic pretrained linear map is copied into a trainable model.</p>
+<p>The target task differs by a known low-rank weight update.</p>
+<pre><code class="language-text">base W
+↓ full parameter update
+target W'
+</code></pre>
+<p>Track:
+- trainable parameters
+- initial/final adaptation loss
+- retained base-task loss</p>
+<h3>Part B — LoRA</h3>
+<p>Use the same base/target problem.</p>
+<pre><code class="language-text">W frozen
++
+(alpha/r) B A
+↓
+adaptation
+</code></pre>
+<p>The lab verifies:
+- base W has requires_grad=False
+- B starts at zero
+- only A/B are optimized
+- trainable fraction is much smaller than full tuning</p>
+<h3>Part C — Instruction SFT</h3>
+<p>Synthetic chat-like token sequences contain:</p>
+<pre><code class="language-text">user prompt tokens
+↓ ignored labels
+
+assistant response tokens
+↓ supervised labels
+</code></pre>
+<p>A tiny causal GRU language model performs next-token SFT with ignore_index=-100.</p>
+<p>This part tests the <strong>data/loss mechanics</strong> of instruction tuning independently from model architecture.</p>
+<h3>Run</h3>
+<pre><code class="language-bash">python integration-project-batch19/src/fine_tune_lora_sft_lab.py --mode full --steps 20
+python integration-project-batch19/src/fine_tune_lora_sft_lab.py --mode lora --steps 20
+python integration-project-batch19/src/fine_tune_lora_sft_lab.py --mode sft --steps 10
+</code></pre>
+<h3>Optional PEFT Lab</h3>
+<pre><code class="language-bash">python -m pip install -r requirements-batch19-peft.txt
+</code></pre>
+<p>Then reproduce the LoRA experiment using Hugging Face PEFT and a tiny compatible causal-LM checkpoint.</p>
+<h3>Required Extensions</h3>
+<ol>
+<li>gradual unfreezing</li>
+<li>full FT vs LoRA validation curves</li>
+<li>q/v-only vs all-linear LoRA</li>
+<li>adapter merge/unmerge in PyTorch</li>
+<li>quantized-base memory estimate</li>
+<li>real chat-template preprocessing</li>
+<li>multi-turn assistant-only labels</li>
+<li>packed conversations</li>
+<li>held-out instruction evaluation</li>
+<li>capability-retention evaluation</li>
+</ol></section></div><label class="local-confirm"><input type="checkbox" id="local-lab-confirm"> ฉันรัน local lab และตรวจผลตาม rubric ด้วยตัวเองแล้ว</label><p class="local-note">สถานะนี้เป็นคำยืนยันของผู้เรียน เว็บไม่ได้รันหรือตรวจ Python บนเครื่องแทนคุณ</p></section>
+<section id="mastery-review" class="practice-section"><h2>หลักฐานตามเกณฑ์การเรียนรู้</h2><p>ทุก objective ต้องแสดงหลักฐานอธิบาย ทำนาย คำนวณ อ่าน shape/state debug และประยุกต์ พร้อมกรณีใหม่ ผลรัน source ผู้เรียนจริง และการประเมินซ้ำ เกณฑ์นี้ไม่รับประกันความเข้าใจทุกสถานการณ์ เปิด JavaScript เพื่อดูรายการที่ยังขาดและนำเข้ารายงานผู้ตรวจ</p></section><section class="coverage-section"><h2>แผนที่สิ่งที่เรียน → สิ่งที่ต้องแสดงให้ได้</h2><div id="coverage-table"></div></section><footer><span>ZERO TO ELITE AI ENGINEER · LEARNING STUDIO</span><span>อ่าน · derive · implement · debug · experiment · build</span></footer></div></main><noscript><style>.workbench,.sidebar,.reading-route,.lesson-toc,.mastery-status,#web-checks{display:none}main{margin-left:0}</style>อ่านเนื้อหา HTML ได้ตามปกติ เปิด JavaScript เพื่อใช้ห้องทดลองและตรวจคำตอบ</noscript></body></html>

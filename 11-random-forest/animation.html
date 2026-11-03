@@ -1,0 +1,1183 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="บทเรียน AI Engineer ภาษาไทย พร้อมคณิตศาสตร์ทีละขั้นและห้องทดลองที่คำนวณจริง"><title>Random Forest: ฝึกสมาชิกต่างกันแล้วรวมผล · AI Engineer Studio</title><link rel="stylesheet" href="../visual-lab/assets/styles.css"><link rel="stylesheet" href="../visual-lab/assets/course.css"><script defer src="../visual-lab/assets/lessons.js"></script><script defer src="../visual-lab/assets/chapter-meta.js"></script><script defer src="../visual-lab/assets/course-math.js"></script><script defer src="../visual-lab/assets/course-models.js"></script><script defer src="../visual-lab/assets/course-models-v3.js"></script><script defer src="../visual-lab/assets/course-assessment.js"></script><script defer src="../visual-lab/assets/course-mastery.js"></script><script defer src="../visual-lab/assets/course-catalog.js"></script><script defer src="../visual-lab/assets/book-content.js"></script><script defer src="../visual-lab/assets/course-render.js"></script><script defer src="../visual-lab/assets/course-mastery-panel.js"></script><script defer src="../visual-lab/assets/quality-report.js"></script><script defer src="../visual-lab/assets/course-app.js"></script></head>
+<body data-chapter="11" data-root="../"><a class="skip-link" href="#main">ข้ามไปบทเรียน</a>
+<aside class="sidebar" id="sidebar" aria-label="เลือกบทเรียน"><a class="brand" href="../visual-lab/index.html"><span class="brand-mark">ai</span><span>AI ENGINEER<small>LEARN · DERIVE · BUILD</small></span></a><div class="sidebar-intro">อ่านให้เข้าใจ · คำนวณให้เห็น · เขียนให้เป็น</div><label class="search-box"><input id="search" type="search" placeholder="ค้นหาบท / attention" aria-label="ค้นหาบทเรียน"></label><label class="filter-label" for="phase-filter">เส้นทางการเรียน <span id="nav-count"></span></label><select id="phase-filter"><option value="">ทุก Phase</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option></select><nav id="chapter-list" class="chapter-list" aria-label="รายชื่อบท"></nav><div class="course-progress"><div><span>ผ่านโจทย์ในเว็บ</span><strong id="progress-count">0 / 80</strong></div><progress id="course-progress" max="80" value="0" aria-label="บทที่ผ่านโจทย์"></progress><a id="resume-link" href="#chapter-1">อ่านต่อจากเดิม →</a></div></aside>
+<button class="nav-backdrop" id="nav-backdrop" aria-label="ปิดเมนู" hidden></button>
+<main id="main" tabindex="-1"><header class="topbar"><div><button id="nav-toggle" class="icon-button mobile-menu" aria-label="เปิดเมนูบทเรียน" aria-expanded="false" aria-controls="sidebar">☰</button><span id="breadcrumb"></span></div><span class="local-badge"><i></i> คำนวณในเครื่อง · ไม่มี API</span></header><div class="content">
+<div class="chapter-navigation"><label for="chapter-select" class="sr-only">เลือกบทเรียน</label><select id="chapter-select"></select><div class="chapter-arrows"><button id="prev-chapter" class="icon-button" aria-label="บทก่อนหน้า">←</button><button id="next-chapter" class="icon-button" aria-label="บทถัดไป">→</button></div></div>
+<section class="chapter-hero"><div><p id="chapter-kicker" class="eyebrow"></p><h1 id="chapter-title">Random Forest: ฝึกสมาชิกต่างกันแล้วรวมผล</h1><p class="english-title" id="chapter-english"></p></div><span class="hero-symbol">f(x) ↗</span></section>
+<p id="quality-status" class="quality-status"></p><div id="mastery-status" class="mastery-status"></div><div class="reading-route"><a href="#chapter-11/section/overview">01 อ่านบทเรียน</a><a href="#workbench">02 ทดลองสมการ</a><a href="#practice">03 ฝึกและตรวจงาน</a><a href="#mastery-review">04 หลักฐานตามเกณฑ์</a></div>
+<nav id="lesson-toc" class="lesson-toc" aria-label="สารบัญบท"></nav>
+<section id="overview" class="course-overview"><span class="eyebrow">THE LEARNING CONTRACT</span><h2>เรียนบทนี้แล้วต้องทำอะไรได้</h2><p id="chapter-purpose"></p><div id="chapter-objectives"></div><div class="learning-hint">ทำนาย → เปลี่ยนทีละค่า → ตรวจตัวเลข → อธิบายเหตุผล → เขียนด้วย Python เอง</div></section>
+<section class="workbench lab-card" id="workbench" aria-label="ห้องทดลองคำนวณจริง"><div class="card-header"><div><span class="live-dot"></span><span class="eyebrow">COMPUTATION WORKBENCH</span></div><span class="simulation-label">ทุกภาพใช้ผลคำนวณชุดเดียวกัน</span></div><div class="lab-top"><label for="lab-select">เลือกกลไกที่ต้องการทดลอง</label><select id="lab-select"></select><p id="lab-question"></p></div><div class="workbench-grid"><div class="viz-column"><div class="compare-labels"><span>เส้นทึบ: ปัจจุบัน</span><span>เส้นประ: baseline ที่ตรึงไว้</span></div><div id="simulation" class="simulation"></div><div id="metrics" class="metrics"></div><div id="baseline-diff" class="baseline-diff"></div><div class="playback"><div class="playback-buttons"><button class="primary-button" id="update-once">อัปเดตหนึ่งก้าว</button><button class="secondary-button" id="train-many">▶ ฝึก 30 ก้าว</button><button class="icon-button" id="back-state" aria-label="ย้อนประวัติ">↶</button><button class="icon-button" id="forward-state" aria-label="ประวัติถัดไป">↷</button></div></div><div class="lab-secondary-actions"><button id="pin-baseline" class="text-button">ตรึง baseline ปัจจุบัน</button><button id="reset-lab" class="text-button">คืนค่าเริ่มต้น</button><button id="download-state" class="text-button">บันทึกผล JSON</button><span id="history-status"></span></div><p id="simulation-note" class="simulation-note"></p><p class="lab-error" id="lab-error" role="alert" hidden></p></div><div class="controls-column"><h3>เปลี่ยนทีละตัว แล้วสังเกตผล</h3><div id="lab-controls"></div><p class="control-note">แก้ weight ด้วยมือจะคำนวณ forward ใหม่; optimizer เปลี่ยน weights เมื่อกดอัปเดตเท่านั้น</p></div></div>
+<div class="trace-section"><div class="trace-toolbar"><h3>เดินสมการทีละ operation</h3><div><button id="trace-prev" class="icon-button" aria-label="operation ก่อนหน้า">←</button><button id="play-trace" class="secondary-button" aria-pressed="false">▶ เล่น flow</button><button id="trace-next" class="icon-button" aria-label="operation ถัดไป">→</button><span id="stage-counter"></span></div></div><label class="motion-control"><input id="reduce-motion" type="checkbox"> ลดภาพเคลื่อนไหว (หยุดการเล่นที่ค้างอยู่)</label><div id="operation-steps" class="operation-steps"></div><div id="flow-diagram" class="flow-diagram"></div><div id="active-operation" class="active-operation" aria-live="polite"></div><p class="control-note">ตัวเลขบนภาพปัดเศษเพื่อให้อ่านง่าย; บันทึก JSON เพื่อดูค่าที่ใช้คำนวณเต็ม precision</p><details open><summary>ตารางค่าระหว่างทาง — ตรวจด้วยมือได้</summary><div id="result-table"></div></details><div id="tensor-tables" class="tensor-tables"></div><details id="surface-details"><summary>ดู loss surface และเส้นทางของ w₁,b (ตรึง controls อื่น)</summary><div id="surface-chart"></div><p>surface คำนวณ objective ปัจจุบันโดยตรึง degree, penalty, ข้อมูล และ weights อื่น เส้นทางแสดงเฉพาะ snapshots ที่ค่าเหล่านี้ตรงกัน; นอกช่วง w=[−1,5], b=[−2,4] ให้ตรวจค่าจริงใน history</p></details><details><summary>ประวัติการเปลี่ยนค่า</summary><div id="history-table"></div></details></div></section>
+<article id="chapter-article" class="chapter-article"><section id="mechanism-1" class="teaching-section"><span class="section-kicker">CHAPTER 11 · ภาพ → สมการ → โค้ด</span><h2>1. bootstrap สุ่มแบบคืนกลับ</h2><h3>โจทย์และเหตุผล</h3><p>tree แต่ละต้นเห็น training rows บางตัวซ้ำและไม่เห็นบางตัว ภาพ fit stumps จาก samples เหล่านี้จริง เมื่อเปลี่ยน seed จะเปลี่ยนชุดที่สมาชิกเห็นและ thresholds ที่เรียน</p><h3>ตัวอย่างและคำอธิบาย</h3><p>bootstrap sampling คืออะไร?</p><p>Bootstrapสุ่มnindicesแบบคืนกลับจากntrainrows. indices[0,0,2]จากn3ทำsample0ซ้ำและไม่เห็นsample1; เก็บindicesเพื่อหาOOBและทำซ้ำด้วยseed ไม่ใช่shuffleโดยไม่คืนกลับ.</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>trees: tree count,initial=5; query: query x,initial=6; seed: bootstrap seed,initial=7; featureJitter: threshold offset,initial=0</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = [0, 0, 0, 1, 0, 1, 1, 1, 1, 1]; ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</li><li>bootstrap → fit greedy stump → average = [1, 1, 0.7142857142857143, 1, 1]; แต่ละ stump fit จาก bootstrap rows จริง; offset เป็น perturbation ที่เลือกเอง ไม่ใช่ random feature subsets</li><li>finite / normalized / bounded = [1, 1, 0.7142857142857143, 1, 1]; เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="ensemble-bootstrap---greedy-stump">เปิดการทดลองนี้</a><p class="failure-box">การสร้างRNGใหม่ด้วยseedเดิมภายในloopทำให้bootstrapและfeaturechoicesเหมือนกัน. ใช้parentRNGสร้างmemberseedsต่างกันแต่reproducible; testsampleindexlistsไม่เหมือนกันทุกต้นและrerunseedเดิมได้เหมือนเดิม.; bagged 1D stumps ที่ฝึกจริงในภาพ; Random Forest หลาย features ใน local lab เพิ่ม feature subsampling</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Bootstrapสุ่มnindicesแบบคืนกลับจากntrainrows. indices[0,0,2]จากn3ทำsample0ซ้ำและไม่เห็นsample1; เก็บindicesเพื่อหาOOBและทำซ้ำด้วยseed ไม่ใช่shuffleโดยไม่คืนกลับ.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-1-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = [0, 0, 0, 1, 0, 1, 1, 1, 1, 1]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>bootstrap → fit greedy stump → average</code> = [1, 1, 0.7142857142857143, 1, 1]<p>แต่ละ stump fit จาก bootstrap rows จริง; offset เป็น perturbation ที่เลือกเอง ไม่ใช่ random feature subsets</p></li><li><code>finite / normalized / bounded</code> = [1, 1, 0.7142857142857143, 1, 1]<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-1-visual"><summary>ภาพและ shape</summary><p>bagged 1D stumps ที่ฝึกจริงในภาพ; Random Forest หลาย features ใน local lab เพิ่ม feature subsampling</p><ol><li><code>shape / range</code> = [0, 0, 0, 1, 0, 1, 1, 1, 1, 1]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>bootstrap → fit greedy stump → average</code> = [1, 1, 0.7142857142857143, 1, 1]<p>แต่ละ stump fit จาก bootstrap rows จริง; offset เป็น perturbation ที่เลือกเอง ไม่ใช่ random feature subsets</p></li><li><code>finite / normalized / bounded</code> = [1, 1, 0.7142857142857143, 1, 1]<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-1-code"><summary>โค้ด</summary><p>Bootstrapสุ่มnindicesแบบคืนกลับจากntrainrows. indices[0,0,2]จากn3ทำsample0ซ้ำและไม่เห็นsample1; เก็บindicesเพื่อหาOOBและทำซ้ำด้วยseed ไม่ใช่shuffleโดยไม่คืนกลับ.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-1-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = [0, 0, 0, 1, 0, 1, 1, 1, 1, 1]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>bootstrap → fit greedy stump → average</code> = [1, 1, 0.7142857142857143, 1, 1]<p>แต่ละ stump fit จาก bootstrap rows จริง; offset เป็น perturbation ที่เลือกเอง ไม่ใช่ random feature subsets</p></li><li><code>finite / normalized / bounded</code> = [1, 1, 0.7142857142857143, 1, 1]<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-1"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-2" class="teaching-section"><span class="section-kicker">CHAPTER 11 · ภาพ → สมการ → โค้ด</span><h2>2. average probability ต่างจากโหวต class</h2><h3>โจทย์และเหตุผล</h3><p>สมาชิกหนึ่งอาจ p=.51 อีกตัว p=.99 การเฉลี่ย probabilities รักษาระดับความมั่นใจต่างจากเสียง class เท่ากันทั้งหมด ต้องระบุ aggregation ที่ใช้ตอนเทียบ implementation</p><h3>ตัวอย่างและคำอธิบาย</h3><p>OOB sample คืออะไร?</p><p>OOBของtreeคือtrainingrowsที่ไม่ถูกbootstrapของtreeนั้น. ประเมินsampleหนึ่งจากเฉพาะtreesที่sampleนั้นเป็นOOB; ถ้าไม่มีOOBvotesต้องรายงานว่าnotcovered ไม่ใช้in-bagpredictionแทนเงียบ ๆ.</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>trees: tree count,initial=5; query: query x,initial=6; seed: bootstrap seed,initial=21; featureJitter: threshold offset,initial=0</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = [0, 0, 0, 1, 0, 1, 1, 1, 1, 1]; ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</li><li>bootstrap → fit greedy stump → average = [0.8333333333333334, 1, 1, 1, 1]; แต่ละ stump fit จาก bootstrap rows จริง; offset เป็น perturbation ที่เลือกเอง ไม่ใช่ random feature subsets</li><li>finite / normalized / bounded = [0.8333333333333334, 1, 1, 1, 1]; เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="ensemble-เปล--ยน-seed-โดยคง-datas">เปิดการทดลองนี้</a><p class="failure-box">การสร้างRNGใหม่ด้วยseedเดิมภายในloopทำให้bootstrapและfeaturechoicesเหมือนกัน. ใช้parentRNGสร้างmemberseedsต่างกันแต่reproducible; testsampleindexlistsไม่เหมือนกันทุกต้นและrerunseedเดิมได้เหมือนเดิม.; bagged 1D stumps ที่ฝึกจริงในภาพ; Random Forest หลาย features ใน local lab เพิ่ม feature subsampling</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>OOBของtreeคือtrainingrowsที่ไม่ถูกbootstrapของtreeนั้น. ประเมินsampleหนึ่งจากเฉพาะtreesที่sampleนั้นเป็นOOB; ถ้าไม่มีOOBvotesต้องรายงานว่าnotcovered ไม่ใช้in-bagpredictionแทนเงียบ ๆ.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-2-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = [0, 0, 0, 1, 0, 1, 1, 1, 1, 1]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>bootstrap → fit greedy stump → average</code> = [0.8333333333333334, 1, 1, 1, 1]<p>แต่ละ stump fit จาก bootstrap rows จริง; offset เป็น perturbation ที่เลือกเอง ไม่ใช่ random feature subsets</p></li><li><code>finite / normalized / bounded</code> = [0.8333333333333334, 1, 1, 1, 1]<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-2-visual"><summary>ภาพและ shape</summary><p>bagged 1D stumps ที่ฝึกจริงในภาพ; Random Forest หลาย features ใน local lab เพิ่ม feature subsampling</p><ol><li><code>shape / range</code> = [0, 0, 0, 1, 0, 1, 1, 1, 1, 1]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>bootstrap → fit greedy stump → average</code> = [0.8333333333333334, 1, 1, 1, 1]<p>แต่ละ stump fit จาก bootstrap rows จริง; offset เป็น perturbation ที่เลือกเอง ไม่ใช่ random feature subsets</p></li><li><code>finite / normalized / bounded</code> = [0.8333333333333334, 1, 1, 1, 1]<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-2-code"><summary>โค้ด</summary><p>OOBของtreeคือtrainingrowsที่ไม่ถูกbootstrapของtreeนั้น. ประเมินsampleหนึ่งจากเฉพาะtreesที่sampleนั้นเป็นOOB; ถ้าไม่มีOOBvotesต้องรายงานว่าnotcovered ไม่ใช้in-bagpredictionแทนเงียบ ๆ.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-2-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = [0, 0, 0, 1, 0, 1, 1, 1, 1, 1]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>bootstrap → fit greedy stump → average</code> = [0.8333333333333334, 1, 1, 1, 1]<p>แต่ละ stump fit จาก bootstrap rows จริง; offset เป็น perturbation ที่เลือกเอง ไม่ใช่ random feature subsets</p></li><li><code>finite / normalized / bounded</code> = [0.8333333333333334, 1, 1, 1, 1]<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-2"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-3" class="teaching-section"><span class="section-kicker">CHAPTER 11 · ภาพ → สมการ → โค้ด</span><h2>3. forest เต็มเพิ่ม random feature subsets</h2><h3>โจทย์และเหตุผล</h3><p>lab 1D สอน bagging จึงยังไม่แสดง feature subsampling หลายมิติ ให้ใช้ local implementation ตรวจ max_features และ OOB โดยไม่ใช้ OOB แทน time/group split ที่จำเป็น</p><h3>ตัวอย่างและคำอธิบาย</h3><p>implement permutation importance บน held-out set</p><p>วัดbaselineheld-outmetricแล้วshuffleหนึ่งfeatureในheld-outเท่านั้นหลายซ้ำ คำนวณscoredecreaseตามทิศmetric. คงmodelไม่retrain; correlatedfeaturesอาจทดแทนกันจึงimportanceเล็กได้ทั้งที่กลุ่มfeaturesมีประโยชน์.</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>threshold: split threshold,initial=4; minLeaf: min samples per leaf,initial=1; query: query x,initial=6</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = [0, 0, 0, 1, 0, 1, 1, 1, 1, 1]; ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</li><li>Gini=1−Σp²; gain=parent−weighted children = 0.16333333333333339; ลูกทั้งสองต้องผ่าน minLeaf; leaf probability คือ class proportion ใน node นั้น</li><li>finite / normalized / bounded = 0.16333333333333339; เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="tree-ตรวจ-single-tree-ท--เป-น">เปิดการทดลองนี้</a><p class="failure-box">การสร้างRNGใหม่ด้วยseedเดิมภายในloopทำให้bootstrapและfeaturechoicesเหมือนกัน. ใช้parentRNGสร้างmemberseedsต่างกันแต่reproducible; testsampleindexlistsไม่เหมือนกันทุกต้นและrerunseedเดิมได้เหมือนเดิม.; คำนวณ split ของ decision stump จริง; บทเต็มต่อ recursion, stopping และ pruning</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>วัดbaselineheld-outmetricแล้วshuffleหนึ่งfeatureในheld-outเท่านั้นหลายซ้ำ คำนวณscoredecreaseตามทิศmetric. คงmodelไม่retrain; correlatedfeaturesอาจทดแทนกันจึงimportanceเล็กได้ทั้งที่กลุ่มfeaturesมีประโยชน์.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-3-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = [0, 0, 0, 1, 0, 1, 1, 1, 1, 1]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>Gini=1−Σp²; gain=parent−weighted children</code> = 0.16333333333333339<p>ลูกทั้งสองต้องผ่าน minLeaf; leaf probability คือ class proportion ใน node นั้น</p></li><li><code>finite / normalized / bounded</code> = 0.16333333333333339<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-3-visual"><summary>ภาพและ shape</summary><p>คำนวณ split ของ decision stump จริง; บทเต็มต่อ recursion, stopping และ pruning</p><ol><li><code>shape / range</code> = [0, 0, 0, 1, 0, 1, 1, 1, 1, 1]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>Gini=1−Σp²; gain=parent−weighted children</code> = 0.16333333333333339<p>ลูกทั้งสองต้องผ่าน minLeaf; leaf probability คือ class proportion ใน node นั้น</p></li><li><code>finite / normalized / bounded</code> = 0.16333333333333339<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-3-code"><summary>โค้ด</summary><p>วัดbaselineheld-outmetricแล้วshuffleหนึ่งfeatureในheld-outเท่านั้นหลายซ้ำ คำนวณscoredecreaseตามทิศmetric. คงmodelไม่retrain; correlatedfeaturesอาจทดแทนกันจึงimportanceเล็กได้ทั้งที่กลุ่มfeaturesมีประโยชน์.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-3-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = [0, 0, 0, 1, 0, 1, 1, 1, 1, 1]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>Gini=1−Σp²; gain=parent−weighted children</code> = 0.16333333333333339<p>ลูกทั้งสองต้องผ่าน minLeaf; leaf probability คือ class proportion ใน node นั้น</p></li><li><code>finite / normalized / bounded</code> = 0.16333333333333339<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-3"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="reference" class="canonical-section"><h2>เนื้อหาครบทุกหัวข้อ พร้อมแผนที่ objective</h2><nav class="source-toc"><a href="#chapter-11/section/topic-1">1. Why This Matters</a> <a href="#chapter-11/section/topic-2">2. Prerequisites</a> <a href="#chapter-11/section/topic-3">3. Learning Objectives</a> <a href="#chapter-11/section/topic-4">4. Bagging</a> <a href="#chapter-11/section/topic-5">5. Why Bootstrap Helps</a> <a href="#chapter-11/section/topic-6">6. Random Feature Subsets</a> <a href="#chapter-11/section/topic-7">7. Aggregation</a> <a href="#chapter-11/section/topic-8">8. Out-of-Bag Samples</a> <a href="#chapter-11/section/topic-9">9. Why About 36.8% OOB?</a> <a href="#chapter-11/section/topic-10">10. OOB Caveats</a> <a href="#chapter-11/section/topic-11">11. Bias–Variance</a> <a href="#chapter-11/section/topic-12">12. Hyperparameters</a> <a href="#chapter-11/section/topic-13">13. Feature Scaling</a> <a href="#chapter-11/section/topic-14">14. Feature Importance</a> <a href="#chapter-11/section/topic-15">15. Extra Trees</a> <a href="#chapter-11/section/topic-16">16. Parallelism</a> <a href="#chapter-11/section/topic-17">17. From Scratch</a> <a href="#chapter-11/section/topic-18">18. Hardware Perspective</a> <a href="#chapter-11/section/topic-19">19. Failure Cases</a> <a href="#chapter-11/section/topic-20">20. Debugging</a> <a href="#chapter-11/section/topic-21">21. Common Mistakes</a> <a href="#chapter-11/section/topic-22">22. Exercises / Project</a> <a href="#chapter-11/section/topic-23">23. Checklist</a> <a href="#chapter-11/section/topic-24">24. What&#x27;s Next</a> </nav><section id="topic-1" class="source-topic"><span id="source-11-random-forest-canonical-chapter-11-random-forest" class="legacy-anchor"></span><span id="source-11-random-forest-canonical-1-why-this-matters" class="legacy-anchor"></span><h3>1. Why This Matters</h3>
+<p>Decision Tree เดี่ยวมี variance สูง: เปลี่ยน training samples เล็กน้อย tree อาจเปลี่ยนโครงสร้างมาก</p>
+<p>Random Forest ลดปัญหานี้ด้วยสองแหล่ง randomness:</p>
+<pre><code class="language-text">training data
+   ↓ bootstrap rows
+Tree 1, Tree 2, ... Tree B
+   ↓ random feature subset at each split
+decorrelated trees
+   ↓ average probabilities / majority vote
+Random Forest prediction
+</code></pre><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>1. Why This Matters</h3>
+<p>Decision Tree เดี่ยวมี variance สูง: เปลี่ยน training samples เล็กน้อย tree อาจเปลี่ยนโครงสร้างมาก</p>
+<p>Random Forest ลดปัญหานี้ด้วยสองแหล่ง randomness:</p>
+<pre><code class="language-text">training data
+   ↓ bootstrap rows
+Tree 1, Tree 2, ... Tree B
+   ↓ random feature subset at each split
+decorrelated trees
+   ↓ average probabilities / majority vote
+Random Forest prediction
+</code></pre><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-1-equation"><summary>สมการ</summary><h3>1. Why This Matters</h3>
+<p>Decision Tree เดี่ยวมี variance สูง: เปลี่ยน training samples เล็กน้อย tree อาจเปลี่ยนโครงสร้างมาก</p>
+<p>Random Forest ลดปัญหานี้ด้วยสองแหล่ง randomness:</p>
+<pre><code class="language-text">training data
+   ↓ bootstrap rows
+Tree 1, Tree 2, ... Tree B
+   ↓ random feature subset at each split
+decorrelated trees
+   ↓ average probabilities / majority vote
+Random Forest prediction
+</code></pre></details><details id="help-topic-1-visual"><summary>ภาพและ shape</summary><h3>1. Why This Matters</h3>
+<p>Decision Tree เดี่ยวมี variance สูง: เปลี่ยน training samples เล็กน้อย tree อาจเปลี่ยนโครงสร้างมาก</p>
+<p>Random Forest ลดปัญหานี้ด้วยสองแหล่ง randomness:</p>
+<pre><code class="language-text">training data
+   ↓ bootstrap rows
+Tree 1, Tree 2, ... Tree B
+   ↓ random feature subset at each split
+decorrelated trees
+   ↓ average probabilities / majority vote
+Random Forest prediction
+</code></pre></details><details id="help-topic-1-code"><summary>โค้ด</summary><h3>1. Why This Matters</h3>
+<p>Decision Tree เดี่ยวมี variance สูง: เปลี่ยน training samples เล็กน้อย tree อาจเปลี่ยนโครงสร้างมาก</p>
+<p>Random Forest ลดปัญหานี้ด้วยสองแหล่ง randomness:</p>
+<pre><code class="language-text">training data
+   ↓ bootstrap rows
+Tree 1, Tree 2, ... Tree B
+   ↓ random feature subset at each split
+decorrelated trees
+   ↓ average probabilities / majority vote
+Random Forest prediction
+</code></pre><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-1-result"><summary>ผลการทดลอง</summary><h3>1. Why This Matters</h3>
+<p>Decision Tree เดี่ยวมี variance สูง: เปลี่ยน training samples เล็กน้อย tree อาจเปลี่ยนโครงสร้างมาก</p>
+<p>Random Forest ลดปัญหานี้ด้วยสองแหล่ง randomness:</p>
+<pre><code class="language-text">training data
+   ↓ bootstrap rows
+Tree 1, Tree 2, ... Tree B
+   ↓ random feature subset at each split
+decorrelated trees
+   ↓ average probabilities / majority vote
+Random Forest prediction
+</code></pre><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-1"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-2" class="source-topic"><span id="source-11-random-forest-canonical-2-prerequisites" class="legacy-anchor"></span><h3>2. Prerequisites</h3>
+<ul>
+<li>Decision Tree</li>
+<li>Gini / entropy</li>
+<li>bootstrap sampling</li>
+<li>bias–variance</li>
+<li>probability averaging</li>
+<li>classification metrics</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>2. Prerequisites</h3>
+<ul>
+<li>Decision Tree</li>
+<li>Gini / entropy</li>
+<li>bootstrap sampling</li>
+<li>bias–variance</li>
+<li>probability averaging</li>
+<li>classification metrics</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-2-equation"><summary>สมการ</summary><h3>2. Prerequisites</h3>
+<ul>
+<li>Decision Tree</li>
+<li>Gini / entropy</li>
+<li>bootstrap sampling</li>
+<li>bias–variance</li>
+<li>probability averaging</li>
+<li>classification metrics</li>
+</ul></details><details id="help-topic-2-visual"><summary>ภาพและ shape</summary><h3>2. Prerequisites</h3>
+<ul>
+<li>Decision Tree</li>
+<li>Gini / entropy</li>
+<li>bootstrap sampling</li>
+<li>bias–variance</li>
+<li>probability averaging</li>
+<li>classification metrics</li>
+</ul></details><details id="help-topic-2-code"><summary>โค้ด</summary><h3>2. Prerequisites</h3>
+<ul>
+<li>Decision Tree</li>
+<li>Gini / entropy</li>
+<li>bootstrap sampling</li>
+<li>bias–variance</li>
+<li>probability averaging</li>
+<li>classification metrics</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-2-result"><summary>ผลการทดลอง</summary><h3>2. Prerequisites</h3>
+<ul>
+<li>Decision Tree</li>
+<li>Gini / entropy</li>
+<li>bootstrap sampling</li>
+<li>bias–variance</li>
+<li>probability averaging</li>
+<li>classification metrics</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-2"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-3" class="source-topic"><span id="source-11-random-forest-canonical-3-learning-objectives" class="legacy-anchor"></span><h3>3. Learning Objectives</h3>
+<p>เมื่อจบบทนี้คุณควร:</p>
+<ul>
+<li>อธิบาย bagging</li>
+<li>implement bootstrap sampling</li>
+<li>อธิบายเหตุผลที่ feature randomness decorrelates trees</li>
+<li>implement Random Forest จากศูนย์</li>
+<li>average class probabilities</li>
+<li>คำนวณ Out-of-Bag score</li>
+<li>tune n_estimators / max_depth / max_features</li>
+<li>อธิบาย OOB limitations</li>
+<li>เปรียบเทียบ single tree vs forest</li>
+<li>อธิบาย MDI importance caveats</li>
+<li>เข้าใจ Extra Trees concept</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>3. Learning Objectives</h3>
+<p>เมื่อจบบทนี้คุณควร:</p>
+<ul>
+<li>อธิบาย bagging</li>
+<li>implement bootstrap sampling</li>
+<li>อธิบายเหตุผลที่ feature randomness decorrelates trees</li>
+<li>implement Random Forest จากศูนย์</li>
+<li>average class probabilities</li>
+<li>คำนวณ Out-of-Bag score</li>
+<li>tune n_estimators / max_depth / max_features</li>
+<li>อธิบาย OOB limitations</li>
+<li>เปรียบเทียบ single tree vs forest</li>
+<li>อธิบาย MDI importance caveats</li>
+<li>เข้าใจ Extra Trees concept</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-3-equation"><summary>สมการ</summary><h3>3. Learning Objectives</h3>
+<p>เมื่อจบบทนี้คุณควร:</p>
+<ul>
+<li>อธิบาย bagging</li>
+<li>implement bootstrap sampling</li>
+<li>อธิบายเหตุผลที่ feature randomness decorrelates trees</li>
+<li>implement Random Forest จากศูนย์</li>
+<li>average class probabilities</li>
+<li>คำนวณ Out-of-Bag score</li>
+<li>tune n_estimators / max_depth / max_features</li>
+<li>อธิบาย OOB limitations</li>
+<li>เปรียบเทียบ single tree vs forest</li>
+<li>อธิบาย MDI importance caveats</li>
+<li>เข้าใจ Extra Trees concept</li>
+</ul></details><details id="help-topic-3-visual"><summary>ภาพและ shape</summary><h3>3. Learning Objectives</h3>
+<p>เมื่อจบบทนี้คุณควร:</p>
+<ul>
+<li>อธิบาย bagging</li>
+<li>implement bootstrap sampling</li>
+<li>อธิบายเหตุผลที่ feature randomness decorrelates trees</li>
+<li>implement Random Forest จากศูนย์</li>
+<li>average class probabilities</li>
+<li>คำนวณ Out-of-Bag score</li>
+<li>tune n_estimators / max_depth / max_features</li>
+<li>อธิบาย OOB limitations</li>
+<li>เปรียบเทียบ single tree vs forest</li>
+<li>อธิบาย MDI importance caveats</li>
+<li>เข้าใจ Extra Trees concept</li>
+</ul></details><details id="help-topic-3-code"><summary>โค้ด</summary><h3>3. Learning Objectives</h3>
+<p>เมื่อจบบทนี้คุณควร:</p>
+<ul>
+<li>อธิบาย bagging</li>
+<li>implement bootstrap sampling</li>
+<li>อธิบายเหตุผลที่ feature randomness decorrelates trees</li>
+<li>implement Random Forest จากศูนย์</li>
+<li>average class probabilities</li>
+<li>คำนวณ Out-of-Bag score</li>
+<li>tune n_estimators / max_depth / max_features</li>
+<li>อธิบาย OOB limitations</li>
+<li>เปรียบเทียบ single tree vs forest</li>
+<li>อธิบาย MDI importance caveats</li>
+<li>เข้าใจ Extra Trees concept</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-3-result"><summary>ผลการทดลอง</summary><h3>3. Learning Objectives</h3>
+<p>เมื่อจบบทนี้คุณควร:</p>
+<ul>
+<li>อธิบาย bagging</li>
+<li>implement bootstrap sampling</li>
+<li>อธิบายเหตุผลที่ feature randomness decorrelates trees</li>
+<li>implement Random Forest จากศูนย์</li>
+<li>average class probabilities</li>
+<li>คำนวณ Out-of-Bag score</li>
+<li>tune n_estimators / max_depth / max_features</li>
+<li>อธิบาย OOB limitations</li>
+<li>เปรียบเทียบ single tree vs forest</li>
+<li>อธิบาย MDI importance caveats</li>
+<li>เข้าใจ Extra Trees concept</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-3"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-4" class="source-topic"><span id="source-11-random-forest-canonical-4-bagging" class="legacy-anchor"></span><h3>4. Bagging</h3>
+<p>Bagging = Bootstrap Aggregating</p>
+<p>แต่ละ estimator ฝึกด้วย bootstrap sample:</p>
+<pre><code class="language-text">original indices:
+0 1 2 3 4 5
+
+bootstrap:
+2 2 5 1 4 2
+</code></pre>
+<p>sampling <strong>with replacement</strong></p>
+<p>บาง rows ถูกเลือกหลายครั้ง บาง rows ไม่ถูกเลือกเลย</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>Baggingfitสมาชิกบนbootstrapdatasetsแล้วaggregateเพื่อลดvarianceเมื่อสมาชิกไม่ได้เหมือนกันทั้งหมด. Parallelfitได้เพราะแต่ละmemberไม่รอresidualของตัวก่อน ต่างจากboostingที่สร้างตามลำดับ.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-4-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Baggingfitสมาชิกบนbootstrapdatasetsแล้วaggregateเพื่อลดvarianceเมื่อสมาชิกไม่ได้เหมือนกันทั้งหมด. Parallelfitได้เพราะแต่ละmemberไม่รอresidualของตัวก่อน ต่างจากboostingที่สร้างตามลำดับ.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-4-equation"><summary>สมการ</summary><p>Baggingfitสมาชิกบนbootstrapdatasetsแล้วaggregateเพื่อลดvarianceเมื่อสมาชิกไม่ได้เหมือนกันทั้งหมด. Parallelfitได้เพราะแต่ละmemberไม่รอresidualของตัวก่อน ต่างจากboostingที่สร้างตามลำดับ.</p></details><details id="help-topic-4-visual"><summary>ภาพและ shape</summary><p>Baggingfitสมาชิกบนbootstrapdatasetsแล้วaggregateเพื่อลดvarianceเมื่อสมาชิกไม่ได้เหมือนกันทั้งหมด. Parallelfitได้เพราะแต่ละmemberไม่รอresidualของตัวก่อน ต่างจากboostingที่สร้างตามลำดับ.</p></details><details id="help-topic-4-code"><summary>โค้ด</summary><p>Baggingfitสมาชิกบนbootstrapdatasetsแล้วaggregateเพื่อลดvarianceเมื่อสมาชิกไม่ได้เหมือนกันทั้งหมด. Parallelfitได้เพราะแต่ละmemberไม่รอresidualของตัวก่อน ต่างจากboostingที่สร้างตามลำดับ.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-4-result"><summary>ผลการทดลอง</summary><p>Baggingfitสมาชิกบนbootstrapdatasetsแล้วaggregateเพื่อลดvarianceเมื่อสมาชิกไม่ได้เหมือนกันทั้งหมด. Parallelfitได้เพราะแต่ละmemberไม่รอresidualของตัวก่อน ต่างจากboostingที่สร้างตามลำดับ.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-4"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-5" class="source-topic"><span id="source-11-random-forest-canonical-5-why-bootstrap-helps" class="legacy-anchor"></span><h3>5. Why Bootstrap Helps</h3>
+<p>แต่ละ tree เห็นข้อมูลต่างกัน จึงสร้าง model errors ต่างกัน</p>
+<p>ถ้า errors ไม่ perfectly correlated การ average ลด variance</p>
+<p>intuition:</p>
+<pre><code class="language-text">Var(mean of B independent-ish models)
+≈ variance / B
+</code></pre>
+<p>แต่ trees ไม่ independent จริง ดังนั้น key คือทำให้ correlation ลดลงด้วย random feature selection</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>Bootstrapสุ่มnindicesแบบคืนกลับจากntrainrows. indices[0,0,2]จากn3ทำsample0ซ้ำและไม่เห็นsample1; เก็บindicesเพื่อหาOOBและทำซ้ำด้วยseed ไม่ใช่shuffleโดยไม่คืนกลับ.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-5-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Bootstrapสุ่มnindicesแบบคืนกลับจากntrainrows. indices[0,0,2]จากn3ทำsample0ซ้ำและไม่เห็นsample1; เก็บindicesเพื่อหาOOBและทำซ้ำด้วยseed ไม่ใช่shuffleโดยไม่คืนกลับ.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-5-equation"><summary>สมการ</summary><p>Bootstrapสุ่มnindicesแบบคืนกลับจากntrainrows. indices[0,0,2]จากn3ทำsample0ซ้ำและไม่เห็นsample1; เก็บindicesเพื่อหาOOBและทำซ้ำด้วยseed ไม่ใช่shuffleโดยไม่คืนกลับ.</p></details><details id="help-topic-5-visual"><summary>ภาพและ shape</summary><p>Bootstrapสุ่มnindicesแบบคืนกลับจากntrainrows. indices[0,0,2]จากn3ทำsample0ซ้ำและไม่เห็นsample1; เก็บindicesเพื่อหาOOBและทำซ้ำด้วยseed ไม่ใช่shuffleโดยไม่คืนกลับ.</p></details><details id="help-topic-5-code"><summary>โค้ด</summary><p>Bootstrapสุ่มnindicesแบบคืนกลับจากntrainrows. indices[0,0,2]จากn3ทำsample0ซ้ำและไม่เห็นsample1; เก็บindicesเพื่อหาOOBและทำซ้ำด้วยseed ไม่ใช่shuffleโดยไม่คืนกลับ.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-5-result"><summary>ผลการทดลอง</summary><p>Bootstrapสุ่มnindicesแบบคืนกลับจากntrainrows. indices[0,0,2]จากn3ทำsample0ซ้ำและไม่เห็นsample1; เก็บindicesเพื่อหาOOBและทำซ้ำด้วยseed ไม่ใช่shuffleโดยไม่คืนกลับ.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-5"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-6" class="source-topic"><span id="source-11-random-forest-canonical-6-random-feature-subsets" class="legacy-anchor"></span><h3>6. Random Feature Subsets</h3>
+<p>ถ้าทุก tree มี feature เด่นมาก feature เดิมอาจถูกเลือก root ทุกต้น ทำให้ trees คล้ายกัน</p>
+<p>Random Forest จึงเลือก subset ของ features ที่แต่ละ split</p>
+<p>classification default heuristic ที่พบบ่อย:</p>
+<pre><code class="language-text">max_features ≈ sqrt(d)
+</code></pre>
+<p>แต่ต้อง tune ตามงาน</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>max_featuresกำหนดfeaturecandidatesที่แต่ละsplitพิจารณา ช่วยdecorrelatetrees. ต้องสุ่มใหม่ตามpolicyและseedของmember ไม่ใช่ทิ้งfeaturesจากdatasetถาวรทุกtreeโดยไม่ตั้งใจ.</p><p>Varianceของaverageขึ้นกับcovariancesระหว่างtrees; ถ้าทุกtreeผิดเหมือนกันการเพิ่มจำนวนไม่ช่วยมาก. Bootstrapกับfeaturesubsamplingเพิ่มdiversity แล้ววัดvalidation/OOB ไม่สมมติว่าindependenceสมบูรณ์.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-6-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>max_featuresกำหนดfeaturecandidatesที่แต่ละsplitพิจารณา ช่วยdecorrelatetrees. ต้องสุ่มใหม่ตามpolicyและseedของmember ไม่ใช่ทิ้งfeaturesจากdatasetถาวรทุกtreeโดยไม่ตั้งใจ.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-6-equation"><summary>สมการ</summary><p>max_featuresกำหนดfeaturecandidatesที่แต่ละsplitพิจารณา ช่วยdecorrelatetrees. ต้องสุ่มใหม่ตามpolicyและseedของmember ไม่ใช่ทิ้งfeaturesจากdatasetถาวรทุกtreeโดยไม่ตั้งใจ.</p></details><details id="help-topic-6-visual"><summary>ภาพและ shape</summary><p>max_featuresกำหนดfeaturecandidatesที่แต่ละsplitพิจารณา ช่วยdecorrelatetrees. ต้องสุ่มใหม่ตามpolicyและseedของmember ไม่ใช่ทิ้งfeaturesจากdatasetถาวรทุกtreeโดยไม่ตั้งใจ.</p></details><details id="help-topic-6-code"><summary>โค้ด</summary><p>max_featuresกำหนดfeaturecandidatesที่แต่ละsplitพิจารณา ช่วยdecorrelatetrees. ต้องสุ่มใหม่ตามpolicyและseedของmember ไม่ใช่ทิ้งfeaturesจากdatasetถาวรทุกtreeโดยไม่ตั้งใจ.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-6-result"><summary>ผลการทดลอง</summary><p>max_featuresกำหนดfeaturecandidatesที่แต่ละsplitพิจารณา ช่วยdecorrelatetrees. ต้องสุ่มใหม่ตามpolicyและseedของmember ไม่ใช่ทิ้งfeaturesจากdatasetถาวรทุกtreeโดยไม่ตั้งใจ.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-6"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-7" class="source-topic"><span id="source-11-random-forest-canonical-7-aggregation" class="legacy-anchor"></span><h3>7. Aggregation</h3>
+<p>classification:</p>
+<pre><code class="language-text">P(class=k|x)
+=
+(1/B) Σ_b P_b(class=k|x)
+</code></pre>
+<p>จากนั้น:</p>
+<pre><code class="language-text">ŷ = argmax_k average probability
+</code></pre>
+<p>probability averaging มีข้อมูลมากกว่าการ vote class label อย่างเดียว</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>จัดclasscolumnsให้ตรงglobalclassesแล้วaverageprobabilitiesต่อsample ก่อนargmax. สองtrees[.9,.1]กับ[.2,.8]เฉลี่ย[.55,.45]; averagingclassIDsให้.5ไม่ใช่classifierที่มีความหมาย.</p><p>ตรวจmemberclassalignmentและnormalizeweightsด้วยจำนวนtreesจริง. Treeที่bootstrapขาดclassหนึ่งยังต้องส่งprob0ในcolumnของclassนั้น; testimbalancedtinydataและrowsum1หลังaggregate.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-7-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>จัดclasscolumnsให้ตรงglobalclassesแล้วaverageprobabilitiesต่อsample ก่อนargmax. สองtrees[.9,.1]กับ[.2,.8]เฉลี่ย[.55,.45]; averagingclassIDsให้.5ไม่ใช่classifierที่มีความหมาย.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-7-equation"><summary>สมการ</summary><p>จัดclasscolumnsให้ตรงglobalclassesแล้วaverageprobabilitiesต่อsample ก่อนargmax. สองtrees[.9,.1]กับ[.2,.8]เฉลี่ย[.55,.45]; averagingclassIDsให้.5ไม่ใช่classifierที่มีความหมาย.</p></details><details id="help-topic-7-visual"><summary>ภาพและ shape</summary><p>จัดclasscolumnsให้ตรงglobalclassesแล้วaverageprobabilitiesต่อsample ก่อนargmax. สองtrees[.9,.1]กับ[.2,.8]เฉลี่ย[.55,.45]; averagingclassIDsให้.5ไม่ใช่classifierที่มีความหมาย.</p></details><details id="help-topic-7-code"><summary>โค้ด</summary><p>จัดclasscolumnsให้ตรงglobalclassesแล้วaverageprobabilitiesต่อsample ก่อนargmax. สองtrees[.9,.1]กับ[.2,.8]เฉลี่ย[.55,.45]; averagingclassIDsให้.5ไม่ใช่classifierที่มีความหมาย.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-7-result"><summary>ผลการทดลอง</summary><p>จัดclasscolumnsให้ตรงglobalclassesแล้วaverageprobabilitiesต่อsample ก่อนargmax. สองtrees[.9,.1]กับ[.2,.8]เฉลี่ย[.55,.45]; averagingclassIDsให้.5ไม่ใช่classifierที่มีความหมาย.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-7"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-8" class="source-topic"><span id="source-11-random-forest-canonical-8-out-of-bag-samples" class="legacy-anchor"></span><h3>8. Out-of-Bag Samples</h3>
+<p>bootstrap sample ของ n rows มักไม่เลือกบาง rows</p>
+<p>row ที่ไม่ถูกเลือกสำหรับ tree นั้นคือ <strong>out-of-bag (OOB)</strong></p>
+<p>ใช้ trees ที่ row นั้นเป็น OOB เพื่อทำนาย row นั้น แล้ว aggregate</p>
+<p>ได้ OOB estimate โดยไม่ต้องมี validation splitเพิ่มเติมสำหรับบาง use cases</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>OOBของtreeคือtrainingrowsที่ไม่ถูกbootstrapของtreeนั้น. ประเมินsampleหนึ่งจากเฉพาะtreesที่sampleนั้นเป็นOOB; ถ้าไม่มีOOBvotesต้องรายงานว่าnotcovered ไม่ใช้in-bagpredictionแทนเงียบ ๆ.</p><p>เก็บOOBprobabilitiesจากสมาชิกที่sampleนั้นไม่เคยเห็น แล้วสร้างconfusionmatrixเฉพาะsamplesที่มีvotes. Testglobalclassorderและcoveragecount; ถ้าn_estimatorsน้อยบางsamplesอาจไม่coveredต้องแยกรายงาน.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-8-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>OOBของtreeคือtrainingrowsที่ไม่ถูกbootstrapของtreeนั้น. ประเมินsampleหนึ่งจากเฉพาะtreesที่sampleนั้นเป็นOOB; ถ้าไม่มีOOBvotesต้องรายงานว่าnotcovered ไม่ใช้in-bagpredictionแทนเงียบ ๆ.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-8-equation"><summary>สมการ</summary><p>OOBของtreeคือtrainingrowsที่ไม่ถูกbootstrapของtreeนั้น. ประเมินsampleหนึ่งจากเฉพาะtreesที่sampleนั้นเป็นOOB; ถ้าไม่มีOOBvotesต้องรายงานว่าnotcovered ไม่ใช้in-bagpredictionแทนเงียบ ๆ.</p></details><details id="help-topic-8-visual"><summary>ภาพและ shape</summary><p>OOBของtreeคือtrainingrowsที่ไม่ถูกbootstrapของtreeนั้น. ประเมินsampleหนึ่งจากเฉพาะtreesที่sampleนั้นเป็นOOB; ถ้าไม่มีOOBvotesต้องรายงานว่าnotcovered ไม่ใช้in-bagpredictionแทนเงียบ ๆ.</p></details><details id="help-topic-8-code"><summary>โค้ด</summary><p>OOBของtreeคือtrainingrowsที่ไม่ถูกbootstrapของtreeนั้น. ประเมินsampleหนึ่งจากเฉพาะtreesที่sampleนั้นเป็นOOB; ถ้าไม่มีOOBvotesต้องรายงานว่าnotcovered ไม่ใช้in-bagpredictionแทนเงียบ ๆ.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-8-result"><summary>ผลการทดลอง</summary><p>OOBของtreeคือtrainingrowsที่ไม่ถูกbootstrapของtreeนั้น. ประเมินsampleหนึ่งจากเฉพาะtreesที่sampleนั้นเป็นOOB; ถ้าไม่มีOOBvotesต้องรายงานว่าnotcovered ไม่ใช้in-bagpredictionแทนเงียบ ๆ.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-8"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-9" class="source-topic"><span id="source-11-random-forest-canonical-9-why-about-368-oob" class="legacy-anchor"></span><h3>9. Why About 36.8% OOB?</h3>
+<p>probability ที่ sample หนึ่งไม่ถูกเลือกใน n draws:</p>
+<pre><code class="language-text">(1 - 1/n)^n
+</code></pre>
+<p>เมื่อ n ใหญ่:</p>
+<pre><code class="language-text">→ e^-1 ≈ 0.368
+</code></pre>
+<p>ดังนั้นแต่ละ tree โดยเฉลี่ยมี OOB rows ราว 36.8%</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>โอกาสไม่ถูกเลือกในหนึ่งdrawคือ1−1/n; nindependentdrawsจึง(1−1/n)^n→exp(−1)≈.367879. นี่เป็นexpectedfractionOOBต่อtree ไม่ใช่รับประกันว่าแต่ละtreeมีOOB36.8%เป๊ะ.</p><p>PlotcoveredOOBscoreกับn_estimatorsพร้อมOOBcoverageและuncertainty. ไม่เติมuncoveredrowsด้วยtraininglabels; scoreอาจแกว่งไม่monotonicเพราะfinitevotesและsamplesที่ถูกประเมินเปลี่ยน.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-9-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>โอกาสไม่ถูกเลือกในหนึ่งdrawคือ1−1/n; nindependentdrawsจึง(1−1/n)^n→exp(−1)≈.367879. นี่เป็นexpectedfractionOOBต่อtree ไม่ใช่รับประกันว่าแต่ละtreeมีOOB36.8%เป๊ะ.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-9-equation"><summary>สมการ</summary><p>โอกาสไม่ถูกเลือกในหนึ่งdrawคือ1−1/n; nindependentdrawsจึง(1−1/n)^n→exp(−1)≈.367879. นี่เป็นexpectedfractionOOBต่อtree ไม่ใช่รับประกันว่าแต่ละtreeมีOOB36.8%เป๊ะ.</p></details><details id="help-topic-9-visual"><summary>ภาพและ shape</summary><p>โอกาสไม่ถูกเลือกในหนึ่งdrawคือ1−1/n; nindependentdrawsจึง(1−1/n)^n→exp(−1)≈.367879. นี่เป็นexpectedfractionOOBต่อtree ไม่ใช่รับประกันว่าแต่ละtreeมีOOB36.8%เป๊ะ.</p></details><details id="help-topic-9-code"><summary>โค้ด</summary><p>โอกาสไม่ถูกเลือกในหนึ่งdrawคือ1−1/n; nindependentdrawsจึง(1−1/n)^n→exp(−1)≈.367879. นี่เป็นexpectedfractionOOBต่อtree ไม่ใช่รับประกันว่าแต่ละtreeมีOOB36.8%เป๊ะ.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-9-result"><summary>ผลการทดลอง</summary><p>โอกาสไม่ถูกเลือกในหนึ่งdrawคือ1−1/n; nindependentdrawsจึง(1−1/n)^n→exp(−1)≈.367879. นี่เป็นexpectedfractionOOBต่อtree ไม่ใช่รับประกันว่าแต่ละtreeมีOOB36.8%เป๊ะ.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-9"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-10" class="source-topic"><span id="source-11-random-forest-canonical-10-oob-caveats" class="legacy-anchor"></span><h3>10. OOB Caveats</h3>
+<p>OOB ไม่ใช่เวทมนตร์:</p>
+<ul>
+<li>time/grouped data อาจยังผิด protocol</li>
+<li>preprocessing ที่ fit ก่อน forest อาจ leak</li>
+<li>hyperparameter tuning บน OOB ซ้ำมาก ๆ ทำให้ optimistic</li>
+<li>small dataset → OOB estimate noisy</li>
+</ul><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>OOBสุ่มจากช่วงเวลาเดียวกับtrainingและอาจมีอนาคต/neighborwindowsของsampleนั้นในtree. ใช้walk-forwardvalidationสำหรับforecastdeployment; OOBยังใช้diagnosticsภายใต้assumptionsที่ระบุแต่ไม่แทนเวลาจริง.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-10-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>OOBสุ่มจากช่วงเวลาเดียวกับtrainingและอาจมีอนาคต/neighborwindowsของsampleนั้นในtree. ใช้walk-forwardvalidationสำหรับforecastdeployment; OOBยังใช้diagnosticsภายใต้assumptionsที่ระบุแต่ไม่แทนเวลาจริง.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-10-equation"><summary>สมการ</summary><p>OOBสุ่มจากช่วงเวลาเดียวกับtrainingและอาจมีอนาคต/neighborwindowsของsampleนั้นในtree. ใช้walk-forwardvalidationสำหรับforecastdeployment; OOBยังใช้diagnosticsภายใต้assumptionsที่ระบุแต่ไม่แทนเวลาจริง.</p></details><details id="help-topic-10-visual"><summary>ภาพและ shape</summary><p>OOBสุ่มจากช่วงเวลาเดียวกับtrainingและอาจมีอนาคต/neighborwindowsของsampleนั้นในtree. ใช้walk-forwardvalidationสำหรับforecastdeployment; OOBยังใช้diagnosticsภายใต้assumptionsที่ระบุแต่ไม่แทนเวลาจริง.</p></details><details id="help-topic-10-code"><summary>โค้ด</summary><p>OOBสุ่มจากช่วงเวลาเดียวกับtrainingและอาจมีอนาคต/neighborwindowsของsampleนั้นในtree. ใช้walk-forwardvalidationสำหรับforecastdeployment; OOBยังใช้diagnosticsภายใต้assumptionsที่ระบุแต่ไม่แทนเวลาจริง.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-10-result"><summary>ผลการทดลอง</summary><p>OOBสุ่มจากช่วงเวลาเดียวกับtrainingและอาจมีอนาคต/neighborwindowsของsampleนั้นในtree. ใช้walk-forwardvalidationสำหรับforecastdeployment; OOBยังใช้diagnosticsภายใต้assumptionsที่ระบุแต่ไม่แทนเวลาจริง.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-10"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-11" class="source-topic"><span id="source-11-random-forest-canonical-11-biasvariance" class="legacy-anchor"></span><h3>11. Bias–Variance</h3>
+<p>เพิ่ม trees:</p>
+<ul>
+<li>variance ของ ensemble มักลด</li>
+<li>bias ไม่ได้ลดโดยตรงมากนัก</li>
+<li>prediction cost เพิ่ม</li>
+<li>memory เพิ่ม</li>
+</ul>
+<p>เพิ่ม depth:
+- individual tree bias ลด
+- variance เพิ่ม
+- forest ช่วยเฉลี่ย variance</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>Varianceของaverageขึ้นกับcovariancesระหว่างtrees; ถ้าทุกtreeผิดเหมือนกันการเพิ่มจำนวนไม่ช่วยมาก. Bootstrapกับfeaturesubsamplingเพิ่มdiversity แล้ววัดvalidation/OOB ไม่สมมติว่าindependenceสมบูรณ์.</p><p>การเพิ่มtreesมักลดMonteCarlo/ensemblevarianceแล้วplateau แต่biasของbaselearnerไม่ได้หายเอง. คงdepth/maxfeaturesและseedstreamเดิม วัดquality,latency,memory; อย่าตีความtrainscoreอย่างเดียว.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-11-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Varianceของaverageขึ้นกับcovariancesระหว่างtrees; ถ้าทุกtreeผิดเหมือนกันการเพิ่มจำนวนไม่ช่วยมาก. Bootstrapกับfeaturesubsamplingเพิ่มdiversity แล้ววัดvalidation/OOB ไม่สมมติว่าindependenceสมบูรณ์.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-11-equation"><summary>สมการ</summary><p>Varianceของaverageขึ้นกับcovariancesระหว่างtrees; ถ้าทุกtreeผิดเหมือนกันการเพิ่มจำนวนไม่ช่วยมาก. Bootstrapกับfeaturesubsamplingเพิ่มdiversity แล้ววัดvalidation/OOB ไม่สมมติว่าindependenceสมบูรณ์.</p></details><details id="help-topic-11-visual"><summary>ภาพและ shape</summary><p>Varianceของaverageขึ้นกับcovariancesระหว่างtrees; ถ้าทุกtreeผิดเหมือนกันการเพิ่มจำนวนไม่ช่วยมาก. Bootstrapกับfeaturesubsamplingเพิ่มdiversity แล้ววัดvalidation/OOB ไม่สมมติว่าindependenceสมบูรณ์.</p></details><details id="help-topic-11-code"><summary>โค้ด</summary><p>Varianceของaverageขึ้นกับcovariancesระหว่างtrees; ถ้าทุกtreeผิดเหมือนกันการเพิ่มจำนวนไม่ช่วยมาก. Bootstrapกับfeaturesubsamplingเพิ่มdiversity แล้ววัดvalidation/OOB ไม่สมมติว่าindependenceสมบูรณ์.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-11-result"><summary>ผลการทดลอง</summary><p>Varianceของaverageขึ้นกับcovariancesระหว่างtrees; ถ้าทุกtreeผิดเหมือนกันการเพิ่มจำนวนไม่ช่วยมาก. Bootstrapกับfeaturesubsamplingเพิ่มdiversity แล้ววัดvalidation/OOB ไม่สมมติว่าindependenceสมบูรณ์.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-11"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-12" class="source-topic"><span id="source-11-random-forest-canonical-12-hyperparameters" class="legacy-anchor"></span><span id="source-11-random-forest-canonical-n_estimators" class="legacy-anchor"></span><span id="source-11-random-forest-canonical-max_depth-min_samples_leaf" class="legacy-anchor"></span><span id="source-11-random-forest-canonical-max_features" class="legacy-anchor"></span><h3>12. Hyperparameters</h3>
+<h4>n_estimators</h4>
+<p>จำนวน trees</p>
+<p>มากขึ้น:
+- stable ขึ้น
+- ช้าขึ้น
+- diminishing returns</p>
+<h4>max_depth / min_samples_leaf</h4>
+<p>คุม individual tree complexity</p>
+<h4>max_features</h4>
+<p>คุม correlation vs strength</p>
+<p>น้อย:
+- trees diverse
+- แต่ individual trees อ่อนลง</p>
+<p>มาก:
+- trees stronger
+- แต่ correlated ขึ้น</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>การเพิ่มtreesมักลดMonteCarlo/ensemblevarianceแล้วplateau แต่biasของbaselearnerไม่ได้หายเอง. คงdepth/maxfeaturesและseedstreamเดิม วัดquality,latency,memory; อย่าตีความtrainscoreอย่างเดียว.</p><p>วัด1..200treesบนsplit/hyperparamsเดิม เก็บfit/querytimeและpeakmemoryพร้อมqualityหลายseed. สมาชิกของNtreesควรเป็นprefixเดียวกับN+1เพื่อให้curveแยกผลจำนวนtreeจากการเปลี่ยนrandomstream.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-12-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>การเพิ่มtreesมักลดMonteCarlo/ensemblevarianceแล้วplateau แต่biasของbaselearnerไม่ได้หายเอง. คงdepth/maxfeaturesและseedstreamเดิม วัดquality,latency,memory; อย่าตีความtrainscoreอย่างเดียว.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-12-equation"><summary>สมการ</summary><p>การเพิ่มtreesมักลดMonteCarlo/ensemblevarianceแล้วplateau แต่biasของbaselearnerไม่ได้หายเอง. คงdepth/maxfeaturesและseedstreamเดิม วัดquality,latency,memory; อย่าตีความtrainscoreอย่างเดียว.</p></details><details id="help-topic-12-visual"><summary>ภาพและ shape</summary><p>การเพิ่มtreesมักลดMonteCarlo/ensemblevarianceแล้วplateau แต่biasของbaselearnerไม่ได้หายเอง. คงdepth/maxfeaturesและseedstreamเดิม วัดquality,latency,memory; อย่าตีความtrainscoreอย่างเดียว.</p></details><details id="help-topic-12-code"><summary>โค้ด</summary><p>การเพิ่มtreesมักลดMonteCarlo/ensemblevarianceแล้วplateau แต่biasของbaselearnerไม่ได้หายเอง. คงdepth/maxfeaturesและseedstreamเดิม วัดquality,latency,memory; อย่าตีความtrainscoreอย่างเดียว.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-12-result"><summary>ผลการทดลอง</summary><p>การเพิ่มtreesมักลดMonteCarlo/ensemblevarianceแล้วplateau แต่biasของbaselearnerไม่ได้หายเอง. คงdepth/maxfeaturesและseedstreamเดิม วัดquality,latency,memory; อย่าตีความtrainscoreอย่างเดียว.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-12"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-13" class="source-topic"><span id="source-11-random-forest-canonical-13-feature-scaling" class="legacy-anchor"></span><h3>13. Feature Scaling</h3>
+<p>เหมือน tree เดี่ยว Random Forest โดยทั่วไปไม่ต้อง standardize numeric features สำหรับ split-based behavior</p>
+<p>แต่ preprocessing อื่น เช่น imputation/encoding ยังสำคัญ</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-13-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>13. Feature Scaling</h3>
+<p>เหมือน tree เดี่ยว Random Forest โดยทั่วไปไม่ต้อง standardize numeric features สำหรับ split-based behavior</p>
+<p>แต่ preprocessing อื่น เช่น imputation/encoding ยังสำคัญ</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-13-equation"><summary>สมการ</summary><h3>13. Feature Scaling</h3>
+<p>เหมือน tree เดี่ยว Random Forest โดยทั่วไปไม่ต้อง standardize numeric features สำหรับ split-based behavior</p>
+<p>แต่ preprocessing อื่น เช่น imputation/encoding ยังสำคัญ</p></details><details id="help-topic-13-visual"><summary>ภาพและ shape</summary><h3>13. Feature Scaling</h3>
+<p>เหมือน tree เดี่ยว Random Forest โดยทั่วไปไม่ต้อง standardize numeric features สำหรับ split-based behavior</p>
+<p>แต่ preprocessing อื่น เช่น imputation/encoding ยังสำคัญ</p></details><details id="help-topic-13-code"><summary>โค้ด</summary><h3>13. Feature Scaling</h3>
+<p>เหมือน tree เดี่ยว Random Forest โดยทั่วไปไม่ต้อง standardize numeric features สำหรับ split-based behavior</p>
+<p>แต่ preprocessing อื่น เช่น imputation/encoding ยังสำคัญ</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-13-result"><summary>ผลการทดลอง</summary><h3>13. Feature Scaling</h3>
+<p>เหมือน tree เดี่ยว Random Forest โดยทั่วไปไม่ต้อง standardize numeric features สำหรับ split-based behavior</p>
+<p>แต่ preprocessing อื่น เช่น imputation/encoding ยังสำคัญ</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-13"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-14" class="source-topic"><span id="source-11-random-forest-canonical-14-feature-importance" class="legacy-anchor"></span><h3>14. Feature Importance</h3>
+<p>MDI importance ใน forest = average impurity decrease across trees</p>
+<p>ข้อจำกัดเดิมยังอยู่:</p>
+<ul>
+<li>high cardinality bias</li>
+<li>correlated features</li>
+<li>not causal</li>
+</ul>
+<p>Permutation importance มักเป็น alternative ที่ useful กว่าเมื่อ evaluate บน held-out data</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>รวม <code>(n_node/n_total)*gain_node</code> ต่อfeatureแล้วnormalizeเมื่อtotalgain&gt;0. ถ้าallconstantfeaturesให้importanceเป็นzerosพร้อมnote; testimportance.sum≈1เมื่อมีusefulsplitและไม่เป็นcausalclaim.</p><p>วัดbaselineheld-outmetricแล้วshuffleหนึ่งfeatureในheld-outเท่านั้นหลายซ้ำ คำนวณscoredecreaseตามทิศmetric. คงmodelไม่retrain; correlatedfeaturesอาจทดแทนกันจึงimportanceเล็กได้ทั้งที่กลุ่มfeaturesมีประโยชน์.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-14-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>รวม <code>(n_node/n_total)*gain_node</code> ต่อfeatureแล้วnormalizeเมื่อtotalgain&gt;0. ถ้าallconstantfeaturesให้importanceเป็นzerosพร้อมnote; testimportance.sum≈1เมื่อมีusefulsplitและไม่เป็นcausalclaim.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-14-equation"><summary>สมการ</summary><p>รวม <code>(n_node/n_total)*gain_node</code> ต่อfeatureแล้วnormalizeเมื่อtotalgain&gt;0. ถ้าallconstantfeaturesให้importanceเป็นzerosพร้อมnote; testimportance.sum≈1เมื่อมีusefulsplitและไม่เป็นcausalclaim.</p></details><details id="help-topic-14-visual"><summary>ภาพและ shape</summary><p>รวม <code>(n_node/n_total)*gain_node</code> ต่อfeatureแล้วnormalizeเมื่อtotalgain&gt;0. ถ้าallconstantfeaturesให้importanceเป็นzerosพร้อมnote; testimportance.sum≈1เมื่อมีusefulsplitและไม่เป็นcausalclaim.</p></details><details id="help-topic-14-code"><summary>โค้ด</summary><p>รวม <code>(n_node/n_total)*gain_node</code> ต่อfeatureแล้วnormalizeเมื่อtotalgain&gt;0. ถ้าallconstantfeaturesให้importanceเป็นzerosพร้อมnote; testimportance.sum≈1เมื่อมีusefulsplitและไม่เป็นcausalclaim.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-14-result"><summary>ผลการทดลอง</summary><p>รวม <code>(n_node/n_total)*gain_node</code> ต่อfeatureแล้วnormalizeเมื่อtotalgain&gt;0. ถ้าallconstantfeaturesให้importanceเป็นzerosพร้อมnote; testimportance.sum≈1เมื่อมีusefulsplitและไม่เป็นcausalclaim.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-14"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-15" class="source-topic"><span id="source-11-random-forest-canonical-15-extra-trees" class="legacy-anchor"></span><h3>15. Extra Trees</h3>
+<p>Extremely Randomized Trees เพิ่ม randomness:</p>
+<ul>
+<li>randomize split thresholds มากขึ้น</li>
+<li>มักใช้ whole sample หรือ configurable bootstrap</li>
+<li>train เร็วขึ้นบางกรณี</li>
+<li>variance ลด แต่ bias อาจเพิ่ม</li>
+</ul>
+<p>scikit-learn มี <code>ExtraTreesClassifier</code></p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>ExtraTreesสุ่มthresholdsมากขึ้นแทนค้นbestthresholdเต็มชุดและค่าdefaultbootstrapอาจต่างกันตามAPI. เมื่อเปรียบเทียบให้ตั้งbootstrap/maxfeatures/depthชัดและวัดbias/variance ไม่กล่าวว่าExtraTreesคือRFที่เพิ่มจำนวนต้นเฉย ๆ.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-15-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>ExtraTreesสุ่มthresholdsมากขึ้นแทนค้นbestthresholdเต็มชุดและค่าdefaultbootstrapอาจต่างกันตามAPI. เมื่อเปรียบเทียบให้ตั้งbootstrap/maxfeatures/depthชัดและวัดbias/variance ไม่กล่าวว่าExtraTreesคือRFที่เพิ่มจำนวนต้นเฉย ๆ.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-15-equation"><summary>สมการ</summary><p>ExtraTreesสุ่มthresholdsมากขึ้นแทนค้นbestthresholdเต็มชุดและค่าdefaultbootstrapอาจต่างกันตามAPI. เมื่อเปรียบเทียบให้ตั้งbootstrap/maxfeatures/depthชัดและวัดbias/variance ไม่กล่าวว่าExtraTreesคือRFที่เพิ่มจำนวนต้นเฉย ๆ.</p></details><details id="help-topic-15-visual"><summary>ภาพและ shape</summary><p>ExtraTreesสุ่มthresholdsมากขึ้นแทนค้นbestthresholdเต็มชุดและค่าdefaultbootstrapอาจต่างกันตามAPI. เมื่อเปรียบเทียบให้ตั้งbootstrap/maxfeatures/depthชัดและวัดbias/variance ไม่กล่าวว่าExtraTreesคือRFที่เพิ่มจำนวนต้นเฉย ๆ.</p></details><details id="help-topic-15-code"><summary>โค้ด</summary><p>ExtraTreesสุ่มthresholdsมากขึ้นแทนค้นbestthresholdเต็มชุดและค่าdefaultbootstrapอาจต่างกันตามAPI. เมื่อเปรียบเทียบให้ตั้งbootstrap/maxfeatures/depthชัดและวัดbias/variance ไม่กล่าวว่าExtraTreesคือRFที่เพิ่มจำนวนต้นเฉย ๆ.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-15-result"><summary>ผลการทดลอง</summary><p>ExtraTreesสุ่มthresholdsมากขึ้นแทนค้นbestthresholdเต็มชุดและค่าdefaultbootstrapอาจต่างกันตามAPI. เมื่อเปรียบเทียบให้ตั้งbootstrap/maxfeatures/depthชัดและวัดbias/variance ไม่กล่าวว่าExtraTreesคือRFที่เพิ่มจำนวนต้นเฉย ๆ.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-15"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-16" class="source-topic"><span id="source-11-random-forest-canonical-16-parallelism" class="legacy-anchor"></span><h3>16. Parallelism</h3>
+<p>Trees ส่วนใหญ่ train independent กัน</p>
+<p>จึง parallelize ได้ดี:</p>
+<pre><code class="language-python">RandomForestClassifier(n_jobs=-1)
+</code></pre>
+<p>ระวัง memory/CPU thermals บน laptop</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>วัด1..200treesบนsplit/hyperparamsเดิม เก็บfit/querytimeและpeakmemoryพร้อมqualityหลายseed. สมาชิกของNtreesควรเป็นprefixเดียวกับN+1เพื่อให้curveแยกผลจำนวนtreeจากการเปลี่ยนrandomstream.</p><p>Fitparallelเร็วไม่ได้ทำqueryผ่านtreesน้อยลง. Profileจำนวนtree/depth/batchingและcachelocality; วัดp50/p95บนquerysizeจริง แล้วลดcapacityหรือcompressโดยตรวจqualityซ้ำ.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-16-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>วัด1..200treesบนsplit/hyperparamsเดิม เก็บfit/querytimeและpeakmemoryพร้อมqualityหลายseed. สมาชิกของNtreesควรเป็นprefixเดียวกับN+1เพื่อให้curveแยกผลจำนวนtreeจากการเปลี่ยนrandomstream.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-16-equation"><summary>สมการ</summary><p>วัด1..200treesบนsplit/hyperparamsเดิม เก็บfit/querytimeและpeakmemoryพร้อมqualityหลายseed. สมาชิกของNtreesควรเป็นprefixเดียวกับN+1เพื่อให้curveแยกผลจำนวนtreeจากการเปลี่ยนrandomstream.</p></details><details id="help-topic-16-visual"><summary>ภาพและ shape</summary><p>วัด1..200treesบนsplit/hyperparamsเดิม เก็บfit/querytimeและpeakmemoryพร้อมqualityหลายseed. สมาชิกของNtreesควรเป็นprefixเดียวกับN+1เพื่อให้curveแยกผลจำนวนtreeจากการเปลี่ยนrandomstream.</p></details><details id="help-topic-16-code"><summary>โค้ด</summary><p>วัด1..200treesบนsplit/hyperparamsเดิม เก็บfit/querytimeและpeakmemoryพร้อมqualityหลายseed. สมาชิกของNtreesควรเป็นprefixเดียวกับN+1เพื่อให้curveแยกผลจำนวนtreeจากการเปลี่ยนrandomstream.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-16-result"><summary>ผลการทดลอง</summary><p>วัด1..200treesบนsplit/hyperparamsเดิม เก็บfit/querytimeและpeakmemoryพร้อมqualityหลายseed. สมาชิกของNtreesควรเป็นprefixเดียวกับN+1เพื่อให้curveแยกผลจำนวนtreeจากการเปลี่ยนrandomstream.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-16"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-17" class="source-topic"><span id="source-11-random-forest-canonical-17-from-scratch" class="legacy-anchor"></span><h3>17. From Scratch</h3>
+<p><a href="../11-random-forest/src/random_forest.py">src/random_forest.py</a></p>
+<p>implement:</p>
+<ul>
+<li>bootstrap indices</li>
+<li>randomized tree</li>
+<li>feature subset per node</li>
+<li>probability averaging</li>
+<li>OOB accuracy</li>
+</ul><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>RFregressorbootstrapแล้วfitregressiontreesและaveragefloatpredictions. Targets[2,4]กับสมาชิกที่ทำนาย2และ4ต้องเฉลี่ย3; OOBaggregationต้องนับcoverageแยก และvalidateMSEด้วยsplitเดิม.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-17-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>RFregressorbootstrapแล้วfitregressiontreesและaveragefloatpredictions. Targets[2,4]กับสมาชิกที่ทำนาย2และ4ต้องเฉลี่ย3; OOBaggregationต้องนับcoverageแยก และvalidateMSEด้วยsplitเดิม.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-17-equation"><summary>สมการ</summary><p>RFregressorbootstrapแล้วfitregressiontreesและaveragefloatpredictions. Targets[2,4]กับสมาชิกที่ทำนาย2และ4ต้องเฉลี่ย3; OOBaggregationต้องนับcoverageแยก และvalidateMSEด้วยsplitเดิม.</p></details><details id="help-topic-17-visual"><summary>ภาพและ shape</summary><p>RFregressorbootstrapแล้วfitregressiontreesและaveragefloatpredictions. Targets[2,4]กับสมาชิกที่ทำนาย2และ4ต้องเฉลี่ย3; OOBaggregationต้องนับcoverageแยก และvalidateMSEด้วยsplitเดิม.</p></details><details id="help-topic-17-code"><summary>โค้ด</summary><p>RFregressorbootstrapแล้วfitregressiontreesและaveragefloatpredictions. Targets[2,4]กับสมาชิกที่ทำนาย2และ4ต้องเฉลี่ย3; OOBaggregationต้องนับcoverageแยก และvalidateMSEด้วยsplitเดิม.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-17-result"><summary>ผลการทดลอง</summary><p>RFregressorbootstrapแล้วfitregressiontreesและaveragefloatpredictions. Targets[2,4]กับสมาชิกที่ทำนาย2และ4ต้องเฉลี่ย3; OOBaggregationต้องนับcoverageแยก และvalidateMSEด้วยsplitเดิม.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-17"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-18" class="source-topic"><span id="source-11-random-forest-canonical-18-hardware-perspective" class="legacy-anchor"></span><h3>18. Hardware Perspective</h3>
+<p>บน Acer A715-43G:</p>
+<p>Random Forest ใช้ CPU เป็นหลักใน scikit-learn</p>
+<p>แนะนำเริ่ม:</p>
+<pre><code class="language-text">n_estimators: 50–200
+max_depth: constrained ก่อน
+n_jobs: 2–4 ตอนทดลอง
+</code></pre>
+<p>ค่อยเพิ่มหลังวัด RAM/temperature/runtime</p>
+<p>อย่าใช้ <code>n_jobs=-1</code> โดยอัตโนมัติถ้า laptop ร้อนหรือทำงานอื่นพร้อมกัน</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>Fitparallelเร็วไม่ได้ทำqueryผ่านtreesน้อยลง. Profileจำนวนtree/depth/batchingและcachelocality; วัดp50/p95บนquerysizeจริง แล้วลดcapacityหรือcompressโดยตรวจqualityซ้ำ.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-18-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Fitparallelเร็วไม่ได้ทำqueryผ่านtreesน้อยลง. Profileจำนวนtree/depth/batchingและcachelocality; วัดp50/p95บนquerysizeจริง แล้วลดcapacityหรือcompressโดยตรวจqualityซ้ำ.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-18-equation"><summary>สมการ</summary><p>Fitparallelเร็วไม่ได้ทำqueryผ่านtreesน้อยลง. Profileจำนวนtree/depth/batchingและcachelocality; วัดp50/p95บนquerysizeจริง แล้วลดcapacityหรือcompressโดยตรวจqualityซ้ำ.</p></details><details id="help-topic-18-visual"><summary>ภาพและ shape</summary><p>Fitparallelเร็วไม่ได้ทำqueryผ่านtreesน้อยลง. Profileจำนวนtree/depth/batchingและcachelocality; วัดp50/p95บนquerysizeจริง แล้วลดcapacityหรือcompressโดยตรวจqualityซ้ำ.</p></details><details id="help-topic-18-code"><summary>โค้ด</summary><p>Fitparallelเร็วไม่ได้ทำqueryผ่านtreesน้อยลง. Profileจำนวนtree/depth/batchingและcachelocality; วัดp50/p95บนquerysizeจริง แล้วลดcapacityหรือcompressโดยตรวจqualityซ้ำ.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-18-result"><summary>ผลการทดลอง</summary><p>Fitparallelเร็วไม่ได้ทำqueryผ่านtreesน้อยลง. Profileจำนวนtree/depth/batchingและcachelocality; วัดp50/p95บนquerysizeจริง แล้วลดcapacityหรือcompressโดยตรวจqualityซ้ำ.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-18"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-19" class="source-topic"><span id="source-11-random-forest-canonical-19-failure-cases" class="legacy-anchor"></span><h3>19. Failure Cases</h3>
+<ul>
+<li>very high-dimensional sparse data ที่ linear model เหมาะกว่า</li>
+<li>extrapolation regression</li>
+<li>massive forest latency</li>
+<li>class imbalance</li>
+<li>leakage</li>
+<li>grouped/time splits ผิด</li>
+<li>categorical encoding ไม่เหมาะ</li>
+<li>distribution shift</li>
+</ul><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>การสร้างRNGใหม่ด้วยseedเดิมภายในloopทำให้bootstrapและfeaturechoicesเหมือนกัน. ใช้parentRNGสร้างmemberseedsต่างกันแต่reproducible; testsampleindexlistsไม่เหมือนกันทุกต้นและrerunseedเดิมได้เหมือนเดิม.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-19-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>การสร้างRNGใหม่ด้วยseedเดิมภายในloopทำให้bootstrapและfeaturechoicesเหมือนกัน. ใช้parentRNGสร้างmemberseedsต่างกันแต่reproducible; testsampleindexlistsไม่เหมือนกันทุกต้นและrerunseedเดิมได้เหมือนเดิม.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-19-equation"><summary>สมการ</summary><p>การสร้างRNGใหม่ด้วยseedเดิมภายในloopทำให้bootstrapและfeaturechoicesเหมือนกัน. ใช้parentRNGสร้างmemberseedsต่างกันแต่reproducible; testsampleindexlistsไม่เหมือนกันทุกต้นและrerunseedเดิมได้เหมือนเดิม.</p></details><details id="help-topic-19-visual"><summary>ภาพและ shape</summary><p>การสร้างRNGใหม่ด้วยseedเดิมภายในloopทำให้bootstrapและfeaturechoicesเหมือนกัน. ใช้parentRNGสร้างmemberseedsต่างกันแต่reproducible; testsampleindexlistsไม่เหมือนกันทุกต้นและrerunseedเดิมได้เหมือนเดิม.</p></details><details id="help-topic-19-code"><summary>โค้ด</summary><p>การสร้างRNGใหม่ด้วยseedเดิมภายในloopทำให้bootstrapและfeaturechoicesเหมือนกัน. ใช้parentRNGสร้างmemberseedsต่างกันแต่reproducible; testsampleindexlistsไม่เหมือนกันทุกต้นและrerunseedเดิมได้เหมือนเดิม.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-19-result"><summary>ผลการทดลอง</summary><p>การสร้างRNGใหม่ด้วยseedเดิมภายในloopทำให้bootstrapและfeaturechoicesเหมือนกัน. ใช้parentRNGสร้างmemberseedsต่างกันแต่reproducible; testsampleindexlistsไม่เหมือนกันทุกต้นและrerunseedเดิมได้เหมือนเดิม.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-19"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-20" class="source-topic"><span id="source-11-random-forest-canonical-20-debugging" class="legacy-anchor"></span><h3>20. Debugging</h3>
+<p>ตรวจ:</p>
+<ul>
+<li>bootstrap indices มี duplicates จริงไหม?</li>
+<li>feature subset เปลี่ยนทุก node ไหม?</li>
+<li>random seed reproducible ไหม?</li>
+<li>class order ของทุก tree เหมือนกันไหม?</li>
+<li>OOB row มีอย่างน้อยหนึ่ง tree ทำนายไหม?</li>
+<li>probability rows sum to 1 ไหม?</li>
+</ul><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>การสร้างRNGใหม่ด้วยseedเดิมภายในloopทำให้bootstrapและfeaturechoicesเหมือนกัน. ใช้parentRNGสร้างmemberseedsต่างกันแต่reproducible; testsampleindexlistsไม่เหมือนกันทุกต้นและrerunseedเดิมได้เหมือนเดิม.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-20-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>การสร้างRNGใหม่ด้วยseedเดิมภายในloopทำให้bootstrapและfeaturechoicesเหมือนกัน. ใช้parentRNGสร้างmemberseedsต่างกันแต่reproducible; testsampleindexlistsไม่เหมือนกันทุกต้นและrerunseedเดิมได้เหมือนเดิม.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-20-equation"><summary>สมการ</summary><p>การสร้างRNGใหม่ด้วยseedเดิมภายในloopทำให้bootstrapและfeaturechoicesเหมือนกัน. ใช้parentRNGสร้างmemberseedsต่างกันแต่reproducible; testsampleindexlistsไม่เหมือนกันทุกต้นและrerunseedเดิมได้เหมือนเดิม.</p></details><details id="help-topic-20-visual"><summary>ภาพและ shape</summary><p>การสร้างRNGใหม่ด้วยseedเดิมภายในloopทำให้bootstrapและfeaturechoicesเหมือนกัน. ใช้parentRNGสร้างmemberseedsต่างกันแต่reproducible; testsampleindexlistsไม่เหมือนกันทุกต้นและrerunseedเดิมได้เหมือนเดิม.</p></details><details id="help-topic-20-code"><summary>โค้ด</summary><p>การสร้างRNGใหม่ด้วยseedเดิมภายในloopทำให้bootstrapและfeaturechoicesเหมือนกัน. ใช้parentRNGสร้างmemberseedsต่างกันแต่reproducible; testsampleindexlistsไม่เหมือนกันทุกต้นและrerunseedเดิมได้เหมือนเดิม.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-20-result"><summary>ผลการทดลอง</summary><p>การสร้างRNGใหม่ด้วยseedเดิมภายในloopทำให้bootstrapและfeaturechoicesเหมือนกัน. ใช้parentRNGสร้างmemberseedsต่างกันแต่reproducible; testsampleindexlistsไม่เหมือนกันทุกต้นและrerunseedเดิมได้เหมือนเดิม.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-20"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-21" class="source-topic"><span id="source-11-random-forest-canonical-21-common-mistakes" class="legacy-anchor"></span><h3>21. Common Mistakes</h3>
+<ol>
+<li>sampling without replacement แล้วเรียก bootstrap</li>
+<li>random features แค่ครั้งเดียวต่อ tree</li>
+<li>test set ใช้ tune forest</li>
+<li>OOB กับ time series</li>
+<li>n_estimators น้อยเกินจน score แกว่ง</li>
+<li>huge forest โดยไม่วัด latency</li>
+<li>feature importance = causality</li>
+<li>inconsistent class ordering</li>
+<li>preprocess full data ก่อน OOB/CV</li>
+<li>assume forest never overfits</li>
+</ol><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-21-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>21. Common Mistakes</h3>
+<ol>
+<li>sampling without replacement แล้วเรียก bootstrap</li>
+<li>random features แค่ครั้งเดียวต่อ tree</li>
+<li>test set ใช้ tune forest</li>
+<li>OOB กับ time series</li>
+<li>n_estimators น้อยเกินจน score แกว่ง</li>
+<li>huge forest โดยไม่วัด latency</li>
+<li>feature importance = causality</li>
+<li>inconsistent class ordering</li>
+<li>preprocess full data ก่อน OOB/CV</li>
+<li>assume forest never overfits</li>
+</ol><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-21-equation"><summary>สมการ</summary><h3>21. Common Mistakes</h3>
+<ol>
+<li>sampling without replacement แล้วเรียก bootstrap</li>
+<li>random features แค่ครั้งเดียวต่อ tree</li>
+<li>test set ใช้ tune forest</li>
+<li>OOB กับ time series</li>
+<li>n_estimators น้อยเกินจน score แกว่ง</li>
+<li>huge forest โดยไม่วัด latency</li>
+<li>feature importance = causality</li>
+<li>inconsistent class ordering</li>
+<li>preprocess full data ก่อน OOB/CV</li>
+<li>assume forest never overfits</li>
+</ol></details><details id="help-topic-21-visual"><summary>ภาพและ shape</summary><h3>21. Common Mistakes</h3>
+<ol>
+<li>sampling without replacement แล้วเรียก bootstrap</li>
+<li>random features แค่ครั้งเดียวต่อ tree</li>
+<li>test set ใช้ tune forest</li>
+<li>OOB กับ time series</li>
+<li>n_estimators น้อยเกินจน score แกว่ง</li>
+<li>huge forest โดยไม่วัด latency</li>
+<li>feature importance = causality</li>
+<li>inconsistent class ordering</li>
+<li>preprocess full data ก่อน OOB/CV</li>
+<li>assume forest never overfits</li>
+</ol></details><details id="help-topic-21-code"><summary>โค้ด</summary><h3>21. Common Mistakes</h3>
+<ol>
+<li>sampling without replacement แล้วเรียก bootstrap</li>
+<li>random features แค่ครั้งเดียวต่อ tree</li>
+<li>test set ใช้ tune forest</li>
+<li>OOB กับ time series</li>
+<li>n_estimators น้อยเกินจน score แกว่ง</li>
+<li>huge forest โดยไม่วัด latency</li>
+<li>feature importance = causality</li>
+<li>inconsistent class ordering</li>
+<li>preprocess full data ก่อน OOB/CV</li>
+<li>assume forest never overfits</li>
+</ol><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-21-result"><summary>ผลการทดลอง</summary><h3>21. Common Mistakes</h3>
+<ol>
+<li>sampling without replacement แล้วเรียก bootstrap</li>
+<li>random features แค่ครั้งเดียวต่อ tree</li>
+<li>test set ใช้ tune forest</li>
+<li>OOB กับ time series</li>
+<li>n_estimators น้อยเกินจน score แกว่ง</li>
+<li>huge forest โดยไม่วัด latency</li>
+<li>feature importance = causality</li>
+<li>inconsistent class ordering</li>
+<li>preprocess full data ก่อน OOB/CV</li>
+<li>assume forest never overfits</li>
+</ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-21"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-22" class="source-topic"><span id="source-11-random-forest-canonical-22-exercises-project" class="legacy-anchor"></span><h3>22. Exercises / Project</h3>
+<ul>
+<li><a href="../11-random-forest/exercises/README.md">Exercises</a></li>
+<li><a href="../11-random-forest/solutions/README.md">Solutions</a></li>
+<li><a href="../11-random-forest/mini-project/README.md">Mini Project</a></li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-22-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>22. Exercises / Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-22-equation"><summary>สมการ</summary><h3>22. Exercises / Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-22-visual"><summary>ภาพและ shape</summary><h3>22. Exercises / Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-22-code"><summary>โค้ด</summary><h3>22. Exercises / Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-22-result"><summary>ผลการทดลอง</summary><h3>22. Exercises / Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-22"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-23" class="source-topic"><span id="source-11-random-forest-canonical-23-checklist" class="legacy-anchor"></span><h3>23. Checklist</h3>
+<ul>
+<li>[ ] bootstrap</li>
+<li>[ ] bagging</li>
+<li>[ ] random feature subset</li>
+<li>[ ] correlation intuition</li>
+<li>[ ] probability aggregation</li>
+<li>[ ] OOB</li>
+<li>[ ] bias/variance</li>
+<li>[ ] Extra Trees concept</li>
+<li>[ ] CPU/memory trade-offs</li>
+<li>[ ] feature importance limits</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-23-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>23. Checklist</h3>
+<ul>
+<li>[ ] bootstrap</li>
+<li>[ ] bagging</li>
+<li>[ ] random feature subset</li>
+<li>[ ] correlation intuition</li>
+<li>[ ] probability aggregation</li>
+<li>[ ] OOB</li>
+<li>[ ] bias/variance</li>
+<li>[ ] Extra Trees concept</li>
+<li>[ ] CPU/memory trade-offs</li>
+<li>[ ] feature importance limits</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-23-equation"><summary>สมการ</summary><h3>23. Checklist</h3>
+<ul>
+<li>[ ] bootstrap</li>
+<li>[ ] bagging</li>
+<li>[ ] random feature subset</li>
+<li>[ ] correlation intuition</li>
+<li>[ ] probability aggregation</li>
+<li>[ ] OOB</li>
+<li>[ ] bias/variance</li>
+<li>[ ] Extra Trees concept</li>
+<li>[ ] CPU/memory trade-offs</li>
+<li>[ ] feature importance limits</li>
+</ul></details><details id="help-topic-23-visual"><summary>ภาพและ shape</summary><h3>23. Checklist</h3>
+<ul>
+<li>[ ] bootstrap</li>
+<li>[ ] bagging</li>
+<li>[ ] random feature subset</li>
+<li>[ ] correlation intuition</li>
+<li>[ ] probability aggregation</li>
+<li>[ ] OOB</li>
+<li>[ ] bias/variance</li>
+<li>[ ] Extra Trees concept</li>
+<li>[ ] CPU/memory trade-offs</li>
+<li>[ ] feature importance limits</li>
+</ul></details><details id="help-topic-23-code"><summary>โค้ด</summary><h3>23. Checklist</h3>
+<ul>
+<li>[ ] bootstrap</li>
+<li>[ ] bagging</li>
+<li>[ ] random feature subset</li>
+<li>[ ] correlation intuition</li>
+<li>[ ] probability aggregation</li>
+<li>[ ] OOB</li>
+<li>[ ] bias/variance</li>
+<li>[ ] Extra Trees concept</li>
+<li>[ ] CPU/memory trade-offs</li>
+<li>[ ] feature importance limits</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-23-result"><summary>ผลการทดลอง</summary><h3>23. Checklist</h3>
+<ul>
+<li>[ ] bootstrap</li>
+<li>[ ] bagging</li>
+<li>[ ] random feature subset</li>
+<li>[ ] correlation intuition</li>
+<li>[ ] probability aggregation</li>
+<li>[ ] OOB</li>
+<li>[ ] bias/variance</li>
+<li>[ ] Extra Trees concept</li>
+<li>[ ] CPU/memory trade-offs</li>
+<li>[ ] feature importance limits</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-23"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-24" class="source-topic"><span id="source-11-random-forest-canonical-24-whats-next" class="legacy-anchor"></span><h3>24. What's Next</h3>
+<p>Chapter 12 จะเปลี่ยนจาก <strong>parallel independent trees</strong> ไปเป็น <strong>sequential trees ที่แก้ error ของ ensemble ก่อนหน้า: Boosting</strong></p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-24-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>24. What's Next</h3>
+<p>Chapter 12 จะเปลี่ยนจาก <strong>parallel independent trees</strong> ไปเป็น <strong>sequential trees ที่แก้ error ของ ensemble ก่อนหน้า: Boosting</strong></p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-24-equation"><summary>สมการ</summary><h3>24. What's Next</h3>
+<p>Chapter 12 จะเปลี่ยนจาก <strong>parallel independent trees</strong> ไปเป็น <strong>sequential trees ที่แก้ error ของ ensemble ก่อนหน้า: Boosting</strong></p></details><details id="help-topic-24-visual"><summary>ภาพและ shape</summary><h3>24. What's Next</h3>
+<p>Chapter 12 จะเปลี่ยนจาก <strong>parallel independent trees</strong> ไปเป็น <strong>sequential trees ที่แก้ error ของ ensemble ก่อนหน้า: Boosting</strong></p></details><details id="help-topic-24-code"><summary>โค้ด</summary><h3>24. What's Next</h3>
+<p>Chapter 12 จะเปลี่ยนจาก <strong>parallel independent trees</strong> ไปเป็น <strong>sequential trees ที่แก้ error ของ ensemble ก่อนหน้า: Boosting</strong></p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-24-result"><summary>ผลการทดลอง</summary><h3>24. What's Next</h3>
+<p>Chapter 12 จะเปลี่ยนจาก <strong>parallel independent trees</strong> ไปเป็น <strong>sequential trees ที่แก้ error ของ ensemble ก่อนหน้า: Boosting</strong></p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-24"> อ่านหัวข้อนี้แล้ว</label></section></section><section id="objective-evidence" class="canonical-section"><h2>พิสูจน์ความสามารถทีละ objective</h2><p>ทำกรณีใหม่ก่อนเปิด reference แล้วบันทึกงานด้านล่าง ให้ผู้ตรวจใช้ rubric ตรวจคำอธิบาย ผลคำนวณ โค้ด และข้อจำกัด บันทึกเก็บในเบราว์เซอร์เครื่องนี้ กดส่งออกเพื่อสำรองหรือส่งให้ผู้ตรวจ เว็บไม่ได้รันโค้ดหรือตัดสินผลงานแทนผู้ตรวจ</p><button type="button" class="secondary-button" data-export-evidence>ส่งออกหลักฐานบทนี้เป็น JSON</button><p role="status" id="evidence-export-status"></p><details id="ch11-objective-01" class="objective-proof"><summary>อธิบาย bagging</summary><p>อธิบาย bagging: ใช้กรณีในหัวข้อ Bagging เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch11-evidence-01"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch11-evidence-01-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch11-evidence-01-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch11-evidence-01-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch11-evidence-01-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch11-evidence-01-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch11-evidence-01-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch11-evidence-01-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch11-evidence-01-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>Baggingfitสมาชิกบนbootstrapdatasetsแล้วaggregateเพื่อลดvarianceเมื่อสมาชิกไม่ได้เหมือนกันทั้งหมด. Parallelfitได้เพราะแต่ละmemberไม่รอresidualของตัวก่อน ต่างจากboostingที่สร้างตามลำดับ.</p><h3>4. Bagging</h3>
+<p>Bagging = Bootstrap Aggregating</p>
+<p>แต่ละ estimator ฝึกด้วย bootstrap sample:</p>
+<pre><code class="language-text">original indices:
+0 1 2 3 4 5
+
+bootstrap:
+2 2 5 1 4 2
+</code></pre>
+<p>sampling <strong>with replacement</strong></p>
+<p>บาง rows ถูกเลือกหลายครั้ง บาง rows ไม่ถูกเลือกเลย</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch11-objective-02" class="objective-proof"><summary>implement bootstrap sampling</summary><p>implement bootstrap sampling: ใช้กรณีในหัวข้อ Why Bootstrap Helps เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch11-evidence-02"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch11-evidence-02-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch11-evidence-02-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch11-evidence-02-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch11-evidence-02-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch11-evidence-02-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch11-evidence-02-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch11-evidence-02-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch11-evidence-02-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>Bootstrapสุ่มnindicesแบบคืนกลับจากntrainrows. indices[0,0,2]จากn3ทำsample0ซ้ำและไม่เห็นsample1; เก็บindicesเพื่อหาOOBและทำซ้ำด้วยseed ไม่ใช่shuffleโดยไม่คืนกลับ.</p><h3>5. Why Bootstrap Helps</h3>
+<p>แต่ละ tree เห็นข้อมูลต่างกัน จึงสร้าง model errors ต่างกัน</p>
+<p>ถ้า errors ไม่ perfectly correlated การ average ลด variance</p>
+<p>intuition:</p>
+<pre><code class="language-text">Var(mean of B independent-ish models)
+≈ variance / B
+</code></pre>
+<p>แต่ trees ไม่ independent จริง ดังนั้น key คือทำให้ correlation ลดลงด้วย random feature selection</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch11-objective-03" class="objective-proof"><summary>อธิบายเหตุผลที่ feature randomness decorrelates trees</summary><p>อธิบายเหตุผลที่ feature randomness decorrelates trees: ใช้กรณีในหัวข้อ Random Feature Subsets เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch11-evidence-03"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch11-evidence-03-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch11-evidence-03-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch11-evidence-03-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch11-evidence-03-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch11-evidence-03-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch11-evidence-03-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch11-evidence-03-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch11-evidence-03-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>max_featuresกำหนดfeaturecandidatesที่แต่ละsplitพิจารณา ช่วยdecorrelatetrees. ต้องสุ่มใหม่ตามpolicyและseedของmember ไม่ใช่ทิ้งfeaturesจากdatasetถาวรทุกtreeโดยไม่ตั้งใจ.</p><h3>6. Random Feature Subsets</h3>
+<p>ถ้าทุก tree มี feature เด่นมาก feature เดิมอาจถูกเลือก root ทุกต้น ทำให้ trees คล้ายกัน</p>
+<p>Random Forest จึงเลือก subset ของ features ที่แต่ละ split</p>
+<p>classification default heuristic ที่พบบ่อย:</p>
+<pre><code class="language-text">max_features ≈ sqrt(d)
+</code></pre>
+<p>แต่ต้อง tune ตามงาน</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch11-objective-04" class="objective-proof"><summary>implement Random Forest จากศูนย์</summary><p>implement Random Forest จากศูนย์: ใช้กรณีในหัวข้อ From Scratch เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch11-evidence-04"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch11-evidence-04-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch11-evidence-04-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch11-evidence-04-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch11-evidence-04-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch11-evidence-04-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch11-evidence-04-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch11-evidence-04-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch11-evidence-04-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>RFregressorbootstrapแล้วfitregressiontreesและaveragefloatpredictions. Targets[2,4]กับสมาชิกที่ทำนาย2และ4ต้องเฉลี่ย3; OOBaggregationต้องนับcoverageแยก และvalidateMSEด้วยsplitเดิม.</p><h3>17. From Scratch</h3>
+<p><a href="src/random_forest.py">src/random_forest.py</a></p>
+<p>implement:</p>
+<ul>
+<li>bootstrap indices</li>
+<li>randomized tree</li>
+<li>feature subset per node</li>
+<li>probability averaging</li>
+<li>OOB accuracy</li>
+</ul></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch11-objective-05" class="objective-proof"><summary>average class probabilities</summary><p>average class probabilities: ใช้กรณีในหัวข้อ Aggregation เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch11-evidence-05"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch11-evidence-05-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch11-evidence-05-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch11-evidence-05-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch11-evidence-05-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch11-evidence-05-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch11-evidence-05-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch11-evidence-05-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch11-evidence-05-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>จัดclasscolumnsให้ตรงglobalclassesแล้วaverageprobabilitiesต่อsample ก่อนargmax. สองtrees[.9,.1]กับ[.2,.8]เฉลี่ย[.55,.45]; averagingclassIDsให้.5ไม่ใช่classifierที่มีความหมาย.</p><h3>7. Aggregation</h3>
+<p>classification:</p>
+<pre><code class="language-text">P(class=k|x)
+=
+(1/B) Σ_b P_b(class=k|x)
+</code></pre>
+<p>จากนั้น:</p>
+<pre><code class="language-text">ŷ = argmax_k average probability
+</code></pre>
+<p>probability averaging มีข้อมูลมากกว่าการ vote class label อย่างเดียว</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch11-objective-06" class="objective-proof"><summary>คำนวณ Out-of-Bag score</summary><p>คำนวณ Out-of-Bag score: ใช้กรณีในหัวข้อ Out-of-Bag Samples, Why About 36.8% OOB? เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch11-evidence-06"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch11-evidence-06-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch11-evidence-06-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch11-evidence-06-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch11-evidence-06-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch11-evidence-06-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch11-evidence-06-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch11-evidence-06-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch11-evidence-06-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>OOBของtreeคือtrainingrowsที่ไม่ถูกbootstrapของtreeนั้น. ประเมินsampleหนึ่งจากเฉพาะtreesที่sampleนั้นเป็นOOB; ถ้าไม่มีOOBvotesต้องรายงานว่าnotcovered ไม่ใช้in-bagpredictionแทนเงียบ ๆ.</p><h3>8. Out-of-Bag Samples</h3>
+<p>bootstrap sample ของ n rows มักไม่เลือกบาง rows</p>
+<p>row ที่ไม่ถูกเลือกสำหรับ tree นั้นคือ <strong>out-of-bag (OOB)</strong></p>
+<p>ใช้ trees ที่ row นั้นเป็น OOB เพื่อทำนาย row นั้น แล้ว aggregate</p>
+<p>ได้ OOB estimate โดยไม่ต้องมี validation splitเพิ่มเติมสำหรับบาง use cases</p>
+<h3>9. Why About 36.8% OOB?</h3>
+<p>probability ที่ sample หนึ่งไม่ถูกเลือกใน n draws:</p>
+<pre><code class="language-text">(1 - 1/n)^n
+</code></pre>
+<p>เมื่อ n ใหญ่:</p>
+<pre><code class="language-text">→ e^-1 ≈ 0.368
+</code></pre>
+<p>ดังนั้นแต่ละ tree โดยเฉลี่ยมี OOB rows ราว 36.8%</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch11-objective-07" class="objective-proof"><summary>tune n_estimators / max_depth / max_features</summary><p>tune n_estimators / max_depth / max_features: ใช้กรณีในหัวข้อ Hyperparameters เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch11-evidence-07"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch11-evidence-07-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch11-evidence-07-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch11-evidence-07-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch11-evidence-07-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch11-evidence-07-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch11-evidence-07-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch11-evidence-07-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch11-evidence-07-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>การเพิ่มtreesมักลดMonteCarlo/ensemblevarianceแล้วplateau แต่biasของbaselearnerไม่ได้หายเอง. คงdepth/maxfeaturesและseedstreamเดิม วัดquality,latency,memory; อย่าตีความtrainscoreอย่างเดียว.</p><h3>12. Hyperparameters</h3>
+<h4>n_estimators</h4>
+<p>จำนวน trees</p>
+<p>มากขึ้น:
+- stable ขึ้น
+- ช้าขึ้น
+- diminishing returns</p>
+<h4>max_depth / min_samples_leaf</h4>
+<p>คุม individual tree complexity</p>
+<h4>max_features</h4>
+<p>คุม correlation vs strength</p>
+<p>น้อย:
+- trees diverse
+- แต่ individual trees อ่อนลง</p>
+<p>มาก:
+- trees stronger
+- แต่ correlated ขึ้น</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch11-objective-08" class="objective-proof"><summary>อธิบาย OOB limitations</summary><p>อธิบาย OOB limitations: ใช้กรณีในหัวข้อ OOB Caveats เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch11-evidence-08"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch11-evidence-08-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch11-evidence-08-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch11-evidence-08-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch11-evidence-08-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch11-evidence-08-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch11-evidence-08-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch11-evidence-08-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch11-evidence-08-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>OOBสุ่มจากช่วงเวลาเดียวกับtrainingและอาจมีอนาคต/neighborwindowsของsampleนั้นในtree. ใช้walk-forwardvalidationสำหรับforecastdeployment; OOBยังใช้diagnosticsภายใต้assumptionsที่ระบุแต่ไม่แทนเวลาจริง.</p><h3>10. OOB Caveats</h3>
+<p>OOB ไม่ใช่เวทมนตร์:</p>
+<ul>
+<li>time/grouped data อาจยังผิด protocol</li>
+<li>preprocessing ที่ fit ก่อน forest อาจ leak</li>
+<li>hyperparameter tuning บน OOB ซ้ำมาก ๆ ทำให้ optimistic</li>
+<li>small dataset → OOB estimate noisy</li>
+</ul></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch11-objective-09" class="objective-proof"><summary>เปรียบเทียบ single tree vs forest</summary><p>เปรียบเทียบ single tree vs forest: ใช้กรณีในหัวข้อ Bias–Variance เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch11-evidence-09"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch11-evidence-09-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch11-evidence-09-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch11-evidence-09-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch11-evidence-09-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch11-evidence-09-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch11-evidence-09-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch11-evidence-09-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch11-evidence-09-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>Varianceของaverageขึ้นกับcovariancesระหว่างtrees; ถ้าทุกtreeผิดเหมือนกันการเพิ่มจำนวนไม่ช่วยมาก. Bootstrapกับfeaturesubsamplingเพิ่มdiversity แล้ววัดvalidation/OOB ไม่สมมติว่าindependenceสมบูรณ์.</p><h3>11. Bias–Variance</h3>
+<p>เพิ่ม trees:</p>
+<ul>
+<li>variance ของ ensemble มักลด</li>
+<li>bias ไม่ได้ลดโดยตรงมากนัก</li>
+<li>prediction cost เพิ่ม</li>
+<li>memory เพิ่ม</li>
+</ul>
+<p>เพิ่ม depth:
+- individual tree bias ลด
+- variance เพิ่ม
+- forest ช่วยเฉลี่ย variance</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch11-objective-10" class="objective-proof"><summary>อธิบาย MDI importance caveats</summary><p>อธิบาย MDI importance caveats: ใช้กรณีในหัวข้อ Feature Importance เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch11-evidence-10"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch11-evidence-10-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch11-evidence-10-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch11-evidence-10-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch11-evidence-10-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch11-evidence-10-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch11-evidence-10-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch11-evidence-10-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch11-evidence-10-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>รวม <code>(n_node/n_total)*gain_node</code> ต่อfeatureแล้วnormalizeเมื่อtotalgain&gt;0. ถ้าallconstantfeaturesให้importanceเป็นzerosพร้อมnote; testimportance.sum≈1เมื่อมีusefulsplitและไม่เป็นcausalclaim.</p><h3>14. Feature Importance</h3>
+<p>MDI importance ใน forest = average impurity decrease across trees</p>
+<p>ข้อจำกัดเดิมยังอยู่:</p>
+<ul>
+<li>high cardinality bias</li>
+<li>correlated features</li>
+<li>not causal</li>
+</ul>
+<p>Permutation importance มักเป็น alternative ที่ useful กว่าเมื่อ evaluate บน held-out data</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch11-objective-11" class="objective-proof"><summary>เข้าใจ Extra Trees concept</summary><p>เข้าใจ Extra Trees concept: ใช้กรณีในหัวข้อ Extra Trees เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch11-evidence-11"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch11-evidence-11-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch11-evidence-11-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch11-evidence-11-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch11-evidence-11-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch11-evidence-11-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch11-evidence-11-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch11-evidence-11-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch11-evidence-11-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>ExtraTreesสุ่มthresholdsมากขึ้นแทนค้นbestthresholdเต็มชุดและค่าdefaultbootstrapอาจต่างกันตามAPI. เมื่อเปรียบเทียบให้ตั้งbootstrap/maxfeatures/depthชัดและวัดbias/variance ไม่กล่าวว่าExtraTreesคือRFที่เพิ่มจำนวนต้นเฉย ๆ.</p><h3>15. Extra Trees</h3>
+<p>Extremely Randomized Trees เพิ่ม randomness:</p>
+<ul>
+<li>randomize split thresholds มากขึ้น</li>
+<li>มักใช้ whole sample หรือ configurable bootstrap</li>
+<li>train เร็วขึ้นบางกรณี</li>
+<li>variance ลด แต่ bias อาจเพิ่ม</li>
+</ul>
+<p>scikit-learn มี <code>ExtraTreesClassifier</code></p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch11-objective-12" class="objective-proof"><summary>Failure Cases / Debugging</summary><p>Failure Cases / Debugging: ใช้กรณีในหัวข้อ Failure Cases, Debugging เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch11-evidence-12"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch11-evidence-12-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch11-evidence-12-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch11-evidence-12-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch11-evidence-12-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch11-evidence-12-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch11-evidence-12-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch11-evidence-12-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch11-evidence-12-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>การสร้างRNGใหม่ด้วยseedเดิมภายในloopทำให้bootstrapและfeaturechoicesเหมือนกัน. ใช้parentRNGสร้างmemberseedsต่างกันแต่reproducible; testsampleindexlistsไม่เหมือนกันทุกต้นและrerunseedเดิมได้เหมือนเดิม.</p><h3>19. Failure Cases</h3>
+<ul>
+<li>very high-dimensional sparse data ที่ linear model เหมาะกว่า</li>
+<li>extrapolation regression</li>
+<li>massive forest latency</li>
+<li>class imbalance</li>
+<li>leakage</li>
+<li>grouped/time splits ผิด</li>
+<li>categorical encoding ไม่เหมาะ</li>
+<li>distribution shift</li>
+</ul>
+<h3>20. Debugging</h3>
+<p>ตรวจ:</p>
+<ul>
+<li>bootstrap indices มี duplicates จริงไหม?</li>
+<li>feature subset เปลี่ยนทุก node ไหม?</li>
+<li>random seed reproducible ไหม?</li>
+<li>class order ของทุก tree เหมือนกันไหม?</li>
+<li>OOB row มีอย่างน้อยหนึ่ง tree ทำนายไหม?</li>
+<li>probability rows sum to 1 ไหม?</li>
+</ul></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch11-objective-13" class="objective-proof"><summary>Parallelism / Hardware Perspective</summary><p>Parallelism / Hardware Perspective: ใช้กรณีในหัวข้อ Parallelism, Hardware Perspective เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch11-evidence-13"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch11-evidence-13-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch11-evidence-13-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch11-evidence-13-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch11-evidence-13-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch11-evidence-13-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch11-evidence-13-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch11-evidence-13-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch11-evidence-13-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>วัด1..200treesบนsplit/hyperparamsเดิม เก็บfit/querytimeและpeakmemoryพร้อมqualityหลายseed. สมาชิกของNtreesควรเป็นprefixเดียวกับN+1เพื่อให้curveแยกผลจำนวนtreeจากการเปลี่ยนrandomstream.</p><h3>16. Parallelism</h3>
+<p>Trees ส่วนใหญ่ train independent กัน</p>
+<p>จึง parallelize ได้ดี:</p>
+<pre><code class="language-python">RandomForestClassifier(n_jobs=-1)
+</code></pre>
+<p>ระวัง memory/CPU thermals บน laptop</p>
+<h3>18. Hardware Perspective</h3>
+<p>บน Acer A715-43G:</p>
+<p>Random Forest ใช้ CPU เป็นหลักใน scikit-learn</p>
+<p>แนะนำเริ่ม:</p>
+<pre><code class="language-text">n_estimators: 50–200
+max_depth: constrained ก่อน
+n_jobs: 2–4 ตอนทดลอง
+</code></pre>
+<p>ค่อยเพิ่มหลังวัด RAM/temperature/runtime</p>
+<p>อย่าใช้ <code>n_jobs=-1</code> โดยอัตโนมัติถ้า laptop ร้อนหรือทำงานอื่นพร้อมกัน</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details></section><section id="implementation" class="canonical-section"><h2>Implementation และ tests ที่รันบนเครื่องได้</h2><details><summary>11-random-forest/src/random_forest.py</summary><pre><code>&quot;&quot;&quot;Educational Random Forest classifier implemented from scratch.&quot;&quot;&quot;
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+import numpy as np
+
+
+def gini(y: np.ndarray) -&gt; float:
+    if y.size == 0:
+        return 0.0
+    _, counts = np.unique(y, return_counts=True)
+    p = counts / counts.sum()
+    return float(1.0 - np.sum(p**2))
+
+
+@dataclass
+class _Node:
+    probabilities: np.ndarray
+    prediction_index: int
+    feature: int | None = None
+    threshold: float | None = None
+    left: &quot;_Node | None&quot; = None
+    right: &quot;_Node | None&quot; = None
+
+    @property
+    def is_leaf(self) -&gt; bool:
+        return self.feature is None
+
+
+class _RandomizedTree:
+    def __init__(
+        self,
+        *,
+        classes: np.ndarray,
+        max_depth: int | None,
+        min_samples_leaf: int,
+        max_features: int,
+        rng: np.random.Generator,
+    ) -&gt; None:
+        self.classes = classes
+        self.max_depth = max_depth
+        self.min_samples_leaf = min_samples_leaf
+        self.max_features = max_features
+        self.rng = rng
+        self.root: _Node | None = None
+
+    def _leaf(self, y: np.ndarray) -&gt; _Node:
+        counts = np.array([np.sum(y == label) for label in self.classes], dtype=float)
+        probabilities = counts / counts.sum()
+        return _Node(
+            probabilities=probabilities,
+            prediction_index=int(np.argmax(counts)),
+        )
+
+    def _best_split(
+        self,
+        X: np.ndarray,
+        y: np.ndarray,
+    ) -&gt; tuple[int | None, float | None]:
+        n_samples, n_features = X.shape
+        candidate_features = self.rng.choice(
+            n_features,
+            size=min(self.max_features, n_features),
+            replace=False,
+        )
+
+        parent = gini(y)
+        best_gain = 0.0
+        best_feature = None
+        best_threshold = None
+
+        for feature in candidate_features:
+            values = np.unique(X[:, feature])
+            if values.size &lt; 2:
+                continue
+
+            thresholds = (values[:-1] + values[1:]) / 2.0
+            for threshold in thresholds:
+                left = X[:, feature] &lt;= threshold
+                n_left = int(np.sum(left))
+                n_right = n_samples - n_left
+
+                if (
+                    n_left &lt; self.min_samples_leaf
+                    or n_right &lt; self.min_samples_leaf
+                ):
+                    continue
+
+                child = (
+                    (n_left / n_samples) * gini(y[left])
+                    + (n_right / n_samples) * gini(y[~left])
+                )
+                gain = parent - child
+
+                if gain &gt; best_gain + 1e-15:
+                    best_gain = gain
+                    best_feature = int(feature)
+                    best_threshold = float(threshold)
+
+        return best_feature, best_threshold
+
+    def _build(self, X: np.ndarray, y: np.ndarray, depth: int) -&gt; _Node:
+        leaf = self._leaf(y)
+
+        if np.unique(y).size == 1:
+            return leaf
+        if self.max_depth is not None and depth &gt;= self.max_depth:
+            return leaf
+        if y.size &lt; 2 * self.min_samples_leaf:
+            return leaf
+
+        feature, threshold = self._best_split(X, y)
+        if feature is None or threshold is None:
+            return leaf
+
+        mask = X[:, feature] &lt;= threshold
+        leaf.feature = feature
+        leaf.threshold = threshold
+        leaf.left = self._build(X[mask], y[mask], depth + 1)
+        leaf.right = self._build(X[~mask], y[~mask], depth + 1)
+        return leaf
+
+    def fit(self, X: np.ndarray, y: np.ndarray) -&gt; &quot;_RandomizedTree&quot;:
+        self.root = self._build(X, y, 0)
+        return self
+
+    def _traverse(self, row: np.ndarray) -&gt; _Node:
+        if self.root is None:
+            raise RuntimeError(&quot;tree is not fit&quot;)
+        node = self.root
+
+        while not node.is_leaf:
+            assert node.feature is not None
+            assert node.threshold is not None
+            assert node.left is not None
+            assert node.right is not None
+            node = node.left if row[node.feature] &lt;= node.threshold else node.right
+
+        return node
+
+    def predict_proba(self, X: np.ndarray) -&gt; np.ndarray:
+        return np.vstack([self._traverse(row).probabilities for row in X])
+
+
+class RandomForestClassifierFromScratch:
+    def __init__(
+        self,
+        *,
+        n_estimators: int = 25,
+        max_depth: int | None = 6,
+        min_samples_leaf: int = 1,
+        max_features: str | int = &quot;sqrt&quot;,
+        bootstrap: bool = True,
+        seed: int = 42,
+    ) -&gt; None:
+        if n_estimators &lt;= 0:
+            raise ValueError(&quot;n_estimators must be positive&quot;)
+        if min_samples_leaf &lt; 1:
+            raise ValueError(&quot;min_samples_leaf must be &gt;= 1&quot;)
+
+        self.n_estimators = n_estimators
+        self.max_depth = max_depth
+        self.min_samples_leaf = min_samples_leaf
+        self.max_features = max_features
+        self.bootstrap = bootstrap
+        self.seed = seed
+
+        self.classes_: np.ndarray | None = None
+        self.trees_: list[_RandomizedTree] = []
+        self.oob_score_: float | None = None
+
+    def _resolve_max_features(self, n_features: int) -&gt; int:
+        if self.max_features == &quot;sqrt&quot;:
+            return max(1, int(np.sqrt(n_features)))
+        if self.max_features == &quot;log2&quot;:
+            return max(1, int(np.log2(n_features)))
+        if isinstance(self.max_features, int):
+            if not 1 &lt;= self.max_features &lt;= n_features:
+                raise ValueError(&quot;integer max_features must be in [1, n_features]&quot;)
+            return self.max_features
+        raise ValueError(&quot;max_features must be &#x27;sqrt&#x27;, &#x27;log2&#x27;, or an integer&quot;)
+
+    def fit(
+        self,
+        X: np.ndarray,
+        y: np.ndarray,
+    ) -&gt; &quot;RandomForestClassifierFromScratch&quot;:
+        X_array = np.asarray(X, dtype=float)
+        y_array = np.asarray(y).reshape(-1)
+
+        if X_array.ndim != 2 or X_array.shape[0] == 0:
+            raise ValueError(&quot;X must be a non-empty 2D array&quot;)
+        if X_array.shape[0] != y_array.shape[0]:
+            raise ValueError(&quot;X and y sample counts differ&quot;)
+        if not np.all(np.isfinite(X_array)):
+            raise ValueError(&quot;X must be finite&quot;)
+
+        n_samples, n_features = X_array.shape
+        self.classes_ = np.unique(y_array)
+        n_feature_candidates = self._resolve_max_features(n_features)
+
+        master_rng = np.random.default_rng(self.seed)
+        self.trees_ = []
+
+        oob_probability_sum = np.zeros((n_samples, len(self.classes_)), dtype=float)
+        oob_counts = np.zeros(n_samples, dtype=int)
+
+        for _ in range(self.n_estimators):
+            tree_seed = int(master_rng.integers(0, np.iinfo(np.int32).max))
+            tree_rng = np.random.default_rng(tree_seed)
+
+            if self.bootstrap:
+                train_indices = tree_rng.integers(0, n_samples, size=n_samples)
+                selected = np.zeros(n_samples, dtype=bool)
+                selected[np.unique(train_indices)] = True
+                oob_indices = np.flatnonzero(~selected)
+            else:
+                train_indices = np.arange(n_samples)
+                oob_indices = np.array([], dtype=int)
+
+            tree = _RandomizedTree(
+                classes=self.classes_,
+                max_depth=self.max_depth,
+                min_samples_leaf=self.min_samples_leaf,
+                max_features=n_feature_candidates,
+                rng=tree_rng,
+            ).fit(X_array[train_indices], y_array[train_indices])
+
+            self.trees_.append(tree)
+
+            if oob_indices.size:
+                oob_probability_sum[oob_indices] += tree.predict_proba(
+                    X_array[oob_indices]
+                )
+                oob_counts[oob_indices] += 1
+
+        valid_oob = oob_counts &gt; 0
+        if np.any(valid_oob):
+            averaged = (
+                oob_probability_sum[valid_oob]
+                / oob_counts[valid_oob, None]
+            )
+            predictions = self.classes_[np.argmax(averaged, axis=1)]
+            self.oob_score_ = float(
+                np.mean(predictions == y_array[valid_oob])
+            )
+        else:
+            self.oob_score_ = None
+
+        return self
+
+    def predict_proba(self, X: np.ndarray) -&gt; np.ndarray:
+        if not self.trees_ or self.classes_ is None:
+            raise RuntimeError(&quot;forest must be fit before prediction&quot;)
+
+        X_array = np.asarray(X, dtype=float)
+        if X_array.ndim != 2:
+            raise ValueError(&quot;X must be 2D&quot;)
+
+        probabilities = np.stack(
+            [tree.predict_proba(X_array) for tree in self.trees_],
+            axis=0,
+        )
+        return probabilities.mean(axis=0)
+
+    def predict(self, X: np.ndarray) -&gt; np.ndarray:
+        if self.classes_ is None:
+            raise RuntimeError(&quot;forest must be fit before prediction&quot;)
+        probabilities = self.predict_proba(X)
+        return self.classes_[np.argmax(probabilities, axis=1)]
+</code></pre></details><details><summary>11-random-forest/tests/test_random_forest.py</summary><pre><code>from pathlib import Path
+import importlib.util
+import sys
+
+import numpy as np
+from sklearn.datasets import make_classification
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+
+
+MODULE_PATH = Path(__file__).parents[1] / &quot;src&quot; / &quot;random_forest.py&quot;
+SPEC = importlib.util.spec_from_file_location(&quot;random_forest_course&quot;, MODULE_PATH)
+assert SPEC and SPEC.loader
+mod = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = mod
+SPEC.loader.exec_module(mod)
+
+
+def test_bootstrap_forest_is_reproducible() -&gt; None:
+    X, y = make_classification(
+        n_samples=180,
+        n_features=4,
+        n_informative=3,
+        n_redundant=0,
+        random_state=4,
+    )
+
+    a = mod.RandomForestClassifierFromScratch(
+        n_estimators=9,
+        max_depth=4,
+        seed=7,
+    ).fit(X, y)
+    b = mod.RandomForestClassifierFromScratch(
+        n_estimators=9,
+        max_depth=4,
+        seed=7,
+    ).fit(X, y)
+
+    np.testing.assert_array_equal(a.predict(X), b.predict(X))
+    assert a.oob_score_ == b.oob_score_
+
+
+def test_probability_rows_sum_to_one() -&gt; None:
+    X, y = make_classification(
+        n_samples=160,
+        n_features=4,
+        n_informative=3,
+        n_redundant=0,
+        random_state=2,
+    )
+
+    model = mod.RandomForestClassifierFromScratch(
+        n_estimators=7,
+        max_depth=3,
+        seed=2,
+    ).fit(X, y)
+
+    probabilities = model.predict_proba(X[:20])
+    np.testing.assert_allclose(probabilities.sum(axis=1), 1.0)
+
+
+def test_from_scratch_forest_has_useful_test_accuracy() -&gt; None:
+    X, y = make_classification(
+        n_samples=320,
+        n_features=5,
+        n_informative=4,
+        n_redundant=0,
+        class_sep=1.3,
+        random_state=12,
+    )
+    X_train, X_test, y_train, y_test = train_test_split(
+        X,
+        y,
+        test_size=0.30,
+        stratify=y,
+        random_state=12,
+    )
+
+    ours = mod.RandomForestClassifierFromScratch(
+        n_estimators=15,
+        max_depth=5,
+        min_samples_leaf=2,
+        seed=12,
+    ).fit(X_train, y_train)
+
+    accuracy = np.mean(ours.predict(X_test) == y_test)
+    assert accuracy &gt; 0.80
+    assert ours.oob_score_ is not None
+    assert 0.0 &lt;= ours.oob_score_ &lt;= 1.0
+
+
+def test_sklearn_reference_model_runs_on_same_problem() -&gt; None:
+    X, y = make_classification(
+        n_samples=250,
+        n_features=5,
+        n_informative=4,
+        n_redundant=0,
+        random_state=21,
+    )
+
+    model = RandomForestClassifier(
+        n_estimators=30,
+        max_depth=5,
+        random_state=21,
+        oob_score=True,
+        bootstrap=True,
+        n_jobs=1,
+    ).fit(X, y)
+
+    assert model.score(X, y) &gt; 0.9
+    assert 0.0 &lt;= model.oob_score_ &lt;= 1.0
+</code></pre></details></section><section id="glossary" class="canonical-section"><h2>อภิธานศัพท์ — คำไทย ความหมาย และข้อควรตรวจ</h2><dl><dt>tensor</dt><dd>เทนเซอร์: ชุดตัวเลขที่มีแกน เช่น scalar ไม่มีแกน, vector หนึ่งแกน, matrix สองแกน; shape บอกขนาดแต่ละแกน ไม่บอกความหมายของแกนจนกว่าจะระบุ</dd><dt>shape</dt><dd>รูปทรงข้อมูล: (B,T,d) หมายถึง batch × เวลา/ตำแหน่ง × features; ใช้ชื่อแกนกำกับเสมอ การ transpose เปลี่ยนแกนแต่ไม่ใช่แค่เปลี่ยนชื่อ</dd><dt>batch</dt><dd>กลุ่มตัวอย่างที่คำนวณร่วมกันหนึ่งครั้ง; B คือจำนวนตัวอย่าง ไม่ใช่จำนวน features หรือจำนวน optimizer updates</dd><dt>weight w / θ</dt><dd>น้ำหนักหรือพารามิเตอร์ที่โมเดลใช้คำนวณ; แก้ด้วยมือทำ forward ใหม่ ส่วน optimizer ต้องรับ gradient แล้วกด update จึงแก้ state</dd><dt>bias b</dt><dd>ค่าคงที่ที่บวกกับผลเชิงเส้น; regression scalar bias เพิ่ม Δ ทำให้ prediction ทุกจุดเพิ่ม Δ เท่ากัน</dd><dt>prediction ŷ</dt><dd>ค่าที่โมเดลทำนายจาก input และพารามิเตอร์ปัจจุบัน; เครื่องหมายหมวกแยกจาก target y ที่มาจากข้อมูล</dd><dt>residual e</dt><dd>ความคลาดเคลื่อน ในเว็บนี้นิยาม prediction − target; บางตำราใช้เครื่องหมายกลับกัน จึงต้องตรวจนิยามก่อนเทียบสูตร gradient</dd><dt>MSE</dt><dd>mean squared error = ผลรวม residual กำลังสองหารจำนวนรายการที่ระบุ; มีหน่วยเป็น target ยกกำลังสอง และการใช้ sum แทน mean เปลี่ยน scale gradient</dd><dt>loss L / objective J</dt><dd>จำนวนที่ optimizer ต้องการลด; objective อาจรวม data loss และ regularization จึงต้องดูองค์ประกอบและ reduction ให้ตรง implementation</dd><dt>gradient ∇ / ∂</dt><dd>เวกเตอร์ของ partial derivatives บอกอัตราเปลี่ยน loss ต่อพารามิเตอร์แต่ละตัว; ∂ ใช้เมื่อเปลี่ยนตัวหนึ่งโดยตรึงตัวอื่น</dd><dt>chain rule</dt><dd>กฎลูกโซ่: คูณอนุพันธ์ตามเส้นทาง และบวก contribution จากทุกเส้นทางที่มารวมกัน ใช้ย้อนจาก loss ถึง weights</dd><dt>learning rate η</dt><dd>ขนาดตัวคูณ gradient ใน update θnew=θ−ηg; η≥0, ศูนย์หมายถึงไม่มีการขยับพารามิเตอร์ ก้าวใหญ่เกินอาจ diverge</dd><dt>regularization λ</dt><dd>ตัวคูณค่าลงโทษ ต้อง λ≥0 ตามนิยามการลงโทษ; Ridge λΣw² เพิ่ม gradient 2λw โดยบท Regression นี้ไม่ลงโทษ bias</dd><dt>baseline</dt><dd>สถานะอ้างอิงที่ตรึงไว้สำหรับเทียบ; ต้องเก็บ snapshot ไม่อ้าง object ปัจจุบันที่แก้ตามไปด้วย</dd><dt>invariant</dt><dd>คุณสมบัติที่กลไกต้องรักษา เช่น probability รวม1, shape สอดคล้อง, queue ไม่เกิน capacity; ใช้ tests ตรวจได้มากกว่าดูภาพสวย</dd><dt>optimizer state</dt><dd>ความจำของอัลกอริทึม เช่น velocity, moments และ completed updates; คืนเฉพาะ weights ยังไม่เท่ากับเริ่มการฝึกใหม่ทั้งหมด</dd><dt>finite difference</dt><dd>ประมาณ derivative ด้วย [f(x+h)−f(x−h)]/(2h); h&gt;0, ใช้ smooth point และลองหลาย h เพื่อแยก truncation error จาก roundoff</dd><dt>softmax</dt><dd>แปลง logits เป็นความน่าจะเป็นตามแกนที่กำหนด; ลบ max ก่อน exp เพื่อความเสถียร และ fully masked row ต้องมีนโยบายชัดเจน</dd><dt>logit</dt><dd>คะแนนก่อน sigmoid/softmax ไม่ใช่ probability; อาจเป็นจำนวนจริงติดลบหรือเกิน1ได้ จึงห้ามส่งให้ loss ที่คาด probability โดยไม่แปลง</dd><dt>temperature τ / T</dt><dd>ตัวหาร logits ก่อน softmax; ต้องเป็นบวก ค่าเล็กทำ distribution แหลมขึ้น โดยไม่เท่ากับ retrain weights</dd><dt>mask</dt><dd>ตัวกำหนดตำแหน่งที่อ่านหรือคิด loss ได้; causal mask ปิดอนาคต, padding mask ปิดข้อมูลเติม, loss mask เลือก target แต่ละอย่างคนละหน้าที่</dd><dt>Q / K / V</dt><dd>query ใช้ค้นข้อมูล, key ใช้จับคู่ query, value เป็นข้อมูลที่ถูกถัวเฉลี่ย; เป็น learned projections ของ representation ไม่ใช่ป้ายความหมายตายตัว</dd><dt>head</dt><dd>ส่วนของ feature representation ที่ทำ attention แยกกัน แล้ว concat/project กลับ; ต้องตรวจ d_model หารจำนวน heads ลงตัว</dd><dt>ε-neighborhood</dt><dd>เพื่อนบ้านทั้งหมดที่มีระยะไม่เกิน ε รวมจุดตัวเองใน DBSCAN นี้; ε มีหน่วยเดียวกับพิกัด ไม่ใช่จำนวน k ที่ใช้โหวต</dd><dt>core / border / noise</dt><dd>DBSCAN core มีเพื่อนบ้านรวมตัวเองถึง min_samples; border อยู่ใกล้ core แต่เพื่อนบ้านไม่ถึง; noise ไม่ถูกเชื่อมกับ core cluster ใด</dd><dt>bootstrap</dt><dd>สุ่ม observations แบบ replacement ขนาดเท่าเดิมซ้ำหลายครั้งแล้วคำนวณ statistic ใหม่; seed ทำให้ตรวจซ้ำได้ แต่ไม่แก้สมมติฐาน IID ที่ผิด</dd><dt>confidence interval</dt><dd>ช่วงที่สร้างด้วย procedure ที่มี coverage ตามสมมติฐาน; ช่วงหนึ่งที่ได้แล้วไม่ใช่ posterior probability ของ parameter และ sample เล็กยังไม่แน่นอนมาก</dd><dt>validation / test</dt><dd>validation ใช้เลือกโมเดล/ค่าตั้ง ส่วน test ใช้ประเมินหลัง freeze การตัดสินใจ; fit preprocessing/tokenizer จาก test เป็น leakage</dd><dt>leakage</dt><dd>ข้อมูลที่ควรยังไม่รู้ไหลเข้า training/การเลือกโมเดล เช่น future feature หรือเอกสารซ้ำข้าม split ทำให้ metric ดูดีเกินการใช้งานจริง</dd><dt>queue / capacity</dt><dd>queue คือรายการรอ, capacity การให้บริการรวม = workers × service rate ตามแบบจำลอง; เพิ่ม timeout ไม่เพิ่มกำลังประมวลผล</dd><dt>state transition</dt><dd>การเปลี่ยนสถานะเมื่อเกิดเหตุการณ์ที่อนุญาต เช่น queued→active→done; ต้องระบุ guard, side effect และเหตุผลเมื่อ transition ถูกปฏิเสธ</dd><dt>latency / throughput</dt><dd>latency คือเวลาต่อคำขอ, throughput คือปริมาณงานต่อหน่วยเวลา; batching อาจเพิ่ม throughput แต่เพิ่มเวลารอ จึงต้องวัดทั้งคู่</dd><dt>idempotency</dt><dd>ทำคำขอ business operation เดิมซ้ำแล้ว side effect เกิดครั้งเดียวตาม key และ transaction protocol; ไม่ได้รับประกันจากการใช้ UUID ใหม่ทุก attempt</dd><dt>local lab</dt><dd>โปรแกรม Python และ tests ที่ผู้เรียนรันบนเครื่อง; เว็บเก็บเพียงคำยืนยันของผู้เรียน การผ่าน tests ของโค้ดต้นแบบไม่ใช่ผลตรวจโค้ดผู้เรียน</dd></dl></section></article>
+<section id="practice" class="practice-section"><span class="eyebrow">PRACTICE · DEBUG · BUILD</span><h2>พิสูจน์ด้วยการลงมือทำ</h2><div id="web-checks"></div><div class="retry-actions"><button class="secondary-button" id="retry-checks">เริ่มทำโจทย์ในเว็บใหม่</button><button class="text-button" id="undo-retry" hidden>คืนผลก่อนเริ่มใหม่</button></div><div id="exercise-content"><h2>แบบฝึก 20 ข้อ — เฉลยเฉพาะข้อ</h2><p>ทำคำตอบก่อนเปิด hints; โจทย์ปลายเปิดให้ใช้ตัวอย่างคำตอบและหลักฐานราย objective ตรวจงานจริง</p><section id="exercise-1" class="exercise-item"><h3>ข้อ 1</h3><p>bootstrap sampling คืออะไร?</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Why Bootstrap Helps: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): Bootstrapสุ่มnindicesแบบคืนกลับจากntrainrows. indices[0,0,2]จากn…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: Bootstrapสุ่มnindicesแบบคืนกลับจากntrainrows. indices[0,0,2]จากn3ทำsample0ซ้ำและไม่เห็นsample1; เก็บindicesเพื่อหาO…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>Bootstrapสุ่มnindicesแบบคืนกลับจากntrainrows. indices[0,0,2]จากn3ทำsample0ซ้ำและไม่เห็นsample1; เก็บindicesเพื่อหาOOBและทำซ้ำด้วยseed ไม่ใช่shuffleโดยไม่คืนกลับ.</p><p>อ้างอิง: <a href="#chapter-11/section/topic-5">Why Bootstrap Helps</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch11-exercise-01"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-2" class="exercise-item"><h3>ข้อ 2</h3><p>bagging คืออะไร?</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Bagging: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): Baggingfitสมาชิกบนbootstrapdatasetsแล้วaggregateเพื่อลดvarianceเมื่อสมาชิ…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: Baggingfitสมาชิกบนbootstrapdatasetsแล้วaggregateเพื่อลดvarianceเมื่อสมาชิกไม่ได้เหมือนกันทั้งหมด. Parallelfitได้เพราะแต่ละmemberไม่ร…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>Baggingfitสมาชิกบนbootstrapdatasetsแล้วaggregateเพื่อลดvarianceเมื่อสมาชิกไม่ได้เหมือนกันทั้งหมด. Parallelfitได้เพราะแต่ละmemberไม่รอresidualของตัวก่อน ต่างจากboostingที่สร้างตามลำดับ.</p><p>อ้างอิง: <a href="#chapter-11/section/topic-4">Bagging</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch11-exercise-02"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-3" class="exercise-item"><h3>ข้อ 3</h3><p>max_features ทำอะไร?</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Random Feature Subsets: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): max_featuresกำหนดfeaturecandidatesที่แต่ละsplitพิจารณา ช่วยdecorre…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: max_featuresกำหนดfeaturecandidatesที่แต่ละsplitพิจารณา ช่วยdecorrelatetrees. ต้องสุ่มใหม่ตามpolicyและseedของmember ไม่ใช…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>max_featuresกำหนดfeaturecandidatesที่แต่ละsplitพิจารณา ช่วยdecorrelatetrees. ต้องสุ่มใหม่ตามpolicyและseedของmember ไม่ใช่ทิ้งfeaturesจากdatasetถาวรทุกtreeโดยไม่ตั้งใจ.</p><p>อ้างอิง: <a href="#chapter-11/section/topic-6">Random Feature Subsets</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch11-exercise-03"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-4" class="exercise-item"><h3>ข้อ 4</h3><p>OOB sample คืออะไร?</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Out-of-Bag Samples: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): OOBของtreeคือtrainingrowsที่ไม่ถูกbootstrapของtreeนั้น. ประเมินsampleหนึ…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: OOBของtreeคือtrainingrowsที่ไม่ถูกbootstrapของtreeนั้น. ประเมินsampleหนึ่งจากเฉพาะtreesที่sampleนั้นเป็นOOB; ถ้าไม่มีOOBvotesต้องรา…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>OOBของtreeคือtrainingrowsที่ไม่ถูกbootstrapของtreeนั้น. ประเมินsampleหนึ่งจากเฉพาะtreesที่sampleนั้นเป็นOOB; ถ้าไม่มีOOBvotesต้องรายงานว่าnotcovered ไม่ใช้in-bagpredictionแทนเงียบ ๆ.</p><p>อ้างอิง: <a href="#chapter-11/section/topic-8">Out-of-Bag Samples</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch11-exercise-04"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-5" class="exercise-item"><h3>ข้อ 5</h3><p>Random Forest aggregate อย่างไร?</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Aggregation: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): จัดclasscolumnsให้ตรงglobalclassesแล้วaverageprobabilitiesต่อsample ก…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: จัดclasscolumnsให้ตรงglobalclassesแล้วaverageprobabilitiesต่อsample ก่อนargmax. สองtrees[.9,.1]กับ[.2,.8]เฉลี่ย[.55,.45]; ave…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>จัดclasscolumnsให้ตรงglobalclassesแล้วaverageprobabilitiesต่อsample ก่อนargmax. สองtrees[.9,.1]กับ[.2,.8]เฉลี่ย[.55,.45]; averagingclassIDsให้.5ไม่ใช่classifierที่มีความหมาย.</p><p>อ้างอิง: <a href="#chapter-11/section/topic-7">Aggregation</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch11-exercise-05"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-6" class="exercise-item"><h3>ข้อ 6</h3><p>ทำไม trees ต้อง decorrelate?</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Random Feature Subsets, Bias–Variance: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): Varianceของaverageขึ้นกับcovariancesระหว่างtrees; ถ้าทุกtreeผิดเหมือนกันการเพิ…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: Varianceของaverageขึ้นกับcovariancesระหว่างtrees; ถ้าทุกtreeผิดเหมือนกันการเพิ่มจำนวนไม่ช่วยมาก. Bootstrapกับfeaturesubsamplingเพิ่มdiversit…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>Varianceของaverageขึ้นกับcovariancesระหว่างtrees; ถ้าทุกtreeผิดเหมือนกันการเพิ่มจำนวนไม่ช่วยมาก. Bootstrapกับfeaturesubsamplingเพิ่มdiversity แล้ววัดvalidation/OOB ไม่สมมติว่าindependenceสมบูรณ์.</p><p>อ้างอิง: <a href="#chapter-11/section/topic-6">Random Feature Subsets</a>, <a href="#chapter-11/section/topic-11">Bias–Variance</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch11-exercise-06"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-7" class="exercise-item"><h3>ข้อ 7</h3><p>derive approximation <code>(1-1/n)^n → e^-1</code></p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Why About 36.8% OOB?: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): โอกาสไม่ถูกเลือกในหนึ่งdrawคือ1−1/n; nindependentdrawsจึง(1−1/n)…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: โอกาสไม่ถูกเลือกในหนึ่งdrawคือ1−1/n; nindependentdrawsจึง(1−1/n)^n→exp(−1)≈.367879. นี่เป็นexpectedfractionOOBต่อtr…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>โอกาสไม่ถูกเลือกในหนึ่งdrawคือ1−1/n; nindependentdrawsจึง(1−1/n)^n→exp(−1)≈.367879. นี่เป็นexpectedfractionOOBต่อtree ไม่ใช่รับประกันว่าแต่ละtreeมีOOB36.8%เป๊ะ.</p><p>อ้างอิง: <a href="#chapter-11/section/topic-9">Why About 36.8% OOB?</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch11-exercise-07"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-8" class="exercise-item"><h3>ข้อ 8</h3><p>n_estimators เพิ่มแล้ว bias/variance เปลี่ยนอย่างไร?</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Bias–Variance, Hyperparameters: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): การเพิ่มtreesมักลดMonteCarlo/ensemblevarianceแล้วplateau แต่biasของbaselea…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: การเพิ่มtreesมักลดMonteCarlo/ensemblevarianceแล้วplateau แต่biasของbaselearnerไม่ได้หายเอง. คงdepth/maxfeaturesและseedstreamเดิม วัดqu…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>การเพิ่มtreesมักลดMonteCarlo/ensemblevarianceแล้วplateau แต่biasของbaselearnerไม่ได้หายเอง. คงdepth/maxfeaturesและseedstreamเดิม วัดquality,latency,memory; อย่าตีความtrainscoreอย่างเดียว.</p><p>อ้างอิง: <a href="#chapter-11/section/topic-11">Bias–Variance</a>, <a href="#chapter-11/section/topic-12">Hyperparameters</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch11-exercise-08"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-9" class="exercise-item"><h3>ข้อ 9</h3><p>OOB ใช้กับ time series ทำไมอันตราย?</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ OOB Caveats: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): OOBสุ่มจากช่วงเวลาเดียวกับtrainingและอาจมีอนาคต/neighborwindowsของsampleนั้นใน…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: OOBสุ่มจากช่วงเวลาเดียวกับtrainingและอาจมีอนาคต/neighborwindowsของsampleนั้นในtree. ใช้walk-forwardvalidationสำหรับforecastdeployment; OOBยัง…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>OOBสุ่มจากช่วงเวลาเดียวกับtrainingและอาจมีอนาคต/neighborwindowsของsampleนั้นในtree. ใช้walk-forwardvalidationสำหรับforecastdeployment; OOBยังใช้diagnosticsภายใต้assumptionsที่ระบุแต่ไม่แทนเวลาจริง.</p><p>อ้างอิง: <a href="#chapter-11/section/topic-10">OOB Caveats</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch11-exercise-09"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-10" class="exercise-item"><h3>ข้อ 10</h3><p>Extra Trees ต่างจาก Random Forest อย่างไร?</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Extra Trees: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ExtraTreesสุ่มthresholdsมากขึ้นแทนค้นbestthresholdเต็มชุดและค่าdefaultbootstrapอาจต่างก…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ExtraTreesสุ่มthresholdsมากขึ้นแทนค้นbestthresholdเต็มชุดและค่าdefaultbootstrapอาจต่างกันตามAPI. เมื่อเปรียบเทียบให้ตั้งbootstrap/maxfeatures/depthชัดและวัด…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ExtraTreesสุ่มthresholdsมากขึ้นแทนค้นbestthresholdเต็มชุดและค่าdefaultbootstrapอาจต่างกันตามAPI. เมื่อเปรียบเทียบให้ตั้งbootstrap/maxfeatures/depthชัดและวัดbias/variance ไม่กล่าวว่าExtraTreesคือRFที่เพิ่มจำนวนต้นเฉย ๆ.</p><p>อ้างอิง: <a href="#chapter-11/section/topic-15">Extra Trees</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch11-exercise-10"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-11" class="exercise-item"><h3>ข้อ 11</h3><p>เพิ่ม OOB confusion matrix</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Out-of-Bag Samples: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): เก็บOOBprobabilitiesจากสมาชิกที่sampleนั้นไม่เคยเห็น แล้วสร้างconfusionmatrixเ…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: เก็บOOBprobabilitiesจากสมาชิกที่sampleนั้นไม่เคยเห็น แล้วสร้างconfusionmatrixเฉพาะsamplesที่มีvotes. Testglobalclassorderและcoveragecount; ถ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>เก็บOOBprobabilitiesจากสมาชิกที่sampleนั้นไม่เคยเห็น แล้วสร้างconfusionmatrixเฉพาะsamplesที่มีvotes. Testglobalclassorderและcoveragecount; ถ้าn_estimatorsน้อยบางsamplesอาจไม่coveredต้องแยกรายงาน.</p><p>อ้างอิง: <a href="#chapter-11/section/topic-8">Out-of-Bag Samples</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch11-exercise-11"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-12" class="exercise-item"><h3>ข้อ 12</h3><p>เพิ่ม <code>max_features=None</code></p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Random Feature Subsets: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): <code>max_features=None</code>ให้พิจารณาทุกfeatureในแต่ละsplitตามcontract. Tes…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: <code>max_features=None</code>ให้พิจารณาทุกfeatureในแต่ละsplitตามcontract. Testdatasetd3ว่าcandidatepoolมี3featuresจริงและstillboots…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p><code>max_features=None</code>ให้พิจารณาทุกfeatureในแต่ละsplitตามcontract. Testdatasetd3ว่าcandidatepoolมี3featuresจริงและstillbootstraprows; ไม่ตีความNoneเป็น0featuresหรือข้ามfit.</p><p>อ้างอิง: <a href="#chapter-11/section/topic-6">Random Feature Subsets</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch11-exercise-12"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-13" class="exercise-item"><h3>ข้อ 13</h3><p>เพิ่ม feature importance จาก impurity decrease</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Feature Importance: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): รวม <code>(n_node/n_total)*gain_node</code> ต่อfeatureแล้วnormalizeเมื่อtotalgain&gt;0. ถ…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: รวม <code>(n_node/n_total)*gain_node</code> ต่อfeatureแล้วnormalizeเมื่อtotalgain&gt;0. ถ้าallconstantfeaturesให้importanceเป็นzerosพร้อมnote; testimp…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>รวม <code>(n_node/n_total)*gain_node</code> ต่อfeatureแล้วnormalizeเมื่อtotalgain&gt;0. ถ้าallconstantfeaturesให้importanceเป็นzerosพร้อมnote; testimportance.sum≈1เมื่อมีusefulsplitและไม่เป็นcausalclaim.</p><p>อ้างอิง: <a href="#chapter-11/section/topic-14">Feature Importance</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch11-exercise-13"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-14" class="exercise-item"><h3>ข้อ 14</h3><p>benchmark n_estimators 1..200</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Hyperparameters, Parallelism: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): วัด1..200treesบนsplit/hyperparamsเดิม เก็บfit/querytimeและpeakmemoryพร้อ…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: วัด1..200treesบนsplit/hyperparamsเดิม เก็บfit/querytimeและpeakmemoryพร้อมqualityหลายseed. สมาชิกของNtreesควรเป็นprefixเดียวกับN+1เพ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>วัด1..200treesบนsplit/hyperparamsเดิม เก็บfit/querytimeและpeakmemoryพร้อมqualityหลายseed. สมาชิกของNtreesควรเป็นprefixเดียวกับN+1เพื่อให้curveแยกผลจำนวนtreeจากการเปลี่ยนrandomstream.</p><p>อ้างอิง: <a href="#chapter-11/section/topic-12">Hyperparameters</a>, <a href="#chapter-11/section/topic-16">Parallelism</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch11-exercise-14"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-15" class="exercise-item"><h3>ข้อ 15</h3><p>plot OOB score vs number of trees</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Out-of-Bag Samples, Why About 36.8% OOB?: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): PlotcoveredOOBscoreกับn_estimatorsพร้อมOOBcoverageและuncertainty. ไม่เต…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: PlotcoveredOOBscoreกับn_estimatorsพร้อมOOBcoverageและuncertainty. ไม่เติมuncoveredrowsด้วยtraininglabels; scoreอาจแกว่งไม่monoto…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>PlotcoveredOOBscoreกับn_estimatorsพร้อมOOBcoverageและuncertainty. ไม่เติมuncoveredrowsด้วยtraininglabels; scoreอาจแกว่งไม่monotonicเพราะfinitevotesและsamplesที่ถูกประเมินเปลี่ยน.</p><p>อ้างอิง: <a href="#chapter-11/section/topic-8">Out-of-Bag Samples</a>, <a href="#chapter-11/section/topic-9">Why About 36.8% OOB?</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch11-exercise-15"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-16" class="exercise-item"><h3>ข้อ 16</h3><p>ทุก tree เหมือนกันเพราะใช้ seed ซ้ำผิด</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Failure Cases, Debugging: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): การสร้างRNGใหม่ด้วยseedเดิมภายในloopทำให้bootstrapและfeaturechoicesเหมือนกัน. ใ…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: การสร้างRNGใหม่ด้วยseedเดิมภายในloopทำให้bootstrapและfeaturechoicesเหมือนกัน. ใช้parentRNGสร้างmemberseedsต่างกันแต่reproducible; testsamplein…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>การสร้างRNGใหม่ด้วยseedเดิมภายในloopทำให้bootstrapและfeaturechoicesเหมือนกัน. ใช้parentRNGสร้างmemberseedsต่างกันแต่reproducible; testsampleindexlistsไม่เหมือนกันทุกต้นและrerunseedเดิมได้เหมือนเดิม.</p><p>อ้างอิง: <a href="#chapter-11/section/topic-19">Failure Cases</a>, <a href="#chapter-11/section/topic-20">Debugging</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch11-exercise-16"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-17" class="exercise-item"><h3>ข้อ 17</h3><p>forest probability sum ไม่เท่ากับ 1</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Aggregation: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ตรวจmemberclassalignmentและnormalizeweightsด้วยจำนวนtreesจริง. Treeที่…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ตรวจmemberclassalignmentและnormalizeweightsด้วยจำนวนtreesจริง. Treeที่bootstrapขาดclassหนึ่งยังต้องส่งprob0ในcolumnของclassนั้…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ตรวจmemberclassalignmentและnormalizeweightsด้วยจำนวนtreesจริง. Treeที่bootstrapขาดclassหนึ่งยังต้องส่งprob0ในcolumnของclassนั้น; testimbalancedtinydataและrowsum1หลังaggregate.</p><p>อ้างอิง: <a href="#chapter-11/section/topic-7">Aggregation</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch11-exercise-17"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-18" class="exercise-item"><h3>ข้อ 18</h3><p>training เร็วแต่ inference ช้ามาก</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Parallelism, Hardware Perspective: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): Fitparallelเร็วไม่ได้ทำqueryผ่านtreesน้อยลง. Profileจำนวนtree/dep…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: Fitparallelเร็วไม่ได้ทำqueryผ่านtreesน้อยลง. Profileจำนวนtree/depth/batchingและcachelocality; วัดp50/p95บนquerysizeจริ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>Fitparallelเร็วไม่ได้ทำqueryผ่านtreesน้อยลง. Profileจำนวนtree/depth/batchingและcachelocality; วัดp50/p95บนquerysizeจริง แล้วลดcapacityหรือcompressโดยตรวจqualityซ้ำ.</p><p>อ้างอิง: <a href="#chapter-11/section/topic-16">Parallelism</a>, <a href="#chapter-11/section/topic-18">Hardware Perspective</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch11-exercise-18"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-19" class="exercise-item"><h3>ข้อ 19</h3><p>implement RandomForestRegressor</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ From Scratch: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): RFregressorbootstrapแล้วfitregressiontreesและaveragefloatpredictions. T…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: RFregressorbootstrapแล้วfitregressiontreesและaveragefloatpredictions. Targets[2,4]กับสมาชิกที่ทำนาย2และ4ต้องเฉลี่ย3; OOBaggregat…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>RFregressorbootstrapแล้วfitregressiontreesและaveragefloatpredictions. Targets[2,4]กับสมาชิกที่ทำนาย2และ4ต้องเฉลี่ย3; OOBaggregationต้องนับcoverageแยก และvalidateMSEด้วยsplitเดิม.</p><p>อ้างอิง: <a href="#chapter-11/section/topic-17">From Scratch</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch11-exercise-19"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-20" class="exercise-item"><h3>ข้อ 20</h3><p>implement permutation importance บน held-out set</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Feature Importance: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): วัดbaselineheld-outmetricแล้วshuffleหนึ่งfeatureในheld-outเท่านั้นหลายซ้ำ คำนวณsco…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: วัดbaselineheld-outmetricแล้วshuffleหนึ่งfeatureในheld-outเท่านั้นหลายซ้ำ คำนวณscoredecreaseตามทิศmetric. คงmodelไม่retrain; correlatedfeaturesอาจท…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>วัดbaselineheld-outmetricแล้วshuffleหนึ่งfeatureในheld-outเท่านั้นหลายซ้ำ คำนวณscoredecreaseตามทิศmetric. คงmodelไม่retrain; correlatedfeaturesอาจทดแทนกันจึงimportanceเล็กได้ทั้งที่กลุ่มfeaturesมีประโยชน์.</p><p>อ้างอิง: <a href="#chapter-11/section/topic-14">Feature Importance</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch11-exercise-20"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section></div><div id="local-lab-content"><section id="local-lab"><h2>Local lab: Python 3.12 บน CPU</h2><p>รันจาก repository root; ใช้ Python 3.12 แยก environment สำหรับ framework ตาม requirements ของชุดบท</p><pre><code>python3.12 -m venv .venv-course
+source .venv-course/bin/activate
+python -m pip install -r requirements-batch04.txt pytest
+(cd 11-random-forest &amp;&amp; python -m pytest tests -q -rs)</code></pre><p>ผลที่คาดหวัง: required tests ผ่านและไม่มี required test ถูก skip; GPU/integrations ที่ยังไม่รันต้องระบุแยก Python 3.15 ที่มากับเครื่องอาจใช้กับ framework wheels เหล่านี้ไม่ได้</p><h2>Mini Project — Forest Variance Lab</h2>
+<h3>Required</h3>
+<p>เปรียบเทียบ:</p>
+<ul>
+<li>DecisionTree</li>
+<li>Bagging trees with all features</li>
+<li>Random Forest</li>
+<li>ExtraTrees (sklearn)</li>
+</ul>
+<p>บน dataset เดียวกันและ repeated seeds</p>
+<h3>Measure</h3>
+<ul>
+<li>train score</li>
+<li>validation score</li>
+<li>score standard deviation across seeds</li>
+<li>OOB score</li>
+<li>fit time</li>
+<li>prediction time</li>
+<li>model size approximation</li>
+</ul>
+<h3>Hyperparameter grid</h3>
+<pre><code class="language-text">n_estimators: 10, 50, 100, 200
+max_features: sqrt, log2, all
+max_depth: 3, 6, None
+min_samples_leaf: 1, 5, 20
+</code></pre>
+<p>อย่ารัน full Cartesian grid ถ้าเครื่องร้อน/ช้า ให้ทำ controlled experiments ทีละตัวแปร</p>
+<h3>Report</h3>
+<p>ตอบว่า:</p>
+<ul>
+<li>forest ลด variance จาก single tree จริงไหม?</li>
+<li>max_features ต่ำเกินทำให้เกิดอะไร?</li>
+<li>OOB ใกล้ validation score แค่ไหน?</li>
+<li>trees เพิ่มถึงจุดไหนเริ่ม diminishing returns?</li>
+</ul><h2>Batch 04 Integration Project — Tree Ensemble Benchmark</h2>
+<p>รวม Chapters 10–12:</p>
+<pre><code class="language-text">same tabular classification data
+        ↓
+train / validation / test
+        ↓
+Decision Tree
+Random Forest
+AdaBoost
+Gradient Boosting
+Histogram Gradient Boosting
+        ↓
+same validation metric
+        ↓
+select model
+        ↓
+one final test
+        ↓
+runtime + metrics report
+</code></pre>
+<h3>Goal</h3>
+<p>ตอบคำถามเชิงวิศวกรรม ไม่ใช่แค่ “ตัวไหน score สูงสุด”:</p>
+<ul>
+<li>single tree overfit แค่ไหน?</li>
+<li>forest ลด variance อย่างไร?</li>
+<li>boosting ลด bias อย่างไร?</li>
+<li>histogram boosting เร็วขึ้นเมื่อ data โตหรือไม่?</li>
+<li>model complexity / latency ต่างกันอย่างไร?</li>
+</ul>
+<h3>Run</h3>
+<pre><code class="language-bash">source .venv/bin/activate
+python -m pip install -r requirements-batch04.txt
+
+python integration-project-batch04/src/tree_ensemble_lab.py \
+  --output-dir reports/batch04 \
+  --seed 42
+</code></pre>
+<h3>Core Models</h3>
+<ul>
+<li>DecisionTreeClassifier</li>
+<li>RandomForestClassifier</li>
+<li>AdaBoostClassifier</li>
+<li>GradientBoostingClassifier</li>
+<li>HistGradientBoostingClassifier</li>
+</ul>
+<h3>Selection Protocol</h3>
+<ol>
+<li>generate fixed synthetic data</li>
+<li>stratified train/validation/test</li>
+<li>fit each model on train</li>
+<li>compare validation F1 + ROC-AUC</li>
+<li>select by F1 then ROC-AUC</li>
+<li>evaluate selected model on test once</li>
+<li>report fit/predict time</li>
+</ol>
+<h3>Why no StandardScaler?</h3>
+<p>Tree split models generally depend on order/thresholds rather than Euclidean distance or coefficient scale</p>
+<p>ดังนั้นโปรเจกต์นี้ intentionally ไม่ standardize เพื่อ reinforce ว่า preprocessing ต้องสัมพันธ์กับ model</p>
+<h3>Optional Extension</h3>
+<p>ติดตั้ง:</p>
+<pre><code class="language-bash">python -m pip install -r requirements-batch04-extras.txt
+</code></pre>
+<p>แล้วเพิ่ม:</p>
+<ul>
+<li>XGBoost</li>
+<li>LightGBM</li>
+<li>CatBoost</li>
+</ul>
+<p>แต่ comparison ต้องใช้ package-appropriate preprocessing และ comparable tuning budget</p>
+<h3>Required Extensions</h3>
+<ol>
+<li>repeated seeds</li>
+<li>confidence interval / score distribution</li>
+<li>OOB score ของ Random Forest</li>
+<li>staged validation curve ของ GradientBoosting</li>
+<li>early stopping comparison</li>
+<li>noise-feature experiment</li>
+<li>label-noise experiment</li>
+<li>class-imbalance experiment</li>
+<li>model-size serialization comparison</li>
+<li>optional XGBoost/LightGBM/CatBoost</li>
+</ol>
+<h3>Mastery Questions</h3>
+<ul>
+<li>bagging กับ boosting ต่างกันเชิง error correlation อย่างไร?</li>
+<li>ทำไม forest train trees independent-ish แต่ boosting ไม่ได้?</li>
+<li>max_depth มีบทบาทต่างกันใน forest vs boosting อย่างไร?</li>
+<li>HistGradientBoosting ใช้ histogram เพื่ออะไร?</li>
+<li>XGBoost ใช้ Hessian เพราะอะไร?</li>
+<li>LightGBM leaf-wise เสี่ยงอะไร?</li>
+<li>CatBoost ลด category target leakage อย่างไร?</li>
+</ul></section></div><label class="local-confirm"><input type="checkbox" id="local-lab-confirm"> ฉันรัน local lab และตรวจผลตาม rubric ด้วยตัวเองแล้ว</label><p class="local-note">สถานะนี้เป็นคำยืนยันของผู้เรียน เว็บไม่ได้รันหรือตรวจ Python บนเครื่องแทนคุณ</p></section>
+<section id="mastery-review" class="practice-section"><h2>หลักฐานตามเกณฑ์การเรียนรู้</h2><p>ทุก objective ต้องแสดงหลักฐานอธิบาย ทำนาย คำนวณ อ่าน shape/state debug และประยุกต์ พร้อมกรณีใหม่ ผลรัน source ผู้เรียนจริง และการประเมินซ้ำ เกณฑ์นี้ไม่รับประกันความเข้าใจทุกสถานการณ์ เปิด JavaScript เพื่อดูรายการที่ยังขาดและนำเข้ารายงานผู้ตรวจ</p></section><section class="coverage-section"><h2>แผนที่สิ่งที่เรียน → สิ่งที่ต้องแสดงให้ได้</h2><div id="coverage-table"></div></section><footer><span>ZERO TO ELITE AI ENGINEER · LEARNING STUDIO</span><span>อ่าน · derive · implement · debug · experiment · build</span></footer></div></main><noscript><style>.workbench,.sidebar,.reading-route,.lesson-toc,.mastery-status,#web-checks{display:none}main{margin-left:0}</style>อ่านเนื้อหา HTML ได้ตามปกติ เปิด JavaScript เพื่อใช้ห้องทดลองและตรวจคำตอบ</noscript></body></html>

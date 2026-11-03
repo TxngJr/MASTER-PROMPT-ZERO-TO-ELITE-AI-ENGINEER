@@ -1,0 +1,1123 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="บทเรียน AI Engineer ภาษาไทย พร้อมคณิตศาสตร์ทีละขั้นและห้องทดลองที่คำนวณจริง"><title>TensorFlow/Keras: อ่านสิ่งที่ fit ทำอยู่ข้างใน · AI Engineer Studio</title><link rel="stylesheet" href="../visual-lab/assets/styles.css"><link rel="stylesheet" href="../visual-lab/assets/course.css"><script defer src="../visual-lab/assets/lessons.js"></script><script defer src="../visual-lab/assets/chapter-meta.js"></script><script defer src="../visual-lab/assets/course-math.js"></script><script defer src="../visual-lab/assets/course-models.js"></script><script defer src="../visual-lab/assets/course-models-v3.js"></script><script defer src="../visual-lab/assets/course-assessment.js"></script><script defer src="../visual-lab/assets/course-mastery.js"></script><script defer src="../visual-lab/assets/course-catalog.js"></script><script defer src="../visual-lab/assets/book-content.js"></script><script defer src="../visual-lab/assets/course-render.js"></script><script defer src="../visual-lab/assets/course-mastery-panel.js"></script><script defer src="../visual-lab/assets/quality-report.js"></script><script defer src="../visual-lab/assets/course-app.js"></script></head>
+<body data-chapter="23" data-root="../"><a class="skip-link" href="#main">ข้ามไปบทเรียน</a>
+<aside class="sidebar" id="sidebar" aria-label="เลือกบทเรียน"><a class="brand" href="../visual-lab/index.html"><span class="brand-mark">ai</span><span>AI ENGINEER<small>LEARN · DERIVE · BUILD</small></span></a><div class="sidebar-intro">อ่านให้เข้าใจ · คำนวณให้เห็น · เขียนให้เป็น</div><label class="search-box"><input id="search" type="search" placeholder="ค้นหาบท / attention" aria-label="ค้นหาบทเรียน"></label><label class="filter-label" for="phase-filter">เส้นทางการเรียน <span id="nav-count"></span></label><select id="phase-filter"><option value="">ทุก Phase</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option></select><nav id="chapter-list" class="chapter-list" aria-label="รายชื่อบท"></nav><div class="course-progress"><div><span>ผ่านโจทย์ในเว็บ</span><strong id="progress-count">0 / 80</strong></div><progress id="course-progress" max="80" value="0" aria-label="บทที่ผ่านโจทย์"></progress><a id="resume-link" href="#chapter-1">อ่านต่อจากเดิม →</a></div></aside>
+<button class="nav-backdrop" id="nav-backdrop" aria-label="ปิดเมนู" hidden></button>
+<main id="main" tabindex="-1"><header class="topbar"><div><button id="nav-toggle" class="icon-button mobile-menu" aria-label="เปิดเมนูบทเรียน" aria-expanded="false" aria-controls="sidebar">☰</button><span id="breadcrumb"></span></div><span class="local-badge"><i></i> คำนวณในเครื่อง · ไม่มี API</span></header><div class="content">
+<div class="chapter-navigation"><label for="chapter-select" class="sr-only">เลือกบทเรียน</label><select id="chapter-select"></select><div class="chapter-arrows"><button id="prev-chapter" class="icon-button" aria-label="บทก่อนหน้า">←</button><button id="next-chapter" class="icon-button" aria-label="บทถัดไป">→</button></div></div>
+<section class="chapter-hero"><div><p id="chapter-kicker" class="eyebrow"></p><h1 id="chapter-title">TensorFlow/Keras: อ่านสิ่งที่ fit ทำอยู่ข้างใน</h1><p class="english-title" id="chapter-english"></p></div><span class="hero-symbol">f(x) ↗</span></section>
+<p id="quality-status" class="quality-status"></p><div id="mastery-status" class="mastery-status"></div><div class="reading-route"><a href="#chapter-23/section/overview">01 อ่านบทเรียน</a><a href="#workbench">02 ทดลองสมการ</a><a href="#practice">03 ฝึกและตรวจงาน</a><a href="#mastery-review">04 หลักฐานตามเกณฑ์</a></div>
+<nav id="lesson-toc" class="lesson-toc" aria-label="สารบัญบท"></nav>
+<section id="overview" class="course-overview"><span class="eyebrow">THE LEARNING CONTRACT</span><h2>เรียนบทนี้แล้วต้องทำอะไรได้</h2><p id="chapter-purpose"></p><div id="chapter-objectives"></div><div class="learning-hint">ทำนาย → เปลี่ยนทีละค่า → ตรวจตัวเลข → อธิบายเหตุผล → เขียนด้วย Python เอง</div></section>
+<section class="workbench lab-card" id="workbench" aria-label="ห้องทดลองคำนวณจริง"><div class="card-header"><div><span class="live-dot"></span><span class="eyebrow">COMPUTATION WORKBENCH</span></div><span class="simulation-label">ทุกภาพใช้ผลคำนวณชุดเดียวกัน</span></div><div class="lab-top"><label for="lab-select">เลือกกลไกที่ต้องการทดลอง</label><select id="lab-select"></select><p id="lab-question"></p></div><div class="workbench-grid"><div class="viz-column"><div class="compare-labels"><span>เส้นทึบ: ปัจจุบัน</span><span>เส้นประ: baseline ที่ตรึงไว้</span></div><div id="simulation" class="simulation"></div><div id="metrics" class="metrics"></div><div id="baseline-diff" class="baseline-diff"></div><div class="playback"><div class="playback-buttons"><button class="primary-button" id="update-once">อัปเดตหนึ่งก้าว</button><button class="secondary-button" id="train-many">▶ ฝึก 30 ก้าว</button><button class="icon-button" id="back-state" aria-label="ย้อนประวัติ">↶</button><button class="icon-button" id="forward-state" aria-label="ประวัติถัดไป">↷</button></div></div><div class="lab-secondary-actions"><button id="pin-baseline" class="text-button">ตรึง baseline ปัจจุบัน</button><button id="reset-lab" class="text-button">คืนค่าเริ่มต้น</button><button id="download-state" class="text-button">บันทึกผล JSON</button><span id="history-status"></span></div><p id="simulation-note" class="simulation-note"></p><p class="lab-error" id="lab-error" role="alert" hidden></p></div><div class="controls-column"><h3>เปลี่ยนทีละตัว แล้วสังเกตผล</h3><div id="lab-controls"></div><p class="control-note">แก้ weight ด้วยมือจะคำนวณ forward ใหม่; optimizer เปลี่ยน weights เมื่อกดอัปเดตเท่านั้น</p></div></div>
+<div class="trace-section"><div class="trace-toolbar"><h3>เดินสมการทีละ operation</h3><div><button id="trace-prev" class="icon-button" aria-label="operation ก่อนหน้า">←</button><button id="play-trace" class="secondary-button" aria-pressed="false">▶ เล่น flow</button><button id="trace-next" class="icon-button" aria-label="operation ถัดไป">→</button><span id="stage-counter"></span></div></div><label class="motion-control"><input id="reduce-motion" type="checkbox"> ลดภาพเคลื่อนไหว (หยุดการเล่นที่ค้างอยู่)</label><div id="operation-steps" class="operation-steps"></div><div id="flow-diagram" class="flow-diagram"></div><div id="active-operation" class="active-operation" aria-live="polite"></div><p class="control-note">ตัวเลขบนภาพปัดเศษเพื่อให้อ่านง่าย; บันทึก JSON เพื่อดูค่าที่ใช้คำนวณเต็ม precision</p><details open><summary>ตารางค่าระหว่างทาง — ตรวจด้วยมือได้</summary><div id="result-table"></div></details><div id="tensor-tables" class="tensor-tables"></div><details id="surface-details"><summary>ดู loss surface และเส้นทางของ w₁,b (ตรึง controls อื่น)</summary><div id="surface-chart"></div><p>surface คำนวณ objective ปัจจุบันโดยตรึง degree, penalty, ข้อมูล และ weights อื่น เส้นทางแสดงเฉพาะ snapshots ที่ค่าเหล่านี้ตรงกัน; นอกช่วง w=[−1,5], b=[−2,4] ให้ตรวจค่าจริงใน history</p></details><details><summary>ประวัติการเปลี่ยนค่า</summary><div id="history-table"></div></details></div></section>
+<article id="chapter-article" class="chapter-article"><section id="mechanism-1" class="teaching-section"><span class="section-kicker">CHAPTER 23 · ภาพ → สมการ → โค้ด</span><h2>1. GradientTape ต้องเห็นการสร้าง loss</h2><h3>โจทย์และเหตุผล</h3><p>คำนวณผ่าน operations ที่เชื่อม variables ไปถึง loss จากนั้น tape.gradient จึงส่ง derivatives กลับได้ การออกไปใช้ NumPy ระหว่างทางอาจทำให้ graph ขาด</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Define GradientTape.</p><p>GradientTapeบันทึกoperationsในcontextเพื่อตรวจgradient; x=tf.Variable(2.),loss=x*x ให้tape.gradient(loss,x)=4 นอกtapeไม่ถูกบันทึก</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>x: input x,initial=2; w: weight w,initial=0.8; b: bias b,initial=0.5; v: output weight v,initial=1.5; target: target y,initial=3; eta: learning rate,initial=0.05; activation: activation,initial=relu</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>z=wx+b = 2.1; รับ scalar input; batch จริงเป็น matrix multiplication</li><li>relu = 2.1; local derivative กำหนดการไหลของ gradient</li><li>ŷ=vh = 3.1500000000000004; output weight ผสม hidden activation</li><li>L=(ŷ−target)² = 0.022500000000000107; ใช้ squared loss แบบหนึ่งตัวอย่าง ไม่มี mean factor เพิ่ม</li><li>dL/dw=2e · v · activation′(z) · x = [0.3000000000000007, 1.5, 1, 2, 0.9000000000000021]; คูณ derivatives ตามเส้นทาง; เมื่อ node ถูกใช้หลายทางต้องบวก contributions</li><li>w←w−ηg_w; b←b−ηg_b; v←v−ηg_v = [0.7549999999999999, 0.4774999999999999, 1.4685]; เปลี่ยน parameters พร้อมกันโดยใช้ gradients จาก forward เดียวกัน</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="neuron-forward-ท---gradienttape">เปิดการทดลองนี้</a><p class="failure-box">SparseCategoricalCrossentropy(from_logits=True)รับrawlogits; from_logitsFalseกับlogitsทำlossผิด ให้ตรวจfinalactivation/lossร่วมกัน; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>GradientTapeบันทึกoperationsในcontextเพื่อตรวจgradient; x=tf.Variable(2.),loss=x*x ให้tape.gradient(loss,x)=4 นอกtapeไม่ถูกบันทึก</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-1-equation"><summary>สมการ</summary><ol><li><code>z=wx+b</code> = 2.1<p>รับ scalar input; batch จริงเป็น matrix multiplication</p></li><li><code>relu</code> = 2.1<p>local derivative กำหนดการไหลของ gradient</p></li><li><code>ŷ=vh</code> = 3.1500000000000004<p>output weight ผสม hidden activation</p></li><li><code>L=(ŷ−target)²</code> = 0.022500000000000107<p>ใช้ squared loss แบบหนึ่งตัวอย่าง ไม่มี mean factor เพิ่ม</p></li><li><code>dL/dw=2e · v · activation′(z) · x</code> = [0.3000000000000007, 1.5, 1, 2, 0.9000000000000021]<p>คูณ derivatives ตามเส้นทาง; เมื่อ node ถูกใช้หลายทางต้องบวก contributions</p></li><li><code>w←w−ηg_w; b←b−ηg_b; v←v−ηg_v</code> = [0.7549999999999999, 0.4774999999999999, 1.4685]<p>เปลี่ยน parameters พร้อมกันโดยใช้ gradients จาก forward เดียวกัน</p></li></ol></details><details id="help-mechanism-1-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>z=wx+b</code> = 2.1<p>รับ scalar input; batch จริงเป็น matrix multiplication</p></li><li><code>relu</code> = 2.1<p>local derivative กำหนดการไหลของ gradient</p></li><li><code>ŷ=vh</code> = 3.1500000000000004<p>output weight ผสม hidden activation</p></li><li><code>L=(ŷ−target)²</code> = 0.022500000000000107<p>ใช้ squared loss แบบหนึ่งตัวอย่าง ไม่มี mean factor เพิ่ม</p></li><li><code>dL/dw=2e · v · activation′(z) · x</code> = [0.3000000000000007, 1.5, 1, 2, 0.9000000000000021]<p>คูณ derivatives ตามเส้นทาง; เมื่อ node ถูกใช้หลายทางต้องบวก contributions</p></li><li><code>w←w−ηg_w; b←b−ηg_b; v←v−ηg_v</code> = [0.7549999999999999, 0.4774999999999999, 1.4685]<p>เปลี่ยน parameters พร้อมกันโดยใช้ gradients จาก forward เดียวกัน</p></li></ol></details><details id="help-mechanism-1-code"><summary>โค้ด</summary><p>GradientTapeบันทึกoperationsในcontextเพื่อตรวจgradient; x=tf.Variable(2.),loss=x*x ให้tape.gradient(loss,x)=4 นอกtapeไม่ถูกบันทึก</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-1-result"><summary>ผลการทดลอง</summary><ol><li><code>z=wx+b</code> = 2.1<p>รับ scalar input; batch จริงเป็น matrix multiplication</p></li><li><code>relu</code> = 2.1<p>local derivative กำหนดการไหลของ gradient</p></li><li><code>ŷ=vh</code> = 3.1500000000000004<p>output weight ผสม hidden activation</p></li><li><code>L=(ŷ−target)²</code> = 0.022500000000000107<p>ใช้ squared loss แบบหนึ่งตัวอย่าง ไม่มี mean factor เพิ่ม</p></li><li><code>dL/dw=2e · v · activation′(z) · x</code> = [0.3000000000000007, 1.5, 1, 2, 0.9000000000000021]<p>คูณ derivatives ตามเส้นทาง; เมื่อ node ถูกใช้หลายทางต้องบวก contributions</p></li><li><code>w←w−ηg_w; b←b−ηg_b; v←v−ηg_v</code> = [0.7549999999999999, 0.4774999999999999, 1.4685]<p>เปลี่ยน parameters พร้อมกันโดยใช้ gradients จาก forward เดียวกัน</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-1"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-2" class="teaching-section"><span class="section-kicker">CHAPTER 23 · ภาพ → สมการ → โค้ด</span><h2>2. compile และ fit รวมหลายหน้าที่</h2><h3>โจทย์และเหตุผล</h3><p>loss, optimizer, metrics และ data batching ยังเป็นแนวคิดเดียวกับที่ฝึกเอง ตรวจ one-batch overfit และ manual gradient ก่อนเชื่อว่าการเรียก fit สำเร็จแปลว่าโจทย์ถูก</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Explain how data pipeline changes model behavior.</p><p>shufflebufferเล็กสลับไม่ทั่วdataset; repeatก่อนbatchอาจข้ามepochboundary ต้องกำหนดsteps_per_epochและไม่repeatvalidationไม่สิ้นสุด</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>w: weight w₁,initial=1; b: bias b,initial=0; eta: learning rate η,initial=0.1; sampleX: x ของจุดที่เลือก,initial=2; sampleY: y ของจุดที่เลือก,initial=5; degree: polynomial degree,initial=1; w2: weight x²,initial=0; w3: weight x³,initial=0; w4: weight x⁴,initial=0; regularizer: penalty,initial=none; lambda: regularization λ,initial=0; noise: noise scale (fixed pattern),initial=0</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>φ(x)=[x, …, x^1] = &quot;5 × 1&quot;; แต่ละแถวเป็นตัวอย่าง แต่ละคอลัมน์เป็นกำลังของ x; polynomial ยัง linear in weights</li><li>ŷᵢ=Σⱼwⱼxᵢ^(j+1)+b = [-2, -1, 0, 1, 2]; w เปลี่ยน slope/curvature; bias เลื่อนทุก prediction เท่ากัน</li><li>eᵢ=ŷᵢ−yᵢ = [1, 0, -1, -2, -3]; นิยาม residual ใช้ prediction ลบ target ตลอดทั้งตัวอย่าง</li><li>MSE=Σeᵢ²/5; J=MSE+penalty = 3; MSE=3, penalty=0; ไม่ลงโทษ bias</li><li>∂J/∂wⱼ = mean(2e x^(j+1)) + penalty derivative = [-4]; คูณ local derivative แล้วเฉลี่ยตัวอย่าง; gradient ติดลบทำให้ weight เพิ่มเมื่อ update</li><li>∂J/∂b=mean(2e) = -2; เพราะ ∂(wx+b−y)/∂b=1 ทุกตัวอย่าง</li><li>w_new=w−0.1g; b_new=b−0.1g_b = [1.4, 0.2]; นี่เป็นข้อเสนอก้าวถัดไป กด update จึงเปลี่ยนสถานะจริง</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="regression-custom-training-step-ท--">เปิดการทดลองนี้</a><p class="failure-box">SparseCategoricalCrossentropy(from_logits=True)รับrawlogits; from_logitsFalseกับlogitsทำlossผิด ให้ตรวจfinalactivation/lossร่วมกัน; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>shufflebufferเล็กสลับไม่ทั่วdataset; repeatก่อนbatchอาจข้ามepochboundary ต้องกำหนดsteps_per_epochและไม่repeatvalidationไม่สิ้นสุด</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-2-equation"><summary>สมการ</summary><ol><li><code>φ(x)=[x, …, x^1]</code> = &quot;5 × 1&quot;<p>แต่ละแถวเป็นตัวอย่าง แต่ละคอลัมน์เป็นกำลังของ x; polynomial ยัง linear in weights</p></li><li><code>ŷᵢ=Σⱼwⱼxᵢ^(j+1)+b</code> = [-2, -1, 0, 1, 2]<p>w เปลี่ยน slope/curvature; bias เลื่อนทุก prediction เท่ากัน</p></li><li><code>eᵢ=ŷᵢ−yᵢ</code> = [1, 0, -1, -2, -3]<p>นิยาม residual ใช้ prediction ลบ target ตลอดทั้งตัวอย่าง</p></li><li><code>MSE=Σeᵢ²/5; J=MSE+penalty</code> = 3<p>MSE=3, penalty=0; ไม่ลงโทษ bias</p></li><li><code>∂J/∂wⱼ = mean(2e x^(j+1)) + penalty derivative</code> = [-4]<p>คูณ local derivative แล้วเฉลี่ยตัวอย่าง; gradient ติดลบทำให้ weight เพิ่มเมื่อ update</p></li><li><code>∂J/∂b=mean(2e)</code> = -2<p>เพราะ ∂(wx+b−y)/∂b=1 ทุกตัวอย่าง</p></li><li><code>w_new=w−0.1g; b_new=b−0.1g_b</code> = [1.4, 0.2]<p>นี่เป็นข้อเสนอก้าวถัดไป กด update จึงเปลี่ยนสถานะจริง</p></li></ol></details><details id="help-mechanism-2-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>φ(x)=[x, …, x^1]</code> = &quot;5 × 1&quot;<p>แต่ละแถวเป็นตัวอย่าง แต่ละคอลัมน์เป็นกำลังของ x; polynomial ยัง linear in weights</p></li><li><code>ŷᵢ=Σⱼwⱼxᵢ^(j+1)+b</code> = [-2, -1, 0, 1, 2]<p>w เปลี่ยน slope/curvature; bias เลื่อนทุก prediction เท่ากัน</p></li><li><code>eᵢ=ŷᵢ−yᵢ</code> = [1, 0, -1, -2, -3]<p>นิยาม residual ใช้ prediction ลบ target ตลอดทั้งตัวอย่าง</p></li><li><code>MSE=Σeᵢ²/5; J=MSE+penalty</code> = 3<p>MSE=3, penalty=0; ไม่ลงโทษ bias</p></li><li><code>∂J/∂wⱼ = mean(2e x^(j+1)) + penalty derivative</code> = [-4]<p>คูณ local derivative แล้วเฉลี่ยตัวอย่าง; gradient ติดลบทำให้ weight เพิ่มเมื่อ update</p></li><li><code>∂J/∂b=mean(2e)</code> = -2<p>เพราะ ∂(wx+b−y)/∂b=1 ทุกตัวอย่าง</p></li><li><code>w_new=w−0.1g; b_new=b−0.1g_b</code> = [1.4, 0.2]<p>นี่เป็นข้อเสนอก้าวถัดไป กด update จึงเปลี่ยนสถานะจริง</p></li></ol></details><details id="help-mechanism-2-code"><summary>โค้ด</summary><p>shufflebufferเล็กสลับไม่ทั่วdataset; repeatก่อนbatchอาจข้ามepochboundary ต้องกำหนดsteps_per_epochและไม่repeatvalidationไม่สิ้นสุด</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-2-result"><summary>ผลการทดลอง</summary><ol><li><code>φ(x)=[x, …, x^1]</code> = &quot;5 × 1&quot;<p>แต่ละแถวเป็นตัวอย่าง แต่ละคอลัมน์เป็นกำลังของ x; polynomial ยัง linear in weights</p></li><li><code>ŷᵢ=Σⱼwⱼxᵢ^(j+1)+b</code> = [-2, -1, 0, 1, 2]<p>w เปลี่ยน slope/curvature; bias เลื่อนทุก prediction เท่ากัน</p></li><li><code>eᵢ=ŷᵢ−yᵢ</code> = [1, 0, -1, -2, -3]<p>นิยาม residual ใช้ prediction ลบ target ตลอดทั้งตัวอย่าง</p></li><li><code>MSE=Σeᵢ²/5; J=MSE+penalty</code> = 3<p>MSE=3, penalty=0; ไม่ลงโทษ bias</p></li><li><code>∂J/∂wⱼ = mean(2e x^(j+1)) + penalty derivative</code> = [-4]<p>คูณ local derivative แล้วเฉลี่ยตัวอย่าง; gradient ติดลบทำให้ weight เพิ่มเมื่อ update</p></li><li><code>∂J/∂b=mean(2e)</code> = -2<p>เพราะ ∂(wx+b−y)/∂b=1 ทุกตัวอย่าง</p></li><li><code>w_new=w−0.1g; b_new=b−0.1g_b</code> = [1.4, 0.2]<p>นี่เป็นข้อเสนอก้าวถัดไป กด update จึงเปลี่ยนสถานะจริง</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-2"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-3" class="teaching-section"><span class="section-kicker">CHAPTER 23 · ภาพ → สมการ → โค้ด</span><h2>3. execution mode เปลี่ยนสิ่งที่ debug ได้</h2><h3>โจทย์และเหตุผล</h3><p>เริ่ม eager เพื่ออ่านค่าก่อนใช้ tf.function เข้าใจ training=True/False และ shape signatures ตรวจ input pipeline ว่า preprocessing fit เฉพาะ train และ validation ไม่เปลี่ยน model state</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Explain the tradeoff introduced by checkpoint.</p><p>checkpointweightsช่วยreproduceinferenceแต่resumeoptimizerต้องบันทึกstateด้วย; ตรวจroundtripoutputและstepอย่าใช้เพียงfileexists</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>batch: batch rows,initial=3; bias: bias scalar,initial=1; column: selected feature,initial=1</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = &quot;X=(3,3), b=scalar&quot;; ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</li><li>Y=X+b; mean(Y,axis=0) = [3, 4, 5]; broadcast scalar ไปทุก element แล้วลดแกนแถว</li><li>finite / normalized / bounded = [3, 4, 5]; เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="arrays-batch-shapes-ก-อนเข-า-ke">เปิดการทดลองนี้</a><p class="failure-box">SparseCategoricalCrossentropy(from_logits=True)รับrawlogits; from_logitsFalseกับlogitsทำlossผิด ให้ตรวจfinalactivation/lossร่วมกัน; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>checkpointweightsช่วยreproduceinferenceแต่resumeoptimizerต้องบันทึกstateด้วย; ตรวจroundtripoutputและstepอย่าใช้เพียงfileexists</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-3-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = &quot;X=(3,3), b=scalar&quot;<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>Y=X+b; mean(Y,axis=0)</code> = [3, 4, 5]<p>broadcast scalar ไปทุก element แล้วลดแกนแถว</p></li><li><code>finite / normalized / bounded</code> = [3, 4, 5]<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-3-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>shape / range</code> = &quot;X=(3,3), b=scalar&quot;<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>Y=X+b; mean(Y,axis=0)</code> = [3, 4, 5]<p>broadcast scalar ไปทุก element แล้วลดแกนแถว</p></li><li><code>finite / normalized / bounded</code> = [3, 4, 5]<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-3-code"><summary>โค้ด</summary><p>checkpointweightsช่วยreproduceinferenceแต่resumeoptimizerต้องบันทึกstateด้วย; ตรวจroundtripoutputและstepอย่าใช้เพียงfileexists</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-3-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = &quot;X=(3,3), b=scalar&quot;<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>Y=X+b; mean(Y,axis=0)</code> = [3, 4, 5]<p>broadcast scalar ไปทุก element แล้วลดแกนแถว</p></li><li><code>finite / normalized / bounded</code> = [3, 4, 5]<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-3"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="reference" class="canonical-section"><h2>เนื้อหาครบทุกหัวข้อ พร้อมแผนที่ objective</h2><nav class="source-toc"><a href="#chapter-23/section/topic-1">1. Why Learn TensorFlow/Keras?</a> <a href="#chapter-23/section/topic-2">2. Learning Objectives</a> <a href="#chapter-23/section/topic-3">3. Installation</a> <a href="#chapter-23/section/topic-4">4. Tensor Basics</a> <a href="#chapter-23/section/topic-5">5. Eager Execution</a> <a href="#chapter-23/section/topic-6">6. GradientTape</a> <a href="#chapter-23/section/topic-7">7. Keras Sequential API</a> <a href="#chapter-23/section/topic-8">8. Functional API</a> <a href="#chapter-23/section/topic-9">9. Model Subclassing</a> <a href="#chapter-23/section/topic-10">10. compile()</a> <a href="#chapter-23/section/topic-11">11. fit()</a> <a href="#chapter-23/section/topic-12">12. evaluate() / predict()</a> <a href="#chapter-23/section/topic-13">13. tf.data.Dataset</a> <a href="#chapter-23/section/topic-14">14. Custom Training Loop</a> <a href="#chapter-23/section/topic-15">15. training=True / False</a> <a href="#chapter-23/section/topic-16">16. tf.function</a> <a href="#chapter-23/section/topic-17">17. Shape Debugging</a> <a href="#chapter-23/section/topic-18">18. dtype</a> <a href="#chapter-23/section/topic-19">19. Saving</a> <a href="#chapter-23/section/topic-20">20. Callbacks</a> <a href="#chapter-23/section/topic-21">21. GPU Memory</a> <a href="#chapter-23/section/topic-22">22. Keras 3 Multi-Backend Context</a> <a href="#chapter-23/section/topic-23">23. Source</a> <a href="#chapter-23/section/topic-24">24. Common Mistakes</a> <a href="#chapter-23/section/topic-25">25. Exercises / Mini Project</a> <a href="#chapter-23/section/topic-26">26. Checklist</a> <a href="#chapter-23/section/topic-27">27. What&#x27;s Next</a> </nav><section id="topic-1" class="source-topic"><span id="source-23-tensorflow-keras-canonical-chapter-23-tensorflow-keras" class="legacy-anchor"></span><span id="source-23-tensorflow-keras-canonical-1-why-learn-tensorflowkeras" class="legacy-anchor"></span><h3>1. Why Learn TensorFlow/Keras?</h3>
+<p>PyTorch และ TensorFlow แก้ปัญหาเดียวกันด้วย abstractions ที่ต่างกันเล็กน้อย</p>
+<p>Mental mapping:</p>
+<pre><code class="language-text">PyTorch                TensorFlow / Keras
+------------------------------------------------
+torch.Tensor           tf.Tensor
+autograd               tf.GradientTape
+nn.Module              keras.Model / keras.layers.Layer
+torch.optim            keras.optimizers
+DataLoader             tf.data.Dataset
+state_dict             model weights / .keras format
+model.train/eval       training=True/False behavior
+</code></pre>
+<p>Keras 3 เป็น multi-backend API และสามารถใช้ TensorFlow, JAX หรือ PyTorch backend ได้</p>
+<p>บทนี้ใช้ TensorFlow backend เพื่อให้เข้าใจ TensorFlow execution และ Keras training APIs</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>1. Why Learn TensorFlow/Keras?</h3>
+<p>PyTorch และ TensorFlow แก้ปัญหาเดียวกันด้วย abstractions ที่ต่างกันเล็กน้อย</p>
+<p>Mental mapping:</p>
+<pre><code class="language-text">PyTorch                TensorFlow / Keras
+------------------------------------------------
+torch.Tensor           tf.Tensor
+autograd               tf.GradientTape
+nn.Module              keras.Model / keras.layers.Layer
+torch.optim            keras.optimizers
+DataLoader             tf.data.Dataset
+state_dict             model weights / .keras format
+model.train/eval       training=True/False behavior
+</code></pre>
+<p>Keras 3 เป็น multi-backend API และสามารถใช้ TensorFlow, JAX หรือ PyTorch backend ได้</p>
+<p>บทนี้ใช้ TensorFlow backend เพื่อให้เข้าใจ TensorFlow execution และ Keras training APIs</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-1-equation"><summary>สมการ</summary><h3>1. Why Learn TensorFlow/Keras?</h3>
+<p>PyTorch และ TensorFlow แก้ปัญหาเดียวกันด้วย abstractions ที่ต่างกันเล็กน้อย</p>
+<p>Mental mapping:</p>
+<pre><code class="language-text">PyTorch                TensorFlow / Keras
+------------------------------------------------
+torch.Tensor           tf.Tensor
+autograd               tf.GradientTape
+nn.Module              keras.Model / keras.layers.Layer
+torch.optim            keras.optimizers
+DataLoader             tf.data.Dataset
+state_dict             model weights / .keras format
+model.train/eval       training=True/False behavior
+</code></pre>
+<p>Keras 3 เป็น multi-backend API และสามารถใช้ TensorFlow, JAX หรือ PyTorch backend ได้</p>
+<p>บทนี้ใช้ TensorFlow backend เพื่อให้เข้าใจ TensorFlow execution และ Keras training APIs</p></details><details id="help-topic-1-visual"><summary>ภาพและ shape</summary><h3>1. Why Learn TensorFlow/Keras?</h3>
+<p>PyTorch และ TensorFlow แก้ปัญหาเดียวกันด้วย abstractions ที่ต่างกันเล็กน้อย</p>
+<p>Mental mapping:</p>
+<pre><code class="language-text">PyTorch                TensorFlow / Keras
+------------------------------------------------
+torch.Tensor           tf.Tensor
+autograd               tf.GradientTape
+nn.Module              keras.Model / keras.layers.Layer
+torch.optim            keras.optimizers
+DataLoader             tf.data.Dataset
+state_dict             model weights / .keras format
+model.train/eval       training=True/False behavior
+</code></pre>
+<p>Keras 3 เป็น multi-backend API และสามารถใช้ TensorFlow, JAX หรือ PyTorch backend ได้</p>
+<p>บทนี้ใช้ TensorFlow backend เพื่อให้เข้าใจ TensorFlow execution และ Keras training APIs</p></details><details id="help-topic-1-code"><summary>โค้ด</summary><h3>1. Why Learn TensorFlow/Keras?</h3>
+<p>PyTorch และ TensorFlow แก้ปัญหาเดียวกันด้วย abstractions ที่ต่างกันเล็กน้อย</p>
+<p>Mental mapping:</p>
+<pre><code class="language-text">PyTorch                TensorFlow / Keras
+------------------------------------------------
+torch.Tensor           tf.Tensor
+autograd               tf.GradientTape
+nn.Module              keras.Model / keras.layers.Layer
+torch.optim            keras.optimizers
+DataLoader             tf.data.Dataset
+state_dict             model weights / .keras format
+model.train/eval       training=True/False behavior
+</code></pre>
+<p>Keras 3 เป็น multi-backend API และสามารถใช้ TensorFlow, JAX หรือ PyTorch backend ได้</p>
+<p>บทนี้ใช้ TensorFlow backend เพื่อให้เข้าใจ TensorFlow execution และ Keras training APIs</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-1-result"><summary>ผลการทดลอง</summary><h3>1. Why Learn TensorFlow/Keras?</h3>
+<p>PyTorch และ TensorFlow แก้ปัญหาเดียวกันด้วย abstractions ที่ต่างกันเล็กน้อย</p>
+<p>Mental mapping:</p>
+<pre><code class="language-text">PyTorch                TensorFlow / Keras
+------------------------------------------------
+torch.Tensor           tf.Tensor
+autograd               tf.GradientTape
+nn.Module              keras.Model / keras.layers.Layer
+torch.optim            keras.optimizers
+DataLoader             tf.data.Dataset
+state_dict             model weights / .keras format
+model.train/eval       training=True/False behavior
+</code></pre>
+<p>Keras 3 เป็น multi-backend API และสามารถใช้ TensorFlow, JAX หรือ PyTorch backend ได้</p>
+<p>บทนี้ใช้ TensorFlow backend เพื่อให้เข้าใจ TensorFlow execution และ Keras training APIs</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-1"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-2" class="source-topic"><span id="source-23-tensorflow-keras-canonical-2-learning-objectives" class="legacy-anchor"></span><h3>2. Learning Objectives</h3>
+<p>เมื่อจบบทนี้คุณควร:</p>
+<ul>
+<li>create tf.Tensor</li>
+<li>understand eager execution</li>
+<li>use GradientTape</li>
+<li>build Sequential models</li>
+<li>build Functional API models</li>
+<li>subclass keras.Model</li>
+<li>compile/fit/evaluate/predict</li>
+<li>write custom training step</li>
+<li>use tf.data</li>
+<li>understand training/inference mode</li>
+<li>save/load .keras models</li>
+<li>inspect GPU visibility</li>
+<li>debug shape/dtype/device issues</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>2. Learning Objectives</h3>
+<p>เมื่อจบบทนี้คุณควร:</p>
+<ul>
+<li>create tf.Tensor</li>
+<li>understand eager execution</li>
+<li>use GradientTape</li>
+<li>build Sequential models</li>
+<li>build Functional API models</li>
+<li>subclass keras.Model</li>
+<li>compile/fit/evaluate/predict</li>
+<li>write custom training step</li>
+<li>use tf.data</li>
+<li>understand training/inference mode</li>
+<li>save/load .keras models</li>
+<li>inspect GPU visibility</li>
+<li>debug shape/dtype/device issues</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-2-equation"><summary>สมการ</summary><h3>2. Learning Objectives</h3>
+<p>เมื่อจบบทนี้คุณควร:</p>
+<ul>
+<li>create tf.Tensor</li>
+<li>understand eager execution</li>
+<li>use GradientTape</li>
+<li>build Sequential models</li>
+<li>build Functional API models</li>
+<li>subclass keras.Model</li>
+<li>compile/fit/evaluate/predict</li>
+<li>write custom training step</li>
+<li>use tf.data</li>
+<li>understand training/inference mode</li>
+<li>save/load .keras models</li>
+<li>inspect GPU visibility</li>
+<li>debug shape/dtype/device issues</li>
+</ul></details><details id="help-topic-2-visual"><summary>ภาพและ shape</summary><h3>2. Learning Objectives</h3>
+<p>เมื่อจบบทนี้คุณควร:</p>
+<ul>
+<li>create tf.Tensor</li>
+<li>understand eager execution</li>
+<li>use GradientTape</li>
+<li>build Sequential models</li>
+<li>build Functional API models</li>
+<li>subclass keras.Model</li>
+<li>compile/fit/evaluate/predict</li>
+<li>write custom training step</li>
+<li>use tf.data</li>
+<li>understand training/inference mode</li>
+<li>save/load .keras models</li>
+<li>inspect GPU visibility</li>
+<li>debug shape/dtype/device issues</li>
+</ul></details><details id="help-topic-2-code"><summary>โค้ด</summary><h3>2. Learning Objectives</h3>
+<p>เมื่อจบบทนี้คุณควร:</p>
+<ul>
+<li>create tf.Tensor</li>
+<li>understand eager execution</li>
+<li>use GradientTape</li>
+<li>build Sequential models</li>
+<li>build Functional API models</li>
+<li>subclass keras.Model</li>
+<li>compile/fit/evaluate/predict</li>
+<li>write custom training step</li>
+<li>use tf.data</li>
+<li>understand training/inference mode</li>
+<li>save/load .keras models</li>
+<li>inspect GPU visibility</li>
+<li>debug shape/dtype/device issues</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-2-result"><summary>ผลการทดลอง</summary><h3>2. Learning Objectives</h3>
+<p>เมื่อจบบทนี้คุณควร:</p>
+<ul>
+<li>create tf.Tensor</li>
+<li>understand eager execution</li>
+<li>use GradientTape</li>
+<li>build Sequential models</li>
+<li>build Functional API models</li>
+<li>subclass keras.Model</li>
+<li>compile/fit/evaluate/predict</li>
+<li>write custom training step</li>
+<li>use tf.data</li>
+<li>understand training/inference mode</li>
+<li>save/load .keras models</li>
+<li>inspect GPU visibility</li>
+<li>debug shape/dtype/device issues</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-2"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-3" class="source-topic"><span id="source-23-tensorflow-keras-canonical-3-installation" class="legacy-anchor"></span><h3>3. Installation</h3>
+<p>Official TensorFlow Linux docs currently provide:</p>
+<pre><code class="language-bash"># GPU path
+python3 -m pip install 'tensorflow[and-cuda]'
+
+# CPU path
+python3 -m pip install tensorflow
+</code></pre>
+<p>For Fedora, TensorFlow officially documents Ubuntu as the supported Linux distribution, though pip installation may still work on other compatible Linux distributions.</p>
+<p>Because your machine uses Fedora, keep TensorFlow in a dedicated virtual environment if package conflicts appear.</p>
+<p>Verify GPU visibility:</p>
+<pre><code class="language-bash">python3 -c &quot;import tensorflow as tf; print(tf.config.list_physical_devices('GPU'))&quot;
+</code></pre><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>3. Installation</h3>
+<p>Official TensorFlow Linux docs currently provide:</p>
+<pre><code class="language-bash"># GPU path
+python3 -m pip install 'tensorflow[and-cuda]'
+
+# CPU path
+python3 -m pip install tensorflow
+</code></pre>
+<p>For Fedora, TensorFlow officially documents Ubuntu as the supported Linux distribution, though pip installation may still work on other compatible Linux distributions.</p>
+<p>Because your machine uses Fedora, keep TensorFlow in a dedicated virtual environment if package conflicts appear.</p>
+<p>Verify GPU visibility:</p>
+<pre><code class="language-bash">python3 -c &quot;import tensorflow as tf; print(tf.config.list_physical_devices('GPU'))&quot;
+</code></pre><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-3-equation"><summary>สมการ</summary><h3>3. Installation</h3>
+<p>Official TensorFlow Linux docs currently provide:</p>
+<pre><code class="language-bash"># GPU path
+python3 -m pip install 'tensorflow[and-cuda]'
+
+# CPU path
+python3 -m pip install tensorflow
+</code></pre>
+<p>For Fedora, TensorFlow officially documents Ubuntu as the supported Linux distribution, though pip installation may still work on other compatible Linux distributions.</p>
+<p>Because your machine uses Fedora, keep TensorFlow in a dedicated virtual environment if package conflicts appear.</p>
+<p>Verify GPU visibility:</p>
+<pre><code class="language-bash">python3 -c &quot;import tensorflow as tf; print(tf.config.list_physical_devices('GPU'))&quot;
+</code></pre></details><details id="help-topic-3-visual"><summary>ภาพและ shape</summary><h3>3. Installation</h3>
+<p>Official TensorFlow Linux docs currently provide:</p>
+<pre><code class="language-bash"># GPU path
+python3 -m pip install 'tensorflow[and-cuda]'
+
+# CPU path
+python3 -m pip install tensorflow
+</code></pre>
+<p>For Fedora, TensorFlow officially documents Ubuntu as the supported Linux distribution, though pip installation may still work on other compatible Linux distributions.</p>
+<p>Because your machine uses Fedora, keep TensorFlow in a dedicated virtual environment if package conflicts appear.</p>
+<p>Verify GPU visibility:</p>
+<pre><code class="language-bash">python3 -c &quot;import tensorflow as tf; print(tf.config.list_physical_devices('GPU'))&quot;
+</code></pre></details><details id="help-topic-3-code"><summary>โค้ด</summary><h3>3. Installation</h3>
+<p>Official TensorFlow Linux docs currently provide:</p>
+<pre><code class="language-bash"># GPU path
+python3 -m pip install 'tensorflow[and-cuda]'
+
+# CPU path
+python3 -m pip install tensorflow
+</code></pre>
+<p>For Fedora, TensorFlow officially documents Ubuntu as the supported Linux distribution, though pip installation may still work on other compatible Linux distributions.</p>
+<p>Because your machine uses Fedora, keep TensorFlow in a dedicated virtual environment if package conflicts appear.</p>
+<p>Verify GPU visibility:</p>
+<pre><code class="language-bash">python3 -c &quot;import tensorflow as tf; print(tf.config.list_physical_devices('GPU'))&quot;
+</code></pre><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-3-result"><summary>ผลการทดลอง</summary><h3>3. Installation</h3>
+<p>Official TensorFlow Linux docs currently provide:</p>
+<pre><code class="language-bash"># GPU path
+python3 -m pip install 'tensorflow[and-cuda]'
+
+# CPU path
+python3 -m pip install tensorflow
+</code></pre>
+<p>For Fedora, TensorFlow officially documents Ubuntu as the supported Linux distribution, though pip installation may still work on other compatible Linux distributions.</p>
+<p>Because your machine uses Fedora, keep TensorFlow in a dedicated virtual environment if package conflicts appear.</p>
+<p>Verify GPU visibility:</p>
+<pre><code class="language-bash">python3 -c &quot;import tensorflow as tf; print(tf.config.list_physical_devices('GPU'))&quot;
+</code></pre><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-3"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-4" class="source-topic"><span id="source-23-tensorflow-keras-canonical-4-tensor-basics" class="legacy-anchor"></span><h3>4. Tensor Basics</h3>
+<pre><code class="language-python">import tensorflow as tf
+
+x = tf.constant([[1.0, 2.0]])
+w = tf.Variable([[3.0], [4.0]])
+
+y = x @ w
+</code></pre>
+<p>tf.Variable represents mutable trainable state.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>tf.Tensorเก็บndarrayimmutableที่มีshape,dtype,device; parameterที่แก้ค่าใช้tf.Variable; [[1,2],[3,4]]float32shape(2,2)</p><p>Tensorคือค่าที่ส่งในgraph ส่วนGradientTapeเก็บความสัมพันธ์เพื่ออนุพันธ์; watchtensorconstantเองหากต้องการgradientไม่ใช่Variable</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-4-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>tf.Tensorเก็บndarrayimmutableที่มีshape,dtype,device; parameterที่แก้ค่าใช้tf.Variable; [[1,2],[3,4]]float32shape(2,2)</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-4-equation"><summary>สมการ</summary><p>tf.Tensorเก็บndarrayimmutableที่มีshape,dtype,device; parameterที่แก้ค่าใช้tf.Variable; [[1,2],[3,4]]float32shape(2,2)</p></details><details id="help-topic-4-visual"><summary>ภาพและ shape</summary><p>tf.Tensorเก็บndarrayimmutableที่มีshape,dtype,device; parameterที่แก้ค่าใช้tf.Variable; [[1,2],[3,4]]float32shape(2,2)</p></details><details id="help-topic-4-code"><summary>โค้ด</summary><p>tf.Tensorเก็บndarrayimmutableที่มีshape,dtype,device; parameterที่แก้ค่าใช้tf.Variable; [[1,2],[3,4]]float32shape(2,2)</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-4-result"><summary>ผลการทดลอง</summary><p>tf.Tensorเก็บndarrayimmutableที่มีshape,dtype,device; parameterที่แก้ค่าใช้tf.Variable; [[1,2],[3,4]]float32shape(2,2)</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-4"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-5" class="source-topic"><span id="source-23-tensorflow-keras-canonical-5-eager-execution" class="legacy-anchor"></span><h3>5. Eager Execution</h3>
+<p>TensorFlow 2 executes eagerly by default:</p>
+<pre><code class="language-python">x = tf.constant(3.0)
+print(x * x)
+</code></pre>
+<p>This feels similar to normal Python.</p>
+<p>TensorFlow can also trace/compile computation using tf.function.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-5-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>5. Eager Execution</h3>
+<p>TensorFlow 2 executes eagerly by default:</p>
+<pre><code class="language-python">x = tf.constant(3.0)
+print(x * x)
+</code></pre>
+<p>This feels similar to normal Python.</p>
+<p>TensorFlow can also trace/compile computation using tf.function.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-5-equation"><summary>สมการ</summary><h3>5. Eager Execution</h3>
+<p>TensorFlow 2 executes eagerly by default:</p>
+<pre><code class="language-python">x = tf.constant(3.0)
+print(x * x)
+</code></pre>
+<p>This feels similar to normal Python.</p>
+<p>TensorFlow can also trace/compile computation using tf.function.</p></details><details id="help-topic-5-visual"><summary>ภาพและ shape</summary><h3>5. Eager Execution</h3>
+<p>TensorFlow 2 executes eagerly by default:</p>
+<pre><code class="language-python">x = tf.constant(3.0)
+print(x * x)
+</code></pre>
+<p>This feels similar to normal Python.</p>
+<p>TensorFlow can also trace/compile computation using tf.function.</p></details><details id="help-topic-5-code"><summary>โค้ด</summary><h3>5. Eager Execution</h3>
+<p>TensorFlow 2 executes eagerly by default:</p>
+<pre><code class="language-python">x = tf.constant(3.0)
+print(x * x)
+</code></pre>
+<p>This feels similar to normal Python.</p>
+<p>TensorFlow can also trace/compile computation using tf.function.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-5-result"><summary>ผลการทดลอง</summary><h3>5. Eager Execution</h3>
+<p>TensorFlow 2 executes eagerly by default:</p>
+<pre><code class="language-python">x = tf.constant(3.0)
+print(x * x)
+</code></pre>
+<p>This feels similar to normal Python.</p>
+<p>TensorFlow can also trace/compile computation using tf.function.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-5"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-6" class="source-topic"><span id="source-23-tensorflow-keras-canonical-6-gradienttape" class="legacy-anchor"></span><h3>6. GradientTape</h3>
+<pre><code class="language-python">x = tf.Variable(3.0)
+
+with tf.GradientTape() as tape:
+    y = x * x + 2.0 * x
+
+grad = tape.gradient(y, x)
+</code></pre>
+<p>GradientTape records differentiable operations and performs reverse-mode differentiation.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>GradientTapeบันทึกoperationsในcontextเพื่อตรวจgradient; x=tf.Variable(2.),loss=x*x ให้tape.gradient(loss,x)=4 นอกtapeไม่ถูกบันทึก</p><p>Tensorคือค่าที่ส่งในgraph ส่วนGradientTapeเก็บความสัมพันธ์เพื่ออนุพันธ์; watchtensorconstantเองหากต้องการgradientไม่ใช่Variable</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-6-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>GradientTapeบันทึกoperationsในcontextเพื่อตรวจgradient; x=tf.Variable(2.),loss=x*x ให้tape.gradient(loss,x)=4 นอกtapeไม่ถูกบันทึก</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-6-equation"><summary>สมการ</summary><p>GradientTapeบันทึกoperationsในcontextเพื่อตรวจgradient; x=tf.Variable(2.),loss=x*x ให้tape.gradient(loss,x)=4 นอกtapeไม่ถูกบันทึก</p></details><details id="help-topic-6-visual"><summary>ภาพและ shape</summary><p>GradientTapeบันทึกoperationsในcontextเพื่อตรวจgradient; x=tf.Variable(2.),loss=x*x ให้tape.gradient(loss,x)=4 นอกtapeไม่ถูกบันทึก</p></details><details id="help-topic-6-code"><summary>โค้ด</summary><p>GradientTapeบันทึกoperationsในcontextเพื่อตรวจgradient; x=tf.Variable(2.),loss=x*x ให้tape.gradient(loss,x)=4 นอกtapeไม่ถูกบันทึก</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-6-result"><summary>ผลการทดลอง</summary><p>GradientTapeบันทึกoperationsในcontextเพื่อตรวจgradient; x=tf.Variable(2.),loss=x*x ให้tape.gradient(loss,x)=4 นอกtapeไม่ถูกบันทึก</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-6"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-7" class="source-topic"><span id="source-23-tensorflow-keras-canonical-7-keras-sequential-api" class="legacy-anchor"></span><h3>7. Keras Sequential API</h3>
+<pre><code class="language-python">model = keras.Sequential([
+    keras.layers.Input(shape=(10,)),
+    keras.layers.Dense(64, activation=&quot;relu&quot;),
+    keras.layers.Dense(3),
+])
+</code></pre>
+<p>Good for simple stack-like architectures.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>Dense1weights[[1],[2]],bias[.5],input[[3,4]]ให้11.5; set_weightsหลังbuildและtraining=Falseสำหรับevaluation</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-7-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Dense1weights[[1],[2]],bias[.5],input[[3,4]]ให้11.5; set_weightsหลังbuildและtraining=Falseสำหรับevaluation</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-7-equation"><summary>สมการ</summary><p>Dense1weights[[1],[2]],bias[.5],input[[3,4]]ให้11.5; set_weightsหลังbuildและtraining=Falseสำหรับevaluation</p></details><details id="help-topic-7-visual"><summary>ภาพและ shape</summary><p>Dense1weights[[1],[2]],bias[.5],input[[3,4]]ให้11.5; set_weightsหลังbuildและtraining=Falseสำหรับevaluation</p></details><details id="help-topic-7-code"><summary>โค้ด</summary><p>Dense1weights[[1],[2]],bias[.5],input[[3,4]]ให้11.5; set_weightsหลังbuildและtraining=Falseสำหรับevaluation</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-7-result"><summary>ผลการทดลอง</summary><p>Dense1weights[[1],[2]],bias[.5],input[[3,4]]ให้11.5; set_weightsหลังbuildและtraining=Falseสำหรับevaluation</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-7"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-8" class="source-topic"><span id="source-23-tensorflow-keras-canonical-8-functional-api" class="legacy-anchor"></span><h3>8. Functional API</h3>
+<p>Useful for:
+- multiple inputs
+- multiple outputs
+- residual connections
+- DAG architectures</p>
+<pre><code class="language-python">inputs = keras.Input(shape=(10,))
+x = keras.layers.Dense(64, activation=&quot;relu&quot;)(inputs)
+outputs = keras.layers.Dense(3)(x)
+model = keras.Model(inputs, outputs)
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>Dense1weights[[1],[2]],bias[.5],input[[3,4]]ให้11.5; set_weightsหลังbuildและtraining=Falseสำหรับevaluation</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-8-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Dense1weights[[1],[2]],bias[.5],input[[3,4]]ให้11.5; set_weightsหลังbuildและtraining=Falseสำหรับevaluation</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-8-equation"><summary>สมการ</summary><p>Dense1weights[[1],[2]],bias[.5],input[[3,4]]ให้11.5; set_weightsหลังbuildและtraining=Falseสำหรับevaluation</p></details><details id="help-topic-8-visual"><summary>ภาพและ shape</summary><p>Dense1weights[[1],[2]],bias[.5],input[[3,4]]ให้11.5; set_weightsหลังbuildและtraining=Falseสำหรับevaluation</p></details><details id="help-topic-8-code"><summary>โค้ด</summary><p>Dense1weights[[1],[2]],bias[.5],input[[3,4]]ให้11.5; set_weightsหลังbuildและtraining=Falseสำหรับevaluation</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-8-result"><summary>ผลการทดลอง</summary><p>Dense1weights[[1],[2]],bias[.5],input[[3,4]]ให้11.5; set_weightsหลังbuildและtraining=Falseสำหรับevaluation</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-8"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-9" class="source-topic"><span id="source-23-tensorflow-keras-canonical-9-model-subclassing" class="legacy-anchor"></span><h3>9. Model Subclassing</h3>
+<pre><code class="language-python">class MyModel(keras.Model):
+    def __init__(self):
+        super().__init__()
+        self.fc1 = keras.layers.Dense(64)
+        self.fc2 = keras.layers.Dense(3)
+
+    def call(self, x, training=False):
+        x = tf.nn.relu(self.fc1(x))
+        return self.fc2(x)
+</code></pre>
+<p>Closest conceptual match to PyTorch nn.Module.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>KerasModelรวมlayersและtrainablevariables,callนิยามforward; Dense(1)รับlastfeaturedimและต้องbuild/callก่อนเข้าถึงweights</p><p>Dense1weights[[1],[2]],bias[.5],input[[3,4]]ให้11.5; set_weightsหลังbuildและtraining=Falseสำหรับevaluation</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-9-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>KerasModelรวมlayersและtrainablevariables,callนิยามforward; Dense(1)รับlastfeaturedimและต้องbuild/callก่อนเข้าถึงweights</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-9-equation"><summary>สมการ</summary><p>KerasModelรวมlayersและtrainablevariables,callนิยามforward; Dense(1)รับlastfeaturedimและต้องbuild/callก่อนเข้าถึงweights</p></details><details id="help-topic-9-visual"><summary>ภาพและ shape</summary><p>KerasModelรวมlayersและtrainablevariables,callนิยามforward; Dense(1)รับlastfeaturedimและต้องbuild/callก่อนเข้าถึงweights</p></details><details id="help-topic-9-code"><summary>โค้ด</summary><p>KerasModelรวมlayersและtrainablevariables,callนิยามforward; Dense(1)รับlastfeaturedimและต้องbuild/callก่อนเข้าถึงweights</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-9-result"><summary>ผลการทดลอง</summary><p>KerasModelรวมlayersและtrainablevariables,callนิยามforward; Dense(1)รับlastfeaturedimและต้องbuild/callก่อนเข้าถึงweights</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-9"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-10" class="source-topic"><span id="source-23-tensorflow-keras-canonical-10-compile" class="legacy-anchor"></span><h3>10. compile()</h3>
+<pre><code class="language-python">model.compile(
+    optimizer=keras.optimizers.Adam(),
+    loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+    metrics=[&quot;accuracy&quot;],
+)
+</code></pre>
+<p>from_logits=True matters when final layer outputs raw logits.</p>
+<p>Do not apply softmax twice.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>SparseCategoricalCrossentropy(from_logits=True)รับrawlogits; from_logitsFalseกับlogitsทำlossผิด ให้ตรวจfinalactivation/lossร่วมกัน</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-10-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>SparseCategoricalCrossentropy(from_logits=True)รับrawlogits; from_logitsFalseกับlogitsทำlossผิด ให้ตรวจfinalactivation/lossร่วมกัน</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-10-equation"><summary>สมการ</summary><p>SparseCategoricalCrossentropy(from_logits=True)รับrawlogits; from_logitsFalseกับlogitsทำlossผิด ให้ตรวจfinalactivation/lossร่วมกัน</p></details><details id="help-topic-10-visual"><summary>ภาพและ shape</summary><p>SparseCategoricalCrossentropy(from_logits=True)รับrawlogits; from_logitsFalseกับlogitsทำlossผิด ให้ตรวจfinalactivation/lossร่วมกัน</p></details><details id="help-topic-10-code"><summary>โค้ด</summary><p>SparseCategoricalCrossentropy(from_logits=True)รับrawlogits; from_logitsFalseกับlogitsทำlossผิด ให้ตรวจfinalactivation/lossร่วมกัน</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-10-result"><summary>ผลการทดลอง</summary><p>SparseCategoricalCrossentropy(from_logits=True)รับrawlogits; from_logitsFalseกับlogitsทำlossผิด ให้ตรวจfinalactivation/lossร่วมกัน</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-10"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-11" class="source-topic"><span id="source-23-tensorflow-keras-canonical-11-fit" class="legacy-anchor"></span><h3>11. fit()</h3>
+<pre><code class="language-python">history = model.fit(
+    x_train,
+    y_train,
+    validation_data=(x_val, y_val),
+    epochs=10,
+    batch_size=64,
+)
+</code></pre>
+<p>fit() handles:
+- batching
+- forward pass
+- gradients
+- optimizer steps
+- metrics
+- callbacks</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>fittraindatasetพร้อมvalidation_dataแยก; preprocessadaptเฉพาะtrain; callbackmonitorvalidationและevaluate testหลังเลือกmodelเสร็จ</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-11-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>fittraindatasetพร้อมvalidation_dataแยก; preprocessadaptเฉพาะtrain; callbackmonitorvalidationและevaluate testหลังเลือกmodelเสร็จ</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-11-equation"><summary>สมการ</summary><p>fittraindatasetพร้อมvalidation_dataแยก; preprocessadaptเฉพาะtrain; callbackmonitorvalidationและevaluate testหลังเลือกmodelเสร็จ</p></details><details id="help-topic-11-visual"><summary>ภาพและ shape</summary><p>fittraindatasetพร้อมvalidation_dataแยก; preprocessadaptเฉพาะtrain; callbackmonitorvalidationและevaluate testหลังเลือกmodelเสร็จ</p></details><details id="help-topic-11-code"><summary>โค้ด</summary><p>fittraindatasetพร้อมvalidation_dataแยก; preprocessadaptเฉพาะtrain; callbackmonitorvalidationและevaluate testหลังเลือกmodelเสร็จ</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-11-result"><summary>ผลการทดลอง</summary><p>fittraindatasetพร้อมvalidation_dataแยก; preprocessadaptเฉพาะtrain; callbackmonitorvalidationและevaluate testหลังเลือกmodelเสร็จ</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-11"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-12" class="source-topic"><span id="source-23-tensorflow-keras-canonical-12-evaluate-predict" class="legacy-anchor"></span><h3>12. evaluate() / predict()</h3>
+<pre><code class="language-python">model.evaluate(x_test, y_test)
+model.predict(x_new)
+</code></pre>
+<p>Use final test only after model/hyperparameter selection.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>fittraindatasetพร้อมvalidation_dataแยก; preprocessadaptเฉพาะtrain; callbackmonitorvalidationและevaluate testหลังเลือกmodelเสร็จ</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-12-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>fittraindatasetพร้อมvalidation_dataแยก; preprocessadaptเฉพาะtrain; callbackmonitorvalidationและevaluate testหลังเลือกmodelเสร็จ</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-12-equation"><summary>สมการ</summary><p>fittraindatasetพร้อมvalidation_dataแยก; preprocessadaptเฉพาะtrain; callbackmonitorvalidationและevaluate testหลังเลือกmodelเสร็จ</p></details><details id="help-topic-12-visual"><summary>ภาพและ shape</summary><p>fittraindatasetพร้อมvalidation_dataแยก; preprocessadaptเฉพาะtrain; callbackmonitorvalidationและevaluate testหลังเลือกmodelเสร็จ</p></details><details id="help-topic-12-code"><summary>โค้ด</summary><p>fittraindatasetพร้อมvalidation_dataแยก; preprocessadaptเฉพาะtrain; callbackmonitorvalidationและevaluate testหลังเลือกmodelเสร็จ</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-12-result"><summary>ผลการทดลอง</summary><p>fittraindatasetพร้อมvalidation_dataแยก; preprocessadaptเฉพาะtrain; callbackmonitorvalidationและevaluate testหลังเลือกmodelเสร็จ</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-12"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-13" class="source-topic"><span id="source-23-tensorflow-keras-canonical-13-tfdatadataset" class="legacy-anchor"></span><h3>13. tf.data.Dataset</h3>
+<pre><code class="language-python">dataset = tf.data.Dataset.from_tensor_slices((x, y))
+dataset = dataset.shuffle(1000).batch(64).prefetch(tf.data.AUTOTUNE)
+</code></pre>
+<p>Benefits:
+- streaming
+- batching
+- preprocessing
+- parallel mapping
+- prefetching</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>tf.data.Datasetจัดmap/shuffle/batch/prefetch; cacheก่อนrandomaugmentationต่างจากcacheหลังaugmentationเพราะหลังcacheจะตรึงผลสุ่ม</p><p>shufflebufferเล็กสลับไม่ทั่วdataset; repeatก่อนbatchอาจข้ามepochboundary ต้องกำหนดsteps_per_epochและไม่repeatvalidationไม่สิ้นสุด</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-13-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>tf.data.Datasetจัดmap/shuffle/batch/prefetch; cacheก่อนrandomaugmentationต่างจากcacheหลังaugmentationเพราะหลังcacheจะตรึงผลสุ่ม</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-13-equation"><summary>สมการ</summary><p>tf.data.Datasetจัดmap/shuffle/batch/prefetch; cacheก่อนrandomaugmentationต่างจากcacheหลังaugmentationเพราะหลังcacheจะตรึงผลสุ่ม</p></details><details id="help-topic-13-visual"><summary>ภาพและ shape</summary><p>tf.data.Datasetจัดmap/shuffle/batch/prefetch; cacheก่อนrandomaugmentationต่างจากcacheหลังaugmentationเพราะหลังcacheจะตรึงผลสุ่ม</p></details><details id="help-topic-13-code"><summary>โค้ด</summary><p>tf.data.Datasetจัดmap/shuffle/batch/prefetch; cacheก่อนrandomaugmentationต่างจากcacheหลังaugmentationเพราะหลังcacheจะตรึงผลสุ่ม</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-13-result"><summary>ผลการทดลอง</summary><p>tf.data.Datasetจัดmap/shuffle/batch/prefetch; cacheก่อนrandomaugmentationต่างจากcacheหลังaugmentationเพราะหลังcacheจะตรึงผลสุ่ม</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-13"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-14" class="source-topic"><span id="source-23-tensorflow-keras-canonical-14-custom-training-loop" class="legacy-anchor"></span><h3>14. Custom Training Loop</h3>
+<pre><code class="language-python">with tf.GradientTape() as tape:
+    logits = model(x, training=True)
+    loss = loss_fn(y, logits)
+
+grads = tape.gradient(loss, model.trainable_variables)
+optimizer.apply_gradients(zip(grads, model.trainable_variables))
+</code></pre>
+<p>This maps directly to the tiny autodiff framework from Batch 07.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>tf.data→Model.call→loss→GradientTape.gradient→optimizer.apply_gradients→metrics→callbacks→checkpoint; Nonegradต้องหาว่าoperationหลุดtapeตรงไหน</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-14-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>tf.data→Model.call→loss→GradientTape.gradient→optimizer.apply_gradients→metrics→callbacks→checkpoint; Nonegradต้องหาว่าoperationหลุดtapeตรงไหน</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-14-equation"><summary>สมการ</summary><p>tf.data→Model.call→loss→GradientTape.gradient→optimizer.apply_gradients→metrics→callbacks→checkpoint; Nonegradต้องหาว่าoperationหลุดtapeตรงไหน</p></details><details id="help-topic-14-visual"><summary>ภาพและ shape</summary><p>tf.data→Model.call→loss→GradientTape.gradient→optimizer.apply_gradients→metrics→callbacks→checkpoint; Nonegradต้องหาว่าoperationหลุดtapeตรงไหน</p></details><details id="help-topic-14-code"><summary>โค้ด</summary><p>tf.data→Model.call→loss→GradientTape.gradient→optimizer.apply_gradients→metrics→callbacks→checkpoint; Nonegradต้องหาว่าoperationหลุดtapeตรงไหน</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-14-result"><summary>ผลการทดลอง</summary><p>tf.data→Model.call→loss→GradientTape.gradient→optimizer.apply_gradients→metrics→callbacks→checkpoint; Nonegradต้องหาว่าoperationหลุดtapeตรงไหน</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-14"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-15" class="source-topic"><span id="source-23-tensorflow-keras-canonical-15-trainingtrue-false" class="legacy-anchor"></span><h3>15. training=True / False</h3>
+<p>Layers such as:
+- Dropout
+- BatchNormalization</p>
+<p>behave differently in training and inference modes.</p>
+<p>Custom model call methods should pass training when needed.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>fittraindatasetพร้อมvalidation_dataแยก; preprocessadaptเฉพาะtrain; callbackmonitorvalidationและevaluate testหลังเลือกmodelเสร็จ</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-15-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>fittraindatasetพร้อมvalidation_dataแยก; preprocessadaptเฉพาะtrain; callbackmonitorvalidationและevaluate testหลังเลือกmodelเสร็จ</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-15-equation"><summary>สมการ</summary><p>fittraindatasetพร้อมvalidation_dataแยก; preprocessadaptเฉพาะtrain; callbackmonitorvalidationและevaluate testหลังเลือกmodelเสร็จ</p></details><details id="help-topic-15-visual"><summary>ภาพและ shape</summary><p>fittraindatasetพร้อมvalidation_dataแยก; preprocessadaptเฉพาะtrain; callbackmonitorvalidationและevaluate testหลังเลือกmodelเสร็จ</p></details><details id="help-topic-15-code"><summary>โค้ด</summary><p>fittraindatasetพร้อมvalidation_dataแยก; preprocessadaptเฉพาะtrain; callbackmonitorvalidationและevaluate testหลังเลือกmodelเสร็จ</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-15-result"><summary>ผลการทดลอง</summary><p>fittraindatasetพร้อมvalidation_dataแยก; preprocessadaptเฉพาะtrain; callbackmonitorvalidationและevaluate testหลังเลือกmodelเสร็จ</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-15"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-16" class="source-topic"><span id="source-23-tensorflow-keras-canonical-16-tffunction" class="legacy-anchor"></span><h3>16. tf.function</h3>
+<p>Decorator:</p>
+<pre><code class="language-python">@tf.function
+def train_step(...):
+    ...
+</code></pre>
+<p>TensorFlow traces Python into a graph-like executable representation.</p>
+<p>Benefits may include:
+- reduced Python overhead
+- graph optimizations
+- accelerator execution</p>
+<p>But debugging traced code differs from eager debugging.</p>
+<p>Learn eager first.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>warmuptracedfunctionก่อนจับเวลา; <code>.numpy()</code>บังคับmaterialization; แยกtracecompiletimeจากsteady-stateและระบุCPU/threadconfig</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-16-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>warmuptracedfunctionก่อนจับเวลา; <code>.numpy()</code>บังคับmaterialization; แยกtracecompiletimeจากsteady-stateและระบุCPU/threadconfig</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-16-equation"><summary>สมการ</summary><p>warmuptracedfunctionก่อนจับเวลา; <code>.numpy()</code>บังคับmaterialization; แยกtracecompiletimeจากsteady-stateและระบุCPU/threadconfig</p></details><details id="help-topic-16-visual"><summary>ภาพและ shape</summary><p>warmuptracedfunctionก่อนจับเวลา; <code>.numpy()</code>บังคับmaterialization; แยกtracecompiletimeจากsteady-stateและระบุCPU/threadconfig</p></details><details id="help-topic-16-code"><summary>โค้ด</summary><p>warmuptracedfunctionก่อนจับเวลา; <code>.numpy()</code>บังคับmaterialization; แยกtracecompiletimeจากsteady-stateและระบุCPU/threadconfig</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-16-result"><summary>ผลการทดลอง</summary><p>warmuptracedfunctionก่อนจับเวลา; <code>.numpy()</code>บังคับmaterialization; แยกtracecompiletimeจากsteady-stateและระบุCPU/threadconfig</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-16"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-17" class="source-topic"><span id="source-23-tensorflow-keras-canonical-17-shape-debugging" class="legacy-anchor"></span><h3>17. Shape Debugging</h3>
+<p>Typical image shape in TensorFlow/Keras:</p>
+<pre><code class="language-text">N × H × W × C
+</code></pre>
+<p>channels-last by default</p>
+<p>PyTorch commonly uses:</p>
+<pre><code class="language-text">N × C × H × W
+</code></pre>
+<p>This difference causes many CNN bugs.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>KerasDensekernel(d,h)ต่างจากPyTorch(h,d); target(B,)กับoutput(B,1)ต้องreshape; variablebatchdimNoneไม่เท่ากับbatchจริง0</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-17-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>KerasDensekernel(d,h)ต่างจากPyTorch(h,d); target(B,)กับoutput(B,1)ต้องreshape; variablebatchdimNoneไม่เท่ากับbatchจริง0</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-17-equation"><summary>สมการ</summary><p>KerasDensekernel(d,h)ต่างจากPyTorch(h,d); target(B,)กับoutput(B,1)ต้องreshape; variablebatchdimNoneไม่เท่ากับbatchจริง0</p></details><details id="help-topic-17-visual"><summary>ภาพและ shape</summary><p>KerasDensekernel(d,h)ต่างจากPyTorch(h,d); target(B,)กับoutput(B,1)ต้องreshape; variablebatchdimNoneไม่เท่ากับbatchจริง0</p></details><details id="help-topic-17-code"><summary>โค้ด</summary><p>KerasDensekernel(d,h)ต่างจากPyTorch(h,d); target(B,)กับoutput(B,1)ต้องreshape; variablebatchdimNoneไม่เท่ากับbatchจริง0</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-17-result"><summary>ผลการทดลอง</summary><p>KerasDensekernel(d,h)ต่างจากPyTorch(h,d); target(B,)กับoutput(B,1)ต้องreshape; variablebatchdimNoneไม่เท่ากับbatchจริง0</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-17"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-18" class="source-topic"><span id="source-23-tensorflow-keras-canonical-18-dtype" class="legacy-anchor"></span><h3>18. dtype</h3>
+<p>Typical:
+- float32 for model inputs
+- int32/int64 class indices
+- bool masks</p>
+<p>Inspect:</p>
+<pre><code class="language-python">print(tensor.shape)
+print(tensor.dtype)
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>KerasDensekernel(d,h)ต่างจากPyTorch(h,d); target(B,)กับoutput(B,1)ต้องreshape; variablebatchdimNoneไม่เท่ากับbatchจริง0</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-18-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>KerasDensekernel(d,h)ต่างจากPyTorch(h,d); target(B,)กับoutput(B,1)ต้องreshape; variablebatchdimNoneไม่เท่ากับbatchจริง0</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-18-equation"><summary>สมการ</summary><p>KerasDensekernel(d,h)ต่างจากPyTorch(h,d); target(B,)กับoutput(B,1)ต้องreshape; variablebatchdimNoneไม่เท่ากับbatchจริง0</p></details><details id="help-topic-18-visual"><summary>ภาพและ shape</summary><p>KerasDensekernel(d,h)ต่างจากPyTorch(h,d); target(B,)กับoutput(B,1)ต้องreshape; variablebatchdimNoneไม่เท่ากับbatchจริง0</p></details><details id="help-topic-18-code"><summary>โค้ด</summary><p>KerasDensekernel(d,h)ต่างจากPyTorch(h,d); target(B,)กับoutput(B,1)ต้องreshape; variablebatchdimNoneไม่เท่ากับbatchจริง0</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-18-result"><summary>ผลการทดลอง</summary><p>KerasDensekernel(d,h)ต่างจากPyTorch(h,d); target(B,)กับoutput(B,1)ต้องreshape; variablebatchdimNoneไม่เท่ากับbatchจริง0</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-18"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-19" class="source-topic"><span id="source-23-tensorflow-keras-canonical-19-saving" class="legacy-anchor"></span><h3>19. Saving</h3>
+<p>Keras native format:</p>
+<pre><code class="language-python">model.save(&quot;model.keras&quot;)
+</code></pre>
+<p>Load:</p>
+<pre><code class="language-python">model = keras.models.load_model(&quot;model.keras&quot;)
+</code></pre>
+<p>Save preprocessing/config/label mappings separately when required.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>checkpointweightsช่วยreproduceinferenceแต่resumeoptimizerต้องบันทึกstateด้วย; ตรวจroundtripoutputและstepอย่าใช้เพียงfileexists</p><p>tf.keras.utils.set_random_seed(7); tf.data batch2tinyregression; train2epochs,save/load.kerasแล้วpredictionallcloseและตรวจoptimizeriterationsเมื่อresume</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-19-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>checkpointweightsช่วยreproduceinferenceแต่resumeoptimizerต้องบันทึกstateด้วย; ตรวจroundtripoutputและstepอย่าใช้เพียงfileexists</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-19-equation"><summary>สมการ</summary><p>checkpointweightsช่วยreproduceinferenceแต่resumeoptimizerต้องบันทึกstateด้วย; ตรวจroundtripoutputและstepอย่าใช้เพียงfileexists</p></details><details id="help-topic-19-visual"><summary>ภาพและ shape</summary><p>checkpointweightsช่วยreproduceinferenceแต่resumeoptimizerต้องบันทึกstateด้วย; ตรวจroundtripoutputและstepอย่าใช้เพียงfileexists</p></details><details id="help-topic-19-code"><summary>โค้ด</summary><p>checkpointweightsช่วยreproduceinferenceแต่resumeoptimizerต้องบันทึกstateด้วย; ตรวจroundtripoutputและstepอย่าใช้เพียงfileexists</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-19-result"><summary>ผลการทดลอง</summary><p>checkpointweightsช่วยreproduceinferenceแต่resumeoptimizerต้องบันทึกstateด้วย; ตรวจroundtripoutputและstepอย่าใช้เพียงfileexists</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-19"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-20" class="source-topic"><span id="source-23-tensorflow-keras-canonical-20-callbacks" class="legacy-anchor"></span><h3>20. Callbacks</h3>
+<p>Important:
+- EarlyStopping
+- ModelCheckpoint
+- ReduceLROnPlateau
+- TensorBoard</p>
+<p>Example:</p>
+<pre><code class="language-python">keras.callbacks.EarlyStopping(
+    monitor=&quot;val_loss&quot;,
+    patience=5,
+    restore_best_weights=True,
+)
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>EarlyStoppingmonitorval_lossและrestore_best_weightsตามเจตนา; ไม่ใช้testlossเลือกcheckpoint; callbackผิดชื่อmetricจะไม่หยุดตามที่คาด</p><p>เปลี่ยนEarlyStoppingpatience0→2โดยคงweights,epochorder,seed; รายงานbestepochกับstop_epochแยกและbestvalscoreไม่อ้างทุกrunดีขึ้น</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-20-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>EarlyStoppingmonitorval_lossและrestore_best_weightsตามเจตนา; ไม่ใช้testlossเลือกcheckpoint; callbackผิดชื่อmetricจะไม่หยุดตามที่คาด</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-20-equation"><summary>สมการ</summary><p>EarlyStoppingmonitorval_lossและrestore_best_weightsตามเจตนา; ไม่ใช้testlossเลือกcheckpoint; callbackผิดชื่อmetricจะไม่หยุดตามที่คาด</p></details><details id="help-topic-20-visual"><summary>ภาพและ shape</summary><p>EarlyStoppingmonitorval_lossและrestore_best_weightsตามเจตนา; ไม่ใช้testlossเลือกcheckpoint; callbackผิดชื่อmetricจะไม่หยุดตามที่คาด</p></details><details id="help-topic-20-code"><summary>โค้ด</summary><p>EarlyStoppingmonitorval_lossและrestore_best_weightsตามเจตนา; ไม่ใช้testlossเลือกcheckpoint; callbackผิดชื่อmetricจะไม่หยุดตามที่คาด</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-20-result"><summary>ผลการทดลอง</summary><p>EarlyStoppingmonitorval_lossและrestore_best_weightsตามเจตนา; ไม่ใช้testlossเลือกcheckpoint; callbackผิดชื่อmetricจะไม่หยุดตามที่คาด</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-20"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-21" class="source-topic"><span id="source-23-tensorflow-keras-canonical-21-gpu-memory" class="legacy-anchor"></span><h3>21. GPU Memory</h3>
+<p>TensorFlow may allocate GPU memory differently from PyTorch.</p>
+<p>Useful setup:</p>
+<pre><code class="language-python">gpus = tf.config.list_physical_devices(&quot;GPU&quot;)
+
+for gpu in gpus:
+    tf.config.experimental.set_memory_growth(gpu, True)
+</code></pre>
+<p>Call configuration before GPU initialization.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-21-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>21. GPU Memory</h3>
+<p>TensorFlow may allocate GPU memory differently from PyTorch.</p>
+<p>Useful setup:</p>
+<pre><code class="language-python">gpus = tf.config.list_physical_devices(&quot;GPU&quot;)
+
+for gpu in gpus:
+    tf.config.experimental.set_memory_growth(gpu, True)
+</code></pre>
+<p>Call configuration before GPU initialization.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-21-equation"><summary>สมการ</summary><h3>21. GPU Memory</h3>
+<p>TensorFlow may allocate GPU memory differently from PyTorch.</p>
+<p>Useful setup:</p>
+<pre><code class="language-python">gpus = tf.config.list_physical_devices(&quot;GPU&quot;)
+
+for gpu in gpus:
+    tf.config.experimental.set_memory_growth(gpu, True)
+</code></pre>
+<p>Call configuration before GPU initialization.</p></details><details id="help-topic-21-visual"><summary>ภาพและ shape</summary><h3>21. GPU Memory</h3>
+<p>TensorFlow may allocate GPU memory differently from PyTorch.</p>
+<p>Useful setup:</p>
+<pre><code class="language-python">gpus = tf.config.list_physical_devices(&quot;GPU&quot;)
+
+for gpu in gpus:
+    tf.config.experimental.set_memory_growth(gpu, True)
+</code></pre>
+<p>Call configuration before GPU initialization.</p></details><details id="help-topic-21-code"><summary>โค้ด</summary><h3>21. GPU Memory</h3>
+<p>TensorFlow may allocate GPU memory differently from PyTorch.</p>
+<p>Useful setup:</p>
+<pre><code class="language-python">gpus = tf.config.list_physical_devices(&quot;GPU&quot;)
+
+for gpu in gpus:
+    tf.config.experimental.set_memory_growth(gpu, True)
+</code></pre>
+<p>Call configuration before GPU initialization.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-21-result"><summary>ผลการทดลอง</summary><h3>21. GPU Memory</h3>
+<p>TensorFlow may allocate GPU memory differently from PyTorch.</p>
+<p>Useful setup:</p>
+<pre><code class="language-python">gpus = tf.config.list_physical_devices(&quot;GPU&quot;)
+
+for gpu in gpus:
+    tf.config.experimental.set_memory_growth(gpu, True)
+</code></pre>
+<p>Call configuration before GPU initialization.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-21"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-22" class="source-topic"><span id="source-23-tensorflow-keras-canonical-22-keras-3-multi-backend-context" class="legacy-anchor"></span><h3>22. Keras 3 Multi-Backend Context</h3>
+<p>Standalone Keras 3 supports:
+- TensorFlow
+- JAX
+- PyTorch</p>
+<p>This course uses TensorFlow backend here because Chapter 22 already covers native PyTorch.</p>
+<p>The important skill is separating:
+- Keras model API
+from
+- backend execution system</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>บันทึกTF/Keras/python/seed/datasetpipeline/checkpointconfig; ทดลองprefetchเพิ่มexamples/secโดยfiniteepochและevaluationเท่าเดิม CPUผ่านไม่ยืนยันGPUintegration</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-22-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>บันทึกTF/Keras/python/seed/datasetpipeline/checkpointconfig; ทดลองprefetchเพิ่มexamples/secโดยfiniteepochและevaluationเท่าเดิม CPUผ่านไม่ยืนยันGPUintegration</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-22-equation"><summary>สมการ</summary><p>บันทึกTF/Keras/python/seed/datasetpipeline/checkpointconfig; ทดลองprefetchเพิ่มexamples/secโดยfiniteepochและevaluationเท่าเดิม CPUผ่านไม่ยืนยันGPUintegration</p></details><details id="help-topic-22-visual"><summary>ภาพและ shape</summary><p>บันทึกTF/Keras/python/seed/datasetpipeline/checkpointconfig; ทดลองprefetchเพิ่มexamples/secโดยfiniteepochและevaluationเท่าเดิม CPUผ่านไม่ยืนยันGPUintegration</p></details><details id="help-topic-22-code"><summary>โค้ด</summary><p>บันทึกTF/Keras/python/seed/datasetpipeline/checkpointconfig; ทดลองprefetchเพิ่มexamples/secโดยfiniteepochและevaluationเท่าเดิม CPUผ่านไม่ยืนยันGPUintegration</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-22-result"><summary>ผลการทดลอง</summary><p>บันทึกTF/Keras/python/seed/datasetpipeline/checkpointconfig; ทดลองprefetchเพิ่มexamples/secโดยfiniteepochและevaluationเท่าเดิม CPUผ่านไม่ยืนยันGPUintegration</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-22"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-23" class="source-topic"><span id="source-23-tensorflow-keras-canonical-23-source" class="legacy-anchor"></span><h3>23. Source</h3>
+<p>src/keras_basics.py includes:
+- build_mlp
+- compile_classifier
+- custom GradientTape train step
+- device visibility helper</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-23-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>23. Source</h3>
+<p>src/keras_basics.py includes:
+- build_mlp
+- compile_classifier
+- custom GradientTape train step
+- device visibility helper</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-23-equation"><summary>สมการ</summary><h3>23. Source</h3>
+<p>src/keras_basics.py includes:
+- build_mlp
+- compile_classifier
+- custom GradientTape train step
+- device visibility helper</p></details><details id="help-topic-23-visual"><summary>ภาพและ shape</summary><h3>23. Source</h3>
+<p>src/keras_basics.py includes:
+- build_mlp
+- compile_classifier
+- custom GradientTape train step
+- device visibility helper</p></details><details id="help-topic-23-code"><summary>โค้ด</summary><h3>23. Source</h3>
+<p>src/keras_basics.py includes:
+- build_mlp
+- compile_classifier
+- custom GradientTape train step
+- device visibility helper</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-23-result"><summary>ผลการทดลอง</summary><h3>23. Source</h3>
+<p>src/keras_basics.py includes:
+- build_mlp
+- compile_classifier
+- custom GradientTape train step
+- device visibility helper</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-23"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-24" class="source-topic"><span id="source-23-tensorflow-keras-canonical-24-common-mistakes" class="legacy-anchor"></span><h3>24. Common Mistakes</h3>
+<ol>
+<li>softmax before from_logits=True loss</li>
+<li>wrong target dtype</li>
+<li>NCHW data fed to channels-last model</li>
+<li>training=False forgotten for custom inference behavior</li>
+<li>fitting preprocessing on validation/test</li>
+<li>calling GPU config after runtime initialization</li>
+<li>tracing everything with tf.function before code works eagerly</li>
+<li>saving model but not preprocessing</li>
+<li>comparing PyTorch and TensorFlow with different splits</li>
+<li>assuming Keras and TensorFlow are exactly the same abstraction layer</li>
+</ol><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-24-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>24. Common Mistakes</h3>
+<ol>
+<li>softmax before from_logits=True loss</li>
+<li>wrong target dtype</li>
+<li>NCHW data fed to channels-last model</li>
+<li>training=False forgotten for custom inference behavior</li>
+<li>fitting preprocessing on validation/test</li>
+<li>calling GPU config after runtime initialization</li>
+<li>tracing everything with tf.function before code works eagerly</li>
+<li>saving model but not preprocessing</li>
+<li>comparing PyTorch and TensorFlow with different splits</li>
+<li>assuming Keras and TensorFlow are exactly the same abstraction layer</li>
+</ol><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-24-equation"><summary>สมการ</summary><h3>24. Common Mistakes</h3>
+<ol>
+<li>softmax before from_logits=True loss</li>
+<li>wrong target dtype</li>
+<li>NCHW data fed to channels-last model</li>
+<li>training=False forgotten for custom inference behavior</li>
+<li>fitting preprocessing on validation/test</li>
+<li>calling GPU config after runtime initialization</li>
+<li>tracing everything with tf.function before code works eagerly</li>
+<li>saving model but not preprocessing</li>
+<li>comparing PyTorch and TensorFlow with different splits</li>
+<li>assuming Keras and TensorFlow are exactly the same abstraction layer</li>
+</ol></details><details id="help-topic-24-visual"><summary>ภาพและ shape</summary><h3>24. Common Mistakes</h3>
+<ol>
+<li>softmax before from_logits=True loss</li>
+<li>wrong target dtype</li>
+<li>NCHW data fed to channels-last model</li>
+<li>training=False forgotten for custom inference behavior</li>
+<li>fitting preprocessing on validation/test</li>
+<li>calling GPU config after runtime initialization</li>
+<li>tracing everything with tf.function before code works eagerly</li>
+<li>saving model but not preprocessing</li>
+<li>comparing PyTorch and TensorFlow with different splits</li>
+<li>assuming Keras and TensorFlow are exactly the same abstraction layer</li>
+</ol></details><details id="help-topic-24-code"><summary>โค้ด</summary><h3>24. Common Mistakes</h3>
+<ol>
+<li>softmax before from_logits=True loss</li>
+<li>wrong target dtype</li>
+<li>NCHW data fed to channels-last model</li>
+<li>training=False forgotten for custom inference behavior</li>
+<li>fitting preprocessing on validation/test</li>
+<li>calling GPU config after runtime initialization</li>
+<li>tracing everything with tf.function before code works eagerly</li>
+<li>saving model but not preprocessing</li>
+<li>comparing PyTorch and TensorFlow with different splits</li>
+<li>assuming Keras and TensorFlow are exactly the same abstraction layer</li>
+</ol><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-24-result"><summary>ผลการทดลอง</summary><h3>24. Common Mistakes</h3>
+<ol>
+<li>softmax before from_logits=True loss</li>
+<li>wrong target dtype</li>
+<li>NCHW data fed to channels-last model</li>
+<li>training=False forgotten for custom inference behavior</li>
+<li>fitting preprocessing on validation/test</li>
+<li>calling GPU config after runtime initialization</li>
+<li>tracing everything with tf.function before code works eagerly</li>
+<li>saving model but not preprocessing</li>
+<li>comparing PyTorch and TensorFlow with different splits</li>
+<li>assuming Keras and TensorFlow are exactly the same abstraction layer</li>
+</ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-24"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-25" class="source-topic"><span id="source-23-tensorflow-keras-canonical-25-exercises-mini-project" class="legacy-anchor"></span><h3>25. Exercises / Mini Project</h3>
+<ul>
+<li><a href="../23-tensorflow-keras/exercises/README.md">Exercises</a></li>
+<li><a href="../23-tensorflow-keras/solutions/README.md">Solutions</a></li>
+<li><a href="../23-tensorflow-keras/mini-project/README.md">Mini Project</a></li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-25-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>25. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-25-equation"><summary>สมการ</summary><h3>25. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-25-visual"><summary>ภาพและ shape</summary><h3>25. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-25-code"><summary>โค้ด</summary><h3>25. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-25-result"><summary>ผลการทดลอง</summary><h3>25. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-25"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-26" class="source-topic"><span id="source-23-tensorflow-keras-canonical-26-checklist" class="legacy-anchor"></span><h3>26. Checklist</h3>
+<ul>
+<li>[ ] tf.Tensor / tf.Variable</li>
+<li>[ ] GradientTape</li>
+<li>[ ] Sequential</li>
+<li>[ ] Functional API</li>
+<li>[ ] subclassing</li>
+<li>[ ] compile/fit</li>
+<li>[ ] custom train step</li>
+<li>[ ] tf.data</li>
+<li>[ ] saving</li>
+<li>[ ] GPU visibility</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-26-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>26. Checklist</h3>
+<ul>
+<li>[ ] tf.Tensor / tf.Variable</li>
+<li>[ ] GradientTape</li>
+<li>[ ] Sequential</li>
+<li>[ ] Functional API</li>
+<li>[ ] subclassing</li>
+<li>[ ] compile/fit</li>
+<li>[ ] custom train step</li>
+<li>[ ] tf.data</li>
+<li>[ ] saving</li>
+<li>[ ] GPU visibility</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-26-equation"><summary>สมการ</summary><h3>26. Checklist</h3>
+<ul>
+<li>[ ] tf.Tensor / tf.Variable</li>
+<li>[ ] GradientTape</li>
+<li>[ ] Sequential</li>
+<li>[ ] Functional API</li>
+<li>[ ] subclassing</li>
+<li>[ ] compile/fit</li>
+<li>[ ] custom train step</li>
+<li>[ ] tf.data</li>
+<li>[ ] saving</li>
+<li>[ ] GPU visibility</li>
+</ul></details><details id="help-topic-26-visual"><summary>ภาพและ shape</summary><h3>26. Checklist</h3>
+<ul>
+<li>[ ] tf.Tensor / tf.Variable</li>
+<li>[ ] GradientTape</li>
+<li>[ ] Sequential</li>
+<li>[ ] Functional API</li>
+<li>[ ] subclassing</li>
+<li>[ ] compile/fit</li>
+<li>[ ] custom train step</li>
+<li>[ ] tf.data</li>
+<li>[ ] saving</li>
+<li>[ ] GPU visibility</li>
+</ul></details><details id="help-topic-26-code"><summary>โค้ด</summary><h3>26. Checklist</h3>
+<ul>
+<li>[ ] tf.Tensor / tf.Variable</li>
+<li>[ ] GradientTape</li>
+<li>[ ] Sequential</li>
+<li>[ ] Functional API</li>
+<li>[ ] subclassing</li>
+<li>[ ] compile/fit</li>
+<li>[ ] custom train step</li>
+<li>[ ] tf.data</li>
+<li>[ ] saving</li>
+<li>[ ] GPU visibility</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-26-result"><summary>ผลการทดลอง</summary><h3>26. Checklist</h3>
+<ul>
+<li>[ ] tf.Tensor / tf.Variable</li>
+<li>[ ] GradientTape</li>
+<li>[ ] Sequential</li>
+<li>[ ] Functional API</li>
+<li>[ ] subclassing</li>
+<li>[ ] compile/fit</li>
+<li>[ ] custom train step</li>
+<li>[ ] tf.data</li>
+<li>[ ] saving</li>
+<li>[ ] GPU visibility</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-26"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-27" class="source-topic"><span id="source-23-tensorflow-keras-canonical-27-whats-next" class="legacy-anchor"></span><span id="source-23-tensorflow-keras-canonical-23-tensorflow-keras-tensorflow-and-keras" class="legacy-anchor"></span><h3>27. What's Next</h3>
+<p>Chapter 24 applies both frameworks to spatial data using convolutional neural networks.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-27-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>27. What's Next</h3>
+<p>Chapter 24 applies both frameworks to spatial data using convolutional neural networks.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-27-equation"><summary>สมการ</summary><h3>27. What's Next</h3>
+<p>Chapter 24 applies both frameworks to spatial data using convolutional neural networks.</p></details><details id="help-topic-27-visual"><summary>ภาพและ shape</summary><h3>27. What's Next</h3>
+<p>Chapter 24 applies both frameworks to spatial data using convolutional neural networks.</p></details><details id="help-topic-27-code"><summary>โค้ด</summary><h3>27. What's Next</h3>
+<p>Chapter 24 applies both frameworks to spatial data using convolutional neural networks.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-27-result"><summary>ผลการทดลอง</summary><h3>27. What's Next</h3>
+<p>Chapter 24 applies both frameworks to spatial data using convolutional neural networks.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-27"> อ่านหัวข้อนี้แล้ว</label></section><details><summary>รายละเอียดเพิ่มเติมและข้อกำหนดของ local lab</summary><h3>23-tensorflow-keras — TensorFlow and Keras</h3>
+<p><strong>Prerequisites:</strong> Complete 22-pytorch; be able to trace array/tensor shapes, separate train/validation/test data, and explain the core objective of the current chapter.</p>
+<p><strong>Mental model:</strong> Treat TensorFlow and Keras as a pipeline: input representation → central mechanism → objective/state update → observable output. At every boundary, state shape/state, allowed information flow, and the invariant that should remain true.</p>
+<p><strong>Code walkthrough:</strong> Read public API first, then input checks, state/shape transformations, numerical core, returned values and tests. Connect each important code block to the equation or algorithm in the chapter README.</p>
+<p><strong>Visualization / inspection:</strong> Use a tiny case. Inspect intermediate values, distributions, norms, scores, states or trajectories appropriate to TensorFlow and Keras; do not rely only on the final metric.</p>
+<p><strong>Experiment:</strong> Run a baseline, one controlled parameter change, one edge case and one repeated seeded comparison. Record seed, environment, data version, configuration and metric.</p>
+<p><strong>Limitations:</strong> List at least one assumption, one data-related limitation, one numerical/optimization limitation and one scaling limitation for TensorFlow and Keras.</p>
+<p><strong>Analysis workflow:</strong> Check inputs → preprocessing → shapes/state → finite numerical values → objective/update → evaluation protocol. The earliest unexpected state is more informative than a downstream metric.</p>
+<p><strong>Performance:</strong> Identify the dominant time and memory terms and measure them on the local learning run before attempting optimization.</p>
+<p><strong>Production perspective:</strong> Define input validation, artifact/configuration versioning, quality and resource measurements, staged release criteria and a way to return to the previous known-good artifact.</p>
+<p><strong>Research perspective:</strong> State a falsifiable hypothesis, baseline, one-factor change, metric, repeated-run plan when stochastic, and how negative results will be recorded.</p>
+<p><strong>Interview questions:</strong>
+1. Explain TensorFlow and Keras from first principles without naming a library API.
+2. Trace one input through the central mechanism and give the important intermediate shapes/state.
+3. Name the strongest assumption and a case where it fails.
+4. State the dominant compute/memory cost.
+5. Describe how you would validate a new implementation against a trusted baseline.</p>
+<p><strong>Summary / exit condition:</strong> You may move on when you can explain, derive or trace, implement, test, analyze, measure and evaluate TensorFlow and Keras, and when the chapter mini-project plus twenty total exercises are complete.</p></details></section><section id="objective-evidence" class="canonical-section"><h2>พิสูจน์ความสามารถทีละ objective</h2><p>ทำกรณีใหม่ก่อนเปิด reference แล้วบันทึกงานด้านล่าง ให้ผู้ตรวจใช้ rubric ตรวจคำอธิบาย ผลคำนวณ โค้ด และข้อจำกัด บันทึกเก็บในเบราว์เซอร์เครื่องนี้ กดส่งออกเพื่อสำรองหรือส่งให้ผู้ตรวจ เว็บไม่ได้รันโค้ดหรือตัดสินผลงานแทนผู้ตรวจ</p><button type="button" class="secondary-button" data-export-evidence>ส่งออกหลักฐานบทนี้เป็น JSON</button><p role="status" id="evidence-export-status"></p><details id="ch23-objective-01" class="objective-proof"><summary>create tf.Tensor</summary><p>create tf.Tensor: ใช้กรณีในหัวข้อ Tensor Basics เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch23-evidence-01"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch23-evidence-01-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch23-evidence-01-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch23-evidence-01-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch23-evidence-01-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch23-evidence-01-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch23-evidence-01-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch23-evidence-01-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch23-evidence-01-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>tf.Tensorเก็บndarrayimmutableที่มีshape,dtype,device; parameterที่แก้ค่าใช้tf.Variable; [[1,2],[3,4]]float32shape(2,2)</p><h3>4. Tensor Basics</h3>
+<pre><code class="language-python">import tensorflow as tf
+
+x = tf.constant([[1.0, 2.0]])
+w = tf.Variable([[3.0], [4.0]])
+
+y = x @ w
+</code></pre>
+<p>tf.Variable represents mutable trainable state.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch23-objective-02" class="objective-proof"><summary>understand eager execution</summary><p>understand eager execution: ใช้กรณีในหัวข้อ Eager Execution เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch23-evidence-02"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch23-evidence-02-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch23-evidence-02-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch23-evidence-02-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch23-evidence-02-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch23-evidence-02-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch23-evidence-02-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch23-evidence-02-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch23-evidence-02-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>5. Eager Execution</h3>
+<p>TensorFlow 2 executes eagerly by default:</p>
+<pre><code class="language-python">x = tf.constant(3.0)
+print(x * x)
+</code></pre>
+<p>This feels similar to normal Python.</p>
+<p>TensorFlow can also trace/compile computation using tf.function.</p><h3>5. Eager Execution</h3>
+<p>TensorFlow 2 executes eagerly by default:</p>
+<pre><code class="language-python">x = tf.constant(3.0)
+print(x * x)
+</code></pre>
+<p>This feels similar to normal Python.</p>
+<p>TensorFlow can also trace/compile computation using tf.function.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch23-objective-03" class="objective-proof"><summary>use GradientTape</summary><p>use GradientTape: ใช้กรณีในหัวข้อ GradientTape เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch23-evidence-03"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch23-evidence-03-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch23-evidence-03-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch23-evidence-03-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch23-evidence-03-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch23-evidence-03-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch23-evidence-03-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch23-evidence-03-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch23-evidence-03-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>GradientTapeบันทึกoperationsในcontextเพื่อตรวจgradient; x=tf.Variable(2.),loss=x*x ให้tape.gradient(loss,x)=4 นอกtapeไม่ถูกบันทึก</p><h3>6. GradientTape</h3>
+<pre><code class="language-python">x = tf.Variable(3.0)
+
+with tf.GradientTape() as tape:
+    y = x * x + 2.0 * x
+
+grad = tape.gradient(y, x)
+</code></pre>
+<p>GradientTape records differentiable operations and performs reverse-mode differentiation.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch23-objective-04" class="objective-proof"><summary>build Sequential models</summary><p>build Sequential models: ใช้กรณีในหัวข้อ Keras Sequential API เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch23-evidence-04"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch23-evidence-04-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch23-evidence-04-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch23-evidence-04-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch23-evidence-04-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch23-evidence-04-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch23-evidence-04-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch23-evidence-04-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch23-evidence-04-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>Dense1weights[[1],[2]],bias[.5],input[[3,4]]ให้11.5; set_weightsหลังbuildและtraining=Falseสำหรับevaluation</p><h3>7. Keras Sequential API</h3>
+<pre><code class="language-python">model = keras.Sequential([
+    keras.layers.Input(shape=(10,)),
+    keras.layers.Dense(64, activation=&quot;relu&quot;),
+    keras.layers.Dense(3),
+])
+</code></pre>
+<p>Good for simple stack-like architectures.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch23-objective-05" class="objective-proof"><summary>build Functional API models</summary><p>build Functional API models: ใช้กรณีในหัวข้อ Functional API เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch23-evidence-05"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch23-evidence-05-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch23-evidence-05-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch23-evidence-05-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch23-evidence-05-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch23-evidence-05-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch23-evidence-05-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch23-evidence-05-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch23-evidence-05-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>Dense1weights[[1],[2]],bias[.5],input[[3,4]]ให้11.5; set_weightsหลังbuildและtraining=Falseสำหรับevaluation</p><h3>8. Functional API</h3>
+<p>Useful for:
+- multiple inputs
+- multiple outputs
+- residual connections
+- DAG architectures</p>
+<pre><code class="language-python">inputs = keras.Input(shape=(10,))
+x = keras.layers.Dense(64, activation=&quot;relu&quot;)(inputs)
+outputs = keras.layers.Dense(3)(x)
+model = keras.Model(inputs, outputs)
+</code></pre></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch23-objective-06" class="objective-proof"><summary>subclass keras.Model</summary><p>subclass keras.Model: ใช้กรณีในหัวข้อ Model Subclassing เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch23-evidence-06"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch23-evidence-06-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch23-evidence-06-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch23-evidence-06-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch23-evidence-06-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch23-evidence-06-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch23-evidence-06-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch23-evidence-06-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch23-evidence-06-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>KerasModelรวมlayersและtrainablevariables,callนิยามforward; Dense(1)รับlastfeaturedimและต้องbuild/callก่อนเข้าถึงweights</p><h3>9. Model Subclassing</h3>
+<pre><code class="language-python">class MyModel(keras.Model):
+    def __init__(self):
+        super().__init__()
+        self.fc1 = keras.layers.Dense(64)
+        self.fc2 = keras.layers.Dense(3)
+
+    def call(self, x, training=False):
+        x = tf.nn.relu(self.fc1(x))
+        return self.fc2(x)
+</code></pre>
+<p>Closest conceptual match to PyTorch nn.Module.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch23-objective-07" class="objective-proof"><summary>compile/fit/evaluate/predict</summary><p>compile/fit/evaluate/predict: ใช้กรณีในหัวข้อ compile(), fit(), evaluate() / predict() เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch23-evidence-07"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch23-evidence-07-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch23-evidence-07-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch23-evidence-07-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch23-evidence-07-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch23-evidence-07-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch23-evidence-07-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch23-evidence-07-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch23-evidence-07-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>SparseCategoricalCrossentropy(from_logits=True)รับrawlogits; from_logitsFalseกับlogitsทำlossผิด ให้ตรวจfinalactivation/lossร่วมกัน</p><h3>10. compile()</h3>
+<pre><code class="language-python">model.compile(
+    optimizer=keras.optimizers.Adam(),
+    loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+    metrics=[&quot;accuracy&quot;],
+)
+</code></pre>
+<p>from_logits=True matters when final layer outputs raw logits.</p>
+<p>Do not apply softmax twice.</p>
+<h3>11. fit()</h3>
+<pre><code class="language-python">history = model.fit(
+    x_train,
+    y_train,
+    validation_data=(x_val, y_val),
+    epochs=10,
+    batch_size=64,
+)
+</code></pre>
+<p>fit() handles:
+- batching
+- forward pass
+- gradients
+- optimizer steps
+- metrics
+- callbacks</p>
+<h3>12. evaluate() / predict()</h3>
+<pre><code class="language-python">model.evaluate(x_test, y_test)
+model.predict(x_new)
+</code></pre>
+<p>Use final test only after model/hyperparameter selection.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch23-objective-08" class="objective-proof"><summary>write custom training step</summary><p>write custom training step: ใช้กรณีในหัวข้อ Custom Training Loop เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch23-evidence-08"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch23-evidence-08-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch23-evidence-08-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch23-evidence-08-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch23-evidence-08-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch23-evidence-08-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch23-evidence-08-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch23-evidence-08-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch23-evidence-08-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>tf.data→Model.call→loss→GradientTape.gradient→optimizer.apply_gradients→metrics→callbacks→checkpoint; Nonegradต้องหาว่าoperationหลุดtapeตรงไหน</p><h3>14. Custom Training Loop</h3>
+<pre><code class="language-python">with tf.GradientTape() as tape:
+    logits = model(x, training=True)
+    loss = loss_fn(y, logits)
+
+grads = tape.gradient(loss, model.trainable_variables)
+optimizer.apply_gradients(zip(grads, model.trainable_variables))
+</code></pre>
+<p>This maps directly to the tiny autodiff framework from Batch 07.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch23-objective-09" class="objective-proof"><summary>use tf.data</summary><p>use tf.data: ใช้กรณีในหัวข้อ tf.data.Dataset เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch23-evidence-09"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch23-evidence-09-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch23-evidence-09-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch23-evidence-09-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch23-evidence-09-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch23-evidence-09-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch23-evidence-09-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch23-evidence-09-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch23-evidence-09-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>tf.data.Datasetจัดmap/shuffle/batch/prefetch; cacheก่อนrandomaugmentationต่างจากcacheหลังaugmentationเพราะหลังcacheจะตรึงผลสุ่ม</p><h3>13. tf.data.Dataset</h3>
+<pre><code class="language-python">dataset = tf.data.Dataset.from_tensor_slices((x, y))
+dataset = dataset.shuffle(1000).batch(64).prefetch(tf.data.AUTOTUNE)
+</code></pre>
+<p>Benefits:
+- streaming
+- batching
+- preprocessing
+- parallel mapping
+- prefetching</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch23-objective-10" class="objective-proof"><summary>understand training/inference mode</summary><p>understand training/inference mode: ใช้กรณีในหัวข้อ training=True / False เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch23-evidence-10"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch23-evidence-10-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch23-evidence-10-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch23-evidence-10-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch23-evidence-10-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch23-evidence-10-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch23-evidence-10-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch23-evidence-10-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch23-evidence-10-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>fittraindatasetพร้อมvalidation_dataแยก; preprocessadaptเฉพาะtrain; callbackmonitorvalidationและevaluate testหลังเลือกmodelเสร็จ</p><h3>15. training=True / False</h3>
+<p>Layers such as:
+- Dropout
+- BatchNormalization</p>
+<p>behave differently in training and inference modes.</p>
+<p>Custom model call methods should pass training when needed.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch23-objective-11" class="objective-proof"><summary>save/load .keras models</summary><p>save/load .keras models: ใช้กรณีในหัวข้อ Saving เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch23-evidence-11"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch23-evidence-11-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch23-evidence-11-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch23-evidence-11-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch23-evidence-11-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch23-evidence-11-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch23-evidence-11-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch23-evidence-11-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch23-evidence-11-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>checkpointweightsช่วยreproduceinferenceแต่resumeoptimizerต้องบันทึกstateด้วย; ตรวจroundtripoutputและstepอย่าใช้เพียงfileexists</p><h3>19. Saving</h3>
+<p>Keras native format:</p>
+<pre><code class="language-python">model.save(&quot;model.keras&quot;)
+</code></pre>
+<p>Load:</p>
+<pre><code class="language-python">model = keras.models.load_model(&quot;model.keras&quot;)
+</code></pre>
+<p>Save preprocessing/config/label mappings separately when required.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch23-objective-12" class="objective-proof"><summary>inspect GPU visibility</summary><p>inspect GPU visibility: ใช้กรณีในหัวข้อ GPU Memory เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch23-evidence-12"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch23-evidence-12-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch23-evidence-12-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch23-evidence-12-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch23-evidence-12-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch23-evidence-12-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch23-evidence-12-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch23-evidence-12-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch23-evidence-12-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>21. GPU Memory</h3>
+<p>TensorFlow may allocate GPU memory differently from PyTorch.</p>
+<p>Useful setup:</p>
+<pre><code class="language-python">gpus = tf.config.list_physical_devices(&quot;GPU&quot;)
+
+for gpu in gpus:
+    tf.config.experimental.set_memory_growth(gpu, True)
+</code></pre>
+<p>Call configuration before GPU initialization.</p><h3>21. GPU Memory</h3>
+<p>TensorFlow may allocate GPU memory differently from PyTorch.</p>
+<p>Useful setup:</p>
+<pre><code class="language-python">gpus = tf.config.list_physical_devices(&quot;GPU&quot;)
+
+for gpu in gpus:
+    tf.config.experimental.set_memory_growth(gpu, True)
+</code></pre>
+<p>Call configuration before GPU initialization.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch23-objective-13" class="objective-proof"><summary>debug shape/dtype/device issues</summary><p>debug shape/dtype/device issues: ใช้กรณีในหัวข้อ Shape Debugging, dtype เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch23-evidence-13"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch23-evidence-13-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch23-evidence-13-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch23-evidence-13-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch23-evidence-13-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch23-evidence-13-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch23-evidence-13-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch23-evidence-13-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch23-evidence-13-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>KerasDensekernel(d,h)ต่างจากPyTorch(h,d); target(B,)กับoutput(B,1)ต้องreshape; variablebatchdimNoneไม่เท่ากับbatchจริง0</p><h3>17. Shape Debugging</h3>
+<p>Typical image shape in TensorFlow/Keras:</p>
+<pre><code class="language-text">N × H × W × C
+</code></pre>
+<p>channels-last by default</p>
+<p>PyTorch commonly uses:</p>
+<pre><code class="language-text">N × C × H × W
+</code></pre>
+<p>This difference causes many CNN bugs.</p>
+<h3>18. dtype</h3>
+<p>Typical:
+- float32 for model inputs
+- int32/int64 class indices
+- bool masks</p>
+<p>Inspect:</p>
+<pre><code class="language-python">print(tensor.shape)
+print(tensor.dtype)
+</code></pre></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch23-objective-14" class="objective-proof"><summary>Callbacks</summary><p>Callbacks: ใช้กรณีในหัวข้อ Callbacks เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch23-evidence-14"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch23-evidence-14-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch23-evidence-14-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch23-evidence-14-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch23-evidence-14-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch23-evidence-14-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch23-evidence-14-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch23-evidence-14-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch23-evidence-14-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>EarlyStoppingmonitorval_lossและrestore_best_weightsตามเจตนา; ไม่ใช้testlossเลือกcheckpoint; callbackผิดชื่อmetricจะไม่หยุดตามที่คาด</p><h3>20. Callbacks</h3>
+<p>Important:
+- EarlyStopping
+- ModelCheckpoint
+- ReduceLROnPlateau
+- TensorBoard</p>
+<p>Example:</p>
+<pre><code class="language-python">keras.callbacks.EarlyStopping(
+    monitor=&quot;val_loss&quot;,
+    patience=5,
+    restore_best_weights=True,
+)
+</code></pre></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch23-objective-15" class="objective-proof"><summary>tf.function</summary><p>tf.function: ใช้กรณีในหัวข้อ tf.function เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch23-evidence-15"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch23-evidence-15-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch23-evidence-15-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch23-evidence-15-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch23-evidence-15-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch23-evidence-15-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch23-evidence-15-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch23-evidence-15-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch23-evidence-15-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>warmuptracedfunctionก่อนจับเวลา; <code>.numpy()</code>บังคับmaterialization; แยกtracecompiletimeจากsteady-stateและระบุCPU/threadconfig</p><h3>16. tf.function</h3>
+<p>Decorator:</p>
+<pre><code class="language-python">@tf.function
+def train_step(...):
+    ...
+</code></pre>
+<p>TensorFlow traces Python into a graph-like executable representation.</p>
+<p>Benefits may include:
+- reduced Python overhead
+- graph optimizations
+- accelerator execution</p>
+<p>But debugging traced code differs from eager debugging.</p>
+<p>Learn eager first.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch23-objective-16" class="objective-proof"><summary>Keras 3 Multi-Backend Context</summary><p>Keras 3 Multi-Backend Context: ใช้กรณีในหัวข้อ Keras 3 Multi-Backend Context เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch23-evidence-16"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch23-evidence-16-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch23-evidence-16-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch23-evidence-16-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch23-evidence-16-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch23-evidence-16-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch23-evidence-16-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch23-evidence-16-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch23-evidence-16-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>บันทึกTF/Keras/python/seed/datasetpipeline/checkpointconfig; ทดลองprefetchเพิ่มexamples/secโดยfiniteepochและevaluationเท่าเดิม CPUผ่านไม่ยืนยันGPUintegration</p><h3>22. Keras 3 Multi-Backend Context</h3>
+<p>Standalone Keras 3 supports:
+- TensorFlow
+- JAX
+- PyTorch</p>
+<p>This course uses TensorFlow backend here because Chapter 22 already covers native PyTorch.</p>
+<p>The important skill is separating:
+- Keras model API
+from
+- backend execution system</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details></section><section id="implementation" class="canonical-section"><h2>Implementation และ tests ที่รันบนเครื่องได้</h2><details><summary>23-tensorflow-keras/src/keras_basics.py</summary><pre><code>&quot;&quot;&quot;Small TensorFlow/Keras utilities used by Chapter 23.&quot;&quot;&quot;
+
+from __future__ import annotations
+
+import tensorflow as tf
+from tensorflow import keras
+
+
+def visible_gpus() -&gt; list[str]:
+    return [device.name for device in tf.config.list_physical_devices(&quot;GPU&quot;)]
+
+
+def build_mlp(
+    input_dim: int,
+    hidden_dim: int,
+    num_classes: int,
+) -&gt; keras.Model:
+    if min(input_dim, hidden_dim, num_classes) &lt;= 0:
+        raise ValueError(&quot;dimensions must be positive&quot;)
+
+    return keras.Sequential(
+        [
+            keras.layers.Input(shape=(input_dim,)),
+            keras.layers.Dense(hidden_dim, activation=&quot;relu&quot;),
+            keras.layers.Dense(num_classes),
+        ],
+        name=&quot;tiny_classifier&quot;,
+    )
+
+
+def compile_classifier(
+    model: keras.Model,
+    *,
+    learning_rate: float = 1e-3,
+) -&gt; keras.Model:
+    model.compile(
+        optimizer=keras.optimizers.Adam(learning_rate=learning_rate),
+        loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+        metrics=[&quot;accuracy&quot;],
+    )
+    return model
+
+
+def train_step(
+    model: keras.Model,
+    optimizer: keras.optimizers.Optimizer,
+    loss_fn: keras.losses.Loss,
+    x: tf.Tensor,
+    y: tf.Tensor,
+) -&gt; float:
+    with tf.GradientTape() as tape:
+        logits = model(x, training=True)
+        loss = loss_fn(y, logits)
+
+    gradients = tape.gradient(loss, model.trainable_variables)
+    optimizer.apply_gradients(zip(gradients, model.trainable_variables))
+    return float(loss.numpy())
+
+
+def predict_classes(model: keras.Model, x: tf.Tensor) -&gt; tf.Tensor:
+    logits = model(x, training=False)
+    return tf.argmax(logits, axis=1, output_type=tf.int64)
+</code></pre></details><details><summary>23-tensorflow-keras/tests/test_keras_basics.py</summary><pre><code>from pathlib import Path
+import importlib.util
+
+import pytest
+
+tf = pytest.importorskip(&quot;tensorflow&quot;)
+
+
+MODULE_PATH = Path(__file__).parents[1] / &quot;src&quot; / &quot;keras_basics.py&quot;
+SPEC = importlib.util.spec_from_file_location(&quot;keras_basics_course&quot;, MODULE_PATH)
+assert SPEC and SPEC.loader
+mod = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(mod)
+
+
+def test_mlp_forward_shape_and_parameter_count() -&gt; None:
+    tf.keras.utils.set_random_seed(7)
+    model = mod.build_mlp(4, 8, 3)
+    x = tf.ones((5, 4), dtype=tf.float32)
+    logits = model(x, training=False)
+
+    assert tuple(logits.shape) == (5, 3)
+    assert model.count_params() == (4 * 8 + 8) + (8 * 3 + 3)
+
+
+def test_custom_train_step_changes_weights() -&gt; None:
+    tf.keras.utils.set_random_seed(9)
+    model = mod.build_mlp(2, 8, 2)
+
+    x = tf.constant(
+        [[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]],
+        dtype=tf.float32,
+    )
+    y = tf.constant([0, 1, 1, 1], dtype=tf.int64)
+
+    _ = model(x)
+    before = [w.numpy().copy() for w in model.trainable_variables]
+
+    optimizer = tf.keras.optimizers.SGD(learning_rate=0.1)
+    loss_fn = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+    loss = mod.train_step(model, optimizer, loss_fn, x, y)
+
+    assert loss &gt; 0.0
+    assert any(
+        not (a == b.numpy()).all()
+        for a, b in zip(before, model.trainable_variables)
+    )
+
+
+def test_predict_classes_shape() -&gt; None:
+    model = mod.build_mlp(3, 5, 2)
+    x = tf.ones((4, 3), dtype=tf.float32)
+    pred = mod.predict_classes(model, x)
+    assert tuple(pred.shape) == (4,)
+</code></pre></details></section><section id="glossary" class="canonical-section"><h2>อภิธานศัพท์ — คำไทย ความหมาย และข้อควรตรวจ</h2><dl><dt>tensor</dt><dd>เทนเซอร์: ชุดตัวเลขที่มีแกน เช่น scalar ไม่มีแกน, vector หนึ่งแกน, matrix สองแกน; shape บอกขนาดแต่ละแกน ไม่บอกความหมายของแกนจนกว่าจะระบุ</dd><dt>shape</dt><dd>รูปทรงข้อมูล: (B,T,d) หมายถึง batch × เวลา/ตำแหน่ง × features; ใช้ชื่อแกนกำกับเสมอ การ transpose เปลี่ยนแกนแต่ไม่ใช่แค่เปลี่ยนชื่อ</dd><dt>batch</dt><dd>กลุ่มตัวอย่างที่คำนวณร่วมกันหนึ่งครั้ง; B คือจำนวนตัวอย่าง ไม่ใช่จำนวน features หรือจำนวน optimizer updates</dd><dt>weight w / θ</dt><dd>น้ำหนักหรือพารามิเตอร์ที่โมเดลใช้คำนวณ; แก้ด้วยมือทำ forward ใหม่ ส่วน optimizer ต้องรับ gradient แล้วกด update จึงแก้ state</dd><dt>bias b</dt><dd>ค่าคงที่ที่บวกกับผลเชิงเส้น; regression scalar bias เพิ่ม Δ ทำให้ prediction ทุกจุดเพิ่ม Δ เท่ากัน</dd><dt>prediction ŷ</dt><dd>ค่าที่โมเดลทำนายจาก input และพารามิเตอร์ปัจจุบัน; เครื่องหมายหมวกแยกจาก target y ที่มาจากข้อมูล</dd><dt>residual e</dt><dd>ความคลาดเคลื่อน ในเว็บนี้นิยาม prediction − target; บางตำราใช้เครื่องหมายกลับกัน จึงต้องตรวจนิยามก่อนเทียบสูตร gradient</dd><dt>MSE</dt><dd>mean squared error = ผลรวม residual กำลังสองหารจำนวนรายการที่ระบุ; มีหน่วยเป็น target ยกกำลังสอง และการใช้ sum แทน mean เปลี่ยน scale gradient</dd><dt>loss L / objective J</dt><dd>จำนวนที่ optimizer ต้องการลด; objective อาจรวม data loss และ regularization จึงต้องดูองค์ประกอบและ reduction ให้ตรง implementation</dd><dt>gradient ∇ / ∂</dt><dd>เวกเตอร์ของ partial derivatives บอกอัตราเปลี่ยน loss ต่อพารามิเตอร์แต่ละตัว; ∂ ใช้เมื่อเปลี่ยนตัวหนึ่งโดยตรึงตัวอื่น</dd><dt>chain rule</dt><dd>กฎลูกโซ่: คูณอนุพันธ์ตามเส้นทาง และบวก contribution จากทุกเส้นทางที่มารวมกัน ใช้ย้อนจาก loss ถึง weights</dd><dt>learning rate η</dt><dd>ขนาดตัวคูณ gradient ใน update θnew=θ−ηg; η≥0, ศูนย์หมายถึงไม่มีการขยับพารามิเตอร์ ก้าวใหญ่เกินอาจ diverge</dd><dt>regularization λ</dt><dd>ตัวคูณค่าลงโทษ ต้อง λ≥0 ตามนิยามการลงโทษ; Ridge λΣw² เพิ่ม gradient 2λw โดยบท Regression นี้ไม่ลงโทษ bias</dd><dt>baseline</dt><dd>สถานะอ้างอิงที่ตรึงไว้สำหรับเทียบ; ต้องเก็บ snapshot ไม่อ้าง object ปัจจุบันที่แก้ตามไปด้วย</dd><dt>invariant</dt><dd>คุณสมบัติที่กลไกต้องรักษา เช่น probability รวม1, shape สอดคล้อง, queue ไม่เกิน capacity; ใช้ tests ตรวจได้มากกว่าดูภาพสวย</dd><dt>optimizer state</dt><dd>ความจำของอัลกอริทึม เช่น velocity, moments และ completed updates; คืนเฉพาะ weights ยังไม่เท่ากับเริ่มการฝึกใหม่ทั้งหมด</dd><dt>finite difference</dt><dd>ประมาณ derivative ด้วย [f(x+h)−f(x−h)]/(2h); h&gt;0, ใช้ smooth point และลองหลาย h เพื่อแยก truncation error จาก roundoff</dd><dt>softmax</dt><dd>แปลง logits เป็นความน่าจะเป็นตามแกนที่กำหนด; ลบ max ก่อน exp เพื่อความเสถียร และ fully masked row ต้องมีนโยบายชัดเจน</dd><dt>logit</dt><dd>คะแนนก่อน sigmoid/softmax ไม่ใช่ probability; อาจเป็นจำนวนจริงติดลบหรือเกิน1ได้ จึงห้ามส่งให้ loss ที่คาด probability โดยไม่แปลง</dd><dt>temperature τ / T</dt><dd>ตัวหาร logits ก่อน softmax; ต้องเป็นบวก ค่าเล็กทำ distribution แหลมขึ้น โดยไม่เท่ากับ retrain weights</dd><dt>mask</dt><dd>ตัวกำหนดตำแหน่งที่อ่านหรือคิด loss ได้; causal mask ปิดอนาคต, padding mask ปิดข้อมูลเติม, loss mask เลือก target แต่ละอย่างคนละหน้าที่</dd><dt>Q / K / V</dt><dd>query ใช้ค้นข้อมูล, key ใช้จับคู่ query, value เป็นข้อมูลที่ถูกถัวเฉลี่ย; เป็น learned projections ของ representation ไม่ใช่ป้ายความหมายตายตัว</dd><dt>head</dt><dd>ส่วนของ feature representation ที่ทำ attention แยกกัน แล้ว concat/project กลับ; ต้องตรวจ d_model หารจำนวน heads ลงตัว</dd><dt>ε-neighborhood</dt><dd>เพื่อนบ้านทั้งหมดที่มีระยะไม่เกิน ε รวมจุดตัวเองใน DBSCAN นี้; ε มีหน่วยเดียวกับพิกัด ไม่ใช่จำนวน k ที่ใช้โหวต</dd><dt>core / border / noise</dt><dd>DBSCAN core มีเพื่อนบ้านรวมตัวเองถึง min_samples; border อยู่ใกล้ core แต่เพื่อนบ้านไม่ถึง; noise ไม่ถูกเชื่อมกับ core cluster ใด</dd><dt>bootstrap</dt><dd>สุ่ม observations แบบ replacement ขนาดเท่าเดิมซ้ำหลายครั้งแล้วคำนวณ statistic ใหม่; seed ทำให้ตรวจซ้ำได้ แต่ไม่แก้สมมติฐาน IID ที่ผิด</dd><dt>confidence interval</dt><dd>ช่วงที่สร้างด้วย procedure ที่มี coverage ตามสมมติฐาน; ช่วงหนึ่งที่ได้แล้วไม่ใช่ posterior probability ของ parameter และ sample เล็กยังไม่แน่นอนมาก</dd><dt>validation / test</dt><dd>validation ใช้เลือกโมเดล/ค่าตั้ง ส่วน test ใช้ประเมินหลัง freeze การตัดสินใจ; fit preprocessing/tokenizer จาก test เป็น leakage</dd><dt>leakage</dt><dd>ข้อมูลที่ควรยังไม่รู้ไหลเข้า training/การเลือกโมเดล เช่น future feature หรือเอกสารซ้ำข้าม split ทำให้ metric ดูดีเกินการใช้งานจริง</dd><dt>queue / capacity</dt><dd>queue คือรายการรอ, capacity การให้บริการรวม = workers × service rate ตามแบบจำลอง; เพิ่ม timeout ไม่เพิ่มกำลังประมวลผล</dd><dt>state transition</dt><dd>การเปลี่ยนสถานะเมื่อเกิดเหตุการณ์ที่อนุญาต เช่น queued→active→done; ต้องระบุ guard, side effect และเหตุผลเมื่อ transition ถูกปฏิเสธ</dd><dt>latency / throughput</dt><dd>latency คือเวลาต่อคำขอ, throughput คือปริมาณงานต่อหน่วยเวลา; batching อาจเพิ่ม throughput แต่เพิ่มเวลารอ จึงต้องวัดทั้งคู่</dd><dt>idempotency</dt><dd>ทำคำขอ business operation เดิมซ้ำแล้ว side effect เกิดครั้งเดียวตาม key และ transaction protocol; ไม่ได้รับประกันจากการใช้ UUID ใหม่ทุก attempt</dd><dt>local lab</dt><dd>โปรแกรม Python และ tests ที่ผู้เรียนรันบนเครื่อง; เว็บเก็บเพียงคำยืนยันของผู้เรียน การผ่าน tests ของโค้ดต้นแบบไม่ใช่ผลตรวจโค้ดผู้เรียน</dd></dl></section></article>
+<section id="practice" class="practice-section"><span class="eyebrow">PRACTICE · DEBUG · BUILD</span><h2>พิสูจน์ด้วยการลงมือทำ</h2><div id="web-checks"></div><div class="retry-actions"><button class="secondary-button" id="retry-checks">เริ่มทำโจทย์ในเว็บใหม่</button><button class="text-button" id="undo-retry" hidden>คืนผลก่อนเริ่มใหม่</button></div><div id="exercise-content"><h2>แบบฝึก 20 ข้อ — เฉลยเฉพาะข้อ</h2><p>ทำคำตอบก่อนเปิด hints; โจทย์ปลายเปิดให้ใช้ตัวอย่างคำตอบและหลักฐานราย objective ตรวจงานจริง</p><section id="exercise-1" class="exercise-item"><h3>ข้อ 1</h3><p>Define Tensor.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Tensor Basics: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): tf.Tensorเก็บndarrayimmutableที่มีshape,dtype,d…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: tf.Tensorเก็บndarrayimmutableที่มีshape,dtype,device; parameterที่แก้ค่าใช้tf.Variab…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>tf.Tensorเก็บndarrayimmutableที่มีshape,dtype,device; parameterที่แก้ค่าใช้tf.Variable; [[1,2],[3,4]]float32shape(2,2)</p><p>อ้างอิง: <a href="#chapter-23/section/topic-4">Tensor Basics</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch23-exercise-01"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-2" class="exercise-item"><h3>ข้อ 2</h3><p>Define GradientTape.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ GradientTape: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): GradientTapeบันทึกoperationsในcontextเพื่อตรวจgradi…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: GradientTapeบันทึกoperationsในcontextเพื่อตรวจgradient; x=tf.Variable(2.),loss=x*x ให้tape.g…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>GradientTapeบันทึกoperationsในcontextเพื่อตรวจgradient; x=tf.Variable(2.),loss=x*x ให้tape.gradient(loss,x)=4 นอกtapeไม่ถูกบันทึก</p><p>อ้างอิง: <a href="#chapter-23/section/topic-6">GradientTape</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch23-exercise-02"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-3" class="exercise-item"><h3>ข้อ 3</h3><p>Explain Keras Model.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Model Subclassing: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): KerasModelรวมlayersและtrainablevariables,callนิ…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: KerasModelรวมlayersและtrainablevariables,callนิยามforward; Dense(1)รับlastfeaturedimแ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>KerasModelรวมlayersและtrainablevariables,callนิยามforward; Dense(1)รับlastfeaturedimและต้องbuild/callก่อนเข้าถึงweights</p><p>อ้างอิง: <a href="#chapter-23/section/topic-9">Model Subclassing</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch23-exercise-03"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-4" class="exercise-item"><h3>ข้อ 4</h3><p>Explain data pipeline.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ tf.data.Dataset: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): tf.data.Datasetจัดmap/shuffle/batch/prefetch; cach…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: tf.data.Datasetจัดmap/shuffle/batch/prefetch; cacheก่อนrandomaugmentationต่างจากcacheหลังau…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>tf.data.Datasetจัดmap/shuffle/batch/prefetch; cacheก่อนrandomaugmentationต่างจากcacheหลังaugmentationเพราะหลังcacheจะตรึงผลสุ่ม</p><p>อ้างอิง: <a href="#chapter-23/section/topic-13">tf.data.Dataset</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch23-exercise-04"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-5" class="exercise-item"><h3>ข้อ 5</h3><p>Compare Tensor and GradientTape.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Tensor Basics, GradientTape: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): Tensorคือค่าที่ส่งในgraph ส่วนGradientTapeเก็บความ…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: Tensorคือค่าที่ส่งในgraph ส่วนGradientTapeเก็บความสัมพันธ์เพื่ออนุพันธ์; watchtensorconstan…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>Tensorคือค่าที่ส่งในgraph ส่วนGradientTapeเก็บความสัมพันธ์เพื่ออนุพันธ์; watchtensorconstantเองหากต้องการgradientไม่ใช่Variable</p><p>อ้างอิง: <a href="#chapter-23/section/topic-4">Tensor Basics</a>, <a href="#chapter-23/section/topic-6">GradientTape</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch23-exercise-05"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-6" class="exercise-item"><h3>ข้อ 6</h3><p>Explain how data pipeline changes model behavior.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ tf.data.Dataset: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): shufflebufferเล็กสลับไม่ทั่วdataset; repeatก่อนbatc…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: shufflebufferเล็กสลับไม่ทั่วdataset; repeatก่อนbatchอาจข้ามepochboundary ต้องกำหนดsteps_per_…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>shufflebufferเล็กสลับไม่ทั่วdataset; repeatก่อนbatchอาจข้ามepochboundary ต้องกำหนดsteps_per_epochและไม่repeatvalidationไม่สิ้นสุด</p><p>อ้างอิง: <a href="#chapter-23/section/topic-13">tf.data.Dataset</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch23-exercise-06"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-7" class="exercise-item"><h3>ข้อ 7</h3><p>Explain a common limitation involving callbacks.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Callbacks: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): EarlyStoppingmonitorval_lossและrestore_best_weightsต…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: EarlyStoppingmonitorval_lossและrestore_best_weightsตามเจตนา; ไม่ใช้testlossเลือกcheckpoint; ca…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>EarlyStoppingmonitorval_lossและrestore_best_weightsตามเจตนา; ไม่ใช้testlossเลือกcheckpoint; callbackผิดชื่อmetricจะไม่หยุดตามที่คาด</p><p>อ้างอิง: <a href="#chapter-23/section/topic-20">Callbacks</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch23-exercise-07"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-8" class="exercise-item"><h3>ข้อ 8</h3><p>Explain the tradeoff introduced by checkpoint.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Saving: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): checkpointweightsช่วยreproduceinferenceแต่resumeop…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: checkpointweightsช่วยreproduceinferenceแต่resumeoptimizerต้องบันทึกstateด้วย; ตรวจroundtri…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>checkpointweightsช่วยreproduceinferenceแต่resumeoptimizerต้องบันทึกstateด้วย; ตรวจroundtripoutputและstepอย่าใช้เพียงfileexists</p><p>อ้างอิง: <a href="#chapter-23/section/topic-19">Saving</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch23-exercise-08"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-9" class="exercise-item"><h3>ข้อ 9</h3><p>Implement a small example of Tensor.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Tensor Basics, GradientTape: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): `x=tf.Variable([1.,2.]); with tf.GradientTape() as t:…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: <code>x=tf.Variable([1.,2.]); with tf.GradientTape() as t: loss=tf.reduce_sum(x*x)</code> แล้วgradientได้[…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p><code>x=tf.Variable([1.,2.]); with tf.GradientTape() as t: loss=tf.reduce_sum(x*x)</code> แล้วgradientได้[2,4],loss5; indentationในPythonต้องถูก</p><p>อ้างอิง: <a href="#chapter-23/section/topic-4">Tensor Basics</a>, <a href="#chapter-23/section/topic-6">GradientTape</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch23-exercise-09"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-10" class="exercise-item"><h3>ข้อ 10</h3><p>Add deterministic tests for Exercise 9.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ GradientTape: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): assertloss5,gradient[2,4],shape(2,),finite; grad…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: assertloss5,gradient[2,4],shape(2,),finite; gradientของconstantนอกwatchควรNoneไม่ตีเป็น…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>assertloss5,gradient[2,4],shape(2,),finite; gradientของconstantนอกwatchควรNoneไม่ตีเป็น0; CPUtestต้องไม่skipcoreTensorFlow</p><p>อ้างอิง: <a href="#chapter-23/section/topic-6">GradientTape</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch23-exercise-10"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-11" class="exercise-item"><h3>ข้อ 11</h3><p>Implement the main calculation behind Keras Model.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Keras Sequential API, Functional API, Model Subclassing: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): Dense1weights[[1],[2]],bias[.5],input[[3,4…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: Dense1weights[[1],[2]],bias[.5],input[[3,4]]ให้11.5; set_weightsหลังbuildและ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>Dense1weights[[1],[2]],bias[.5],input[[3,4]]ให้11.5; set_weightsหลังbuildและtraining=Falseสำหรับevaluation</p><p>อ้างอิง: <a href="#chapter-23/section/topic-7">Keras Sequential API</a>, <a href="#chapter-23/section/topic-8">Functional API</a>, <a href="#chapter-23/section/topic-9">Model Subclassing</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch23-exercise-11"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-12" class="exercise-item"><h3>ข้อ 12</h3><p>Run a small seeded experiment using GradientTape, data pipeline, and checkpoint.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ tf.data.Dataset, Saving: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): tf.keras.utils.set_random_seed(7); tf.data batch2tinyregress…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: tf.keras.utils.set_random_seed(7); tf.data batch2tinyregression; train2epochs,save/load.kerasแล้วpredictional…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>tf.keras.utils.set_random_seed(7); tf.data batch2tinyregression; train2epochs,save/load.kerasแล้วpredictionallcloseและตรวจoptimizeriterationsเมื่อresume</p><p>อ้างอิง: <a href="#chapter-23/section/topic-13">tf.data.Dataset</a>, <a href="#chapter-23/section/topic-19">Saving</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch23-exercise-12"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-13" class="exercise-item"><h3>ข้อ 13</h3><p>Explain a common shape or data mismatch.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Shape Debugging, dtype: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): KerasDensekernel(d,h)ต่างจากPyTorch(h,d); targe…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: KerasDensekernel(d,h)ต่างจากPyTorch(h,d); target(B,)กับoutput(B,1)ต้องreshape; variab…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>KerasDensekernel(d,h)ต่างจากPyTorch(h,d); target(B,)กับoutput(B,1)ต้องreshape; variablebatchdimNoneไม่เท่ากับbatchจริง0</p><p>อ้างอิง: <a href="#chapter-23/section/topic-17">Shape Debugging</a>, <a href="#chapter-23/section/topic-18">dtype</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch23-exercise-13"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-14" class="exercise-item"><h3>ข้อ 14</h3><p>Explain one numerical-stability concern.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ compile(): ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): SparseCategoricalCrossentropy(from_logits=True)รับra…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: SparseCategoricalCrossentropy(from_logits=True)รับrawlogits; from_logitsFalseกับlogitsทำlossผ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>SparseCategoricalCrossentropy(from_logits=True)รับrawlogits; from_logitsFalseกับlogitsทำlossผิด ให้ตรวจfinalactivation/lossร่วมกัน</p><p>อ้างอิง: <a href="#chapter-23/section/topic-10">compile()</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch23-exercise-14"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-15" class="exercise-item"><h3>ข้อ 15</h3><p>Explain a correct train, validation, and test workflow.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ fit(), evaluate() / predict(), training=True / False: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): fittraindatasetพร้อมvalidation_dataแยก; preprocess…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: fittraindatasetพร้อมvalidation_dataแยก; preprocessadaptเฉพาะtrain; callbackmonitorvalidatio…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>fittraindatasetพร้อมvalidation_dataแยก; preprocessadaptเฉพาะtrain; callbackmonitorvalidationและevaluate testหลังเลือกmodelเสร็จ</p><p>อ้างอิง: <a href="#chapter-23/section/topic-11">fit()</a>, <a href="#chapter-23/section/topic-12">evaluate() / predict()</a>, <a href="#chapter-23/section/topic-15">training=True / False</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch23-exercise-15"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-16" class="exercise-item"><h3>ข้อ 16</h3><p>Measure runtime and memory of the main calculation.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ tf.function: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): warmuptracedfunctionก่อนจับเวลา; <code>.numpy()</code>บังคับ…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: warmuptracedfunctionก่อนจับเวลา; <code>.numpy()</code>บังคับmaterialization; แยกtracecompiletimeจาก…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>warmuptracedfunctionก่อนจับเวลา; <code>.numpy()</code>บังคับmaterialization; แยกtracecompiletimeจากsteady-stateและระบุCPU/threadconfig</p><p>อ้างอิง: <a href="#chapter-23/section/topic-16">tf.function</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch23-exercise-16"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-17" class="exercise-item"><h3>ข้อ 17</h3><p>Derive the main input-to-output algorithm for TensorFlow and Keras.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Custom Training Loop: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): tf.data→Model.call→loss→GradientTape.gradient→optimizer.…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: tf.data→Model.call→loss→GradientTape.gradient→optimizer.apply_gradients→metrics→callbacks→checkpoint; …</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>tf.data→Model.call→loss→GradientTape.gradient→optimizer.apply_gradients→metrics→callbacks→checkpoint; Nonegradต้องหาว่าoperationหลุดtapeตรงไหน</p><p>อ้างอิง: <a href="#chapter-23/section/topic-14">Custom Training Loop</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch23-exercise-17"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-18" class="exercise-item"><h3>ข้อ 18</h3><p>Compare a scratch implementation with a trusted library on identical data.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Tensor Basics, GradientTape: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ตั้งDenseweightsจากNumPyแบบ(d,h),dtypefloat64,los…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ตั้งDenseweightsจากNumPyแบบ(d,h),dtypefloat64,lossreductionเดียวกัน; assertforward,dW,db…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ตั้งDenseweightsจากNumPyแบบ(d,h),dtypefloat64,lossreductionเดียวกัน; assertforward,dW,dbทั้งKeras/Torch/NumPyตรงบนtinyinput</p><p>อ้างอิง: <a href="#chapter-23/section/topic-4">Tensor Basics</a>, <a href="#chapter-23/section/topic-6">GradientTape</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch23-exercise-18"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-19" class="exercise-item"><h3>ข้อ 19</h3><p>Compare a baseline with one controlled change involving callbacks.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Callbacks: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): เปลี่ยนEarlyStoppingpatience0→2โดยคงweights,epocho…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: เปลี่ยนEarlyStoppingpatience0→2โดยคงweights,epochorder,seed; รายงานbestepochกับstop_epochแ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>เปลี่ยนEarlyStoppingpatience0→2โดยคงweights,epochorder,seed; รายงานbestepochกับstop_epochแยกและbestvalscoreไม่อ้างทุกrunดีขึ้น</p><p>อ้างอิง: <a href="#chapter-23/section/topic-20">Callbacks</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch23-exercise-19"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-20" class="exercise-item"><h3>ข้อ 20</h3><p>Summarize validation, reproducibility, and one open research question.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Keras 3 Multi-Backend Context: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): บันทึกTF/Keras/python/seed/datasetpipeline/checkpointconfig; ท…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: บันทึกTF/Keras/python/seed/datasetpipeline/checkpointconfig; ทดลองprefetchเพิ่มexamples/secโดยfiniteepochและevalu…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>บันทึกTF/Keras/python/seed/datasetpipeline/checkpointconfig; ทดลองprefetchเพิ่มexamples/secโดยfiniteepochและevaluationเท่าเดิม CPUผ่านไม่ยืนยันGPUintegration</p><p>อ้างอิง: <a href="#chapter-23/section/topic-22">Keras 3 Multi-Backend Context</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch23-exercise-20"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section></div><div id="local-lab-content"><section id="local-lab"><h2>Local lab: Python 3.12 บน CPU</h2><p>รันจาก repository root; ใช้ Python 3.12 แยก environment สำหรับ framework ตาม requirements ของชุดบท</p><pre><code>python3.12 -m venv .venv-course
+source .venv-course/bin/activate
+python -m pip install -r requirements-batch08.txt pytest
+(cd 23-tensorflow-keras &amp;&amp; python -m pytest tests -q -rs)</code></pre><p>ผลที่คาดหวัง: required tests ผ่านและไม่มี required test ถูก skip; GPU/integrations ที่ยังไม่รันต้องระบุแยก Python 3.15 ที่มากับเครื่องอาจใช้กับ framework wheels เหล่านี้ไม่ได้</p><h2>Mini Project — TensorFlow/Keras Training Harness</h2>
+<p>Use sklearn digits and build:
+- tf.data pipeline
+- MLP
+- SparseCategoricalCrossentropy(from_logits=True)
+- Adam
+- EarlyStopping
+- ModelCheckpoint
+- validation model selection
+- final test
+- .keras save/load
+- JSON report</p>
+<p>Then recreate the same network with a custom GradientTape loop and compare results/runtime.</p><h2>Batch 08 Integration Project — Cross-Framework CNN Lab</h2>
+<p>This project trains equivalent small CNN classifiers on the same sklearn digits dataset using:</p>
+<ul>
+<li>PyTorch</li>
+<li>TensorFlow/Keras</li>
+</ul>
+<p>The goal is not to declare a framework winner. The goal is to understand how the same mathematical model maps to different framework APIs.</p>
+<h3>Shared Protocol</h3>
+<pre><code class="language-text">sklearn digits
+→ fixed stratified split
+→ normalize pixels to [0,1]
+→ same train / validation / test indices
+→ equivalent small CNNs
+→ validation tracking
+→ final test
+</code></pre>
+<h3>Data Layout</h3>
+<p>PyTorch branch:</p>
+<pre><code class="language-text">N × C × H × W
+</code></pre>
+<p>TensorFlow/Keras branch:</p>
+<pre><code class="language-text">N × H × W × C
+</code></pre>
+<p>The conversion is explicit.</p>
+<h3>Run PyTorch</h3>
+<p>Install the core course environment first:</p>
+<pre><code class="language-bash">python -m pip install -r requirements-batch08.txt
+</code></pre>
+<p>Then install PyTorch using the current official selector for your machine.</p>
+<p>Run:</p>
+<pre><code class="language-bash">python integration-project-batch08/src/cnn_framework_lab.py \
+  --framework pytorch \
+  --epochs 8 \
+  --output-dir reports/batch08-pytorch
+</code></pre>
+<h3>Run TensorFlow/Keras</h3>
+<p>CPU/simple install:</p>
+<pre><code class="language-bash">python -m pip install -r requirements-batch08-tensorflow.txt
+</code></pre>
+<p>On a compatible NVIDIA Linux GPU environment, follow the current TensorFlow Linux GPU installation instructions instead of assuming an old CUDA setup.</p>
+<p>Run:</p>
+<pre><code class="language-bash">python integration-project-batch08/src/cnn_framework_lab.py \
+  --framework tensorflow \
+  --epochs 8 \
+  --output-dir reports/batch08-tensorflow
+</code></pre>
+<h3>What To Compare</h3>
+<p>Record:</p>
+<ul>
+<li>parameter count</li>
+<li>best validation accuracy</li>
+<li>final test accuracy</li>
+<li>training time</li>
+<li>prediction time</li>
+<li>CPU or GPU device</li>
+<li>framework version</li>
+</ul>
+<p>A speed comparison is meaningful only if:
+- data split is identical
+- model capacity is close
+- batch size is equal
+- preprocessing is equal
+- warmup is considered
+- asynchronous GPU execution is synchronized appropriately</p>
+<h3>Required Extensions</h3>
+<ol>
+<li>confusion matrix</li>
+<li>per-class recall</li>
+<li>checkpoint saving</li>
+<li>early stopping</li>
+<li>GPU memory measurements</li>
+<li>batch-size sweep</li>
+<li>mixed precision later after Chapter 54 concepts</li>
+<li>add augmentation</li>
+<li>replace pooling with strided convolution</li>
+<li>compare flatten head vs global average pooling</li>
+</ol>
+<h3>Mastery Questions</h3>
+<ul>
+<li>Why does PyTorch receive NCHW while Keras defaults to NHWC?</li>
+<li>Why should CrossEntropy-style losses receive logits?</li>
+<li>Why does model.eval() not itself disable PyTorch gradients?</li>
+<li>What does GradientTape record?</li>
+<li>Why can a tiny CNN be slower on GPU than CPU?</li>
+<li>Which parts of the training loop are framework-specific and which are mathematical?</li>
+</ul></section></div><label class="local-confirm"><input type="checkbox" id="local-lab-confirm"> ฉันรัน local lab และตรวจผลตาม rubric ด้วยตัวเองแล้ว</label><p class="local-note">สถานะนี้เป็นคำยืนยันของผู้เรียน เว็บไม่ได้รันหรือตรวจ Python บนเครื่องแทนคุณ</p></section>
+<section id="mastery-review" class="practice-section"><h2>หลักฐานตามเกณฑ์การเรียนรู้</h2><p>ทุก objective ต้องแสดงหลักฐานอธิบาย ทำนาย คำนวณ อ่าน shape/state debug และประยุกต์ พร้อมกรณีใหม่ ผลรัน source ผู้เรียนจริง และการประเมินซ้ำ เกณฑ์นี้ไม่รับประกันความเข้าใจทุกสถานการณ์ เปิด JavaScript เพื่อดูรายการที่ยังขาดและนำเข้ารายงานผู้ตรวจ</p></section><section class="coverage-section"><h2>แผนที่สิ่งที่เรียน → สิ่งที่ต้องแสดงให้ได้</h2><div id="coverage-table"></div></section><footer><span>ZERO TO ELITE AI ENGINEER · LEARNING STUDIO</span><span>อ่าน · derive · implement · debug · experiment · build</span></footer></div></main><noscript><style>.workbench,.sidebar,.reading-route,.lesson-toc,.mastery-status,#web-checks{display:none}main{margin-left:0}</style>อ่านเนื้อหา HTML ได้ตามปกติ เปิด JavaScript เพื่อใช้ห้องทดลองและตรวจคำตอบ</noscript></body></html>

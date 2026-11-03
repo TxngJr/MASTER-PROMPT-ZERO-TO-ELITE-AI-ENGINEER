@@ -1,0 +1,1617 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="บทเรียน AI Engineer ภาษาไทย พร้อมคณิตศาสตร์ทีละขั้นและห้องทดลองที่คำนวณจริง"><title>NLP: กำหนด representation ก่อนเรียนภาษา · AI Engineer Studio</title><link rel="stylesheet" href="../visual-lab/assets/styles.css"><link rel="stylesheet" href="../visual-lab/assets/course.css"><script defer src="../visual-lab/assets/lessons.js"></script><script defer src="../visual-lab/assets/chapter-meta.js"></script><script defer src="../visual-lab/assets/course-math.js"></script><script defer src="../visual-lab/assets/course-models.js"></script><script defer src="../visual-lab/assets/course-models-v3.js"></script><script defer src="../visual-lab/assets/course-assessment.js"></script><script defer src="../visual-lab/assets/course-mastery.js"></script><script defer src="../visual-lab/assets/course-catalog.js"></script><script defer src="../visual-lab/assets/book-content.js"></script><script defer src="../visual-lab/assets/course-render.js"></script><script defer src="../visual-lab/assets/course-mastery-panel.js"></script><script defer src="../visual-lab/assets/quality-report.js"></script><script defer src="../visual-lab/assets/course-app.js"></script></head>
+<body data-chapter="32" data-root="../"><a class="skip-link" href="#main">ข้ามไปบทเรียน</a>
+<aside class="sidebar" id="sidebar" aria-label="เลือกบทเรียน"><a class="brand" href="../visual-lab/index.html"><span class="brand-mark">ai</span><span>AI ENGINEER<small>LEARN · DERIVE · BUILD</small></span></a><div class="sidebar-intro">อ่านให้เข้าใจ · คำนวณให้เห็น · เขียนให้เป็น</div><label class="search-box"><input id="search" type="search" placeholder="ค้นหาบท / attention" aria-label="ค้นหาบทเรียน"></label><label class="filter-label" for="phase-filter">เส้นทางการเรียน <span id="nav-count"></span></label><select id="phase-filter"><option value="">ทุก Phase</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option></select><nav id="chapter-list" class="chapter-list" aria-label="รายชื่อบท"></nav><div class="course-progress"><div><span>ผ่านโจทย์ในเว็บ</span><strong id="progress-count">0 / 80</strong></div><progress id="course-progress" max="80" value="0" aria-label="บทที่ผ่านโจทย์"></progress><a id="resume-link" href="#chapter-1">อ่านต่อจากเดิม →</a></div></aside>
+<button class="nav-backdrop" id="nav-backdrop" aria-label="ปิดเมนู" hidden></button>
+<main id="main" tabindex="-1"><header class="topbar"><div><button id="nav-toggle" class="icon-button mobile-menu" aria-label="เปิดเมนูบทเรียน" aria-expanded="false" aria-controls="sidebar">☰</button><span id="breadcrumb"></span></div><span class="local-badge"><i></i> คำนวณในเครื่อง · ไม่มี API</span></header><div class="content">
+<div class="chapter-navigation"><label for="chapter-select" class="sr-only">เลือกบทเรียน</label><select id="chapter-select"></select><div class="chapter-arrows"><button id="prev-chapter" class="icon-button" aria-label="บทก่อนหน้า">←</button><button id="next-chapter" class="icon-button" aria-label="บทถัดไป">→</button></div></div>
+<section class="chapter-hero"><div><p id="chapter-kicker" class="eyebrow"></p><h1 id="chapter-title">NLP: กำหนด representation ก่อนเรียนภาษา</h1><p class="english-title" id="chapter-english"></p></div><span class="hero-symbol">f(x) ↗</span></section>
+<p id="quality-status" class="quality-status"></p><div id="mastery-status" class="mastery-status"></div><div class="reading-route"><a href="#chapter-32/section/overview">01 อ่านบทเรียน</a><a href="#workbench">02 ทดลองสมการ</a><a href="#practice">03 ฝึกและตรวจงาน</a><a href="#mastery-review">04 หลักฐานตามเกณฑ์</a></div>
+<nav id="lesson-toc" class="lesson-toc" aria-label="สารบัญบท"></nav>
+<section id="overview" class="course-overview"><span class="eyebrow">THE LEARNING CONTRACT</span><h2>เรียนบทนี้แล้วต้องทำอะไรได้</h2><p id="chapter-purpose"></p><div id="chapter-objectives"></div><div class="learning-hint">ทำนาย → เปลี่ยนทีละค่า → ตรวจตัวเลข → อธิบายเหตุผล → เขียนด้วย Python เอง</div></section>
+<section class="workbench lab-card" id="workbench" aria-label="ห้องทดลองคำนวณจริง"><div class="card-header"><div><span class="live-dot"></span><span class="eyebrow">COMPUTATION WORKBENCH</span></div><span class="simulation-label">ทุกภาพใช้ผลคำนวณชุดเดียวกัน</span></div><div class="lab-top"><label for="lab-select">เลือกกลไกที่ต้องการทดลอง</label><select id="lab-select"></select><p id="lab-question"></p></div><div class="workbench-grid"><div class="viz-column"><div class="compare-labels"><span>เส้นทึบ: ปัจจุบัน</span><span>เส้นประ: baseline ที่ตรึงไว้</span></div><div id="simulation" class="simulation"></div><div id="metrics" class="metrics"></div><div id="baseline-diff" class="baseline-diff"></div><div class="playback"><div class="playback-buttons"><button class="primary-button" id="update-once">อัปเดตหนึ่งก้าว</button><button class="secondary-button" id="train-many">▶ ฝึก 30 ก้าว</button><button class="icon-button" id="back-state" aria-label="ย้อนประวัติ">↶</button><button class="icon-button" id="forward-state" aria-label="ประวัติถัดไป">↷</button></div></div><div class="lab-secondary-actions"><button id="pin-baseline" class="text-button">ตรึง baseline ปัจจุบัน</button><button id="reset-lab" class="text-button">คืนค่าเริ่มต้น</button><button id="download-state" class="text-button">บันทึกผล JSON</button><span id="history-status"></span></div><p id="simulation-note" class="simulation-note"></p><p class="lab-error" id="lab-error" role="alert" hidden></p></div><div class="controls-column"><h3>เปลี่ยนทีละตัว แล้วสังเกตผล</h3><div id="lab-controls"></div><p class="control-note">แก้ weight ด้วยมือจะคำนวณ forward ใหม่; optimizer เปลี่ยน weights เมื่อกดอัปเดตเท่านั้น</p></div></div>
+<div class="trace-section"><div class="trace-toolbar"><h3>เดินสมการทีละ operation</h3><div><button id="trace-prev" class="icon-button" aria-label="operation ก่อนหน้า">←</button><button id="play-trace" class="secondary-button" aria-pressed="false">▶ เล่น flow</button><button id="trace-next" class="icon-button" aria-label="operation ถัดไป">→</button><span id="stage-counter"></span></div></div><label class="motion-control"><input id="reduce-motion" type="checkbox"> ลดภาพเคลื่อนไหว (หยุดการเล่นที่ค้างอยู่)</label><div id="operation-steps" class="operation-steps"></div><div id="flow-diagram" class="flow-diagram"></div><div id="active-operation" class="active-operation" aria-live="polite"></div><p class="control-note">ตัวเลขบนภาพปัดเศษเพื่อให้อ่านง่าย; บันทึก JSON เพื่อดูค่าที่ใช้คำนวณเต็ม precision</p><details open><summary>ตารางค่าระหว่างทาง — ตรวจด้วยมือได้</summary><div id="result-table"></div></details><div id="tensor-tables" class="tensor-tables"></div><details id="surface-details"><summary>ดู loss surface และเส้นทางของ w₁,b (ตรึง controls อื่น)</summary><div id="surface-chart"></div><p>surface คำนวณ objective ปัจจุบันโดยตรึง degree, penalty, ข้อมูล และ weights อื่น เส้นทางแสดงเฉพาะ snapshots ที่ค่าเหล่านี้ตรงกัน; นอกช่วง w=[−1,5], b=[−2,4] ให้ตรวจค่าจริงใน history</p></details><details><summary>ประวัติการเปลี่ยนค่า</summary><div id="history-table"></div></details></div></section>
+<article id="chapter-article" class="chapter-article"><section id="mechanism-1" class="teaching-section"><span class="section-kicker">CHAPTER 32 · ภาพ → สมการ → โค้ด</span><h2>1. ข้อความไม่ใช่ sequence ของคำที่รู้แล้ว</h2><h3>โจทย์และเหตุผล</h3><p>Unicode normalization และ tokenization ต้องรักษาความหมาย ภาษาไทยไม่สามารถแบ่งคำด้วย whitespace อย่างเดียว ภาพ character model ใช้เพื่อแยกกลไกการนับจากปัญหาการตัดคำ</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Implement the main calculation behind n-gram.</p><p>tokens[a,b,a,b], bigramcounts(a,b)=2,(b,a)=1; add-onevocab2ให้P(b|a)=3/4,P(a|a)=1/4; contextunseenใช้priorที่ระบุ</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>corpus: training text,initial=banana banana bandana; context: context,initial=a; alpha: add-k smoothing,initial=1; order: context length,initial=1</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = &quot;a&quot;; ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</li><li>P(next|context)=(count+α)/(context_count+αV) = [0.23076923076923078, 0.07692307692307693, 0.07692307692307693, 0.07692307692307693, 0.5384615384615384]; นับ Unicode codepoints ในตัวอย่าง; ไม่ใช่ Thai word tokenizer</li><li>finite / normalized / bounded = [0.23076923076923078, 0.07692307692307693, 0.07692307692307693, 0.07692307692307693, 0.5384615384615384]; เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="ngram-น-บ-context-และ-next-cha">เปิดการทดลองนี้</a><p class="failure-box">probabilityproductsunderflowให้sumlogprobs; smoothingα&gt;0ป้องกันunseengramlog0 แต่ต้องเลือกαvalidationและไม่เพิ่มcountจากtest; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>tokens[a,b,a,b], bigramcounts(a,b)=2,(b,a)=1; add-onevocab2ให้P(b|a)=3/4,P(a|a)=1/4; contextunseenใช้priorที่ระบุ</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-1-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = &quot;a&quot;<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>P(next|context)=(count+α)/(context_count+αV)</code> = [0.23076923076923078, 0.07692307692307693, 0.07692307692307693, 0.07692307692307693, 0.5384615384615384]<p>นับ Unicode codepoints ในตัวอย่าง; ไม่ใช่ Thai word tokenizer</p></li><li><code>finite / normalized / bounded</code> = [0.23076923076923078, 0.07692307692307693, 0.07692307692307693, 0.07692307692307693, 0.5384615384615384]<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-1-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>shape / range</code> = &quot;a&quot;<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>P(next|context)=(count+α)/(context_count+αV)</code> = [0.23076923076923078, 0.07692307692307693, 0.07692307692307693, 0.07692307692307693, 0.5384615384615384]<p>นับ Unicode codepoints ในตัวอย่าง; ไม่ใช่ Thai word tokenizer</p></li><li><code>finite / normalized / bounded</code> = [0.23076923076923078, 0.07692307692307693, 0.07692307692307693, 0.07692307692307693, 0.5384615384615384]<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-1-code"><summary>โค้ด</summary><p>tokens[a,b,a,b], bigramcounts(a,b)=2,(b,a)=1; add-onevocab2ให้P(b|a)=3/4,P(a|a)=1/4; contextunseenใช้priorที่ระบุ</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-1-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = &quot;a&quot;<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>P(next|context)=(count+α)/(context_count+αV)</code> = [0.23076923076923078, 0.07692307692307693, 0.07692307692307693, 0.07692307692307693, 0.5384615384615384]<p>นับ Unicode codepoints ในตัวอย่าง; ไม่ใช่ Thai word tokenizer</p></li><li><code>finite / normalized / bounded</code> = [0.23076923076923078, 0.07692307692307693, 0.07692307692307693, 0.07692307692307693, 0.5384615384615384]<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-1"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-2" class="teaching-section"><span class="section-kicker">CHAPTER 32 · ภาพ → สมการ → โค้ด</span><h2>2. context-target ต้อง shift ให้ตรง</h2><h3>โจทย์และเหตุผล</h3><p>สำหรับ a b c ใช้ a ทำนาย b และ b ทำนาย c ไม่ใช่สอนให้คัดลอก token ปัจจุบัน นับ probability จาก train และกำหนด unknown/padding/EOS ให้มีหน้าที่ชัด</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Explain how language model changes behavior.</p><p>LMทำnext-tokenpredictionไม่ใช่ความจริงsemantic; unigramจับfrequencyได้แต่ไม่wordorder จึงต้องholdoutloglossและfailureexamples</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>corpus: training text,initial=banana banana bandana; context: context,initial=an; alpha: add-k smoothing,initial=1; order: context length,initial=2</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = &quot;an&quot;; ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</li><li>P(next|context)=(count+α)/(context_count+αV) = [0.09090909090909091, 0.5454545454545454, 0.09090909090909091, 0.18181818181818182, 0.09090909090909091]; นับ Unicode codepoints ในตัวอย่าง; ไม่ใช่ Thai word tokenizer</li><li>finite / normalized / bounded = [0.09090909090909091, 0.5454545454545454, 0.09090909090909091, 0.18181818181818182, 0.09090909090909091]; เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="ngram-context-ยาวข--นก-บ-unsee">เปิดการทดลองนี้</a><p class="failure-box">probabilityproductsunderflowให้sumlogprobs; smoothingα&gt;0ป้องกันunseengramlog0 แต่ต้องเลือกαvalidationและไม่เพิ่มcountจากtest; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>LMทำnext-tokenpredictionไม่ใช่ความจริงsemantic; unigramจับfrequencyได้แต่ไม่wordorder จึงต้องholdoutloglossและfailureexamples</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-2-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = &quot;an&quot;<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>P(next|context)=(count+α)/(context_count+αV)</code> = [0.09090909090909091, 0.5454545454545454, 0.09090909090909091, 0.18181818181818182, 0.09090909090909091]<p>นับ Unicode codepoints ในตัวอย่าง; ไม่ใช่ Thai word tokenizer</p></li><li><code>finite / normalized / bounded</code> = [0.09090909090909091, 0.5454545454545454, 0.09090909090909091, 0.18181818181818182, 0.09090909090909091]<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-2-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>shape / range</code> = &quot;an&quot;<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>P(next|context)=(count+α)/(context_count+αV)</code> = [0.09090909090909091, 0.5454545454545454, 0.09090909090909091, 0.18181818181818182, 0.09090909090909091]<p>นับ Unicode codepoints ในตัวอย่าง; ไม่ใช่ Thai word tokenizer</p></li><li><code>finite / normalized / bounded</code> = [0.09090909090909091, 0.5454545454545454, 0.09090909090909091, 0.18181818181818182, 0.09090909090909091]<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-2-code"><summary>โค้ด</summary><p>LMทำnext-tokenpredictionไม่ใช่ความจริงsemantic; unigramจับfrequencyได้แต่ไม่wordorder จึงต้องholdoutloglossและfailureexamples</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-2-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = &quot;an&quot;<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>P(next|context)=(count+α)/(context_count+αV)</code> = [0.09090909090909091, 0.5454545454545454, 0.09090909090909091, 0.18181818181818182, 0.09090909090909091]<p>นับ Unicode codepoints ในตัวอย่าง; ไม่ใช่ Thai word tokenizer</p></li><li><code>finite / normalized / bounded</code> = [0.09090909090909091, 0.5454545454545454, 0.09090909090909091, 0.18181818181818182, 0.09090909090909091]<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-2"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-3" class="teaching-section"><span class="section-kicker">CHAPTER 32 · ภาพ → สมการ → โค้ด</span><h2>3. perplexity อ่านได้เมื่อ protocol เดียวกัน</h2><h3>โจทย์และเหตุผล</h3><p>exp(mean cross-entropy) ขึ้นกับ tokenizer, masking และชุดข้อมูล จึงห้ามเทียบข้าม tokenization เหมือนมีหน่วยเดียวกันทั้งหมด ตรวจ corpus leakage ก่อนเชื่อคะแนนต่ำ</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Compare a baseline with one controlled change involving subword tokenization.</p><p>คงcorpus/split เปลี่ยนword→subword; reportOOV/tokensperbyte,holdoutbits/byteและtaskmetric ไม่ใช้PPLต่ำสุดข้ามtokenizersตัดสิน</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>corpus: corpus over a,b,c,initial=abacaba; eta: learning rate,initial=0.2; temperature: sampling temperature,initial=1; query: query token ID (a=0,b=1,c=2),initial=0; ignorePrefix: ignore first target positions,initial=0; l0: logit W[0,0],initial=0; l1: logit W[0,1],initial=0; l2: logit W[0,2],initial=0; l3: logit W[1,0],initial=0; l4: logit W[1,1],initial=0; l5: logit W[1,2],initial=0; l6: logit W[2,0],initial=0; l7: logit W[2,1],initial=0; l8: logit W[2,2],initial=0</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>inputs=tokens[:-1], targets=tokens[1:] = [0, 1, 0, 2, 0, 1, 0]; causal bigram model ใช้ current token ทำนาย next token</li><li>logits=W[current token] = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]; weights เริ่มจาก 0 จึง probability=1/3; ไม่มี pretrained weights</li><li>valid=t &gt;= ignorePrefix = 6; ignore label ไม่ได้ลบ input; ใช้สอน assistant-only loss</li><li>L=−mean log p(target) = 1.0986122886681098; normalize เฉพาะ valid targets</li><li>∂L/∂W[x,j] += (p_j−1[j=target])/N_valid = [[0.16666666666666666, -0.1666666666666667, -1.850371707708594e-17], [-0.22222222222222224, 0.1111111111111111, 0.1111111111111111], [-0.11111111111111112, 0.05555555555555555, 0.05555555555555555]]; accumulate เมื่อ context token เดียวถูกใช้หลายครั้ง</li><li>softmax(W[query]/temperature) = [0.3333333333333333, 0.3333333333333333, 0.3333333333333333]; temperature ใช้เฉพาะ distribution ตอน inference ไม่แก้ training CE</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="language-shift-targets-และ-perple">เปิดการทดลองนี้</a><p class="failure-box">probabilityproductsunderflowให้sumlogprobs; smoothingα&gt;0ป้องกันunseengramlog0 แต่ต้องเลือกαvalidationและไม่เพิ่มcountจากtest; tiny trainable bigram LM ใน browser ไม่ใช่ Transformer; full decoder-only implementation และ training loop อยู่ในบทเต็ม/local lab</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>คงcorpus/split เปลี่ยนword→subword; reportOOV/tokensperbyte,holdoutbits/byteและtaskmetric ไม่ใช้PPLต่ำสุดข้ามtokenizersตัดสิน</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-3-equation"><summary>สมการ</summary><ol><li><code>inputs=tokens[:-1], targets=tokens[1:]</code> = [0, 1, 0, 2, 0, 1, 0]<p>causal bigram model ใช้ current token ทำนาย next token</p></li><li><code>logits=W[current token]</code> = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]<p>weights เริ่มจาก 0 จึง probability=1/3; ไม่มี pretrained weights</p></li><li><code>valid=t &gt;= ignorePrefix</code> = 6<p>ignore label ไม่ได้ลบ input; ใช้สอน assistant-only loss</p></li><li><code>L=−mean log p(target)</code> = 1.0986122886681098<p>normalize เฉพาะ valid targets</p></li><li><code>∂L/∂W[x,j] += (p_j−1[j=target])/N_valid</code> = [[0.16666666666666666, -0.1666666666666667, -1.850371707708594e-17], [-0.22222222222222224, 0.1111111111111111, 0.1111111111111111], [-0.11111111111111112, 0.05555555555555555, 0.05555555555555555]]<p>accumulate เมื่อ context token เดียวถูกใช้หลายครั้ง</p></li><li><code>softmax(W[query]/temperature)</code> = [0.3333333333333333, 0.3333333333333333, 0.3333333333333333]<p>temperature ใช้เฉพาะ distribution ตอน inference ไม่แก้ training CE</p></li></ol></details><details id="help-mechanism-3-visual"><summary>ภาพและ shape</summary><p>tiny trainable bigram LM ใน browser ไม่ใช่ Transformer; full decoder-only implementation และ training loop อยู่ในบทเต็ม/local lab</p><ol><li><code>inputs=tokens[:-1], targets=tokens[1:]</code> = [0, 1, 0, 2, 0, 1, 0]<p>causal bigram model ใช้ current token ทำนาย next token</p></li><li><code>logits=W[current token]</code> = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]<p>weights เริ่มจาก 0 จึง probability=1/3; ไม่มี pretrained weights</p></li><li><code>valid=t &gt;= ignorePrefix</code> = 6<p>ignore label ไม่ได้ลบ input; ใช้สอน assistant-only loss</p></li><li><code>L=−mean log p(target)</code> = 1.0986122886681098<p>normalize เฉพาะ valid targets</p></li><li><code>∂L/∂W[x,j] += (p_j−1[j=target])/N_valid</code> = [[0.16666666666666666, -0.1666666666666667, -1.850371707708594e-17], [-0.22222222222222224, 0.1111111111111111, 0.1111111111111111], [-0.11111111111111112, 0.05555555555555555, 0.05555555555555555]]<p>accumulate เมื่อ context token เดียวถูกใช้หลายครั้ง</p></li><li><code>softmax(W[query]/temperature)</code> = [0.3333333333333333, 0.3333333333333333, 0.3333333333333333]<p>temperature ใช้เฉพาะ distribution ตอน inference ไม่แก้ training CE</p></li></ol></details><details id="help-mechanism-3-code"><summary>โค้ด</summary><p>คงcorpus/split เปลี่ยนword→subword; reportOOV/tokensperbyte,holdoutbits/byteและtaskmetric ไม่ใช้PPLต่ำสุดข้ามtokenizersตัดสิน</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-3-result"><summary>ผลการทดลอง</summary><ol><li><code>inputs=tokens[:-1], targets=tokens[1:]</code> = [0, 1, 0, 2, 0, 1, 0]<p>causal bigram model ใช้ current token ทำนาย next token</p></li><li><code>logits=W[current token]</code> = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]<p>weights เริ่มจาก 0 จึง probability=1/3; ไม่มี pretrained weights</p></li><li><code>valid=t &gt;= ignorePrefix</code> = 6<p>ignore label ไม่ได้ลบ input; ใช้สอน assistant-only loss</p></li><li><code>L=−mean log p(target)</code> = 1.0986122886681098<p>normalize เฉพาะ valid targets</p></li><li><code>∂L/∂W[x,j] += (p_j−1[j=target])/N_valid</code> = [[0.16666666666666666, -0.1666666666666667, -1.850371707708594e-17], [-0.22222222222222224, 0.1111111111111111, 0.1111111111111111], [-0.11111111111111112, 0.05555555555555555, 0.05555555555555555]]<p>accumulate เมื่อ context token เดียวถูกใช้หลายครั้ง</p></li><li><code>softmax(W[query]/temperature)</code> = [0.3333333333333333, 0.3333333333333333, 0.3333333333333333]<p>temperature ใช้เฉพาะ distribution ตอน inference ไม่แก้ training CE</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-3"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="reference" class="canonical-section"><h2>เนื้อหาครบทุกหัวข้อ พร้อมแผนที่ objective</h2><nav class="source-toc"><a href="#chapter-32/section/topic-1">1. Why NLP Starts Before the Model</a> <a href="#chapter-32/section/topic-2">2. Learning Objectives</a> <a href="#chapter-32/section/topic-3">3. Text Is Unicode</a> <a href="#chapter-32/section/topic-4">4. Unicode Normalization</a> <a href="#chapter-32/section/topic-5">5. Case Folding</a> <a href="#chapter-32/section/topic-6">6. Whitespace and Punctuation</a> <a href="#chapter-32/section/topic-7">7. Tokenization Levels</a> <a href="#chapter-32/section/topic-8">8. Thai Segmentation</a> <a href="#chapter-32/section/topic-9">9. Vocabulary</a> <a href="#chapter-32/section/topic-10">10. Vocabulary Leakage</a> <a href="#chapter-32/section/topic-11">11. Frequency Threshold</a> <a href="#chapter-32/section/topic-12">12. Sequence Encoding</a> <a href="#chapter-32/section/topic-13">13. N-Grams</a> <a href="#chapter-32/section/topic-14">14. N-Gram Language Model</a> <a href="#chapter-32/section/topic-15">15. Zero Counts</a> <a href="#chapter-32/section/topic-16">16. Add-k Smoothing</a> <a href="#chapter-32/section/topic-17">17. Language Modeling Objective</a> <a href="#chapter-32/section/topic-18">18. Next-Token Pairs</a> <a href="#chapter-32/section/topic-19">19. Cross-Entropy</a> <a href="#chapter-32/section/topic-20">20. Perplexity</a> <a href="#chapter-32/section/topic-21">21. Padding</a> <a href="#chapter-32/section/topic-22">22. Attention Mask</a> <a href="#chapter-32/section/topic-23">23. Loss Mask</a> <a href="#chapter-32/section/topic-24">24. BOS / EOS</a> <a href="#chapter-32/section/topic-25">25. Corpus Splitting</a> <a href="#chapter-32/section/topic-26">26. Data Quality</a> <a href="#chapter-32/section/topic-27">27. Embeddings Preview</a> <a href="#chapter-32/section/topic-28">28. From Scratch</a> <a href="#chapter-32/section/topic-29">29. Common Mistakes</a> <a href="#chapter-32/section/topic-30">30. Exercises / Mini Project</a> <a href="#chapter-32/section/topic-31">31. Checklist</a> <a href="#chapter-32/section/topic-32">32. What&#x27;s Next</a> </nav><section id="topic-1" class="source-topic"><span id="source-32-nlp-fundamentals-canonical-chapter-32-nlp-fundamentals" class="legacy-anchor"></span><span id="source-32-nlp-fundamentals-canonical-1-why-nlp-starts-before-the-model" class="legacy-anchor"></span><h3>1. Why NLP Starts Before the Model</h3>
+<p>A language model never receives “language” directly.</p>
+<p>It receives numbers produced by a pipeline:</p>
+<pre><code class="language-text">raw text
+→ Unicode handling
+→ normalization policy
+→ tokenization
+→ vocabulary / token ids
+→ sequences
+→ batches / masks
+→ model
+→ logits
+→ language objective
+</code></pre>
+<p>Bad preprocessing can silently destroy information before the model sees it.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>1. Why NLP Starts Before the Model</h3>
+<p>A language model never receives “language” directly.</p>
+<p>It receives numbers produced by a pipeline:</p>
+<pre><code class="language-text">raw text
+→ Unicode handling
+→ normalization policy
+→ tokenization
+→ vocabulary / token ids
+→ sequences
+→ batches / masks
+→ model
+→ logits
+→ language objective
+</code></pre>
+<p>Bad preprocessing can silently destroy information before the model sees it.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-1-equation"><summary>สมการ</summary><h3>1. Why NLP Starts Before the Model</h3>
+<p>A language model never receives “language” directly.</p>
+<p>It receives numbers produced by a pipeline:</p>
+<pre><code class="language-text">raw text
+→ Unicode handling
+→ normalization policy
+→ tokenization
+→ vocabulary / token ids
+→ sequences
+→ batches / masks
+→ model
+→ logits
+→ language objective
+</code></pre>
+<p>Bad preprocessing can silently destroy information before the model sees it.</p></details><details id="help-topic-1-visual"><summary>ภาพและ shape</summary><h3>1. Why NLP Starts Before the Model</h3>
+<p>A language model never receives “language” directly.</p>
+<p>It receives numbers produced by a pipeline:</p>
+<pre><code class="language-text">raw text
+→ Unicode handling
+→ normalization policy
+→ tokenization
+→ vocabulary / token ids
+→ sequences
+→ batches / masks
+→ model
+→ logits
+→ language objective
+</code></pre>
+<p>Bad preprocessing can silently destroy information before the model sees it.</p></details><details id="help-topic-1-code"><summary>โค้ด</summary><h3>1. Why NLP Starts Before the Model</h3>
+<p>A language model never receives “language” directly.</p>
+<p>It receives numbers produced by a pipeline:</p>
+<pre><code class="language-text">raw text
+→ Unicode handling
+→ normalization policy
+→ tokenization
+→ vocabulary / token ids
+→ sequences
+→ batches / masks
+→ model
+→ logits
+→ language objective
+</code></pre>
+<p>Bad preprocessing can silently destroy information before the model sees it.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-1-result"><summary>ผลการทดลอง</summary><h3>1. Why NLP Starts Before the Model</h3>
+<p>A language model never receives “language” directly.</p>
+<p>It receives numbers produced by a pipeline:</p>
+<pre><code class="language-text">raw text
+→ Unicode handling
+→ normalization policy
+→ tokenization
+→ vocabulary / token ids
+→ sequences
+→ batches / masks
+→ model
+→ logits
+→ language objective
+</code></pre>
+<p>Bad preprocessing can silently destroy information before the model sees it.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-1"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-2" class="source-topic"><span id="source-32-nlp-fundamentals-canonical-2-learning-objectives" class="legacy-anchor"></span><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>explain Unicode/code points</li>
+<li>distinguish normalization from tokenization</li>
+<li>design a vocabulary</li>
+<li>handle unknown tokens</li>
+<li>explain word/character/subword tokenization</li>
+<li>create n-gram counts</li>
+<li>implement a smoothed n-gram language model</li>
+<li>explain conditional language modeling</li>
+<li>calculate cross-entropy and perplexity</li>
+<li>construct next-token training examples</li>
+<li>pad variable-length text</li>
+<li>construct attention/loss masks</li>
+<li>avoid train/test vocabulary leakage</li>
+<li>understand tokenization trade-offs</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>explain Unicode/code points</li>
+<li>distinguish normalization from tokenization</li>
+<li>design a vocabulary</li>
+<li>handle unknown tokens</li>
+<li>explain word/character/subword tokenization</li>
+<li>create n-gram counts</li>
+<li>implement a smoothed n-gram language model</li>
+<li>explain conditional language modeling</li>
+<li>calculate cross-entropy and perplexity</li>
+<li>construct next-token training examples</li>
+<li>pad variable-length text</li>
+<li>construct attention/loss masks</li>
+<li>avoid train/test vocabulary leakage</li>
+<li>understand tokenization trade-offs</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-2-equation"><summary>สมการ</summary><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>explain Unicode/code points</li>
+<li>distinguish normalization from tokenization</li>
+<li>design a vocabulary</li>
+<li>handle unknown tokens</li>
+<li>explain word/character/subword tokenization</li>
+<li>create n-gram counts</li>
+<li>implement a smoothed n-gram language model</li>
+<li>explain conditional language modeling</li>
+<li>calculate cross-entropy and perplexity</li>
+<li>construct next-token training examples</li>
+<li>pad variable-length text</li>
+<li>construct attention/loss masks</li>
+<li>avoid train/test vocabulary leakage</li>
+<li>understand tokenization trade-offs</li>
+</ul></details><details id="help-topic-2-visual"><summary>ภาพและ shape</summary><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>explain Unicode/code points</li>
+<li>distinguish normalization from tokenization</li>
+<li>design a vocabulary</li>
+<li>handle unknown tokens</li>
+<li>explain word/character/subword tokenization</li>
+<li>create n-gram counts</li>
+<li>implement a smoothed n-gram language model</li>
+<li>explain conditional language modeling</li>
+<li>calculate cross-entropy and perplexity</li>
+<li>construct next-token training examples</li>
+<li>pad variable-length text</li>
+<li>construct attention/loss masks</li>
+<li>avoid train/test vocabulary leakage</li>
+<li>understand tokenization trade-offs</li>
+</ul></details><details id="help-topic-2-code"><summary>โค้ด</summary><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>explain Unicode/code points</li>
+<li>distinguish normalization from tokenization</li>
+<li>design a vocabulary</li>
+<li>handle unknown tokens</li>
+<li>explain word/character/subword tokenization</li>
+<li>create n-gram counts</li>
+<li>implement a smoothed n-gram language model</li>
+<li>explain conditional language modeling</li>
+<li>calculate cross-entropy and perplexity</li>
+<li>construct next-token training examples</li>
+<li>pad variable-length text</li>
+<li>construct attention/loss masks</li>
+<li>avoid train/test vocabulary leakage</li>
+<li>understand tokenization trade-offs</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-2-result"><summary>ผลการทดลอง</summary><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>explain Unicode/code points</li>
+<li>distinguish normalization from tokenization</li>
+<li>design a vocabulary</li>
+<li>handle unknown tokens</li>
+<li>explain word/character/subword tokenization</li>
+<li>create n-gram counts</li>
+<li>implement a smoothed n-gram language model</li>
+<li>explain conditional language modeling</li>
+<li>calculate cross-entropy and perplexity</li>
+<li>construct next-token training examples</li>
+<li>pad variable-length text</li>
+<li>construct attention/loss masks</li>
+<li>avoid train/test vocabulary leakage</li>
+<li>understand tokenization trade-offs</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-2"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-3" class="source-topic"><span id="source-32-nlp-fundamentals-canonical-3-text-is-unicode" class="legacy-anchor"></span><h3>3. Text Is Unicode</h3>
+<p>Python strings are Unicode text.</p>
+<p>Do not assume:
+- one character = one byte
+- one visible glyph = one code point
+- string length equals user-perceived character count</p>
+<p>Unicode matters especially for:
+- Thai
+- emoji
+- combining marks
+- multilingual corpora</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>3. Text Is Unicode</h3>
+<p>Python strings are Unicode text.</p>
+<p>Do not assume:
+- one character = one byte
+- one visible glyph = one code point
+- string length equals user-perceived character count</p>
+<p>Unicode matters especially for:
+- Thai
+- emoji
+- combining marks
+- multilingual corpora</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-3-equation"><summary>สมการ</summary><h3>3. Text Is Unicode</h3>
+<p>Python strings are Unicode text.</p>
+<p>Do not assume:
+- one character = one byte
+- one visible glyph = one code point
+- string length equals user-perceived character count</p>
+<p>Unicode matters especially for:
+- Thai
+- emoji
+- combining marks
+- multilingual corpora</p></details><details id="help-topic-3-visual"><summary>ภาพและ shape</summary><h3>3. Text Is Unicode</h3>
+<p>Python strings are Unicode text.</p>
+<p>Do not assume:
+- one character = one byte
+- one visible glyph = one code point
+- string length equals user-perceived character count</p>
+<p>Unicode matters especially for:
+- Thai
+- emoji
+- combining marks
+- multilingual corpora</p></details><details id="help-topic-3-code"><summary>โค้ด</summary><h3>3. Text Is Unicode</h3>
+<p>Python strings are Unicode text.</p>
+<p>Do not assume:
+- one character = one byte
+- one visible glyph = one code point
+- string length equals user-perceived character count</p>
+<p>Unicode matters especially for:
+- Thai
+- emoji
+- combining marks
+- multilingual corpora</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-3-result"><summary>ผลการทดลอง</summary><h3>3. Text Is Unicode</h3>
+<p>Python strings are Unicode text.</p>
+<p>Do not assume:
+- one character = one byte
+- one visible glyph = one code point
+- string length equals user-perceived character count</p>
+<p>Unicode matters especially for:
+- Thai
+- emoji
+- combining marks
+- multilingual corpora</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-3"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-4" class="source-topic"><span id="source-32-nlp-fundamentals-canonical-4-unicode-normalization" class="legacy-anchor"></span><h3>4. Unicode Normalization</h3>
+<p>Unicode can represent visually similar text with different code-point sequences.</p>
+<p>Common normalization forms:
+- NFC
+- NFD
+- NFKC
+- NFKD</p>
+<p>Normalization is a <strong>policy decision</strong>.</p>
+<p>Compatibility normalization can change distinctions that may matter in some domains.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>normalizationเปลี่ยนรูปข้อความตามpolicyเช่นUnicodeNFC/whitespace; ไม่ควรลบวรรณยุกต์ไทยเพราะเปลี่ยนความหมาย; ต้องversionpolicy</p><p>normalizationแก้representationก่อนแบ่ง ส่วนtokenizationกำหนดboundaries/IDs; lowercasingทำข้อมูลcaseหายแม้decoderต่อtokensกลับได้</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-4-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>normalizationเปลี่ยนรูปข้อความตามpolicyเช่นUnicodeNFC/whitespace; ไม่ควรลบวรรณยุกต์ไทยเพราะเปลี่ยนความหมาย; ต้องversionpolicy</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-4-equation"><summary>สมการ</summary><p>normalizationเปลี่ยนรูปข้อความตามpolicyเช่นUnicodeNFC/whitespace; ไม่ควรลบวรรณยุกต์ไทยเพราะเปลี่ยนความหมาย; ต้องversionpolicy</p></details><details id="help-topic-4-visual"><summary>ภาพและ shape</summary><p>normalizationเปลี่ยนรูปข้อความตามpolicyเช่นUnicodeNFC/whitespace; ไม่ควรลบวรรณยุกต์ไทยเพราะเปลี่ยนความหมาย; ต้องversionpolicy</p></details><details id="help-topic-4-code"><summary>โค้ด</summary><p>normalizationเปลี่ยนรูปข้อความตามpolicyเช่นUnicodeNFC/whitespace; ไม่ควรลบวรรณยุกต์ไทยเพราะเปลี่ยนความหมาย; ต้องversionpolicy</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-4-result"><summary>ผลการทดลอง</summary><p>normalizationเปลี่ยนรูปข้อความตามpolicyเช่นUnicodeNFC/whitespace; ไม่ควรลบวรรณยุกต์ไทยเพราะเปลี่ยนความหมาย; ต้องversionpolicy</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-4"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-5" class="source-topic"><span id="source-32-nlp-fundamentals-canonical-5-case-folding" class="legacy-anchor"></span><h3>5. Case Folding</h3>
+<p>English-centric pipelines often lowercase.</p>
+<p>But case can encode meaning:</p>
+<pre><code class="language-text">US
+vs
+us
+</code></pre>
+<p>Large pretrained models often preserve case depending on tokenizer/model design.</p>
+<p>Do not lowercase automatically without task justification.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-5-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>5. Case Folding</h3>
+<p>English-centric pipelines often lowercase.</p>
+<p>But case can encode meaning:</p>
+<pre><code class="language-text">US
+vs
+us
+</code></pre>
+<p>Large pretrained models often preserve case depending on tokenizer/model design.</p>
+<p>Do not lowercase automatically without task justification.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-5-equation"><summary>สมการ</summary><h3>5. Case Folding</h3>
+<p>English-centric pipelines often lowercase.</p>
+<p>But case can encode meaning:</p>
+<pre><code class="language-text">US
+vs
+us
+</code></pre>
+<p>Large pretrained models often preserve case depending on tokenizer/model design.</p>
+<p>Do not lowercase automatically without task justification.</p></details><details id="help-topic-5-visual"><summary>ภาพและ shape</summary><h3>5. Case Folding</h3>
+<p>English-centric pipelines often lowercase.</p>
+<p>But case can encode meaning:</p>
+<pre><code class="language-text">US
+vs
+us
+</code></pre>
+<p>Large pretrained models often preserve case depending on tokenizer/model design.</p>
+<p>Do not lowercase automatically without task justification.</p></details><details id="help-topic-5-code"><summary>โค้ด</summary><h3>5. Case Folding</h3>
+<p>English-centric pipelines often lowercase.</p>
+<p>But case can encode meaning:</p>
+<pre><code class="language-text">US
+vs
+us
+</code></pre>
+<p>Large pretrained models often preserve case depending on tokenizer/model design.</p>
+<p>Do not lowercase automatically without task justification.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-5-result"><summary>ผลการทดลอง</summary><h3>5. Case Folding</h3>
+<p>English-centric pipelines often lowercase.</p>
+<p>But case can encode meaning:</p>
+<pre><code class="language-text">US
+vs
+us
+</code></pre>
+<p>Large pretrained models often preserve case depending on tokenizer/model design.</p>
+<p>Do not lowercase automatically without task justification.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-5"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-6" class="source-topic"><span id="source-32-nlp-fundamentals-canonical-6-whitespace-and-punctuation" class="legacy-anchor"></span><h3>6. Whitespace and Punctuation</h3>
+<p>Removing punctuation may damage:
+- sentiment
+- sentence boundaries
+- code
+- URLs
+- named entities</p>
+<p>Removing whitespace can be especially harmful in languages where segmentation rules differ.</p>
+<p>Text cleaning should preserve information unless there is a documented reason to discard it.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-6-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>6. Whitespace and Punctuation</h3>
+<p>Removing punctuation may damage:
+- sentiment
+- sentence boundaries
+- code
+- URLs
+- named entities</p>
+<p>Removing whitespace can be especially harmful in languages where segmentation rules differ.</p>
+<p>Text cleaning should preserve information unless there is a documented reason to discard it.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-6-equation"><summary>สมการ</summary><h3>6. Whitespace and Punctuation</h3>
+<p>Removing punctuation may damage:
+- sentiment
+- sentence boundaries
+- code
+- URLs
+- named entities</p>
+<p>Removing whitespace can be especially harmful in languages where segmentation rules differ.</p>
+<p>Text cleaning should preserve information unless there is a documented reason to discard it.</p></details><details id="help-topic-6-visual"><summary>ภาพและ shape</summary><h3>6. Whitespace and Punctuation</h3>
+<p>Removing punctuation may damage:
+- sentiment
+- sentence boundaries
+- code
+- URLs
+- named entities</p>
+<p>Removing whitespace can be especially harmful in languages where segmentation rules differ.</p>
+<p>Text cleaning should preserve information unless there is a documented reason to discard it.</p></details><details id="help-topic-6-code"><summary>โค้ด</summary><h3>6. Whitespace and Punctuation</h3>
+<p>Removing punctuation may damage:
+- sentiment
+- sentence boundaries
+- code
+- URLs
+- named entities</p>
+<p>Removing whitespace can be especially harmful in languages where segmentation rules differ.</p>
+<p>Text cleaning should preserve information unless there is a documented reason to discard it.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-6-result"><summary>ผลการทดลอง</summary><h3>6. Whitespace and Punctuation</h3>
+<p>Removing punctuation may damage:
+- sentiment
+- sentence boundaries
+- code
+- URLs
+- named entities</p>
+<p>Removing whitespace can be especially harmful in languages where segmentation rules differ.</p>
+<p>Text cleaning should preserve information unless there is a documented reason to discard it.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-6"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-7" class="source-topic"><span id="source-32-nlp-fundamentals-canonical-7-tokenization-levels" class="legacy-anchor"></span><span id="source-32-nlp-fundamentals-canonical-character" class="legacy-anchor"></span><span id="source-32-nlp-fundamentals-canonical-word" class="legacy-anchor"></span><span id="source-32-nlp-fundamentals-canonical-subword" class="legacy-anchor"></span><h3>7. Tokenization Levels</h3>
+<h4>Character</h4>
+<pre><code class="language-text">hello
+→ h e l l o
+</code></pre>
+<p>Pros:
+- tiny vocabulary
+- no unknown words</p>
+<p>Cons:
+- long sequences
+- weak semantic unit</p>
+<h4>Word</h4>
+<pre><code class="language-text">I love AI
+→ I | love | AI
+</code></pre>
+<p>Pros:
+- intuitive units</p>
+<p>Cons:
+- huge vocabulary
+- unknown words
+- morphology issues
+- segmentation problems</p>
+<h4>Subword</h4>
+<pre><code class="language-text">unbelievable
+→ un | believe | able
+</code></pre>
+<p>Balances vocabulary size and sequence length.</p>
+<p>BPE/WordPiece/Unigram receive deeper treatment later.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>tokenizationแบ่งข้อความเป็นหน่วยและmapID; “AI engineer”แบบwhitespaceให้2tokens แต่ภาษาไทยไม่มีเว้นวรรคทุกคำจึงต้องใช้tokenizerเหมาะสม</p><p>normalizationแก้representationก่อนแบ่ง ส่วนtokenizationกำหนดboundaries/IDs; lowercasingทำข้อมูลcaseหายแม้decoderต่อtokensกลับได้</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-7-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>tokenizationแบ่งข้อความเป็นหน่วยและmapID; “AI engineer”แบบwhitespaceให้2tokens แต่ภาษาไทยไม่มีเว้นวรรคทุกคำจึงต้องใช้tokenizerเหมาะสม</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-7-equation"><summary>สมการ</summary><p>tokenizationแบ่งข้อความเป็นหน่วยและmapID; “AI engineer”แบบwhitespaceให้2tokens แต่ภาษาไทยไม่มีเว้นวรรคทุกคำจึงต้องใช้tokenizerเหมาะสม</p></details><details id="help-topic-7-visual"><summary>ภาพและ shape</summary><p>tokenizationแบ่งข้อความเป็นหน่วยและmapID; “AI engineer”แบบwhitespaceให้2tokens แต่ภาษาไทยไม่มีเว้นวรรคทุกคำจึงต้องใช้tokenizerเหมาะสม</p></details><details id="help-topic-7-code"><summary>โค้ด</summary><p>tokenizationแบ่งข้อความเป็นหน่วยและmapID; “AI engineer”แบบwhitespaceให้2tokens แต่ภาษาไทยไม่มีเว้นวรรคทุกคำจึงต้องใช้tokenizerเหมาะสม</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-7-result"><summary>ผลการทดลอง</summary><p>tokenizationแบ่งข้อความเป็นหน่วยและmapID; “AI engineer”แบบwhitespaceให้2tokens แต่ภาษาไทยไม่มีเว้นวรรคทุกคำจึงต้องใช้tokenizerเหมาะสม</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-7"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-8" class="source-topic"><span id="source-32-nlp-fundamentals-canonical-8-thai-segmentation" class="legacy-anchor"></span><h3>8. Thai Segmentation</h3>
+<p>Thai does not always separate words with spaces in the same way English does.</p>
+<p>A whitespace tokenizer is therefore not a general Thai word tokenizer.</p>
+<p>For multilingual/Thai systems:
+- use an appropriate tokenizer
+- preserve Unicode
+- validate segmentation examples manually</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>tokenizationแบ่งข้อความเป็นหน่วยและmapID; “AI engineer”แบบwhitespaceให้2tokens แต่ภาษาไทยไม่มีเว้นวรรคทุกคำจึงต้องใช้tokenizerเหมาะสม</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-8-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>tokenizationแบ่งข้อความเป็นหน่วยและmapID; “AI engineer”แบบwhitespaceให้2tokens แต่ภาษาไทยไม่มีเว้นวรรคทุกคำจึงต้องใช้tokenizerเหมาะสม</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-8-equation"><summary>สมการ</summary><p>tokenizationแบ่งข้อความเป็นหน่วยและmapID; “AI engineer”แบบwhitespaceให้2tokens แต่ภาษาไทยไม่มีเว้นวรรคทุกคำจึงต้องใช้tokenizerเหมาะสม</p></details><details id="help-topic-8-visual"><summary>ภาพและ shape</summary><p>tokenizationแบ่งข้อความเป็นหน่วยและmapID; “AI engineer”แบบwhitespaceให้2tokens แต่ภาษาไทยไม่มีเว้นวรรคทุกคำจึงต้องใช้tokenizerเหมาะสม</p></details><details id="help-topic-8-code"><summary>โค้ด</summary><p>tokenizationแบ่งข้อความเป็นหน่วยและmapID; “AI engineer”แบบwhitespaceให้2tokens แต่ภาษาไทยไม่มีเว้นวรรคทุกคำจึงต้องใช้tokenizerเหมาะสม</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-8-result"><summary>ผลการทดลอง</summary><p>tokenizationแบ่งข้อความเป็นหน่วยและmapID; “AI engineer”แบบwhitespaceให้2tokens แต่ภาษาไทยไม่มีเว้นวรรคทุกคำจึงต้องใช้tokenizerเหมาะสม</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-8"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-9" class="source-topic"><span id="source-32-nlp-fundamentals-canonical-9-vocabulary" class="legacy-anchor"></span><h3>9. Vocabulary</h3>
+<p>Map token → integer id.</p>
+<p>Example:</p>
+<pre><code class="language-text">&lt;PAD&gt; → 0
+&lt;UNK&gt; → 1
+hello → 2
+world → 3
+</code></pre>
+<p>Keep special-token meanings explicit and stable.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-9-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>9. Vocabulary</h3>
+<p>Map token → integer id.</p>
+<p>Example:</p>
+<pre><code class="language-text">&lt;PAD&gt; → 0
+&lt;UNK&gt; → 1
+hello → 2
+world → 3
+</code></pre>
+<p>Keep special-token meanings explicit and stable.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-9-equation"><summary>สมการ</summary><h3>9. Vocabulary</h3>
+<p>Map token → integer id.</p>
+<p>Example:</p>
+<pre><code class="language-text">&lt;PAD&gt; → 0
+&lt;UNK&gt; → 1
+hello → 2
+world → 3
+</code></pre>
+<p>Keep special-token meanings explicit and stable.</p></details><details id="help-topic-9-visual"><summary>ภาพและ shape</summary><h3>9. Vocabulary</h3>
+<p>Map token → integer id.</p>
+<p>Example:</p>
+<pre><code class="language-text">&lt;PAD&gt; → 0
+&lt;UNK&gt; → 1
+hello → 2
+world → 3
+</code></pre>
+<p>Keep special-token meanings explicit and stable.</p></details><details id="help-topic-9-code"><summary>โค้ด</summary><h3>9. Vocabulary</h3>
+<p>Map token → integer id.</p>
+<p>Example:</p>
+<pre><code class="language-text">&lt;PAD&gt; → 0
+&lt;UNK&gt; → 1
+hello → 2
+world → 3
+</code></pre>
+<p>Keep special-token meanings explicit and stable.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-9-result"><summary>ผลการทดลอง</summary><h3>9. Vocabulary</h3>
+<p>Map token → integer id.</p>
+<p>Example:</p>
+<pre><code class="language-text">&lt;PAD&gt; → 0
+&lt;UNK&gt; → 1
+hello → 2
+world → 3
+</code></pre>
+<p>Keep special-token meanings explicit and stable.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-9"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-10" class="source-topic"><span id="source-32-nlp-fundamentals-canonical-10-vocabulary-leakage" class="legacy-anchor"></span><h3>10. Vocabulary Leakage</h3>
+<p>If you build vocabulary from train+validation+test, test information influences representation design.</p>
+<p>Safer supervised evaluation:</p>
+<pre><code class="language-text">build vocab on training corpus
+freeze vocab
+map unseen validation/test tokens to UNK
+</code></pre>
+<p>Large-scale pretrained tokenizers are a different setting because the vocabulary is fixed before downstream evaluation.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-10-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>10. Vocabulary Leakage</h3>
+<p>If you build vocabulary from train+validation+test, test information influences representation design.</p>
+<p>Safer supervised evaluation:</p>
+<pre><code class="language-text">build vocab on training corpus
+freeze vocab
+map unseen validation/test tokens to UNK
+</code></pre>
+<p>Large-scale pretrained tokenizers are a different setting because the vocabulary is fixed before downstream evaluation.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-10-equation"><summary>สมการ</summary><h3>10. Vocabulary Leakage</h3>
+<p>If you build vocabulary from train+validation+test, test information influences representation design.</p>
+<p>Safer supervised evaluation:</p>
+<pre><code class="language-text">build vocab on training corpus
+freeze vocab
+map unseen validation/test tokens to UNK
+</code></pre>
+<p>Large-scale pretrained tokenizers are a different setting because the vocabulary is fixed before downstream evaluation.</p></details><details id="help-topic-10-visual"><summary>ภาพและ shape</summary><h3>10. Vocabulary Leakage</h3>
+<p>If you build vocabulary from train+validation+test, test information influences representation design.</p>
+<p>Safer supervised evaluation:</p>
+<pre><code class="language-text">build vocab on training corpus
+freeze vocab
+map unseen validation/test tokens to UNK
+</code></pre>
+<p>Large-scale pretrained tokenizers are a different setting because the vocabulary is fixed before downstream evaluation.</p></details><details id="help-topic-10-code"><summary>โค้ด</summary><h3>10. Vocabulary Leakage</h3>
+<p>If you build vocabulary from train+validation+test, test information influences representation design.</p>
+<p>Safer supervised evaluation:</p>
+<pre><code class="language-text">build vocab on training corpus
+freeze vocab
+map unseen validation/test tokens to UNK
+</code></pre>
+<p>Large-scale pretrained tokenizers are a different setting because the vocabulary is fixed before downstream evaluation.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-10-result"><summary>ผลการทดลอง</summary><h3>10. Vocabulary Leakage</h3>
+<p>If you build vocabulary from train+validation+test, test information influences representation design.</p>
+<p>Safer supervised evaluation:</p>
+<pre><code class="language-text">build vocab on training corpus
+freeze vocab
+map unseen validation/test tokens to UNK
+</code></pre>
+<p>Large-scale pretrained tokenizers are a different setting because the vocabulary is fixed before downstream evaluation.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-10"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-11" class="source-topic"><span id="source-32-nlp-fundamentals-canonical-11-frequency-threshold" class="legacy-anchor"></span><h3>11. Frequency Threshold</h3>
+<p>Rare tokens may be replaced by UNK in word-level systems.</p>
+<p>Parameter:</p>
+<pre><code class="language-text">min_frequency
+</code></pre>
+<p>Trade-off:
+- larger vocab → more sparse rare tokens
+- smaller vocab → more UNK</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-11-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>11. Frequency Threshold</h3>
+<p>Rare tokens may be replaced by UNK in word-level systems.</p>
+<p>Parameter:</p>
+<pre><code class="language-text">min_frequency
+</code></pre>
+<p>Trade-off:
+- larger vocab → more sparse rare tokens
+- smaller vocab → more UNK</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-11-equation"><summary>สมการ</summary><h3>11. Frequency Threshold</h3>
+<p>Rare tokens may be replaced by UNK in word-level systems.</p>
+<p>Parameter:</p>
+<pre><code class="language-text">min_frequency
+</code></pre>
+<p>Trade-off:
+- larger vocab → more sparse rare tokens
+- smaller vocab → more UNK</p></details><details id="help-topic-11-visual"><summary>ภาพและ shape</summary><h3>11. Frequency Threshold</h3>
+<p>Rare tokens may be replaced by UNK in word-level systems.</p>
+<p>Parameter:</p>
+<pre><code class="language-text">min_frequency
+</code></pre>
+<p>Trade-off:
+- larger vocab → more sparse rare tokens
+- smaller vocab → more UNK</p></details><details id="help-topic-11-code"><summary>โค้ด</summary><h3>11. Frequency Threshold</h3>
+<p>Rare tokens may be replaced by UNK in word-level systems.</p>
+<p>Parameter:</p>
+<pre><code class="language-text">min_frequency
+</code></pre>
+<p>Trade-off:
+- larger vocab → more sparse rare tokens
+- smaller vocab → more UNK</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-11-result"><summary>ผลการทดลอง</summary><h3>11. Frequency Threshold</h3>
+<p>Rare tokens may be replaced by UNK in word-level systems.</p>
+<p>Parameter:</p>
+<pre><code class="language-text">min_frequency
+</code></pre>
+<p>Trade-off:
+- larger vocab → more sparse rare tokens
+- smaller vocab → more UNK</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-11"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-12" class="source-topic"><span id="source-32-nlp-fundamentals-canonical-12-sequence-encoding" class="legacy-anchor"></span><h3>12. Sequence Encoding</h3>
+<pre><code class="language-text">tokens
+→ ids
+→ [12, 7, 44, 3]
+</code></pre>
+<p>Decoding uses inverse mapping where available.</p>
+<p>Unknown-token handling must be deterministic.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>inputIDs(B,T),targets(B,T)shift1; paddinglengthmaskตรงT; ID−1หรือ≥vocabsizeต้องerrorไม่เอาmodvocab</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-12-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>inputIDs(B,T),targets(B,T)shift1; paddinglengthmaskตรงT; ID−1หรือ≥vocabsizeต้องerrorไม่เอาmodvocab</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-12-equation"><summary>สมการ</summary><p>inputIDs(B,T),targets(B,T)shift1; paddinglengthmaskตรงT; ID−1หรือ≥vocabsizeต้องerrorไม่เอาmodvocab</p></details><details id="help-topic-12-visual"><summary>ภาพและ shape</summary><p>inputIDs(B,T),targets(B,T)shift1; paddinglengthmaskตรงT; ID−1หรือ≥vocabsizeต้องerrorไม่เอาmodvocab</p></details><details id="help-topic-12-code"><summary>โค้ด</summary><p>inputIDs(B,T),targets(B,T)shift1; paddinglengthmaskตรงT; ID−1หรือ≥vocabsizeต้องerrorไม่เอาmodvocab</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-12-result"><summary>ผลการทดลอง</summary><p>inputIDs(B,T),targets(B,T)shift1; paddinglengthmaskตรงT; ID−1หรือ≥vocabsizeต้องerrorไม่เอาmodvocab</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-12"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-13" class="source-topic"><span id="source-32-nlp-fundamentals-canonical-13-n-grams" class="legacy-anchor"></span><h3>13. N-Grams</h3>
+<p>An n-gram is a sequence of n tokens.</p>
+<p>Bigram:</p>
+<pre><code class="language-text">(w_(t-1), w_t)
+</code></pre>
+<p>Trigram:</p>
+<pre><code class="language-text">(w_(t-2), w_(t-1), w_t)
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>n-gramคือsequenceต่อเนื่องnหน่วย; tokens[a,b,a]ให้bigrams(a,b),(b,a); กำหนดBOS/EOSเพื่อmodelboundary</p><p>tokens[a,b,a,b], bigramcounts(a,b)=2,(b,a)=1; add-onevocab2ให้P(b|a)=3/4,P(a|a)=1/4; contextunseenใช้priorที่ระบุ</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-13-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>n-gramคือsequenceต่อเนื่องnหน่วย; tokens[a,b,a]ให้bigrams(a,b),(b,a); กำหนดBOS/EOSเพื่อmodelboundary</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-13-equation"><summary>สมการ</summary><p>n-gramคือsequenceต่อเนื่องnหน่วย; tokens[a,b,a]ให้bigrams(a,b),(b,a); กำหนดBOS/EOSเพื่อmodelboundary</p></details><details id="help-topic-13-visual"><summary>ภาพและ shape</summary><p>n-gramคือsequenceต่อเนื่องnหน่วย; tokens[a,b,a]ให้bigrams(a,b),(b,a); กำหนดBOS/EOSเพื่อmodelboundary</p></details><details id="help-topic-13-code"><summary>โค้ด</summary><p>n-gramคือsequenceต่อเนื่องnหน่วย; tokens[a,b,a]ให้bigrams(a,b),(b,a); กำหนดBOS/EOSเพื่อmodelboundary</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-13-result"><summary>ผลการทดลอง</summary><p>n-gramคือsequenceต่อเนื่องnหน่วย; tokens[a,b,a]ให้bigrams(a,b),(b,a); กำหนดBOS/EOSเพื่อmodelboundary</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-13"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-14" class="source-topic"><span id="source-32-nlp-fundamentals-canonical-14-n-gram-language-model" class="legacy-anchor"></span><h3>14. N-Gram Language Model</h3>
+<p>Bigram approximation:</p>
+<pre><code class="language-text">P(w_t | w_1...w_(t-1))
+≈
+P(w_t | w_(t-1))
+</code></pre>
+<p>Maximum-likelihood estimate:</p>
+<pre><code class="language-text">P(w_t | w_(t-1))
+=
+count(w_(t-1),w_t)
+/
+count(w_(t-1))
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>language modelให้P(tokenₜ|prefix); bigramใช้previous1token ส่วนneuralLMเห็นcontextยาวกว่า; probabilityรวม1ต่อcontext</p><p>tokens[a,b,a,b], bigramcounts(a,b)=2,(b,a)=1; add-onevocab2ให้P(b|a)=3/4,P(a|a)=1/4; contextunseenใช้priorที่ระบุ</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-14-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>language modelให้P(tokenₜ|prefix); bigramใช้previous1token ส่วนneuralLMเห็นcontextยาวกว่า; probabilityรวม1ต่อcontext</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-14-equation"><summary>สมการ</summary><p>language modelให้P(tokenₜ|prefix); bigramใช้previous1token ส่วนneuralLMเห็นcontextยาวกว่า; probabilityรวม1ต่อcontext</p></details><details id="help-topic-14-visual"><summary>ภาพและ shape</summary><p>language modelให้P(tokenₜ|prefix); bigramใช้previous1token ส่วนneuralLMเห็นcontextยาวกว่า; probabilityรวม1ต่อcontext</p></details><details id="help-topic-14-code"><summary>โค้ด</summary><p>language modelให้P(tokenₜ|prefix); bigramใช้previous1token ส่วนneuralLMเห็นcontextยาวกว่า; probabilityรวม1ต่อcontext</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-14-result"><summary>ผลการทดลอง</summary><p>language modelให้P(tokenₜ|prefix); bigramใช้previous1token ส่วนneuralLMเห็นcontextยาวกว่า; probabilityรวม1ต่อcontext</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-14"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-15" class="source-topic"><span id="source-32-nlp-fundamentals-canonical-15-zero-counts" class="legacy-anchor"></span><h3>15. Zero Counts</h3>
+<p>Unseen n-grams produce probability 0 under naive maximum likelihood.</p>
+<p>Then:</p>
+<pre><code class="language-text">log(0)
+→ -∞
+</code></pre>
+<p>Smoothing assigns some probability mass to unseen events.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-15-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>15. Zero Counts</h3>
+<p>Unseen n-grams produce probability 0 under naive maximum likelihood.</p>
+<p>Then:</p>
+<pre><code class="language-text">log(0)
+→ -∞
+</code></pre>
+<p>Smoothing assigns some probability mass to unseen events.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-15-equation"><summary>สมการ</summary><h3>15. Zero Counts</h3>
+<p>Unseen n-grams produce probability 0 under naive maximum likelihood.</p>
+<p>Then:</p>
+<pre><code class="language-text">log(0)
+→ -∞
+</code></pre>
+<p>Smoothing assigns some probability mass to unseen events.</p></details><details id="help-topic-15-visual"><summary>ภาพและ shape</summary><h3>15. Zero Counts</h3>
+<p>Unseen n-grams produce probability 0 under naive maximum likelihood.</p>
+<p>Then:</p>
+<pre><code class="language-text">log(0)
+→ -∞
+</code></pre>
+<p>Smoothing assigns some probability mass to unseen events.</p></details><details id="help-topic-15-code"><summary>โค้ด</summary><h3>15. Zero Counts</h3>
+<p>Unseen n-grams produce probability 0 under naive maximum likelihood.</p>
+<p>Then:</p>
+<pre><code class="language-text">log(0)
+→ -∞
+</code></pre>
+<p>Smoothing assigns some probability mass to unseen events.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-15-result"><summary>ผลการทดลอง</summary><h3>15. Zero Counts</h3>
+<p>Unseen n-grams produce probability 0 under naive maximum likelihood.</p>
+<p>Then:</p>
+<pre><code class="language-text">log(0)
+→ -∞
+</code></pre>
+<p>Smoothing assigns some probability mass to unseen events.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-15"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-16" class="source-topic"><span id="source-32-nlp-fundamentals-canonical-16-add-k-smoothing" class="legacy-anchor"></span><h3>16. Add-k Smoothing</h3>
+<p>For vocabulary size V:</p>
+<pre><code class="language-text">P(w | context)
+=
+(count(context,w) + k)
+/
+(count(context) + kV)
+</code></pre>
+<p>Useful educational baseline, though sophisticated language modeling uses better methods.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>tokens[a,b,a,b], bigramcounts(a,b)=2,(b,a)=1; add-onevocab2ให้P(b|a)=3/4,P(a|a)=1/4; contextunseenใช้priorที่ระบุ</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-16-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>tokens[a,b,a,b], bigramcounts(a,b)=2,(b,a)=1; add-onevocab2ให้P(b|a)=3/4,P(a|a)=1/4; contextunseenใช้priorที่ระบุ</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-16-equation"><summary>สมการ</summary><p>tokens[a,b,a,b], bigramcounts(a,b)=2,(b,a)=1; add-onevocab2ให้P(b|a)=3/4,P(a|a)=1/4; contextunseenใช้priorที่ระบุ</p></details><details id="help-topic-16-visual"><summary>ภาพและ shape</summary><p>tokens[a,b,a,b], bigramcounts(a,b)=2,(b,a)=1; add-onevocab2ให้P(b|a)=3/4,P(a|a)=1/4; contextunseenใช้priorที่ระบุ</p></details><details id="help-topic-16-code"><summary>โค้ด</summary><p>tokens[a,b,a,b], bigramcounts(a,b)=2,(b,a)=1; add-onevocab2ให้P(b|a)=3/4,P(a|a)=1/4; contextunseenใช้priorที่ระบุ</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-16-result"><summary>ผลการทดลอง</summary><p>tokens[a,b,a,b], bigramcounts(a,b)=2,(b,a)=1; add-onevocab2ให้P(b|a)=3/4,P(a|a)=1/4; contextunseenใช้priorที่ระบุ</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-16"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-17" class="source-topic"><span id="source-32-nlp-fundamentals-canonical-17-language-modeling-objective" class="legacy-anchor"></span><h3>17. Language Modeling Objective</h3>
+<p>Autoregressive model factorization:</p>
+<pre><code class="language-text">P(x_1,...,x_T)
+=
+Π_t P(
+    x_t | x_&lt;t
+)
+</code></pre>
+<p>Training minimizes negative log-likelihood / cross-entropy over next-token targets.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>LMทำnext-tokenpredictionไม่ใช่ความจริงsemantic; unigramจับfrequencyได้แต่ไม่wordorder จึงต้องholdoutloglossและfailureexamples</p><p>raw→versionednormalize→tokenize→vocabfittrain→ngrams/counts→conditionalprob→NLL/PPL; generatedsampleต้องdetokenizeตามpolicy</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-17-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>LMทำnext-tokenpredictionไม่ใช่ความจริงsemantic; unigramจับfrequencyได้แต่ไม่wordorder จึงต้องholdoutloglossและfailureexamples</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-17-equation"><summary>สมการ</summary><p>LMทำnext-tokenpredictionไม่ใช่ความจริงsemantic; unigramจับfrequencyได้แต่ไม่wordorder จึงต้องholdoutloglossและfailureexamples</p></details><details id="help-topic-17-visual"><summary>ภาพและ shape</summary><p>LMทำnext-tokenpredictionไม่ใช่ความจริงsemantic; unigramจับfrequencyได้แต่ไม่wordorder จึงต้องholdoutloglossและfailureexamples</p></details><details id="help-topic-17-code"><summary>โค้ด</summary><p>LMทำnext-tokenpredictionไม่ใช่ความจริงsemantic; unigramจับfrequencyได้แต่ไม่wordorder จึงต้องholdoutloglossและfailureexamples</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-17-result"><summary>ผลการทดลอง</summary><p>LMทำnext-tokenpredictionไม่ใช่ความจริงsemantic; unigramจับfrequencyได้แต่ไม่wordorder จึงต้องholdoutloglossและfailureexamples</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-17"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-18" class="source-topic"><span id="source-32-nlp-fundamentals-canonical-18-next-token-pairs" class="legacy-anchor"></span><h3>18. Next-Token Pairs</h3>
+<p>Sequence:</p>
+<pre><code class="language-text">[A,B,C,D,E]
+</code></pre>
+<p>Input:</p>
+<pre><code class="language-text">[A,B,C,D]
+</code></pre>
+<p>Target:</p>
+<pre><code class="language-text">[B,C,D,E]
+</code></pre>
+<p>This is the same causal objective introduced in Chapter 30.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>raw→versionednormalize→tokenize→vocabfittrain→ngrams/counts→conditionalprob→NLL/PPL; generatedsampleต้องdetokenizeตามpolicy</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-18-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>raw→versionednormalize→tokenize→vocabfittrain→ngrams/counts→conditionalprob→NLL/PPL; generatedsampleต้องdetokenizeตามpolicy</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-18-equation"><summary>สมการ</summary><p>raw→versionednormalize→tokenize→vocabfittrain→ngrams/counts→conditionalprob→NLL/PPL; generatedsampleต้องdetokenizeตามpolicy</p></details><details id="help-topic-18-visual"><summary>ภาพและ shape</summary><p>raw→versionednormalize→tokenize→vocabfittrain→ngrams/counts→conditionalprob→NLL/PPL; generatedsampleต้องdetokenizeตามpolicy</p></details><details id="help-topic-18-code"><summary>โค้ด</summary><p>raw→versionednormalize→tokenize→vocabfittrain→ngrams/counts→conditionalprob→NLL/PPL; generatedsampleต้องdetokenizeตามpolicy</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-18-result"><summary>ผลการทดลอง</summary><p>raw→versionednormalize→tokenize→vocabfittrain→ngrams/counts→conditionalprob→NLL/PPL; generatedsampleต้องdetokenizeตามpolicy</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-18"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-19" class="source-topic"><span id="source-32-nlp-fundamentals-canonical-19-cross-entropy" class="legacy-anchor"></span><h3>19. Cross-Entropy</h3>
+<p>For true next token y and predicted distribution p:</p>
+<pre><code class="language-text">CE =
+-log p(y)
+</code></pre>
+<p>Average across valid tokens.</p>
+<p>For vocabulary logits, use a numerically stable cross-entropy implementation rather than manually computing softmax then log.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>probabilityproductsunderflowให้sumlogprobs; smoothingα&gt;0ป้องกันunseengramlog0 แต่ต้องเลือกαvalidationและไม่เพิ่มcountจากtest</p><p>raw→versionednormalize→tokenize→vocabfittrain→ngrams/counts→conditionalprob→NLL/PPL; generatedsampleต้องdetokenizeตามpolicy</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-19-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>probabilityproductsunderflowให้sumlogprobs; smoothingα&gt;0ป้องกันunseengramlog0 แต่ต้องเลือกαvalidationและไม่เพิ่มcountจากtest</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-19-equation"><summary>สมการ</summary><p>probabilityproductsunderflowให้sumlogprobs; smoothingα&gt;0ป้องกันunseengramlog0 แต่ต้องเลือกαvalidationและไม่เพิ่มcountจากtest</p></details><details id="help-topic-19-visual"><summary>ภาพและ shape</summary><p>probabilityproductsunderflowให้sumlogprobs; smoothingα&gt;0ป้องกันunseengramlog0 แต่ต้องเลือกαvalidationและไม่เพิ่มcountจากtest</p></details><details id="help-topic-19-code"><summary>โค้ด</summary><p>probabilityproductsunderflowให้sumlogprobs; smoothingα&gt;0ป้องกันunseengramlog0 แต่ต้องเลือกαvalidationและไม่เพิ่มcountจากtest</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-19-result"><summary>ผลการทดลอง</summary><p>probabilityproductsunderflowให้sumlogprobs; smoothingα&gt;0ป้องกันunseengramlog0 แต่ต้องเลือกαvalidationและไม่เพิ่มcountจากtest</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-19"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-20" class="source-topic"><span id="source-32-nlp-fundamentals-canonical-20-perplexity" class="legacy-anchor"></span><h3>20. Perplexity</h3>
+<p>For average natural-log cross-entropy:</p>
+<pre><code class="language-text">PPL = exp(CE)
+</code></pre>
+<p>Interpretation:</p>
+<p>lower is better <strong>only when evaluated under compatible tokenization/data/objective</strong>.</p>
+<p>Perplexity values across different tokenizers are not directly comparable because token units differ.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>perplexityขึ้นกับtokenizationและnormalizationจึงเทียบข้ามvocabโดยตรงไม่fair; reportbits/byteหรือtaskmetricร่วม</p><p>seed7splitdocuments fitvocab/countstrain; compareunigram/bigramheldoutNLLและOOVrateด้วยtokenizationเดียว; shuffletrainingorderต้องcountsเท่าเดิม</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-20-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>perplexityขึ้นกับtokenizationและnormalizationจึงเทียบข้ามvocabโดยตรงไม่fair; reportbits/byteหรือtaskmetricร่วม</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-20-equation"><summary>สมการ</summary><p>perplexityขึ้นกับtokenizationและnormalizationจึงเทียบข้ามvocabโดยตรงไม่fair; reportbits/byteหรือtaskmetricร่วม</p></details><details id="help-topic-20-visual"><summary>ภาพและ shape</summary><p>perplexityขึ้นกับtokenizationและnormalizationจึงเทียบข้ามvocabโดยตรงไม่fair; reportbits/byteหรือtaskmetricร่วม</p></details><details id="help-topic-20-code"><summary>โค้ด</summary><p>perplexityขึ้นกับtokenizationและnormalizationจึงเทียบข้ามvocabโดยตรงไม่fair; reportbits/byteหรือtaskmetricร่วม</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-20-result"><summary>ผลการทดลอง</summary><p>perplexityขึ้นกับtokenizationและnormalizationจึงเทียบข้ามvocabโดยตรงไม่fair; reportbits/byteหรือtaskmetricร่วม</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-20"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-21" class="source-topic"><span id="source-32-nlp-fundamentals-canonical-21-padding" class="legacy-anchor"></span><h3>21. Padding</h3>
+<p>Variable-length sequences can be padded:</p>
+<pre><code class="language-text">A B C PAD PAD
+D E F G H
+</code></pre>
+<p>Padding token must be distinguishable from real tokens.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>inputIDs(B,T),targets(B,T)shift1; paddinglengthmaskตรงT; ID−1หรือ≥vocabsizeต้องerrorไม่เอาmodvocab</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-21-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>inputIDs(B,T),targets(B,T)shift1; paddinglengthmaskตรงT; ID−1หรือ≥vocabsizeต้องerrorไม่เอาmodvocab</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-21-equation"><summary>สมการ</summary><p>inputIDs(B,T),targets(B,T)shift1; paddinglengthmaskตรงT; ID−1หรือ≥vocabsizeต้องerrorไม่เอาmodvocab</p></details><details id="help-topic-21-visual"><summary>ภาพและ shape</summary><p>inputIDs(B,T),targets(B,T)shift1; paddinglengthmaskตรงT; ID−1หรือ≥vocabsizeต้องerrorไม่เอาmodvocab</p></details><details id="help-topic-21-code"><summary>โค้ด</summary><p>inputIDs(B,T),targets(B,T)shift1; paddinglengthmaskตรงT; ID−1หรือ≥vocabsizeต้องerrorไม่เอาmodvocab</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-21-result"><summary>ผลการทดลอง</summary><p>inputIDs(B,T),targets(B,T)shift1; paddinglengthmaskตรงT; ID−1หรือ≥vocabsizeต้องerrorไม่เอาmodvocab</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-21"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-22" class="source-topic"><span id="source-32-nlp-fundamentals-canonical-22-attention-mask" class="legacy-anchor"></span><h3>22. Attention Mask</h3>
+<p>Mask indicates which positions are valid.</p>
+<p>Example:</p>
+<pre><code class="language-text">1 1 1 0 0
+1 1 1 1 1
+</code></pre>
+<p>Exact semantics depend on API.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-22-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>22. Attention Mask</h3>
+<p>Mask indicates which positions are valid.</p>
+<p>Example:</p>
+<pre><code class="language-text">1 1 1 0 0
+1 1 1 1 1
+</code></pre>
+<p>Exact semantics depend on API.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-22-equation"><summary>สมการ</summary><h3>22. Attention Mask</h3>
+<p>Mask indicates which positions are valid.</p>
+<p>Example:</p>
+<pre><code class="language-text">1 1 1 0 0
+1 1 1 1 1
+</code></pre>
+<p>Exact semantics depend on API.</p></details><details id="help-topic-22-visual"><summary>ภาพและ shape</summary><h3>22. Attention Mask</h3>
+<p>Mask indicates which positions are valid.</p>
+<p>Example:</p>
+<pre><code class="language-text">1 1 1 0 0
+1 1 1 1 1
+</code></pre>
+<p>Exact semantics depend on API.</p></details><details id="help-topic-22-code"><summary>โค้ด</summary><h3>22. Attention Mask</h3>
+<p>Mask indicates which positions are valid.</p>
+<p>Example:</p>
+<pre><code class="language-text">1 1 1 0 0
+1 1 1 1 1
+</code></pre>
+<p>Exact semantics depend on API.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-22-result"><summary>ผลการทดลอง</summary><h3>22. Attention Mask</h3>
+<p>Mask indicates which positions are valid.</p>
+<p>Example:</p>
+<pre><code class="language-text">1 1 1 0 0
+1 1 1 1 1
+</code></pre>
+<p>Exact semantics depend on API.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-22"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-23" class="source-topic"><span id="source-32-nlp-fundamentals-canonical-23-loss-mask" class="legacy-anchor"></span><h3>23. Loss Mask</h3>
+<p>Do not include padding targets in token loss.</p>
+<p>Concept:</p>
+<pre><code class="language-text">token_loss * valid_target_mask
+</code></pre>
+<p>Normalize over valid tokens.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-23-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>23. Loss Mask</h3>
+<p>Do not include padding targets in token loss.</p>
+<p>Concept:</p>
+<pre><code class="language-text">token_loss * valid_target_mask
+</code></pre>
+<p>Normalize over valid tokens.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-23-equation"><summary>สมการ</summary><h3>23. Loss Mask</h3>
+<p>Do not include padding targets in token loss.</p>
+<p>Concept:</p>
+<pre><code class="language-text">token_loss * valid_target_mask
+</code></pre>
+<p>Normalize over valid tokens.</p></details><details id="help-topic-23-visual"><summary>ภาพและ shape</summary><h3>23. Loss Mask</h3>
+<p>Do not include padding targets in token loss.</p>
+<p>Concept:</p>
+<pre><code class="language-text">token_loss * valid_target_mask
+</code></pre>
+<p>Normalize over valid tokens.</p></details><details id="help-topic-23-code"><summary>โค้ด</summary><h3>23. Loss Mask</h3>
+<p>Do not include padding targets in token loss.</p>
+<p>Concept:</p>
+<pre><code class="language-text">token_loss * valid_target_mask
+</code></pre>
+<p>Normalize over valid tokens.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-23-result"><summary>ผลการทดลอง</summary><h3>23. Loss Mask</h3>
+<p>Do not include padding targets in token loss.</p>
+<p>Concept:</p>
+<pre><code class="language-text">token_loss * valid_target_mask
+</code></pre>
+<p>Normalize over valid tokens.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-23"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-24" class="source-topic"><span id="source-32-nlp-fundamentals-canonical-24-bos-eos" class="legacy-anchor"></span><h3>24. BOS / EOS</h3>
+<p>Common special tokens:</p>
+<ul>
+<li>BOS: beginning of sequence</li>
+<li>EOS: end of sequence</li>
+</ul>
+<p>EOS lets autoregressive generation learn when to stop.</p>
+<p>Not every architecture/tokenizer uses every special token.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-24-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>24. BOS / EOS</h3>
+<p>Common special tokens:</p>
+<ul>
+<li>BOS: beginning of sequence</li>
+<li>EOS: end of sequence</li>
+</ul>
+<p>EOS lets autoregressive generation learn when to stop.</p>
+<p>Not every architecture/tokenizer uses every special token.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-24-equation"><summary>สมการ</summary><h3>24. BOS / EOS</h3>
+<p>Common special tokens:</p>
+<ul>
+<li>BOS: beginning of sequence</li>
+<li>EOS: end of sequence</li>
+</ul>
+<p>EOS lets autoregressive generation learn when to stop.</p>
+<p>Not every architecture/tokenizer uses every special token.</p></details><details id="help-topic-24-visual"><summary>ภาพและ shape</summary><h3>24. BOS / EOS</h3>
+<p>Common special tokens:</p>
+<ul>
+<li>BOS: beginning of sequence</li>
+<li>EOS: end of sequence</li>
+</ul>
+<p>EOS lets autoregressive generation learn when to stop.</p>
+<p>Not every architecture/tokenizer uses every special token.</p></details><details id="help-topic-24-code"><summary>โค้ด</summary><h3>24. BOS / EOS</h3>
+<p>Common special tokens:</p>
+<ul>
+<li>BOS: beginning of sequence</li>
+<li>EOS: end of sequence</li>
+</ul>
+<p>EOS lets autoregressive generation learn when to stop.</p>
+<p>Not every architecture/tokenizer uses every special token.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-24-result"><summary>ผลการทดลอง</summary><h3>24. BOS / EOS</h3>
+<p>Common special tokens:</p>
+<ul>
+<li>BOS: beginning of sequence</li>
+<li>EOS: end of sequence</li>
+</ul>
+<p>EOS lets autoregressive generation learn when to stop.</p>
+<p>Not every architecture/tokenizer uses every special token.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-24"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-25" class="source-topic"><span id="source-32-nlp-fundamentals-canonical-25-corpus-splitting" class="legacy-anchor"></span><h3>25. Corpus Splitting</h3>
+<p>For language modeling, duplicate or near-duplicate text across splits can inflate validation performance.</p>
+<p>Important:
+- deduplicate where appropriate
+- split by document/source boundaries
+- avoid future leakage in chronological corpora
+- document corpus provenance</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>dedupเอกสารก่อนsplit,fitnormalizerconfiguration/vocabบนtrain; temporalholdoutเมื่อproductiontextเปลี่ยนเวลาและไม่leaknear-duplicates</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-25-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>dedupเอกสารก่อนsplit,fitnormalizerconfiguration/vocabบนtrain; temporalholdoutเมื่อproductiontextเปลี่ยนเวลาและไม่leaknear-duplicates</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-25-equation"><summary>สมการ</summary><p>dedupเอกสารก่อนsplit,fitnormalizerconfiguration/vocabบนtrain; temporalholdoutเมื่อproductiontextเปลี่ยนเวลาและไม่leaknear-duplicates</p></details><details id="help-topic-25-visual"><summary>ภาพและ shape</summary><p>dedupเอกสารก่อนsplit,fitnormalizerconfiguration/vocabบนtrain; temporalholdoutเมื่อproductiontextเปลี่ยนเวลาและไม่leaknear-duplicates</p></details><details id="help-topic-25-code"><summary>โค้ด</summary><p>dedupเอกสารก่อนsplit,fitnormalizerconfiguration/vocabบนtrain; temporalholdoutเมื่อproductiontextเปลี่ยนเวลาและไม่leaknear-duplicates</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-25-result"><summary>ผลการทดลอง</summary><p>dedupเอกสารก่อนsplit,fitnormalizerconfiguration/vocabบนtrain; temporalholdoutเมื่อproductiontextเปลี่ยนเวลาและไม่leaknear-duplicates</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-25"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-26" class="source-topic"><span id="source-32-nlp-fundamentals-canonical-26-data-quality" class="legacy-anchor"></span><h3>26. Data Quality</h3>
+<p>Corpus problems:
+- duplicated pages
+- broken encodings
+- boilerplate
+- spam
+- personally sensitive data
+- train/evaluation contamination
+- malformed markup</p>
+<p>“More tokens” does not automatically mean better training data.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>บันทึกUnicodeversion/normalization/vocab/specialIDs/split; ทดลองNFCลดduplicateformsโดยThai roundtripไม่เสียและreportcollisioncases</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-26-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>บันทึกUnicodeversion/normalization/vocab/specialIDs/split; ทดลองNFCลดduplicateformsโดยThai roundtripไม่เสียและreportcollisioncases</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-26-equation"><summary>สมการ</summary><p>บันทึกUnicodeversion/normalization/vocab/specialIDs/split; ทดลองNFCลดduplicateformsโดยThai roundtripไม่เสียและreportcollisioncases</p></details><details id="help-topic-26-visual"><summary>ภาพและ shape</summary><p>บันทึกUnicodeversion/normalization/vocab/specialIDs/split; ทดลองNFCลดduplicateformsโดยThai roundtripไม่เสียและreportcollisioncases</p></details><details id="help-topic-26-code"><summary>โค้ด</summary><p>บันทึกUnicodeversion/normalization/vocab/specialIDs/split; ทดลองNFCลดduplicateformsโดยThai roundtripไม่เสียและreportcollisioncases</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-26-result"><summary>ผลการทดลอง</summary><p>บันทึกUnicodeversion/normalization/vocab/specialIDs/split; ทดลองNFCลดduplicateformsโดยThai roundtripไม่เสียและreportcollisioncases</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-26"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-27" class="source-topic"><span id="source-32-nlp-fundamentals-canonical-27-embeddings-preview" class="legacy-anchor"></span><h3>27. Embeddings Preview</h3>
+<p>Token IDs have no geometric meaning:</p>
+<pre><code class="language-text">cat=7
+dog=8
+</code></pre>
+<p>does not mean dog is numerically one unit away from cat.</p>
+<p>Embedding tables learn dense vectors:</p>
+<pre><code class="language-text">id
+→ vector in R^D
+</code></pre>
+<p>Chapter 33 studies how word vectors can be learned from distributional context.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-27-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>27. Embeddings Preview</h3>
+<p>Token IDs have no geometric meaning:</p>
+<pre><code class="language-text">cat=7
+dog=8
+</code></pre>
+<p>does not mean dog is numerically one unit away from cat.</p>
+<p>Embedding tables learn dense vectors:</p>
+<pre><code class="language-text">id
+→ vector in R^D
+</code></pre>
+<p>Chapter 33 studies how word vectors can be learned from distributional context.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-27-equation"><summary>สมการ</summary><h3>27. Embeddings Preview</h3>
+<p>Token IDs have no geometric meaning:</p>
+<pre><code class="language-text">cat=7
+dog=8
+</code></pre>
+<p>does not mean dog is numerically one unit away from cat.</p>
+<p>Embedding tables learn dense vectors:</p>
+<pre><code class="language-text">id
+→ vector in R^D
+</code></pre>
+<p>Chapter 33 studies how word vectors can be learned from distributional context.</p></details><details id="help-topic-27-visual"><summary>ภาพและ shape</summary><h3>27. Embeddings Preview</h3>
+<p>Token IDs have no geometric meaning:</p>
+<pre><code class="language-text">cat=7
+dog=8
+</code></pre>
+<p>does not mean dog is numerically one unit away from cat.</p>
+<p>Embedding tables learn dense vectors:</p>
+<pre><code class="language-text">id
+→ vector in R^D
+</code></pre>
+<p>Chapter 33 studies how word vectors can be learned from distributional context.</p></details><details id="help-topic-27-code"><summary>โค้ด</summary><h3>27. Embeddings Preview</h3>
+<p>Token IDs have no geometric meaning:</p>
+<pre><code class="language-text">cat=7
+dog=8
+</code></pre>
+<p>does not mean dog is numerically one unit away from cat.</p>
+<p>Embedding tables learn dense vectors:</p>
+<pre><code class="language-text">id
+→ vector in R^D
+</code></pre>
+<p>Chapter 33 studies how word vectors can be learned from distributional context.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-27-result"><summary>ผลการทดลอง</summary><h3>27. Embeddings Preview</h3>
+<p>Token IDs have no geometric meaning:</p>
+<pre><code class="language-text">cat=7
+dog=8
+</code></pre>
+<p>does not mean dog is numerically one unit away from cat.</p>
+<p>Embedding tables learn dense vectors:</p>
+<pre><code class="language-text">id
+→ vector in R^D
+</code></pre>
+<p>Chapter 33 studies how word vectors can be learned from distributional context.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-27"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-28" class="source-topic"><span id="source-32-nlp-fundamentals-canonical-28-from-scratch" class="legacy-anchor"></span><h3>28. From Scratch</h3>
+<p>src/nlp_basics.py includes:</p>
+<ul>
+<li>Unicode normalization</li>
+<li>simple regex/whitespace-aware word tokenizer</li>
+<li>Vocabulary</li>
+<li>ngram counting</li>
+<li>smoothed NGramLanguageModel</li>
+<li>cross-entropy/perplexity helpers</li>
+<li>next-token window construction</li>
+</ul>
+<p>This tokenizer is educational, not a universal multilingual tokenizer.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p><code>unicodedata.normalize('NFC', text)</code> แล้วnormalizewhitespaceตามpolicy; decomposed <code>e\u0301</code>ควรเท่ากับé แต่เก็บrawtextเพื่อaudit</p><p>countngramsO(total_tokens·n)โดยstraightforward; dictionarymemoryO(uniquegrams); tokenizerbenchmarkรายงานbytes/secและtokens/byteแยก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-28-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p><code>unicodedata.normalize('NFC', text)</code> แล้วnormalizewhitespaceตามpolicy; decomposed <code>e\u0301</code>ควรเท่ากับé แต่เก็บrawtextเพื่อaudit</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-28-equation"><summary>สมการ</summary><p><code>unicodedata.normalize('NFC', text)</code> แล้วnormalizewhitespaceตามpolicy; decomposed <code>e\u0301</code>ควรเท่ากับé แต่เก็บrawtextเพื่อaudit</p></details><details id="help-topic-28-visual"><summary>ภาพและ shape</summary><p><code>unicodedata.normalize('NFC', text)</code> แล้วnormalizewhitespaceตามpolicy; decomposed <code>e\u0301</code>ควรเท่ากับé แต่เก็บrawtextเพื่อaudit</p></details><details id="help-topic-28-code"><summary>โค้ด</summary><p><code>unicodedata.normalize('NFC', text)</code> แล้วnormalizewhitespaceตามpolicy; decomposed <code>e\u0301</code>ควรเท่ากับé แต่เก็บrawtextเพื่อaudit</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-28-result"><summary>ผลการทดลอง</summary><p><code>unicodedata.normalize('NFC', text)</code> แล้วnormalizewhitespaceตามpolicy; decomposed <code>e\u0301</code>ควรเท่ากับé แต่เก็บrawtextเพื่อaudit</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-28"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-29" class="source-topic"><span id="source-32-nlp-fundamentals-canonical-29-common-mistakes" class="legacy-anchor"></span><h3>29. Common Mistakes</h3>
+<ol>
+<li>assuming bytes = characters</li>
+<li>destructive normalization without justification</li>
+<li>using whitespace-only tokenization for every language</li>
+<li>building vocabulary on test data</li>
+<li>no UNK policy</li>
+<li>including PAD in loss</li>
+<li>comparing perplexity across different tokenizers blindly</li>
+<li>data duplicates across splits</li>
+<li>treating token id values as numeric semantics</li>
+<li>confusing tokenization with embedding</li>
+</ol><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>assertnormalizationidempotent,éกับe+combiningเท่ากัน,NFCไม่เปลี่ยน“ไทย”; emptystringvalidและunknownunicodeไม่หายเงียบ</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-29-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>assertnormalizationidempotent,éกับe+combiningเท่ากัน,NFCไม่เปลี่ยน“ไทย”; emptystringvalidและunknownunicodeไม่หายเงียบ</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-29-equation"><summary>สมการ</summary><p>assertnormalizationidempotent,éกับe+combiningเท่ากัน,NFCไม่เปลี่ยน“ไทย”; emptystringvalidและunknownunicodeไม่หายเงียบ</p></details><details id="help-topic-29-visual"><summary>ภาพและ shape</summary><p>assertnormalizationidempotent,éกับe+combiningเท่ากัน,NFCไม่เปลี่ยน“ไทย”; emptystringvalidและunknownunicodeไม่หายเงียบ</p></details><details id="help-topic-29-code"><summary>โค้ด</summary><p>assertnormalizationidempotent,éกับe+combiningเท่ากัน,NFCไม่เปลี่ยน“ไทย”; emptystringvalidและunknownunicodeไม่หายเงียบ</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-29-result"><summary>ผลการทดลอง</summary><p>assertnormalizationidempotent,éกับe+combiningเท่ากัน,NFCไม่เปลี่ยน“ไทย”; emptystringvalidและunknownunicodeไม่หายเงียบ</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-29"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-30" class="source-topic"><span id="source-32-nlp-fundamentals-canonical-30-exercises-mini-project" class="legacy-anchor"></span><h3>30. Exercises / Mini Project</h3>
+<ul>
+<li><a href="../32-nlp-fundamentals/exercises/README.md">Exercises</a></li>
+<li><a href="../32-nlp-fundamentals/solutions/README.md">Solutions</a></li>
+<li><a href="../32-nlp-fundamentals/mini-project/README.md">Mini Project</a></li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-30-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>30. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-30-equation"><summary>สมการ</summary><h3>30. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-30-visual"><summary>ภาพและ shape</summary><h3>30. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-30-code"><summary>โค้ด</summary><h3>30. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-30-result"><summary>ผลการทดลอง</summary><h3>30. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-30"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-31" class="source-topic"><span id="source-32-nlp-fundamentals-canonical-31-checklist" class="legacy-anchor"></span><h3>31. Checklist</h3>
+<ul>
+<li>[ ] Unicode</li>
+<li>[ ] normalization</li>
+<li>[ ] tokenization levels</li>
+<li>[ ] vocabulary</li>
+<li>[ ] OOV/UNK</li>
+<li>[ ] n-grams</li>
+<li>[ ] smoothing</li>
+<li>[ ] next-token objective</li>
+<li>[ ] cross-entropy</li>
+<li>[ ] perplexity</li>
+<li>[ ] padding/masks</li>
+<li>[ ] leakage/data quality</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-31-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>31. Checklist</h3>
+<ul>
+<li>[ ] Unicode</li>
+<li>[ ] normalization</li>
+<li>[ ] tokenization levels</li>
+<li>[ ] vocabulary</li>
+<li>[ ] OOV/UNK</li>
+<li>[ ] n-grams</li>
+<li>[ ] smoothing</li>
+<li>[ ] next-token objective</li>
+<li>[ ] cross-entropy</li>
+<li>[ ] perplexity</li>
+<li>[ ] padding/masks</li>
+<li>[ ] leakage/data quality</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-31-equation"><summary>สมการ</summary><h3>31. Checklist</h3>
+<ul>
+<li>[ ] Unicode</li>
+<li>[ ] normalization</li>
+<li>[ ] tokenization levels</li>
+<li>[ ] vocabulary</li>
+<li>[ ] OOV/UNK</li>
+<li>[ ] n-grams</li>
+<li>[ ] smoothing</li>
+<li>[ ] next-token objective</li>
+<li>[ ] cross-entropy</li>
+<li>[ ] perplexity</li>
+<li>[ ] padding/masks</li>
+<li>[ ] leakage/data quality</li>
+</ul></details><details id="help-topic-31-visual"><summary>ภาพและ shape</summary><h3>31. Checklist</h3>
+<ul>
+<li>[ ] Unicode</li>
+<li>[ ] normalization</li>
+<li>[ ] tokenization levels</li>
+<li>[ ] vocabulary</li>
+<li>[ ] OOV/UNK</li>
+<li>[ ] n-grams</li>
+<li>[ ] smoothing</li>
+<li>[ ] next-token objective</li>
+<li>[ ] cross-entropy</li>
+<li>[ ] perplexity</li>
+<li>[ ] padding/masks</li>
+<li>[ ] leakage/data quality</li>
+</ul></details><details id="help-topic-31-code"><summary>โค้ด</summary><h3>31. Checklist</h3>
+<ul>
+<li>[ ] Unicode</li>
+<li>[ ] normalization</li>
+<li>[ ] tokenization levels</li>
+<li>[ ] vocabulary</li>
+<li>[ ] OOV/UNK</li>
+<li>[ ] n-grams</li>
+<li>[ ] smoothing</li>
+<li>[ ] next-token objective</li>
+<li>[ ] cross-entropy</li>
+<li>[ ] perplexity</li>
+<li>[ ] padding/masks</li>
+<li>[ ] leakage/data quality</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-31-result"><summary>ผลการทดลอง</summary><h3>31. Checklist</h3>
+<ul>
+<li>[ ] Unicode</li>
+<li>[ ] normalization</li>
+<li>[ ] tokenization levels</li>
+<li>[ ] vocabulary</li>
+<li>[ ] OOV/UNK</li>
+<li>[ ] n-grams</li>
+<li>[ ] smoothing</li>
+<li>[ ] next-token objective</li>
+<li>[ ] cross-entropy</li>
+<li>[ ] perplexity</li>
+<li>[ ] padding/masks</li>
+<li>[ ] leakage/data quality</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-31"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-32" class="source-topic"><span id="source-32-nlp-fundamentals-canonical-32-whats-next" class="legacy-anchor"></span><span id="source-32-nlp-fundamentals-canonical-32-nlp-fundamentals-nlp-fundamentals" class="legacy-anchor"></span><h3>32. What's Next</h3>
+<p>Chapter 33 learns dense word representations from distributional context: Word2Vec, GloVe and FastText.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-32-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>32. What's Next</h3>
+<p>Chapter 33 learns dense word representations from distributional context: Word2Vec, GloVe and FastText.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-32-equation"><summary>สมการ</summary><h3>32. What's Next</h3>
+<p>Chapter 33 learns dense word representations from distributional context: Word2Vec, GloVe and FastText.</p></details><details id="help-topic-32-visual"><summary>ภาพและ shape</summary><h3>32. What's Next</h3>
+<p>Chapter 33 learns dense word representations from distributional context: Word2Vec, GloVe and FastText.</p></details><details id="help-topic-32-code"><summary>โค้ด</summary><h3>32. What's Next</h3>
+<p>Chapter 33 learns dense word representations from distributional context: Word2Vec, GloVe and FastText.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-32-result"><summary>ผลการทดลอง</summary><h3>32. What's Next</h3>
+<p>Chapter 33 learns dense word representations from distributional context: Word2Vec, GloVe and FastText.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-32"> อ่านหัวข้อนี้แล้ว</label></section><details><summary>รายละเอียดเพิ่มเติมและข้อกำหนดของ local lab</summary><h3>32-nlp-fundamentals — NLP Fundamentals</h3>
+<p><strong>Prerequisites:</strong> Complete 31-vision-transformer; be able to trace array/tensor shapes, separate train/validation/test data, and explain the core objective of the current chapter.</p>
+<p><strong>Mental model:</strong> Treat NLP Fundamentals as a pipeline: input representation → central mechanism → objective/state update → observable output. At every boundary, state shape/state, allowed information flow, and the invariant that should remain true.</p>
+<p><strong>Code walkthrough:</strong> Read public API first, then input checks, state/shape transformations, numerical core, returned values and tests. Connect each important code block to the equation or algorithm in the chapter README.</p>
+<p><strong>Visualization / inspection:</strong> Use a tiny case. Inspect intermediate values, distributions, norms, scores, states or trajectories appropriate to NLP Fundamentals; do not rely only on the final metric.</p>
+<p><strong>Experiment:</strong> Run a baseline, one controlled parameter change, one edge case and one repeated seeded comparison. Record seed, environment, data version, configuration and metric.</p>
+<p><strong>Limitations:</strong> List at least one assumption, one data-related limitation, one numerical/optimization limitation and one scaling limitation for NLP Fundamentals.</p>
+<p><strong>Analysis workflow:</strong> Check inputs → preprocessing → shapes/state → finite numerical values → objective/update → evaluation protocol. The earliest unexpected state is more informative than a downstream metric.</p>
+<p><strong>Performance:</strong> Identify the dominant time and memory terms and measure them on the local learning run before attempting optimization.</p>
+<p><strong>Production perspective:</strong> Define input validation, artifact/configuration versioning, quality and resource measurements, staged release criteria and a way to return to the previous known-good artifact.</p>
+<p><strong>Research perspective:</strong> State a falsifiable hypothesis, baseline, one-factor change, metric, repeated-run plan when stochastic, and how negative results will be recorded.</p>
+<p><strong>Interview questions:</strong>
+1. Explain NLP Fundamentals from first principles without naming a library API.
+2. Trace one input through the central mechanism and give the important intermediate shapes/state.
+3. Name the strongest assumption and a case where it fails.
+4. State the dominant compute/memory cost.
+5. Describe how you would validate a new implementation against a trusted baseline.</p>
+<p><strong>Summary / exit condition:</strong> You may move on when you can explain, derive or trace, implement, test, analyze, measure and evaluate NLP Fundamentals, and when the chapter mini-project plus twenty total exercises are complete.</p></details></section><section id="objective-evidence" class="canonical-section"><h2>พิสูจน์ความสามารถทีละ objective</h2><p>ทำกรณีใหม่ก่อนเปิด reference แล้วบันทึกงานด้านล่าง ให้ผู้ตรวจใช้ rubric ตรวจคำอธิบาย ผลคำนวณ โค้ด และข้อจำกัด บันทึกเก็บในเบราว์เซอร์เครื่องนี้ กดส่งออกเพื่อสำรองหรือส่งให้ผู้ตรวจ เว็บไม่ได้รันโค้ดหรือตัดสินผลงานแทนผู้ตรวจ</p><button type="button" class="secondary-button" data-export-evidence>ส่งออกหลักฐานบทนี้เป็น JSON</button><p role="status" id="evidence-export-status"></p><details id="ch32-objective-01" class="objective-proof"><summary>explain Unicode/code points</summary><p>explain Unicode/code points: ใช้กรณีในหัวข้อ Text Is Unicode เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch32-evidence-01"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch32-evidence-01-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch32-evidence-01-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch32-evidence-01-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch32-evidence-01-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch32-evidence-01-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch32-evidence-01-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch32-evidence-01-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch32-evidence-01-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>3. Text Is Unicode</h3>
+<p>Python strings are Unicode text.</p>
+<p>Do not assume:
+- one character = one byte
+- one visible glyph = one code point
+- string length equals user-perceived character count</p>
+<p>Unicode matters especially for:
+- Thai
+- emoji
+- combining marks
+- multilingual corpora</p><h3>3. Text Is Unicode</h3>
+<p>Python strings are Unicode text.</p>
+<p>Do not assume:
+- one character = one byte
+- one visible glyph = one code point
+- string length equals user-perceived character count</p>
+<p>Unicode matters especially for:
+- Thai
+- emoji
+- combining marks
+- multilingual corpora</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch32-objective-02" class="objective-proof"><summary>distinguish normalization from tokenization</summary><p>distinguish normalization from tokenization: ใช้กรณีในหัวข้อ Unicode Normalization, Case Folding, Whitespace and Punctuation, Tokenization Levels เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch32-evidence-02"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch32-evidence-02-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch32-evidence-02-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch32-evidence-02-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch32-evidence-02-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch32-evidence-02-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch32-evidence-02-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch32-evidence-02-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch32-evidence-02-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>normalizationเปลี่ยนรูปข้อความตามpolicyเช่นUnicodeNFC/whitespace; ไม่ควรลบวรรณยุกต์ไทยเพราะเปลี่ยนความหมาย; ต้องversionpolicy</p><h3>4. Unicode Normalization</h3>
+<p>Unicode can represent visually similar text with different code-point sequences.</p>
+<p>Common normalization forms:
+- NFC
+- NFD
+- NFKC
+- NFKD</p>
+<p>Normalization is a <strong>policy decision</strong>.</p>
+<p>Compatibility normalization can change distinctions that may matter in some domains.</p>
+<h3>5. Case Folding</h3>
+<p>English-centric pipelines often lowercase.</p>
+<p>But case can encode meaning:</p>
+<pre><code class="language-text">US
+vs
+us
+</code></pre>
+<p>Large pretrained models often preserve case depending on tokenizer/model design.</p>
+<p>Do not lowercase automatically without task justification.</p>
+<h3>6. Whitespace and Punctuation</h3>
+<p>Removing punctuation may damage:
+- sentiment
+- sentence boundaries
+- code
+- URLs
+- named entities</p>
+<p>Removing whitespace can be especially harmful in languages where segmentation rules differ.</p>
+<p>Text cleaning should preserve information unless there is a documented reason to discard it.</p>
+<h3>7. Tokenization Levels</h3>
+<h4>Character</h4>
+<pre><code class="language-text">hello
+→ h e l l o
+</code></pre>
+<p>Pros:
+- tiny vocabulary
+- no unknown words</p>
+<p>Cons:
+- long sequences
+- weak semantic unit</p>
+<h4>Word</h4>
+<pre><code class="language-text">I love AI
+→ I | love | AI
+</code></pre>
+<p>Pros:
+- intuitive units</p>
+<p>Cons:
+- huge vocabulary
+- unknown words
+- morphology issues
+- segmentation problems</p>
+<h4>Subword</h4>
+<pre><code class="language-text">unbelievable
+→ un | believe | able
+</code></pre>
+<p>Balances vocabulary size and sequence length.</p>
+<p>BPE/WordPiece/Unigram receive deeper treatment later.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch32-objective-03" class="objective-proof"><summary>design a vocabulary</summary><p>design a vocabulary: ใช้กรณีในหัวข้อ Vocabulary, Frequency Threshold เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch32-evidence-03"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch32-evidence-03-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch32-evidence-03-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch32-evidence-03-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch32-evidence-03-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch32-evidence-03-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch32-evidence-03-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch32-evidence-03-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch32-evidence-03-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>9. Vocabulary</h3>
+<p>Map token → integer id.</p>
+<p>Example:</p>
+<pre><code class="language-text">&lt;PAD&gt; → 0
+&lt;UNK&gt; → 1
+hello → 2
+world → 3
+</code></pre>
+<p>Keep special-token meanings explicit and stable.</p>
+<h3>11. Frequency Threshold</h3>
+<p>Rare tokens may be replaced by UNK in word-level systems.</p>
+<p>Parameter:</p>
+<pre><code class="language-text">min_frequency
+</code></pre>
+<p>Trade-off:
+- larger vocab → more sparse rare tokens
+- smaller vocab → more UNK</p><h3>9. Vocabulary</h3>
+<p>Map token → integer id.</p>
+<p>Example:</p>
+<pre><code class="language-text">&lt;PAD&gt; → 0
+&lt;UNK&gt; → 1
+hello → 2
+world → 3
+</code></pre>
+<p>Keep special-token meanings explicit and stable.</p>
+<h3>11. Frequency Threshold</h3>
+<p>Rare tokens may be replaced by UNK in word-level systems.</p>
+<p>Parameter:</p>
+<pre><code class="language-text">min_frequency
+</code></pre>
+<p>Trade-off:
+- larger vocab → more sparse rare tokens
+- smaller vocab → more UNK</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch32-objective-04" class="objective-proof"><summary>handle unknown tokens</summary><p>handle unknown tokens: ใช้กรณีในหัวข้อ Sequence Encoding เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch32-evidence-04"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch32-evidence-04-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch32-evidence-04-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch32-evidence-04-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch32-evidence-04-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch32-evidence-04-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch32-evidence-04-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch32-evidence-04-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch32-evidence-04-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>inputIDs(B,T),targets(B,T)shift1; paddinglengthmaskตรงT; ID−1หรือ≥vocabsizeต้องerrorไม่เอาmodvocab</p><h3>12. Sequence Encoding</h3>
+<pre><code class="language-text">tokens
+→ ids
+→ [12, 7, 44, 3]
+</code></pre>
+<p>Decoding uses inverse mapping where available.</p>
+<p>Unknown-token handling must be deterministic.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch32-objective-05" class="objective-proof"><summary>explain word/character/subword tokenization</summary><p>explain word/character/subword tokenization: ใช้กรณีในหัวข้อ Tokenization Levels, Thai Segmentation เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch32-evidence-05"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch32-evidence-05-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch32-evidence-05-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch32-evidence-05-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch32-evidence-05-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch32-evidence-05-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch32-evidence-05-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch32-evidence-05-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch32-evidence-05-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>tokenizationแบ่งข้อความเป็นหน่วยและmapID; “AI engineer”แบบwhitespaceให้2tokens แต่ภาษาไทยไม่มีเว้นวรรคทุกคำจึงต้องใช้tokenizerเหมาะสม</p><h3>7. Tokenization Levels</h3>
+<h4>Character</h4>
+<pre><code class="language-text">hello
+→ h e l l o
+</code></pre>
+<p>Pros:
+- tiny vocabulary
+- no unknown words</p>
+<p>Cons:
+- long sequences
+- weak semantic unit</p>
+<h4>Word</h4>
+<pre><code class="language-text">I love AI
+→ I | love | AI
+</code></pre>
+<p>Pros:
+- intuitive units</p>
+<p>Cons:
+- huge vocabulary
+- unknown words
+- morphology issues
+- segmentation problems</p>
+<h4>Subword</h4>
+<pre><code class="language-text">unbelievable
+→ un | believe | able
+</code></pre>
+<p>Balances vocabulary size and sequence length.</p>
+<p>BPE/WordPiece/Unigram receive deeper treatment later.</p>
+<h3>8. Thai Segmentation</h3>
+<p>Thai does not always separate words with spaces in the same way English does.</p>
+<p>A whitespace tokenizer is therefore not a general Thai word tokenizer.</p>
+<p>For multilingual/Thai systems:
+- use an appropriate tokenizer
+- preserve Unicode
+- validate segmentation examples manually</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch32-objective-06" class="objective-proof"><summary>create n-gram counts</summary><p>create n-gram counts: ใช้กรณีในหัวข้อ N-Grams เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch32-evidence-06"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch32-evidence-06-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch32-evidence-06-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch32-evidence-06-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch32-evidence-06-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch32-evidence-06-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch32-evidence-06-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch32-evidence-06-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch32-evidence-06-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>n-gramคือsequenceต่อเนื่องnหน่วย; tokens[a,b,a]ให้bigrams(a,b),(b,a); กำหนดBOS/EOSเพื่อmodelboundary</p><h3>13. N-Grams</h3>
+<p>An n-gram is a sequence of n tokens.</p>
+<p>Bigram:</p>
+<pre><code class="language-text">(w_(t-1), w_t)
+</code></pre>
+<p>Trigram:</p>
+<pre><code class="language-text">(w_(t-2), w_(t-1), w_t)
+</code></pre></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch32-objective-07" class="objective-proof"><summary>implement a smoothed n-gram language model</summary><p>implement a smoothed n-gram language model: ใช้กรณีในหัวข้อ N-Gram Language Model, Zero Counts, Add-k Smoothing เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch32-evidence-07"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch32-evidence-07-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch32-evidence-07-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch32-evidence-07-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch32-evidence-07-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch32-evidence-07-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch32-evidence-07-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch32-evidence-07-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch32-evidence-07-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>language modelให้P(tokenₜ|prefix); bigramใช้previous1token ส่วนneuralLMเห็นcontextยาวกว่า; probabilityรวม1ต่อcontext</p><h3>14. N-Gram Language Model</h3>
+<p>Bigram approximation:</p>
+<pre><code class="language-text">P(w_t | w_1...w_(t-1))
+≈
+P(w_t | w_(t-1))
+</code></pre>
+<p>Maximum-likelihood estimate:</p>
+<pre><code class="language-text">P(w_t | w_(t-1))
+=
+count(w_(t-1),w_t)
+/
+count(w_(t-1))
+</code></pre>
+<h3>15. Zero Counts</h3>
+<p>Unseen n-grams produce probability 0 under naive maximum likelihood.</p>
+<p>Then:</p>
+<pre><code class="language-text">log(0)
+→ -∞
+</code></pre>
+<p>Smoothing assigns some probability mass to unseen events.</p>
+<h3>16. Add-k Smoothing</h3>
+<p>For vocabulary size V:</p>
+<pre><code class="language-text">P(w | context)
+=
+(count(context,w) + k)
+/
+(count(context) + kV)
+</code></pre>
+<p>Useful educational baseline, though sophisticated language modeling uses better methods.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch32-objective-08" class="objective-proof"><summary>explain conditional language modeling</summary><p>explain conditional language modeling: ใช้กรณีในหัวข้อ Language Modeling Objective เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch32-evidence-08"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch32-evidence-08-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch32-evidence-08-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch32-evidence-08-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch32-evidence-08-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch32-evidence-08-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch32-evidence-08-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch32-evidence-08-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch32-evidence-08-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>LMทำnext-tokenpredictionไม่ใช่ความจริงsemantic; unigramจับfrequencyได้แต่ไม่wordorder จึงต้องholdoutloglossและfailureexamples</p><h3>17. Language Modeling Objective</h3>
+<p>Autoregressive model factorization:</p>
+<pre><code class="language-text">P(x_1,...,x_T)
+=
+Π_t P(
+    x_t | x_&lt;t
+)
+</code></pre>
+<p>Training minimizes negative log-likelihood / cross-entropy over next-token targets.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch32-objective-09" class="objective-proof"><summary>calculate cross-entropy and perplexity</summary><p>calculate cross-entropy and perplexity: ใช้กรณีในหัวข้อ Cross-Entropy, Perplexity เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch32-evidence-09"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch32-evidence-09-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch32-evidence-09-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch32-evidence-09-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch32-evidence-09-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch32-evidence-09-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch32-evidence-09-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch32-evidence-09-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch32-evidence-09-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>perplexityขึ้นกับtokenizationและnormalizationจึงเทียบข้ามvocabโดยตรงไม่fair; reportbits/byteหรือtaskmetricร่วม</p><h3>19. Cross-Entropy</h3>
+<p>For true next token y and predicted distribution p:</p>
+<pre><code class="language-text">CE =
+-log p(y)
+</code></pre>
+<p>Average across valid tokens.</p>
+<p>For vocabulary logits, use a numerically stable cross-entropy implementation rather than manually computing softmax then log.</p>
+<h3>20. Perplexity</h3>
+<p>For average natural-log cross-entropy:</p>
+<pre><code class="language-text">PPL = exp(CE)
+</code></pre>
+<p>Interpretation:</p>
+<p>lower is better <strong>only when evaluated under compatible tokenization/data/objective</strong>.</p>
+<p>Perplexity values across different tokenizers are not directly comparable because token units differ.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch32-objective-10" class="objective-proof"><summary>construct next-token training examples</summary><p>construct next-token training examples: ใช้กรณีในหัวข้อ Next-Token Pairs เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch32-evidence-10"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch32-evidence-10-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch32-evidence-10-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch32-evidence-10-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch32-evidence-10-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch32-evidence-10-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch32-evidence-10-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch32-evidence-10-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch32-evidence-10-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>raw→versionednormalize→tokenize→vocabfittrain→ngrams/counts→conditionalprob→NLL/PPL; generatedsampleต้องdetokenizeตามpolicy</p><h3>18. Next-Token Pairs</h3>
+<p>Sequence:</p>
+<pre><code class="language-text">[A,B,C,D,E]
+</code></pre>
+<p>Input:</p>
+<pre><code class="language-text">[A,B,C,D]
+</code></pre>
+<p>Target:</p>
+<pre><code class="language-text">[B,C,D,E]
+</code></pre>
+<p>This is the same causal objective introduced in Chapter 30.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch32-objective-11" class="objective-proof"><summary>pad variable-length text</summary><p>pad variable-length text: ใช้กรณีในหัวข้อ Padding เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch32-evidence-11"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch32-evidence-11-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch32-evidence-11-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch32-evidence-11-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch32-evidence-11-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch32-evidence-11-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch32-evidence-11-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch32-evidence-11-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch32-evidence-11-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>inputIDs(B,T),targets(B,T)shift1; paddinglengthmaskตรงT; ID−1หรือ≥vocabsizeต้องerrorไม่เอาmodvocab</p><h3>21. Padding</h3>
+<p>Variable-length sequences can be padded:</p>
+<pre><code class="language-text">A B C PAD PAD
+D E F G H
+</code></pre>
+<p>Padding token must be distinguishable from real tokens.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch32-objective-12" class="objective-proof"><summary>construct attention/loss masks</summary><p>construct attention/loss masks: ใช้กรณีในหัวข้อ Attention Mask, Loss Mask, BOS / EOS เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch32-evidence-12"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch32-evidence-12-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch32-evidence-12-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch32-evidence-12-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch32-evidence-12-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch32-evidence-12-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch32-evidence-12-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch32-evidence-12-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch32-evidence-12-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>22. Attention Mask</h3>
+<p>Mask indicates which positions are valid.</p>
+<p>Example:</p>
+<pre><code class="language-text">1 1 1 0 0
+1 1 1 1 1
+</code></pre>
+<p>Exact semantics depend on API.</p>
+<h3>23. Loss Mask</h3>
+<p>Do not include padding targets in token loss.</p>
+<p>Concept:</p>
+<pre><code class="language-text">token_loss * valid_target_mask
+</code></pre>
+<p>Normalize over valid tokens.</p>
+<h3>24. BOS / EOS</h3>
+<p>Common special tokens:</p>
+<ul>
+<li>BOS: beginning of sequence</li>
+<li>EOS: end of sequence</li>
+</ul>
+<p>EOS lets autoregressive generation learn when to stop.</p>
+<p>Not every architecture/tokenizer uses every special token.</p><h3>22. Attention Mask</h3>
+<p>Mask indicates which positions are valid.</p>
+<p>Example:</p>
+<pre><code class="language-text">1 1 1 0 0
+1 1 1 1 1
+</code></pre>
+<p>Exact semantics depend on API.</p>
+<h3>23. Loss Mask</h3>
+<p>Do not include padding targets in token loss.</p>
+<p>Concept:</p>
+<pre><code class="language-text">token_loss * valid_target_mask
+</code></pre>
+<p>Normalize over valid tokens.</p>
+<h3>24. BOS / EOS</h3>
+<p>Common special tokens:</p>
+<ul>
+<li>BOS: beginning of sequence</li>
+<li>EOS: end of sequence</li>
+</ul>
+<p>EOS lets autoregressive generation learn when to stop.</p>
+<p>Not every architecture/tokenizer uses every special token.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch32-objective-13" class="objective-proof"><summary>avoid train/test vocabulary leakage</summary><p>avoid train/test vocabulary leakage: ใช้กรณีในหัวข้อ Vocabulary Leakage, Corpus Splitting เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch32-evidence-13"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch32-evidence-13-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch32-evidence-13-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch32-evidence-13-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch32-evidence-13-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch32-evidence-13-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch32-evidence-13-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch32-evidence-13-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch32-evidence-13-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>dedupเอกสารก่อนsplit,fitnormalizerconfiguration/vocabบนtrain; temporalholdoutเมื่อproductiontextเปลี่ยนเวลาและไม่leaknear-duplicates</p><h3>10. Vocabulary Leakage</h3>
+<p>If you build vocabulary from train+validation+test, test information influences representation design.</p>
+<p>Safer supervised evaluation:</p>
+<pre><code class="language-text">build vocab on training corpus
+freeze vocab
+map unseen validation/test tokens to UNK
+</code></pre>
+<p>Large-scale pretrained tokenizers are a different setting because the vocabulary is fixed before downstream evaluation.</p>
+<h3>25. Corpus Splitting</h3>
+<p>For language modeling, duplicate or near-duplicate text across splits can inflate validation performance.</p>
+<p>Important:
+- deduplicate where appropriate
+- split by document/source boundaries
+- avoid future leakage in chronological corpora
+- document corpus provenance</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch32-objective-14" class="objective-proof"><summary>understand tokenization trade-offs</summary><p>understand tokenization trade-offs: ใช้กรณีในหัวข้อ Data Quality, Embeddings Preview, From Scratch เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch32-evidence-14"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch32-evidence-14-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch32-evidence-14-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch32-evidence-14-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch32-evidence-14-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch32-evidence-14-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch32-evidence-14-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch32-evidence-14-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch32-evidence-14-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p><code>unicodedata.normalize('NFC', text)</code> แล้วnormalizewhitespaceตามpolicy; decomposed <code>e\u0301</code>ควรเท่ากับé แต่เก็บrawtextเพื่อaudit</p><h3>26. Data Quality</h3>
+<p>Corpus problems:
+- duplicated pages
+- broken encodings
+- boilerplate
+- spam
+- personally sensitive data
+- train/evaluation contamination
+- malformed markup</p>
+<p>“More tokens” does not automatically mean better training data.</p>
+<h3>27. Embeddings Preview</h3>
+<p>Token IDs have no geometric meaning:</p>
+<pre><code class="language-text">cat=7
+dog=8
+</code></pre>
+<p>does not mean dog is numerically one unit away from cat.</p>
+<p>Embedding tables learn dense vectors:</p>
+<pre><code class="language-text">id
+→ vector in R^D
+</code></pre>
+<p>Chapter 33 studies how word vectors can be learned from distributional context.</p>
+<h3>28. From Scratch</h3>
+<p>src/nlp_basics.py includes:</p>
+<ul>
+<li>Unicode normalization</li>
+<li>simple regex/whitespace-aware word tokenizer</li>
+<li>Vocabulary</li>
+<li>ngram counting</li>
+<li>smoothed NGramLanguageModel</li>
+<li>cross-entropy/perplexity helpers</li>
+<li>next-token window construction</li>
+</ul>
+<p>This tokenizer is educational, not a universal multilingual tokenizer.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch32-objective-15" class="objective-proof"><summary>Common Mistakes</summary><p>Common Mistakes: ใช้กรณีในหัวข้อ Common Mistakes เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch32-evidence-15"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch32-evidence-15-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch32-evidence-15-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch32-evidence-15-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch32-evidence-15-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch32-evidence-15-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch32-evidence-15-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch32-evidence-15-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch32-evidence-15-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>assertnormalizationidempotent,éกับe+combiningเท่ากัน,NFCไม่เปลี่ยน“ไทย”; emptystringvalidและunknownunicodeไม่หายเงียบ</p><h3>29. Common Mistakes</h3>
+<ol>
+<li>assuming bytes = characters</li>
+<li>destructive normalization without justification</li>
+<li>using whitespace-only tokenization for every language</li>
+<li>building vocabulary on test data</li>
+<li>no UNK policy</li>
+<li>including PAD in loss</li>
+<li>comparing perplexity across different tokenizers blindly</li>
+<li>data duplicates across splits</li>
+<li>treating token id values as numeric semantics</li>
+<li>confusing tokenization with embedding</li>
+</ol></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details></section><section id="implementation" class="canonical-section"><h2>Implementation และ tests ที่รันบนเครื่องได้</h2><details><summary>32-nlp-fundamentals/src/nlp_basics.py</summary><pre><code>&quot;&quot;&quot;Educational NLP preprocessing and n-gram language-model utilities.&quot;&quot;&quot;
+
+from __future__ import annotations
+
+from collections import Counter, defaultdict
+from dataclasses import dataclass
+import math
+import re
+import unicodedata
+
+import numpy as np
+
+
+TOKEN_PATTERN = re.compile(r&quot;\w+|[^\w\s]&quot;, flags=re.UNICODE)
+
+
+def normalize_unicode(text: str, form: str = &quot;NFC&quot;) -&gt; str:
+    if form not in {&quot;NFC&quot;, &quot;NFD&quot;, &quot;NFKC&quot;, &quot;NFKD&quot;}:
+        raise ValueError(&quot;unsupported Unicode normalization form&quot;)
+    return unicodedata.normalize(form, text)
+
+
+def simple_word_tokenize(
+    text: str,
+    *,
+    lowercase: bool = False,
+    normalization: str = &quot;NFC&quot;,
+) -&gt; list[str]:
+    normalized = normalize_unicode(text, normalization)
+    if lowercase:
+        normalized = normalized.casefold()
+    return TOKEN_PATTERN.findall(normalized)
+
+
+@dataclass
+class Vocabulary:
+    token_to_id: dict[str, int]
+    pad_token: str = &quot;&lt;PAD&gt;&quot;
+    unk_token: str = &quot;&lt;UNK&gt;&quot;
+
+    @classmethod
+    def build(
+        cls,
+        token_sequences: list[list[str]],
+        *,
+        min_frequency: int = 1,
+    ) -&gt; &quot;Vocabulary&quot;:
+        if min_frequency &lt;= 0:
+            raise ValueError(&quot;min_frequency must be positive&quot;)
+
+        counts = Counter(
+            token
+            for sequence in token_sequences
+            for token in sequence
+        )
+
+        mapping = {&quot;&lt;PAD&gt;&quot;: 0, &quot;&lt;UNK&gt;&quot;: 1}
+        for token in sorted(counts):
+            if counts[token] &gt;= min_frequency and token not in mapping:
+                mapping[token] = len(mapping)
+
+        return cls(mapping)
+
+    @property
+    def id_to_token(self) -&gt; dict[int, str]:
+        return {idx: token for token, idx in self.token_to_id.items()}
+
+    def encode(self, tokens: list[str]) -&gt; list[int]:
+        unk = self.token_to_id[self.unk_token]
+        return [self.token_to_id.get(token, unk) for token in tokens]
+
+    def decode(self, ids: list[int]) -&gt; list[str]:
+        reverse = self.id_to_token
+        return [reverse.get(idx, self.unk_token) for idx in ids]
+
+
+def count_ngrams(
+    tokens: list[str],
+    n: int,
+) -&gt; Counter[tuple[str, ...]]:
+    if n &lt;= 0:
+        raise ValueError(&quot;n must be positive&quot;)
+    if len(tokens) &lt; n:
+        return Counter()
+
+    return Counter(
+        tuple(tokens[i : i + n])
+        for i in range(len(tokens) - n + 1)
+    )
+
+
+@dataclass
+class NGramLanguageModel:
+    n: int = 2
+    smoothing: float = 1.0
+
+    def fit(self, tokens: list[str]) -&gt; &quot;NGramLanguageModel&quot;:
+        if self.n &lt; 1:
+            raise ValueError(&quot;n must be &gt;= 1&quot;)
+        if self.smoothing &lt;= 0:
+            raise ValueError(&quot;smoothing must be positive&quot;)
+        if not tokens:
+            raise ValueError(&quot;tokens must be non-empty&quot;)
+
+        self.vocabulary_ = sorted(set(tokens))
+        self.vocab_size_ = len(self.vocabulary_)
+        self.ngram_counts_ = count_ngrams(tokens, self.n)
+
+        self.context_counts_: dict[tuple[str, ...], int] = defaultdict(int)
+        if self.n == 1:
+            self.context_counts_[()] = len(tokens)
+        else:
+            for ngram, count in self.ngram_counts_.items():
+                self.context_counts_[ngram[:-1]] += count
+        return self
+
+    def probability(
+        self,
+        token: str,
+        context: tuple[str, ...] = (),
+    ) -&gt; float:
+        if not hasattr(self, &quot;vocabulary_&quot;):
+            raise RuntimeError(&quot;fit before probability&quot;)
+
+        if self.n == 1:
+            context = ()
+        elif len(context) != self.n - 1:
+            raise ValueError(&quot;context length mismatch&quot;)
+
+        key = context + (token,)
+        numerator = self.ngram_counts_.get(key, 0) + self.smoothing
+        denominator = (
+            self.context_counts_.get(context, 0)
+            + self.smoothing * self.vocab_size_
+        )
+        return float(numerator / denominator)
+
+    def average_cross_entropy(self, tokens: list[str]) -&gt; float:
+        if len(tokens) &lt; self.n:
+            raise ValueError(&quot;token sequence too short&quot;)
+
+        losses = []
+        start = self.n - 1
+
+        for i in range(start, len(tokens)):
+            context = (
+                tuple(tokens[i - self.n + 1 : i])
+                if self.n &gt; 1
+                else ()
+            )
+            probability = self.probability(tokens[i], context)
+            losses.append(-math.log(probability))
+
+        return float(np.mean(losses))
+
+    def perplexity(self, tokens: list[str]) -&gt; float:
+        return float(math.exp(self.average_cross_entropy(tokens)))
+
+
+def make_next_token_windows(
+    token_ids: list[int],
+    context_length: int,
+) -&gt; tuple[np.ndarray, np.ndarray]:
+    if context_length &lt;= 0:
+        raise ValueError(&quot;context_length must be positive&quot;)
+    if len(token_ids) &lt;= context_length:
+        raise ValueError(&quot;sequence must be longer than context_length&quot;)
+
+    x = []
+    y = []
+
+    for start in range(len(token_ids) - context_length):
+        window = token_ids[start : start + context_length + 1]
+        x.append(window[:-1])
+        y.append(window[1:])
+
+    return np.asarray(x, dtype=np.int64), np.asarray(y, dtype=np.int64)
+</code></pre></details><details><summary>32-nlp-fundamentals/tests/test_nlp_basics.py</summary><pre><code>from pathlib import Path
+import importlib.util
+import sys
+
+import numpy as np
+
+
+MODULE_PATH = Path(__file__).parents[1] / &quot;src&quot; / &quot;nlp_basics.py&quot;
+SPEC = importlib.util.spec_from_file_location(&quot;nlp_basics_course&quot;, MODULE_PATH)
+assert SPEC and SPEC.loader
+mod = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = mod
+SPEC.loader.exec_module(mod)
+
+
+def test_unicode_normalization_equivalence() -&gt; None:
+    composed = &quot;é&quot;
+    decomposed = &quot;e\u0301&quot;
+    assert mod.normalize_unicode(composed, &quot;NFC&quot;) == mod.normalize_unicode(
+        decomposed,
+        &quot;NFC&quot;,
+    )
+
+
+def test_vocabulary_unknown_policy() -&gt; None:
+    vocab = mod.Vocabulary.build(
+        [[&quot;hello&quot;, &quot;world&quot;], [&quot;hello&quot;]],
+        min_frequency=2,
+    )
+    encoded = vocab.encode([&quot;hello&quot;, &quot;world&quot;])
+
+    assert encoded[0] != vocab.token_to_id[&quot;&lt;UNK&gt;&quot;]
+    assert encoded[1] == vocab.token_to_id[&quot;&lt;UNK&gt;&quot;]
+
+
+def test_bigram_probability_sums_over_training_vocab() -&gt; None:
+    tokens = &quot;a b a c a b&quot;.split()
+    model = mod.NGramLanguageModel(n=2, smoothing=1.0).fit(tokens)
+
+    total = sum(
+        model.probability(token, (&quot;a&quot;,))
+        for token in model.vocabulary_
+    )
+    np.testing.assert_allclose(total, 1.0)
+
+
+def test_perplexity_is_finite() -&gt; None:
+    tokens = &quot;a b a b a b a b&quot;.split()
+    model = mod.NGramLanguageModel(n=2, smoothing=0.5).fit(tokens)
+    ppl = model.perplexity(tokens)
+
+    assert np.isfinite(ppl)
+    assert ppl &gt;= 1.0
+
+
+def test_next_token_windows() -&gt; None:
+    x, y = mod.make_next_token_windows([1, 2, 3, 4, 5], 3)
+
+    np.testing.assert_array_equal(x, [[1, 2, 3], [2, 3, 4]])
+    np.testing.assert_array_equal(y, [[2, 3, 4], [3, 4, 5]])
+</code></pre></details></section><section id="glossary" class="canonical-section"><h2>อภิธานศัพท์ — คำไทย ความหมาย และข้อควรตรวจ</h2><dl><dt>tensor</dt><dd>เทนเซอร์: ชุดตัวเลขที่มีแกน เช่น scalar ไม่มีแกน, vector หนึ่งแกน, matrix สองแกน; shape บอกขนาดแต่ละแกน ไม่บอกความหมายของแกนจนกว่าจะระบุ</dd><dt>shape</dt><dd>รูปทรงข้อมูล: (B,T,d) หมายถึง batch × เวลา/ตำแหน่ง × features; ใช้ชื่อแกนกำกับเสมอ การ transpose เปลี่ยนแกนแต่ไม่ใช่แค่เปลี่ยนชื่อ</dd><dt>batch</dt><dd>กลุ่มตัวอย่างที่คำนวณร่วมกันหนึ่งครั้ง; B คือจำนวนตัวอย่าง ไม่ใช่จำนวน features หรือจำนวน optimizer updates</dd><dt>weight w / θ</dt><dd>น้ำหนักหรือพารามิเตอร์ที่โมเดลใช้คำนวณ; แก้ด้วยมือทำ forward ใหม่ ส่วน optimizer ต้องรับ gradient แล้วกด update จึงแก้ state</dd><dt>bias b</dt><dd>ค่าคงที่ที่บวกกับผลเชิงเส้น; regression scalar bias เพิ่ม Δ ทำให้ prediction ทุกจุดเพิ่ม Δ เท่ากัน</dd><dt>prediction ŷ</dt><dd>ค่าที่โมเดลทำนายจาก input และพารามิเตอร์ปัจจุบัน; เครื่องหมายหมวกแยกจาก target y ที่มาจากข้อมูล</dd><dt>residual e</dt><dd>ความคลาดเคลื่อน ในเว็บนี้นิยาม prediction − target; บางตำราใช้เครื่องหมายกลับกัน จึงต้องตรวจนิยามก่อนเทียบสูตร gradient</dd><dt>MSE</dt><dd>mean squared error = ผลรวม residual กำลังสองหารจำนวนรายการที่ระบุ; มีหน่วยเป็น target ยกกำลังสอง และการใช้ sum แทน mean เปลี่ยน scale gradient</dd><dt>loss L / objective J</dt><dd>จำนวนที่ optimizer ต้องการลด; objective อาจรวม data loss และ regularization จึงต้องดูองค์ประกอบและ reduction ให้ตรง implementation</dd><dt>gradient ∇ / ∂</dt><dd>เวกเตอร์ของ partial derivatives บอกอัตราเปลี่ยน loss ต่อพารามิเตอร์แต่ละตัว; ∂ ใช้เมื่อเปลี่ยนตัวหนึ่งโดยตรึงตัวอื่น</dd><dt>chain rule</dt><dd>กฎลูกโซ่: คูณอนุพันธ์ตามเส้นทาง และบวก contribution จากทุกเส้นทางที่มารวมกัน ใช้ย้อนจาก loss ถึง weights</dd><dt>learning rate η</dt><dd>ขนาดตัวคูณ gradient ใน update θnew=θ−ηg; η≥0, ศูนย์หมายถึงไม่มีการขยับพารามิเตอร์ ก้าวใหญ่เกินอาจ diverge</dd><dt>regularization λ</dt><dd>ตัวคูณค่าลงโทษ ต้อง λ≥0 ตามนิยามการลงโทษ; Ridge λΣw² เพิ่ม gradient 2λw โดยบท Regression นี้ไม่ลงโทษ bias</dd><dt>baseline</dt><dd>สถานะอ้างอิงที่ตรึงไว้สำหรับเทียบ; ต้องเก็บ snapshot ไม่อ้าง object ปัจจุบันที่แก้ตามไปด้วย</dd><dt>invariant</dt><dd>คุณสมบัติที่กลไกต้องรักษา เช่น probability รวม1, shape สอดคล้อง, queue ไม่เกิน capacity; ใช้ tests ตรวจได้มากกว่าดูภาพสวย</dd><dt>optimizer state</dt><dd>ความจำของอัลกอริทึม เช่น velocity, moments และ completed updates; คืนเฉพาะ weights ยังไม่เท่ากับเริ่มการฝึกใหม่ทั้งหมด</dd><dt>finite difference</dt><dd>ประมาณ derivative ด้วย [f(x+h)−f(x−h)]/(2h); h&gt;0, ใช้ smooth point และลองหลาย h เพื่อแยก truncation error จาก roundoff</dd><dt>softmax</dt><dd>แปลง logits เป็นความน่าจะเป็นตามแกนที่กำหนด; ลบ max ก่อน exp เพื่อความเสถียร และ fully masked row ต้องมีนโยบายชัดเจน</dd><dt>logit</dt><dd>คะแนนก่อน sigmoid/softmax ไม่ใช่ probability; อาจเป็นจำนวนจริงติดลบหรือเกิน1ได้ จึงห้ามส่งให้ loss ที่คาด probability โดยไม่แปลง</dd><dt>temperature τ / T</dt><dd>ตัวหาร logits ก่อน softmax; ต้องเป็นบวก ค่าเล็กทำ distribution แหลมขึ้น โดยไม่เท่ากับ retrain weights</dd><dt>mask</dt><dd>ตัวกำหนดตำแหน่งที่อ่านหรือคิด loss ได้; causal mask ปิดอนาคต, padding mask ปิดข้อมูลเติม, loss mask เลือก target แต่ละอย่างคนละหน้าที่</dd><dt>Q / K / V</dt><dd>query ใช้ค้นข้อมูล, key ใช้จับคู่ query, value เป็นข้อมูลที่ถูกถัวเฉลี่ย; เป็น learned projections ของ representation ไม่ใช่ป้ายความหมายตายตัว</dd><dt>head</dt><dd>ส่วนของ feature representation ที่ทำ attention แยกกัน แล้ว concat/project กลับ; ต้องตรวจ d_model หารจำนวน heads ลงตัว</dd><dt>ε-neighborhood</dt><dd>เพื่อนบ้านทั้งหมดที่มีระยะไม่เกิน ε รวมจุดตัวเองใน DBSCAN นี้; ε มีหน่วยเดียวกับพิกัด ไม่ใช่จำนวน k ที่ใช้โหวต</dd><dt>core / border / noise</dt><dd>DBSCAN core มีเพื่อนบ้านรวมตัวเองถึง min_samples; border อยู่ใกล้ core แต่เพื่อนบ้านไม่ถึง; noise ไม่ถูกเชื่อมกับ core cluster ใด</dd><dt>bootstrap</dt><dd>สุ่ม observations แบบ replacement ขนาดเท่าเดิมซ้ำหลายครั้งแล้วคำนวณ statistic ใหม่; seed ทำให้ตรวจซ้ำได้ แต่ไม่แก้สมมติฐาน IID ที่ผิด</dd><dt>confidence interval</dt><dd>ช่วงที่สร้างด้วย procedure ที่มี coverage ตามสมมติฐาน; ช่วงหนึ่งที่ได้แล้วไม่ใช่ posterior probability ของ parameter และ sample เล็กยังไม่แน่นอนมาก</dd><dt>validation / test</dt><dd>validation ใช้เลือกโมเดล/ค่าตั้ง ส่วน test ใช้ประเมินหลัง freeze การตัดสินใจ; fit preprocessing/tokenizer จาก test เป็น leakage</dd><dt>leakage</dt><dd>ข้อมูลที่ควรยังไม่รู้ไหลเข้า training/การเลือกโมเดล เช่น future feature หรือเอกสารซ้ำข้าม split ทำให้ metric ดูดีเกินการใช้งานจริง</dd><dt>queue / capacity</dt><dd>queue คือรายการรอ, capacity การให้บริการรวม = workers × service rate ตามแบบจำลอง; เพิ่ม timeout ไม่เพิ่มกำลังประมวลผล</dd><dt>state transition</dt><dd>การเปลี่ยนสถานะเมื่อเกิดเหตุการณ์ที่อนุญาต เช่น queued→active→done; ต้องระบุ guard, side effect และเหตุผลเมื่อ transition ถูกปฏิเสธ</dd><dt>latency / throughput</dt><dd>latency คือเวลาต่อคำขอ, throughput คือปริมาณงานต่อหน่วยเวลา; batching อาจเพิ่ม throughput แต่เพิ่มเวลารอ จึงต้องวัดทั้งคู่</dd><dt>idempotency</dt><dd>ทำคำขอ business operation เดิมซ้ำแล้ว side effect เกิดครั้งเดียวตาม key และ transaction protocol; ไม่ได้รับประกันจากการใช้ UUID ใหม่ทุก attempt</dd><dt>local lab</dt><dd>โปรแกรม Python และ tests ที่ผู้เรียนรันบนเครื่อง; เว็บเก็บเพียงคำยืนยันของผู้เรียน การผ่าน tests ของโค้ดต้นแบบไม่ใช่ผลตรวจโค้ดผู้เรียน</dd></dl></section></article>
+<section id="practice" class="practice-section"><span class="eyebrow">PRACTICE · DEBUG · BUILD</span><h2>พิสูจน์ด้วยการลงมือทำ</h2><div id="web-checks"></div><div class="retry-actions"><button class="secondary-button" id="retry-checks">เริ่มทำโจทย์ในเว็บใหม่</button><button class="text-button" id="undo-retry" hidden>คืนผลก่อนเริ่มใหม่</button></div><div id="exercise-content"><h2>แบบฝึก 20 ข้อ — เฉลยเฉพาะข้อ</h2><p>ทำคำตอบก่อนเปิด hints; โจทย์ปลายเปิดให้ใช้ตัวอย่างคำตอบและหลักฐานราย objective ตรวจงานจริง</p><section id="exercise-1" class="exercise-item"><h3>ข้อ 1</h3><p>Define normalization.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Unicode Normalization: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): normalizationเปลี่ยนรูปข้อความตามpolicyเช่นUnicode…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: normalizationเปลี่ยนรูปข้อความตามpolicyเช่นUnicodeNFC/whitespace; ไม่ควรลบวรรณยุกต์ไทยเพรา…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>normalizationเปลี่ยนรูปข้อความตามpolicyเช่นUnicodeNFC/whitespace; ไม่ควรลบวรรณยุกต์ไทยเพราะเปลี่ยนความหมาย; ต้องversionpolicy</p><p>อ้างอิง: <a href="#chapter-32/section/topic-4">Unicode Normalization</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch32-exercise-01"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-2" class="exercise-item"><h3>ข้อ 2</h3><p>Define tokenization.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Tokenization Levels, Thai Segmentation: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): tokenizationแบ่งข้อความเป็นหน่วยและmapID; “AI enginee…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: tokenizationแบ่งข้อความเป็นหน่วยและmapID; “AI engineer”แบบwhitespaceให้2tokens แต่ภาษาไทยไม่มีเ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>tokenizationแบ่งข้อความเป็นหน่วยและmapID; “AI engineer”แบบwhitespaceให้2tokens แต่ภาษาไทยไม่มีเว้นวรรคทุกคำจึงต้องใช้tokenizerเหมาะสม</p><p>อ้างอิง: <a href="#chapter-32/section/topic-7">Tokenization Levels</a>, <a href="#chapter-32/section/topic-8">Thai Segmentation</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch32-exercise-02"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-3" class="exercise-item"><h3>ข้อ 3</h3><p>Explain n-gram.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ N-Grams: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): n-gramคือsequenceต่อเนื่องnหน่วย; tokens…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: n-gramคือsequenceต่อเนื่องnหน่วย; tokens[a,b,a]ให้bigrams(a,b),(b,a); กำ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>n-gramคือsequenceต่อเนื่องnหน่วย; tokens[a,b,a]ให้bigrams(a,b),(b,a); กำหนดBOS/EOSเพื่อmodelboundary</p><p>อ้างอิง: <a href="#chapter-32/section/topic-13">N-Grams</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch32-exercise-03"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-4" class="exercise-item"><h3>ข้อ 4</h3><p>Explain language model.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ N-Gram Language Model: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): language modelให้P(tokenₜ|prefix); bigramใช้pr…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: language modelให้P(tokenₜ|prefix); bigramใช้previous1token ส่วนneuralLMเห็นcontextย…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>language modelให้P(tokenₜ|prefix); bigramใช้previous1token ส่วนneuralLMเห็นcontextยาวกว่า; probabilityรวม1ต่อcontext</p><p>อ้างอิง: <a href="#chapter-32/section/topic-14">N-Gram Language Model</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch32-exercise-04"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-5" class="exercise-item"><h3>ข้อ 5</h3><p>Compare normalization and tokenization.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Unicode Normalization, Tokenization Levels: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): normalizationแก้representationก่อนแบ่ง ส่วนtokeniza…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: normalizationแก้representationก่อนแบ่ง ส่วนtokenizationกำหนดboundaries/IDs; lowercasingทำข้อ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>normalizationแก้representationก่อนแบ่ง ส่วนtokenizationกำหนดboundaries/IDs; lowercasingทำข้อมูลcaseหายแม้decoderต่อtokensกลับได้</p><p>อ้างอิง: <a href="#chapter-32/section/topic-4">Unicode Normalization</a>, <a href="#chapter-32/section/topic-7">Tokenization Levels</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch32-exercise-05"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-6" class="exercise-item"><h3>ข้อ 6</h3><p>Explain how language model changes behavior.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Language Modeling Objective: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): LMทำnext-tokenpredictionไม่ใช่ความจริงsemantic; un…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: LMทำnext-tokenpredictionไม่ใช่ความจริงsemantic; unigramจับfrequencyได้แต่ไม่wordorder จึงต…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>LMทำnext-tokenpredictionไม่ใช่ความจริงsemantic; unigramจับfrequencyได้แต่ไม่wordorder จึงต้องholdoutloglossและfailureexamples</p><p>อ้างอิง: <a href="#chapter-32/section/topic-17">Language Modeling Objective</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch32-exercise-06"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-7" class="exercise-item"><h3>ข้อ 7</h3><p>Explain a common limitation involving subword tokenization.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Tokenization Levels: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): subwordทำrarewordแบ่งได้แต่sequenceยาวและบางภาษา…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: subwordทำrarewordแบ่งได้แต่sequenceยาวและบางภาษาถูกแบ่งถี่กว่า; bytefallbackช่วยroundtr…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>subwordทำrarewordแบ่งได้แต่sequenceยาวและบางภาษาถูกแบ่งถี่กว่า; bytefallbackช่วยroundtripแต่ไม่ได้รับประกันsemanticquality</p><p>อ้างอิง: <a href="#chapter-32/section/topic-7">Tokenization Levels</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch32-exercise-07"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-8" class="exercise-item"><h3>ข้อ 8</h3><p>Explain the tradeoff introduced by evaluation.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Perplexity: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): perplexityขึ้นกับtokenizationและnormalizatio…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: perplexityขึ้นกับtokenizationและnormalizationจึงเทียบข้ามvocabโดยตรงไม่fair; re…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>perplexityขึ้นกับtokenizationและnormalizationจึงเทียบข้ามvocabโดยตรงไม่fair; reportbits/byteหรือtaskmetricร่วม</p><p>อ้างอิง: <a href="#chapter-32/section/topic-20">Perplexity</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch32-exercise-08"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-9" class="exercise-item"><h3>ข้อ 9</h3><p>Implement a small example of normalization.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ From Scratch: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): <code>unicodedata.normalize('NFC', text)</code> แล้วnormalize…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: <code>unicodedata.normalize('NFC', text)</code> แล้วnormalizewhitespaceตามpolicy; decomposed <code>e\u0301</code>…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p><code>unicodedata.normalize('NFC', text)</code> แล้วnormalizewhitespaceตามpolicy; decomposed <code>e\u0301</code>ควรเท่ากับé แต่เก็บrawtextเพื่อaudit</p><p>อ้างอิง: <a href="#chapter-32/section/topic-28">From Scratch</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch32-exercise-09"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-10" class="exercise-item"><h3>ข้อ 10</h3><p>Add deterministic tests for Exercise 9.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Common Mistakes: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): assertnormalizationidempotent,éกับe+combiningเ…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: assertnormalizationidempotent,éกับe+combiningเท่ากัน,NFCไม่เปลี่ยน“ไทย”; emptystring…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>assertnormalizationidempotent,éกับe+combiningเท่ากัน,NFCไม่เปลี่ยน“ไทย”; emptystringvalidและunknownunicodeไม่หายเงียบ</p><p>อ้างอิง: <a href="#chapter-32/section/topic-29">Common Mistakes</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch32-exercise-10"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-11" class="exercise-item"><h3>ข้อ 11</h3><p>Implement the main calculation behind n-gram.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ N-Grams, N-Gram Language Model, Add-k Smoothing: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): tokens[a,b,a,b], bigramcounts(a,b)=2,(b,a)=1;…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: tokens[a,b,a,b], bigramcounts(a,b)=2,(b,a)=1; add-onevocab2ให้P(b|a)=3/4,P(a|a)=1…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>tokens[a,b,a,b], bigramcounts(a,b)=2,(b,a)=1; add-onevocab2ให้P(b|a)=3/4,P(a|a)=1/4; contextunseenใช้priorที่ระบุ</p><p>อ้างอิง: <a href="#chapter-32/section/topic-13">N-Grams</a>, <a href="#chapter-32/section/topic-14">N-Gram Language Model</a>, <a href="#chapter-32/section/topic-16">Add-k Smoothing</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch32-exercise-11"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-12" class="exercise-item"><h3>ข้อ 12</h3><p>Run a small seeded experiment using tokenization, language model, and evaluation.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Tokenization Levels, N-Gram Language Model, Perplexity: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): seed7splitdocuments fitvocab/countstrain; compareunigram/…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: seed7splitdocuments fitvocab/countstrain; compareunigram/bigramheldoutNLLและOOVrateด้วยtokenizationเดีย…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>seed7splitdocuments fitvocab/countstrain; compareunigram/bigramheldoutNLLและOOVrateด้วยtokenizationเดียว; shuffletrainingorderต้องcountsเท่าเดิม</p><p>อ้างอิง: <a href="#chapter-32/section/topic-7">Tokenization Levels</a>, <a href="#chapter-32/section/topic-14">N-Gram Language Model</a>, <a href="#chapter-32/section/topic-20">Perplexity</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch32-exercise-12"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-13" class="exercise-item"><h3>ข้อ 13</h3><p>Explain a common shape or data mismatch.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Sequence Encoding, Padding: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): inputIDs(B,T),targets(B,T)shift1; paddi…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: inputIDs(B,T),targets(B,T)shift1; paddinglengthmaskตรงT; ID−1หรือ≥voca…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>inputIDs(B,T),targets(B,T)shift1; paddinglengthmaskตรงT; ID−1หรือ≥vocabsizeต้องerrorไม่เอาmodvocab</p><p>อ้างอิง: <a href="#chapter-32/section/topic-12">Sequence Encoding</a>, <a href="#chapter-32/section/topic-21">Padding</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch32-exercise-13"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-14" class="exercise-item"><h3>ข้อ 14</h3><p>Explain one numerical-stability concern.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Cross-Entropy: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): probabilityproductsunderflowให้sumlogprobs; smoot…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: probabilityproductsunderflowให้sumlogprobs; smoothingα&gt;0ป้องกันunseengramlog0 แต่ต้องเลือ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>probabilityproductsunderflowให้sumlogprobs; smoothingα&gt;0ป้องกันunseengramlog0 แต่ต้องเลือกαvalidationและไม่เพิ่มcountจากtest</p><p>อ้างอิง: <a href="#chapter-32/section/topic-19">Cross-Entropy</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch32-exercise-14"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-15" class="exercise-item"><h3>ข้อ 15</h3><p>Explain a correct train, validation, and test workflow.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Corpus Splitting: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): dedupเอกสารก่อนsplit,fitnormalizerconfiguration/voca…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: dedupเอกสารก่อนsplit,fitnormalizerconfiguration/vocabบนtrain; temporalholdoutเมื่อproductiontex…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>dedupเอกสารก่อนsplit,fitnormalizerconfiguration/vocabบนtrain; temporalholdoutเมื่อproductiontextเปลี่ยนเวลาและไม่leaknear-duplicates</p><p>อ้างอิง: <a href="#chapter-32/section/topic-25">Corpus Splitting</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch32-exercise-15"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-16" class="exercise-item"><h3>ข้อ 16</h3><p>Measure runtime and memory of the main calculation.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ From Scratch: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): countngramsO(total_tokens·n)โดยstraightforward; dict…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: countngramsO(total_tokens·n)โดยstraightforward; dictionarymemoryO(uniquegrams); tokenizerbenc…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>countngramsO(total_tokens·n)โดยstraightforward; dictionarymemoryO(uniquegrams); tokenizerbenchmarkรายงานbytes/secและtokens/byteแยก</p><p>อ้างอิง: <a href="#chapter-32/section/topic-28">From Scratch</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch32-exercise-16"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-17" class="exercise-item"><h3>ข้อ 17</h3><p>Derive the main input-to-output algorithm for NLP Fundamentals.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Language Modeling Objective, Next-Token Pairs, Cross-Entropy, Perplexity: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): raw→versionednormalize→tokenize→vocabfittrain→ngr…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: raw→versionednormalize→tokenize→vocabfittrain→ngrams/counts→conditionalprob→NLL/PPL; gen…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>raw→versionednormalize→tokenize→vocabfittrain→ngrams/counts→conditionalprob→NLL/PPL; generatedsampleต้องdetokenizeตามpolicy</p><p>อ้างอิง: <a href="#chapter-32/section/topic-17">Language Modeling Objective</a>, <a href="#chapter-32/section/topic-18">Next-Token Pairs</a>, <a href="#chapter-32/section/topic-19">Cross-Entropy</a>, <a href="#chapter-32/section/topic-20">Perplexity</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch32-exercise-17"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-18" class="exercise-item"><h3>ข้อ 18</h3><p>Compare a scratch implementation with a trusted library on identical data.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ From Scratch: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): compareCounterbigramกับexplicitloopบนtokens[a,b,a,b]ได…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: compareCounterbigramกับexplicitloopบนtokens[a,b,a,b]ได้countsเหมือนกัน; librarytokenizerต่างกฎต้อง…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>compareCounterbigramกับexplicitloopบนtokens[a,b,a,b]ได้countsเหมือนกัน; librarytokenizerต่างกฎต้องไม่อ้างเป็นoracleก่อนalignnormalization</p><p>อ้างอิง: <a href="#chapter-32/section/topic-28">From Scratch</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch32-exercise-18"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-19" class="exercise-item"><h3>ข้อ 19</h3><p>Compare a baseline with one controlled change involving subword tokenization.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Tokenization Levels: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): คงcorpus/split เปลี่ยนword→subword; reportOOV/toke…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: คงcorpus/split เปลี่ยนword→subword; reportOOV/tokensperbyte,holdoutbits/byteและtaskmetric …</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>คงcorpus/split เปลี่ยนword→subword; reportOOV/tokensperbyte,holdoutbits/byteและtaskmetric ไม่ใช้PPLต่ำสุดข้ามtokenizersตัดสิน</p><p>อ้างอิง: <a href="#chapter-32/section/topic-7">Tokenization Levels</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch32-exercise-19"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-20" class="exercise-item"><h3>ข้อ 20</h3><p>Summarize validation, reproducibility, and one open research question.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Data Quality: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): บันทึกUnicodeversion/normalization/vocab/specialIDs/…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: บันทึกUnicodeversion/normalization/vocab/specialIDs/split; ทดลองNFCลดduplicateformsโดยThai ro…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>บันทึกUnicodeversion/normalization/vocab/specialIDs/split; ทดลองNFCลดduplicateformsโดยThai roundtripไม่เสียและreportcollisioncases</p><p>อ้างอิง: <a href="#chapter-32/section/topic-26">Data Quality</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch32-exercise-20"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section></div><div id="local-lab-content"><section id="local-lab"><h2>Local lab: Python 3.12 บน CPU</h2><p>รันจาก repository root; ใช้ Python 3.12 แยก environment สำหรับ framework ตาม requirements ของชุดบท</p><pre><code>python3.12 -m venv .venv-course
+source .venv-course/bin/activate
+python -m pip install -r requirements-batch11.txt pytest
+(cd 32-nlp-fundamentals &amp;&amp; python -m pytest tests -q -rs)</code></pre><p>ผลที่คาดหวัง: required tests ผ่านและไม่มี required test ถูก skip; GPU/integrations ที่ยังไม่รันต้องระบุแยก Python 3.15 ที่มากับเครื่องอาจใช้กับ framework wheels เหล่านี้ไม่ได้</p><h2>Mini Project — Tiny Language Modeling Data Pipeline</h2>
+<p>Create an internal corpus with multiple documents.</p>
+<p>Build:
+- Unicode normalization policy
+- tokenizer
+- train/validation document split
+- train-only vocabulary
+- UNK statistics
+- bigram/trigram models
+- perplexity report
+- next-token windows
+- padded mini-batches
+- valid-token masks</p>
+<p>Document every preprocessing choice and what information it can remove.</p><h2>Batch 11 Integration Project — Vision &amp; Static Embedding Lab</h2>
+<p>Batch 11 has two experiments.</p>
+<h3>Part A — Tiny Vision Transformer</h3>
+<p>Use sklearn digits:</p>
+<pre><code class="language-text">8×8 image
+↓
+2×2 patch embedding
+↓
+16 patch tokens
+↓
+prepend CLS
+↓
+learned positions
+↓
+2 Transformer encoder layers
+↓
+CLS classifier
+</code></pre>
+<p>Tracks:
+- parameter count
+- patch size
+- token count
+- validation accuracy
+- final test accuracy
+- CPU/CUDA device</p>
+<h3>Part B — Static Word Embeddings</h3>
+<p>Use an internal corpus and train:</p>
+<ul>
+<li>Skip-Gram with Negative Sampling</li>
+<li>GloVe</li>
+<li>FastText-style subword table</li>
+</ul>
+<p>Tracks:
+- loss histories
+- vocabulary size
+- training-pair count
+- cosine similarities
+- OOV subword-vector norm</p>
+<h3>Run ViT</h3>
+<pre><code class="language-bash">python integration-project-batch11/src/vision_nlp_lab.py \
+  --mode vit \
+  --epochs 8 \
+  --output-dir reports/batch11-vit
+</code></pre>
+<h3>Run Embeddings</h3>
+<pre><code class="language-bash">python integration-project-batch11/src/vision_nlp_lab.py \
+  --mode embeddings \
+  --epochs 8 \
+  --output-dir reports/batch11-embeddings
+</code></pre>
+<h3>Methodology Rules</h3>
+<p>ViT:
+- same fixed split throughout model selection
+- validation chooses checkpoint
+- final test once
+- full self-attention; no causal mask</p>
+<p>Embeddings:
+- corpus is fixed before evaluation
+- no cherry-picked single analogy as the only metric
+- static-vector similarity is treated as a diagnostic</p>
+<h3>Required Extensions</h3>
+<ol>
+<li>Tiny CNN vs ViT comparison</li>
+<li>patch-size sweep</li>
+<li>mean-pooling vs CLS</li>
+<li>learned vs sinusoidal image positions</li>
+<li>Skip-Gram subsampling</li>
+<li>GloVe epoch sweep</li>
+<li>FastText hashed buckets</li>
+<li>nearest-neighbor reports</li>
+<li>downstream linear classifier</li>
+<li>seed stability report</li>
+</ol></section></div><label class="local-confirm"><input type="checkbox" id="local-lab-confirm"> ฉันรัน local lab และตรวจผลตาม rubric ด้วยตัวเองแล้ว</label><p class="local-note">สถานะนี้เป็นคำยืนยันของผู้เรียน เว็บไม่ได้รันหรือตรวจ Python บนเครื่องแทนคุณ</p></section>
+<section id="mastery-review" class="practice-section"><h2>หลักฐานตามเกณฑ์การเรียนรู้</h2><p>ทุก objective ต้องแสดงหลักฐานอธิบาย ทำนาย คำนวณ อ่าน shape/state debug และประยุกต์ พร้อมกรณีใหม่ ผลรัน source ผู้เรียนจริง และการประเมินซ้ำ เกณฑ์นี้ไม่รับประกันความเข้าใจทุกสถานการณ์ เปิด JavaScript เพื่อดูรายการที่ยังขาดและนำเข้ารายงานผู้ตรวจ</p></section><section class="coverage-section"><h2>แผนที่สิ่งที่เรียน → สิ่งที่ต้องแสดงให้ได้</h2><div id="coverage-table"></div></section><footer><span>ZERO TO ELITE AI ENGINEER · LEARNING STUDIO</span><span>อ่าน · derive · implement · debug · experiment · build</span></footer></div></main><noscript><style>.workbench,.sidebar,.reading-route,.lesson-toc,.mastery-status,#web-checks{display:none}main{margin-left:0}</style>อ่านเนื้อหา HTML ได้ตามปกติ เปิด JavaScript เพื่อใช้ห้องทดลองและตรวจคำตอบ</noscript></body></html>

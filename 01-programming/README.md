@@ -1,5 +1,11 @@
 # Chapter 01 — Programming Foundations
 
+## Interactive Animation Lab
+
+[เปิดภาพจำลองของบทนี้](animation.html) · [เลือกจากทั้ง 80 บท](../visual-lab/index.html)
+
+ดู flow ทีละขั้น → ทดลองเปลี่ยนค่า → อ่านสมการและโค้ด → ตอบคำถามเช็กความเข้าใจ แล้วกลับมาทำแบบฝึกหัดในบทนี้
+
 ## 1. Why This Matters
 
 AI engineering คือ software engineering ที่มีข้อมูลและคณิตศาสตร์เข้ามาเพิ่ม ถ้า Python, Linux, Git และ debugging ยังไม่แน่น เราจะเสียเวลาแก้ environment มากกว่าเรียน model

@@ -1,0 +1,1348 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="บทเรียน AI Engineer ภาษาไทย พร้อมคณิตศาสตร์ทีละขั้นและห้องทดลองที่คำนวณจริง"><title>Data: ปิดทางรั่วก่อนเริ่มฝึกโมเดล · AI Engineer Studio</title><link rel="stylesheet" href="../visual-lab/assets/styles.css"><link rel="stylesheet" href="../visual-lab/assets/course.css"><script defer src="../visual-lab/assets/lessons.js"></script><script defer src="../visual-lab/assets/chapter-meta.js"></script><script defer src="../visual-lab/assets/course-math.js"></script><script defer src="../visual-lab/assets/course-models.js"></script><script defer src="../visual-lab/assets/course-models-v3.js"></script><script defer src="../visual-lab/assets/course-assessment.js"></script><script defer src="../visual-lab/assets/course-mastery.js"></script><script defer src="../visual-lab/assets/course-catalog.js"></script><script defer src="../visual-lab/assets/book-content.js"></script><script defer src="../visual-lab/assets/course-render.js"></script><script defer src="../visual-lab/assets/course-mastery-panel.js"></script><script defer src="../visual-lab/assets/quality-report.js"></script><script defer src="../visual-lab/assets/course-app.js"></script></head>
+<body data-chapter="4" data-root="../"><a class="skip-link" href="#main">ข้ามไปบทเรียน</a>
+<aside class="sidebar" id="sidebar" aria-label="เลือกบทเรียน"><a class="brand" href="../visual-lab/index.html"><span class="brand-mark">ai</span><span>AI ENGINEER<small>LEARN · DERIVE · BUILD</small></span></a><div class="sidebar-intro">อ่านให้เข้าใจ · คำนวณให้เห็น · เขียนให้เป็น</div><label class="search-box"><input id="search" type="search" placeholder="ค้นหาบท / attention" aria-label="ค้นหาบทเรียน"></label><label class="filter-label" for="phase-filter">เส้นทางการเรียน <span id="nav-count"></span></label><select id="phase-filter"><option value="">ทุก Phase</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option></select><nav id="chapter-list" class="chapter-list" aria-label="รายชื่อบท"></nav><div class="course-progress"><div><span>ผ่านโจทย์ในเว็บ</span><strong id="progress-count">0 / 80</strong></div><progress id="course-progress" max="80" value="0" aria-label="บทที่ผ่านโจทย์"></progress><a id="resume-link" href="#chapter-1">อ่านต่อจากเดิม →</a></div></aside>
+<button class="nav-backdrop" id="nav-backdrop" aria-label="ปิดเมนู" hidden></button>
+<main id="main" tabindex="-1"><header class="topbar"><div><button id="nav-toggle" class="icon-button mobile-menu" aria-label="เปิดเมนูบทเรียน" aria-expanded="false" aria-controls="sidebar">☰</button><span id="breadcrumb"></span></div><span class="local-badge"><i></i> คำนวณในเครื่อง · ไม่มี API</span></header><div class="content">
+<div class="chapter-navigation"><label for="chapter-select" class="sr-only">เลือกบทเรียน</label><select id="chapter-select"></select><div class="chapter-arrows"><button id="prev-chapter" class="icon-button" aria-label="บทก่อนหน้า">←</button><button id="next-chapter" class="icon-button" aria-label="บทถัดไป">→</button></div></div>
+<section class="chapter-hero"><div><p id="chapter-kicker" class="eyebrow"></p><h1 id="chapter-title">Data: ปิดทางรั่วก่อนเริ่มฝึกโมเดล</h1><p class="english-title" id="chapter-english"></p></div><span class="hero-symbol">f(x) ↗</span></section>
+<p id="quality-status" class="quality-status"></p><div id="mastery-status" class="mastery-status"></div><div class="reading-route"><a href="#chapter-4/section/overview">01 อ่านบทเรียน</a><a href="#workbench">02 ทดลองสมการ</a><a href="#practice">03 ฝึกและตรวจงาน</a><a href="#mastery-review">04 หลักฐานตามเกณฑ์</a></div>
+<nav id="lesson-toc" class="lesson-toc" aria-label="สารบัญบท"></nav>
+<section id="overview" class="course-overview"><span class="eyebrow">THE LEARNING CONTRACT</span><h2>เรียนบทนี้แล้วต้องทำอะไรได้</h2><p id="chapter-purpose"></p><div id="chapter-objectives"></div><div class="learning-hint">ทำนาย → เปลี่ยนทีละค่า → ตรวจตัวเลข → อธิบายเหตุผล → เขียนด้วย Python เอง</div></section>
+<section class="workbench lab-card" id="workbench" aria-label="ห้องทดลองคำนวณจริง"><div class="card-header"><div><span class="live-dot"></span><span class="eyebrow">COMPUTATION WORKBENCH</span></div><span class="simulation-label">ทุกภาพใช้ผลคำนวณชุดเดียวกัน</span></div><div class="lab-top"><label for="lab-select">เลือกกลไกที่ต้องการทดลอง</label><select id="lab-select"></select><p id="lab-question"></p></div><div class="workbench-grid"><div class="viz-column"><div class="compare-labels"><span>เส้นทึบ: ปัจจุบัน</span><span>เส้นประ: baseline ที่ตรึงไว้</span></div><div id="simulation" class="simulation"></div><div id="metrics" class="metrics"></div><div id="baseline-diff" class="baseline-diff"></div><div class="playback"><div class="playback-buttons"><button class="primary-button" id="update-once">อัปเดตหนึ่งก้าว</button><button class="secondary-button" id="train-many">▶ ฝึก 30 ก้าว</button><button class="icon-button" id="back-state" aria-label="ย้อนประวัติ">↶</button><button class="icon-button" id="forward-state" aria-label="ประวัติถัดไป">↷</button></div></div><div class="lab-secondary-actions"><button id="pin-baseline" class="text-button">ตรึง baseline ปัจจุบัน</button><button id="reset-lab" class="text-button">คืนค่าเริ่มต้น</button><button id="download-state" class="text-button">บันทึกผล JSON</button><span id="history-status"></span></div><p id="simulation-note" class="simulation-note"></p><p class="lab-error" id="lab-error" role="alert" hidden></p></div><div class="controls-column"><h3>เปลี่ยนทีละตัว แล้วสังเกตผล</h3><div id="lab-controls"></div><p class="control-note">แก้ weight ด้วยมือจะคำนวณ forward ใหม่; optimizer เปลี่ยน weights เมื่อกดอัปเดตเท่านั้น</p></div></div>
+<div class="trace-section"><div class="trace-toolbar"><h3>เดินสมการทีละ operation</h3><div><button id="trace-prev" class="icon-button" aria-label="operation ก่อนหน้า">←</button><button id="play-trace" class="secondary-button" aria-pressed="false">▶ เล่น flow</button><button id="trace-next" class="icon-button" aria-label="operation ถัดไป">→</button><span id="stage-counter"></span></div></div><label class="motion-control"><input id="reduce-motion" type="checkbox"> ลดภาพเคลื่อนไหว (หยุดการเล่นที่ค้างอยู่)</label><div id="operation-steps" class="operation-steps"></div><div id="flow-diagram" class="flow-diagram"></div><div id="active-operation" class="active-operation" aria-live="polite"></div><p class="control-note">ตัวเลขบนภาพปัดเศษเพื่อให้อ่านง่าย; บันทึก JSON เพื่อดูค่าที่ใช้คำนวณเต็ม precision</p><details open><summary>ตารางค่าระหว่างทาง — ตรวจด้วยมือได้</summary><div id="result-table"></div></details><div id="tensor-tables" class="tensor-tables"></div><details id="surface-details"><summary>ดู loss surface และเส้นทางของ w₁,b (ตรึง controls อื่น)</summary><div id="surface-chart"></div><p>surface คำนวณ objective ปัจจุบันโดยตรึง degree, penalty, ข้อมูล และ weights อื่น เส้นทางแสดงเฉพาะ snapshots ที่ค่าเหล่านี้ตรงกัน; นอกช่วง w=[−1,5], b=[−2,4] ให้ตรวจค่าจริงใน history</p></details><details><summary>ประวัติการเปลี่ยนค่า</summary><div id="history-table"></div></details></div></section>
+<article id="chapter-article" class="chapter-article"><section id="mechanism-1" class="teaching-section"><span class="section-kicker">CHAPTER 04 · ภาพ → สมการ → โค้ด</span><h2>1. ตัวอย่างที่ถือว่าอิสระเป็นตัวกำหนด split</h2><h3>โจทย์และเหตุผล</h3><p>คนเดียวกันหลายแถวหรือเอกสารซ้ำข้ามชุดทำให้ evaluation ง่ายเกินจริง เลือกแบ่งตาม group หรือเวลาเมื่อโจทย์กำหนด แยก train/validation/test ก่อน learned preprocessing</p><h3>ตัวอย่างและคำอธิบาย</h3><p>median imputation มีข้อดีอะไรเมื่อมี outlier?</p><p>Medianใช้ลำดับจึงไวต่อextreme magnitudeน้อยกว่าmean. [1,2,100]mean34.33,median2; fitmedianจากtrainและเพิ่มmissingindicatorเมื่อmissingมีความหมาย. Robustไม่แปลว่าปลอดbiasทุกmissingness mechanism.</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>trainPercent: train (%),initial=70; outlier: held-out outlier,initial=20; impute: missing replacement,initial=3; leak: fit statistics on,initial=train</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = [1, 2, null, 4, 5, 6, 7, 8, 9, 20]; ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</li><li>z=(x−μ_fit)/σ_fit = 4; เปลี่ยน held-out outlier ไม่ควรเปลี่ยน μ_train; all-data mode จงใจสาธิต leakage</li><li>finite / normalized / bounded = 4; เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="data-train-only-scaler-ก-บ-he">เปิดการทดลองนี้</a><p class="failure-box">ย้ายscaler.fitเข้าtrain-onlypipelineหรือแต่ละCVfold. เปลี่ยนtestoutlierจาก10เป็น1000แล้วtrain-scaledvaluesต้องเท่าเดิม; retrainด้วยsplitเดิมและรายงานscoreใหม่แทนเก็บscoreที่มีleakage.; missing replacement เป็นค่าที่เลือกเพื่อสอน; local lab เปรียบเทียบ imputer ที่ fit จาก train จริง</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Medianใช้ลำดับจึงไวต่อextreme magnitudeน้อยกว่าmean. [1,2,100]mean34.33,median2; fitmedianจากtrainและเพิ่มmissingindicatorเมื่อmissingมีความหมาย. Robustไม่แปลว่าปลอดbiasทุกmissingness mechanism.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-1-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = [1, 2, null, 4, 5, 6, 7, 8, 9, 20]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>z=(x−μ_fit)/σ_fit</code> = 4<p>เปลี่ยน held-out outlier ไม่ควรเปลี่ยน μ_train; all-data mode จงใจสาธิต leakage</p></li><li><code>finite / normalized / bounded</code> = 4<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-1-visual"><summary>ภาพและ shape</summary><p>missing replacement เป็นค่าที่เลือกเพื่อสอน; local lab เปรียบเทียบ imputer ที่ fit จาก train จริง</p><ol><li><code>shape / range</code> = [1, 2, null, 4, 5, 6, 7, 8, 9, 20]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>z=(x−μ_fit)/σ_fit</code> = 4<p>เปลี่ยน held-out outlier ไม่ควรเปลี่ยน μ_train; all-data mode จงใจสาธิต leakage</p></li><li><code>finite / normalized / bounded</code> = 4<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-1-code"><summary>โค้ด</summary><p>Medianใช้ลำดับจึงไวต่อextreme magnitudeน้อยกว่าmean. [1,2,100]mean34.33,median2; fitmedianจากtrainและเพิ่มmissingindicatorเมื่อmissingมีความหมาย. Robustไม่แปลว่าปลอดbiasทุกmissingness mechanism.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-1-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = [1, 2, null, 4, 5, 6, 7, 8, 9, 20]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>z=(x−μ_fit)/σ_fit</code> = 4<p>เปลี่ยน held-out outlier ไม่ควรเปลี่ยน μ_train; all-data mode จงใจสาธิต leakage</p></li><li><code>finite / normalized / bounded</code> = 4<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-1"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-2" class="teaching-section"><span class="section-kicker">CHAPTER 04 · ภาพ → สมการ → โค้ด</span><h2>2. fit คือเรียน state ส่วน transform คือใช้ state</h2><h3>โจทย์และเหตุผล</h3><p>เมื่อเพิ่ม outlier ใน held-out set ค่า μ_train และ σ_train ต้องไม่เปลี่ยน ถ้าเปลี่ยนแปลว่า held-out มีทางกลับไปสู่ขั้นฝึกได้ ใน lab เปิด all-data mode เพื่อเห็นกลไกการรั่วโดยตรง</p><h3>ตัวอย่างและคำอธิบาย</h3><p>standardization สูตรอะไร?</p><p><code>z=(x−μ_train)/σ_train</code>. train[1,3]มีμ2,σ_population1 จึงz[-1,1]; held-out5ได้3โดยใช้stateเดิม. σ0ต้องมีpolicy เช่นsafe denominator1 ไม่หารศูนย์.</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>trainPercent: train (%),initial=70; outlier: held-out outlier,initial=20; impute: missing replacement,initial=3; leak: fit statistics on,initial=all</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = [1, 2, null, 4, 5, 6, 7, 8, 9, 20]; ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</li><li>z=(x−μ_fit)/σ_fit = 6.5; เปลี่ยน held-out outlier ไม่ควรเปลี่ยน μ_train; all-data mode จงใจสาธิต leakage</li><li>finite / normalized / bounded = 6.5; เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="data-สาธ-ต-leakage-เม--อ-fit-">เปิดการทดลองนี้</a><p class="failure-box">ย้ายscaler.fitเข้าtrain-onlypipelineหรือแต่ละCVfold. เปลี่ยนtestoutlierจาก10เป็น1000แล้วtrain-scaledvaluesต้องเท่าเดิม; retrainด้วยsplitเดิมและรายงานscoreใหม่แทนเก็บscoreที่มีleakage.; missing replacement เป็นค่าที่เลือกเพื่อสอน; local lab เปรียบเทียบ imputer ที่ fit จาก train จริง</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p><code>z=(x−μ_train)/σ_train</code>. train[1,3]มีμ2,σ_population1 จึงz[-1,1]; held-out5ได้3โดยใช้stateเดิม. σ0ต้องมีpolicy เช่นsafe denominator1 ไม่หารศูนย์.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-2-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = [1, 2, null, 4, 5, 6, 7, 8, 9, 20]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>z=(x−μ_fit)/σ_fit</code> = 6.5<p>เปลี่ยน held-out outlier ไม่ควรเปลี่ยน μ_train; all-data mode จงใจสาธิต leakage</p></li><li><code>finite / normalized / bounded</code> = 6.5<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-2-visual"><summary>ภาพและ shape</summary><p>missing replacement เป็นค่าที่เลือกเพื่อสอน; local lab เปรียบเทียบ imputer ที่ fit จาก train จริง</p><ol><li><code>shape / range</code> = [1, 2, null, 4, 5, 6, 7, 8, 9, 20]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>z=(x−μ_fit)/σ_fit</code> = 6.5<p>เปลี่ยน held-out outlier ไม่ควรเปลี่ยน μ_train; all-data mode จงใจสาธิต leakage</p></li><li><code>finite / normalized / bounded</code> = 6.5<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-2-code"><summary>โค้ด</summary><p><code>z=(x−μ_train)/σ_train</code>. train[1,3]มีμ2,σ_population1 จึงz[-1,1]; held-out5ได้3โดยใช้stateเดิม. σ0ต้องมีpolicy เช่นsafe denominator1 ไม่หารศูนย์.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-2-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = [1, 2, null, 4, 5, 6, 7, 8, 9, 20]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>z=(x−μ_fit)/σ_fit</code> = 6.5<p>เปลี่ยน held-out outlier ไม่ควรเปลี่ยน μ_train; all-data mode จงใจสาธิต leakage</p></li><li><code>finite / normalized / bounded</code> = 6.5<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-2"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-3" class="teaching-section"><span class="section-kicker">CHAPTER 04 · ภาพ → สมการ → โค้ด</span><h2>3. missing และ category ใหม่ต้องมีนโยบาย</h2><h3>โจทย์และเหตุผล</h3><p>เลือก imputation/encoding จาก train และทดสอบ unknown categories ในข้อมูลใหม่ ความสะอาดต้องรักษาความหมาย ไม่ใช่ลบแถวจน metric ดูดี</p><h3>ตัวอย่างและคำอธิบาย</h3><p>ทำไมต้อง split ก่อน fit scaler?</p><p>Splitก่อนfitเพื่อให้ μ/σ/median/category vocabularyมาจากtrainเท่านั้น. เปลี่ยน held-out outlier แล้ว stateของpreprocessorต้องไม่เปลี่ยน; ถ้าใช้CVต้องfitภายในแต่ละfold ไม่fitครั้งเดียวก่อนแบ่งfold.</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>documents: documents separated by |,initial=alpha beta|alpha beta|gamma delta|epsilon zeta|beta gamma; trainPercent: train (%),initial=60; window: tokens per window,initial=3</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = [&quot;alpha beta&quot;, &quot;alpha beta&quot;, &quot;gamma delta&quot;, &quot;epsilon zeta&quot;, &quot;beta gamma&quot;]; กำหนดความหมายและหน่วยของ input ก่อนทดลอง</li><li>dedup documents → split → tokenize → windows = 4; แยกเอกสารก่อนสร้าง windows; tokenizer ตัวอย่างคือ whitespace ที่ไม่มี learned vocabulary</li><li>normal / boundary / comparison = 4; ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="dataset-dedup-และ-split-หน-วยเอก">เปิดการทดลองนี้</a><p class="failure-box">ย้ายscaler.fitเข้าtrain-onlypipelineหรือแต่ละCVfold. เปลี่ยนtestoutlierจาก10เป็น1000แล้วtrain-scaledvaluesต้องเท่าเดิม; retrainด้วยsplitเดิมและรายงานscoreใหม่แทนเก็บscoreที่มีleakage.; toy exact dedup และ non-overlap windows; ไม่รวม byte tokenization, cross-document EOS packing หรือ production near-dedup</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Splitก่อนfitเพื่อให้ μ/σ/median/category vocabularyมาจากtrainเท่านั้น. เปลี่ยน held-out outlier แล้ว stateของpreprocessorต้องไม่เปลี่ยน; ถ้าใช้CVต้องfitภายในแต่ละfold ไม่fitครั้งเดียวก่อนแบ่งfold.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-3-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = [&quot;alpha beta&quot;, &quot;alpha beta&quot;, &quot;gamma delta&quot;, &quot;epsilon zeta&quot;, &quot;beta gamma&quot;]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>dedup documents → split → tokenize → windows</code> = 4<p>แยกเอกสารก่อนสร้าง windows; tokenizer ตัวอย่างคือ whitespace ที่ไม่มี learned vocabulary</p></li><li><code>normal / boundary / comparison</code> = 4<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-3-visual"><summary>ภาพและ shape</summary><p>toy exact dedup และ non-overlap windows; ไม่รวม byte tokenization, cross-document EOS packing หรือ production near-dedup</p><ol><li><code>shape / range</code> = [&quot;alpha beta&quot;, &quot;alpha beta&quot;, &quot;gamma delta&quot;, &quot;epsilon zeta&quot;, &quot;beta gamma&quot;]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>dedup documents → split → tokenize → windows</code> = 4<p>แยกเอกสารก่อนสร้าง windows; tokenizer ตัวอย่างคือ whitespace ที่ไม่มี learned vocabulary</p></li><li><code>normal / boundary / comparison</code> = 4<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-3-code"><summary>โค้ด</summary><p>Splitก่อนfitเพื่อให้ μ/σ/median/category vocabularyมาจากtrainเท่านั้น. เปลี่ยน held-out outlier แล้ว stateของpreprocessorต้องไม่เปลี่ยน; ถ้าใช้CVต้องfitภายในแต่ละfold ไม่fitครั้งเดียวก่อนแบ่งfold.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-3-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = [&quot;alpha beta&quot;, &quot;alpha beta&quot;, &quot;gamma delta&quot;, &quot;epsilon zeta&quot;, &quot;beta gamma&quot;]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>dedup documents → split → tokenize → windows</code> = 4<p>แยกเอกสารก่อนสร้าง windows; tokenizer ตัวอย่างคือ whitespace ที่ไม่มี learned vocabulary</p></li><li><code>normal / boundary / comparison</code> = 4<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-3"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="reference" class="canonical-section"><h2>เนื้อหาครบทุกหัวข้อ พร้อมแผนที่ objective</h2><nav class="source-toc"><a href="#chapter-4/section/topic-1">1. Why This Matters</a> <a href="#chapter-4/section/topic-2">2. Prerequisites</a> <a href="#chapter-4/section/topic-3">3. Learning Objectives</a> <a href="#chapter-4/section/topic-4">4. Mental Model</a> <a href="#chapter-4/section/topic-5">5. Core Vocabulary</a> <a href="#chapter-4/section/topic-6">6. Data Types</a> <a href="#chapter-4/section/topic-7">7. Missing Values</a> <a href="#chapter-4/section/topic-8">8. Numeric Imputation</a> <a href="#chapter-4/section/topic-9">9. Categorical Encoding</a> <a href="#chapter-4/section/topic-10">10. Scaling</a> <a href="#chapter-4/section/topic-11">11. Outliers</a> <a href="#chapter-4/section/topic-12">12. Duplicates</a> <a href="#chapter-4/section/topic-13">13. Feature Engineering</a> <a href="#chapter-4/section/topic-14">14. Dataset Splitting</a> <a href="#chapter-4/section/topic-15">15. Random Split vs Time Split</a> <a href="#chapter-4/section/topic-16">16. Stratification</a> <a href="#chapter-4/section/topic-17">17. Data Leakage</a> <a href="#chapter-4/section/topic-18">18. Imbalanced Data</a> <a href="#chapter-4/section/topic-19">19. Data Contracts</a> <a href="#chapter-4/section/topic-20">20. From Scratch</a> <a href="#chapter-4/section/topic-21">21. scikit-learn Perspective</a> <a href="#chapter-4/section/topic-22">22. Debugging Checklist</a> <a href="#chapter-4/section/topic-23">23. Common Mistakes</a> <a href="#chapter-4/section/topic-24">24. Exercises / Project</a> <a href="#chapter-4/section/topic-25">25. Checklist</a> <a href="#chapter-4/section/topic-26">26. What&#x27;s Next</a> </nav><section id="topic-1" class="source-topic"><span id="source-04-data-canonical-chapter-04-data-fundamentals" class="legacy-anchor"></span><span id="source-04-data-canonical-1-why-this-matters" class="legacy-anchor"></span><h3>1. Why This Matters</h3>
+<p>โมเดลที่ดีไม่สามารถชดเชย dataset ที่ผิดโจทย์ รั่วข้อมูล หรือมี preprocessing ไม่สอดคล้องกันได้</p>
+<p>ในงานจริง pipeline มักเป็น:</p>
+<pre><code class="language-text">raw data
+   ↓
+schema + validation
+   ↓
+cleaning
+   ↓
+split
+   ↓
+fit preprocessing on train
+   ↓
+transform train/validation/test
+   ↓
+model
+</code></pre>
+<p>ลำดับนี้สำคัญมาก โดยเฉพาะ <strong>split ก่อน fit preprocessing</strong> เพื่อป้องกัน data leakage</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>1. Why This Matters</h3>
+<p>โมเดลที่ดีไม่สามารถชดเชย dataset ที่ผิดโจทย์ รั่วข้อมูล หรือมี preprocessing ไม่สอดคล้องกันได้</p>
+<p>ในงานจริง pipeline มักเป็น:</p>
+<pre><code class="language-text">raw data
+   ↓
+schema + validation
+   ↓
+cleaning
+   ↓
+split
+   ↓
+fit preprocessing on train
+   ↓
+transform train/validation/test
+   ↓
+model
+</code></pre>
+<p>ลำดับนี้สำคัญมาก โดยเฉพาะ <strong>split ก่อน fit preprocessing</strong> เพื่อป้องกัน data leakage</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-1-equation"><summary>สมการ</summary><h3>1. Why This Matters</h3>
+<p>โมเดลที่ดีไม่สามารถชดเชย dataset ที่ผิดโจทย์ รั่วข้อมูล หรือมี preprocessing ไม่สอดคล้องกันได้</p>
+<p>ในงานจริง pipeline มักเป็น:</p>
+<pre><code class="language-text">raw data
+   ↓
+schema + validation
+   ↓
+cleaning
+   ↓
+split
+   ↓
+fit preprocessing on train
+   ↓
+transform train/validation/test
+   ↓
+model
+</code></pre>
+<p>ลำดับนี้สำคัญมาก โดยเฉพาะ <strong>split ก่อน fit preprocessing</strong> เพื่อป้องกัน data leakage</p></details><details id="help-topic-1-visual"><summary>ภาพและ shape</summary><h3>1. Why This Matters</h3>
+<p>โมเดลที่ดีไม่สามารถชดเชย dataset ที่ผิดโจทย์ รั่วข้อมูล หรือมี preprocessing ไม่สอดคล้องกันได้</p>
+<p>ในงานจริง pipeline มักเป็น:</p>
+<pre><code class="language-text">raw data
+   ↓
+schema + validation
+   ↓
+cleaning
+   ↓
+split
+   ↓
+fit preprocessing on train
+   ↓
+transform train/validation/test
+   ↓
+model
+</code></pre>
+<p>ลำดับนี้สำคัญมาก โดยเฉพาะ <strong>split ก่อน fit preprocessing</strong> เพื่อป้องกัน data leakage</p></details><details id="help-topic-1-code"><summary>โค้ด</summary><h3>1. Why This Matters</h3>
+<p>โมเดลที่ดีไม่สามารถชดเชย dataset ที่ผิดโจทย์ รั่วข้อมูล หรือมี preprocessing ไม่สอดคล้องกันได้</p>
+<p>ในงานจริง pipeline มักเป็น:</p>
+<pre><code class="language-text">raw data
+   ↓
+schema + validation
+   ↓
+cleaning
+   ↓
+split
+   ↓
+fit preprocessing on train
+   ↓
+transform train/validation/test
+   ↓
+model
+</code></pre>
+<p>ลำดับนี้สำคัญมาก โดยเฉพาะ <strong>split ก่อน fit preprocessing</strong> เพื่อป้องกัน data leakage</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-1-result"><summary>ผลการทดลอง</summary><h3>1. Why This Matters</h3>
+<p>โมเดลที่ดีไม่สามารถชดเชย dataset ที่ผิดโจทย์ รั่วข้อมูล หรือมี preprocessing ไม่สอดคล้องกันได้</p>
+<p>ในงานจริง pipeline มักเป็น:</p>
+<pre><code class="language-text">raw data
+   ↓
+schema + validation
+   ↓
+cleaning
+   ↓
+split
+   ↓
+fit preprocessing on train
+   ↓
+transform train/validation/test
+   ↓
+model
+</code></pre>
+<p>ลำดับนี้สำคัญมาก โดยเฉพาะ <strong>split ก่อน fit preprocessing</strong> เพื่อป้องกัน data leakage</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-1"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-2" class="source-topic"><span id="source-04-data-canonical-2-prerequisites" class="legacy-anchor"></span><h3>2. Prerequisites</h3>
+<p>จาก Batch 01:</p>
+<ul>
+<li>Python functions/classes/tests</li>
+<li>mean, variance, probability</li>
+<li>NumPy arrays</li>
+<li>Pandas DataFrame</li>
+<li>plotting</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>2. Prerequisites</h3>
+<p>จาก Batch 01:</p>
+<ul>
+<li>Python functions/classes/tests</li>
+<li>mean, variance, probability</li>
+<li>NumPy arrays</li>
+<li>Pandas DataFrame</li>
+<li>plotting</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-2-equation"><summary>สมการ</summary><h3>2. Prerequisites</h3>
+<p>จาก Batch 01:</p>
+<ul>
+<li>Python functions/classes/tests</li>
+<li>mean, variance, probability</li>
+<li>NumPy arrays</li>
+<li>Pandas DataFrame</li>
+<li>plotting</li>
+</ul></details><details id="help-topic-2-visual"><summary>ภาพและ shape</summary><h3>2. Prerequisites</h3>
+<p>จาก Batch 01:</p>
+<ul>
+<li>Python functions/classes/tests</li>
+<li>mean, variance, probability</li>
+<li>NumPy arrays</li>
+<li>Pandas DataFrame</li>
+<li>plotting</li>
+</ul></details><details id="help-topic-2-code"><summary>โค้ด</summary><h3>2. Prerequisites</h3>
+<p>จาก Batch 01:</p>
+<ul>
+<li>Python functions/classes/tests</li>
+<li>mean, variance, probability</li>
+<li>NumPy arrays</li>
+<li>Pandas DataFrame</li>
+<li>plotting</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-2-result"><summary>ผลการทดลอง</summary><h3>2. Prerequisites</h3>
+<p>จาก Batch 01:</p>
+<ul>
+<li>Python functions/classes/tests</li>
+<li>mean, variance, probability</li>
+<li>NumPy arrays</li>
+<li>Pandas DataFrame</li>
+<li>plotting</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-2"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-3" class="source-topic"><span id="source-04-data-canonical-3-learning-objectives" class="legacy-anchor"></span><h3>3. Learning Objectives</h3>
+<p>By the end of this chapter you can:</p>
+<ul>
+<li>แยก sample / feature / target</li>
+<li>ตรวจ schema และ data types</li>
+<li>วิเคราะห์ missing values</li>
+<li>แยก duplicate จริงออกจาก repeated legitimate events</li>
+<li>ตรวจ outliers โดยไม่ลบทิ้งอัตโนมัติ</li>
+<li>ใช้ standardization / min-max scaling</li>
+<li>encode categorical features</li>
+<li>สร้าง features โดยไม่ใช้ข้อมูลอนาคต</li>
+<li>split train / validation / test</li>
+<li>อธิบาย data leakage หลายชนิด</li>
+<li>รับมือ class imbalance ในระดับพื้นฐาน</li>
+<li>สร้าง reusable preprocessing pipeline</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>3. Learning Objectives</h3>
+<p>By the end of this chapter you can:</p>
+<ul>
+<li>แยก sample / feature / target</li>
+<li>ตรวจ schema และ data types</li>
+<li>วิเคราะห์ missing values</li>
+<li>แยก duplicate จริงออกจาก repeated legitimate events</li>
+<li>ตรวจ outliers โดยไม่ลบทิ้งอัตโนมัติ</li>
+<li>ใช้ standardization / min-max scaling</li>
+<li>encode categorical features</li>
+<li>สร้าง features โดยไม่ใช้ข้อมูลอนาคต</li>
+<li>split train / validation / test</li>
+<li>อธิบาย data leakage หลายชนิด</li>
+<li>รับมือ class imbalance ในระดับพื้นฐาน</li>
+<li>สร้าง reusable preprocessing pipeline</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-3-equation"><summary>สมการ</summary><h3>3. Learning Objectives</h3>
+<p>By the end of this chapter you can:</p>
+<ul>
+<li>แยก sample / feature / target</li>
+<li>ตรวจ schema และ data types</li>
+<li>วิเคราะห์ missing values</li>
+<li>แยก duplicate จริงออกจาก repeated legitimate events</li>
+<li>ตรวจ outliers โดยไม่ลบทิ้งอัตโนมัติ</li>
+<li>ใช้ standardization / min-max scaling</li>
+<li>encode categorical features</li>
+<li>สร้าง features โดยไม่ใช้ข้อมูลอนาคต</li>
+<li>split train / validation / test</li>
+<li>อธิบาย data leakage หลายชนิด</li>
+<li>รับมือ class imbalance ในระดับพื้นฐาน</li>
+<li>สร้าง reusable preprocessing pipeline</li>
+</ul></details><details id="help-topic-3-visual"><summary>ภาพและ shape</summary><h3>3. Learning Objectives</h3>
+<p>By the end of this chapter you can:</p>
+<ul>
+<li>แยก sample / feature / target</li>
+<li>ตรวจ schema และ data types</li>
+<li>วิเคราะห์ missing values</li>
+<li>แยก duplicate จริงออกจาก repeated legitimate events</li>
+<li>ตรวจ outliers โดยไม่ลบทิ้งอัตโนมัติ</li>
+<li>ใช้ standardization / min-max scaling</li>
+<li>encode categorical features</li>
+<li>สร้าง features โดยไม่ใช้ข้อมูลอนาคต</li>
+<li>split train / validation / test</li>
+<li>อธิบาย data leakage หลายชนิด</li>
+<li>รับมือ class imbalance ในระดับพื้นฐาน</li>
+<li>สร้าง reusable preprocessing pipeline</li>
+</ul></details><details id="help-topic-3-code"><summary>โค้ด</summary><h3>3. Learning Objectives</h3>
+<p>By the end of this chapter you can:</p>
+<ul>
+<li>แยก sample / feature / target</li>
+<li>ตรวจ schema และ data types</li>
+<li>วิเคราะห์ missing values</li>
+<li>แยก duplicate จริงออกจาก repeated legitimate events</li>
+<li>ตรวจ outliers โดยไม่ลบทิ้งอัตโนมัติ</li>
+<li>ใช้ standardization / min-max scaling</li>
+<li>encode categorical features</li>
+<li>สร้าง features โดยไม่ใช้ข้อมูลอนาคต</li>
+<li>split train / validation / test</li>
+<li>อธิบาย data leakage หลายชนิด</li>
+<li>รับมือ class imbalance ในระดับพื้นฐาน</li>
+<li>สร้าง reusable preprocessing pipeline</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-3-result"><summary>ผลการทดลอง</summary><h3>3. Learning Objectives</h3>
+<p>By the end of this chapter you can:</p>
+<ul>
+<li>แยก sample / feature / target</li>
+<li>ตรวจ schema และ data types</li>
+<li>วิเคราะห์ missing values</li>
+<li>แยก duplicate จริงออกจาก repeated legitimate events</li>
+<li>ตรวจ outliers โดยไม่ลบทิ้งอัตโนมัติ</li>
+<li>ใช้ standardization / min-max scaling</li>
+<li>encode categorical features</li>
+<li>สร้าง features โดยไม่ใช้ข้อมูลอนาคต</li>
+<li>split train / validation / test</li>
+<li>อธิบาย data leakage หลายชนิด</li>
+<li>รับมือ class imbalance ในระดับพื้นฐาน</li>
+<li>สร้าง reusable preprocessing pipeline</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-3"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-4" class="source-topic"><span id="source-04-data-canonical-4-mental-model" class="legacy-anchor"></span><h3>4. Mental Model</h3>
+<pre><code class="language-text">โลกจริง
+  ↓ measurement
+raw records
+  ↓ cleaning
+analysis-ready rows
+  ↓ feature construction
+X, y
+  ↓ split
+train | validation | test
+  ↓ fit(train only)
+preprocessor
+  ↓ transform
+model-ready arrays
+</code></pre><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-4-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>4. Mental Model</h3>
+<pre><code class="language-text">โลกจริง
+  ↓ measurement
+raw records
+  ↓ cleaning
+analysis-ready rows
+  ↓ feature construction
+X, y
+  ↓ split
+train | validation | test
+  ↓ fit(train only)
+preprocessor
+  ↓ transform
+model-ready arrays
+</code></pre><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-4-equation"><summary>สมการ</summary><h3>4. Mental Model</h3>
+<pre><code class="language-text">โลกจริง
+  ↓ measurement
+raw records
+  ↓ cleaning
+analysis-ready rows
+  ↓ feature construction
+X, y
+  ↓ split
+train | validation | test
+  ↓ fit(train only)
+preprocessor
+  ↓ transform
+model-ready arrays
+</code></pre></details><details id="help-topic-4-visual"><summary>ภาพและ shape</summary><h3>4. Mental Model</h3>
+<pre><code class="language-text">โลกจริง
+  ↓ measurement
+raw records
+  ↓ cleaning
+analysis-ready rows
+  ↓ feature construction
+X, y
+  ↓ split
+train | validation | test
+  ↓ fit(train only)
+preprocessor
+  ↓ transform
+model-ready arrays
+</code></pre></details><details id="help-topic-4-code"><summary>โค้ด</summary><h3>4. Mental Model</h3>
+<pre><code class="language-text">โลกจริง
+  ↓ measurement
+raw records
+  ↓ cleaning
+analysis-ready rows
+  ↓ feature construction
+X, y
+  ↓ split
+train | validation | test
+  ↓ fit(train only)
+preprocessor
+  ↓ transform
+model-ready arrays
+</code></pre><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-4-result"><summary>ผลการทดลอง</summary><h3>4. Mental Model</h3>
+<pre><code class="language-text">โลกจริง
+  ↓ measurement
+raw records
+  ↓ cleaning
+analysis-ready rows
+  ↓ feature construction
+X, y
+  ↓ split
+train | validation | test
+  ↓ fit(train only)
+preprocessor
+  ↓ transform
+model-ready arrays
+</code></pre><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-4"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-5" class="source-topic"><span id="source-04-data-canonical-5-core-vocabulary" class="legacy-anchor"></span><h3>5. Core Vocabulary</h3>
+<ul>
+<li><strong>Sample / observation</strong> — หนึ่งตัวอย่าง</li>
+<li><strong>Feature</strong> — input variable</li>
+<li><strong>Target / label</strong> — สิ่งที่ต้องการทำนาย</li>
+<li><strong>Schema</strong> — ข้อตกลงเรื่อง columns, types, ranges, nullable rules</li>
+<li><strong>Preprocessing</strong> — การแปลงข้อมูลก่อนเข้า model</li>
+<li><strong>Feature engineering</strong> — สร้าง feature ใหม่จากข้อมูลเดิม</li>
+<li><strong>Leakage</strong> — model ได้ข้อมูลที่ตอนใช้งานจริงไม่ควรมี</li>
+</ul><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>Sample คือหน่วยตัวอย่างหนึ่งหน่วย,feature คือข้อมูลที่รู้ตอนทำนาย,target คือสิ่งที่ต้องทำนาย. งานพยากรณ์รายวัน sample=(ร้าน,วันที่),feature=ยอดอดีต,target=ยอดวันถัดไป; targetอนาคตห้ามหลุดกลับเข้า features.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-5-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Sample คือหน่วยตัวอย่างหนึ่งหน่วย,feature คือข้อมูลที่รู้ตอนทำนาย,target คือสิ่งที่ต้องทำนาย. งานพยากรณ์รายวัน sample=(ร้าน,วันที่),feature=ยอดอดีต,target=ยอดวันถัดไป; targetอนาคตห้ามหลุดกลับเข้า features.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-5-equation"><summary>สมการ</summary><p>Sample คือหน่วยตัวอย่างหนึ่งหน่วย,feature คือข้อมูลที่รู้ตอนทำนาย,target คือสิ่งที่ต้องทำนาย. งานพยากรณ์รายวัน sample=(ร้าน,วันที่),feature=ยอดอดีต,target=ยอดวันถัดไป; targetอนาคตห้ามหลุดกลับเข้า features.</p></details><details id="help-topic-5-visual"><summary>ภาพและ shape</summary><p>Sample คือหน่วยตัวอย่างหนึ่งหน่วย,feature คือข้อมูลที่รู้ตอนทำนาย,target คือสิ่งที่ต้องทำนาย. งานพยากรณ์รายวัน sample=(ร้าน,วันที่),feature=ยอดอดีต,target=ยอดวันถัดไป; targetอนาคตห้ามหลุดกลับเข้า features.</p></details><details id="help-topic-5-code"><summary>โค้ด</summary><p>Sample คือหน่วยตัวอย่างหนึ่งหน่วย,feature คือข้อมูลที่รู้ตอนทำนาย,target คือสิ่งที่ต้องทำนาย. งานพยากรณ์รายวัน sample=(ร้าน,วันที่),feature=ยอดอดีต,target=ยอดวันถัดไป; targetอนาคตห้ามหลุดกลับเข้า features.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-5-result"><summary>ผลการทดลอง</summary><p>Sample คือหน่วยตัวอย่างหนึ่งหน่วย,feature คือข้อมูลที่รู้ตอนทำนาย,target คือสิ่งที่ต้องทำนาย. งานพยากรณ์รายวัน sample=(ร้าน,วันที่),feature=ยอดอดีต,target=ยอดวันถัดไป; targetอนาคตห้ามหลุดกลับเข้า features.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-5"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-6" class="source-topic"><span id="source-04-data-canonical-6-data-types" class="legacy-anchor"></span><h3>6. Data Types</h3>
+<p>ประเภทเชิงความหมายสำคัญกว่าชนิด Python อย่างเดียว:</p>
+<ul>
+<li>continuous numeric</li>
+<li>discrete numeric</li>
+<li>binary</li>
+<li>categorical nominal</li>
+<li>categorical ordinal</li>
+<li>text</li>
+<li>image/audio</li>
+<li>datetime/time series</li>
+<li>identifiers</li>
+</ul>
+<p>ตัวอย่าง: รหัสไปรษณีย์แม้เป็นตัวเลข ก็ไม่ควรถูกตีความเป็น continuous quantity โดยอัตโนมัติ</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>IDอาจเป็นlabelระบุentity ไม่ใช่quantityที่ระยะห่างมีความหมาย. ID100กับ101ไม่ได้แปลว่าใกล้กว่าระหว่าง100กับ500เชิงพฤติกรรม; ตรวจentityleakageและใช้encodingที่เหมาะกับdeploymentgroups.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-6-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>IDอาจเป็นlabelระบุentity ไม่ใช่quantityที่ระยะห่างมีความหมาย. ID100กับ101ไม่ได้แปลว่าใกล้กว่าระหว่าง100กับ500เชิงพฤติกรรม; ตรวจentityleakageและใช้encodingที่เหมาะกับdeploymentgroups.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-6-equation"><summary>สมการ</summary><p>IDอาจเป็นlabelระบุentity ไม่ใช่quantityที่ระยะห่างมีความหมาย. ID100กับ101ไม่ได้แปลว่าใกล้กว่าระหว่าง100กับ500เชิงพฤติกรรม; ตรวจentityleakageและใช้encodingที่เหมาะกับdeploymentgroups.</p></details><details id="help-topic-6-visual"><summary>ภาพและ shape</summary><p>IDอาจเป็นlabelระบุentity ไม่ใช่quantityที่ระยะห่างมีความหมาย. ID100กับ101ไม่ได้แปลว่าใกล้กว่าระหว่าง100กับ500เชิงพฤติกรรม; ตรวจentityleakageและใช้encodingที่เหมาะกับdeploymentgroups.</p></details><details id="help-topic-6-code"><summary>โค้ด</summary><p>IDอาจเป็นlabelระบุentity ไม่ใช่quantityที่ระยะห่างมีความหมาย. ID100กับ101ไม่ได้แปลว่าใกล้กว่าระหว่าง100กับ500เชิงพฤติกรรม; ตรวจentityleakageและใช้encodingที่เหมาะกับdeploymentgroups.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-6-result"><summary>ผลการทดลอง</summary><p>IDอาจเป็นlabelระบุentity ไม่ใช่quantityที่ระยะห่างมีความหมาย. ID100กับ101ไม่ได้แปลว่าใกล้กว่าระหว่าง100กับ500เชิงพฤติกรรม; ตรวจentityleakageและใช้encodingที่เหมาะกับdeploymentgroups.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-6"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-7" class="source-topic"><span id="source-04-data-canonical-7-missing-values" class="legacy-anchor"></span><h3>7. Missing Values</h3>
+<p>ถามก่อนเติมค่า:</p>
+<ol>
+<li>missing เพราะอะไร?</li>
+<li>เกิดใน train และ production แบบเดียวกันหรือไม่?</li>
+<li>missing เองมี information หรือไม่?</li>
+<li>การ drop row ทำให้ sample bias หรือไม่?</li>
+</ol>
+<p>แนวคิดที่ควรรู้:</p>
+<ul>
+<li>MCAR — Missing Completely At Random</li>
+<li>MAR — Missing At Random เมื่อ conditioned บน observed variables</li>
+<li>MNAR — Missing Not At Random</li>
+</ul>
+<p>นี่เป็นกรอบความคิด ไม่ใช่ label ที่พิสูจน์ได้จากตารางเดียวเสมอ</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>นับค่าที่ไม่missingต่อcolumn เลือกmodeด้วยtie-breakที่deterministicแล้วเก็บstate. ['b',None,'a','b']fillเป็นb; all-missingต้องfallbackที่ประกาศหรือreject ไม่เลือกcategoryจากvalidation.</p><p>สร้างindicatorจากmissingmaskก่อนimputation เช่น[1,NaN,3]→indicator[0,1,0]. fitmedianแล้วเติมค่าคนละขั้น เก็บลำดับcolumns; missingindicatorของtargetไม่ควรเป็นfeatureที่deploymentไม่มี.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-7-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>นับค่าที่ไม่missingต่อcolumn เลือกmodeด้วยtie-breakที่deterministicแล้วเก็บstate. ['b',None,'a','b']fillเป็นb; all-missingต้องfallbackที่ประกาศหรือreject ไม่เลือกcategoryจากvalidation.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-7-equation"><summary>สมการ</summary><p>นับค่าที่ไม่missingต่อcolumn เลือกmodeด้วยtie-breakที่deterministicแล้วเก็บstate. ['b',None,'a','b']fillเป็นb; all-missingต้องfallbackที่ประกาศหรือreject ไม่เลือกcategoryจากvalidation.</p></details><details id="help-topic-7-visual"><summary>ภาพและ shape</summary><p>นับค่าที่ไม่missingต่อcolumn เลือกmodeด้วยtie-breakที่deterministicแล้วเก็บstate. ['b',None,'a','b']fillเป็นb; all-missingต้องfallbackที่ประกาศหรือreject ไม่เลือกcategoryจากvalidation.</p></details><details id="help-topic-7-code"><summary>โค้ด</summary><p>นับค่าที่ไม่missingต่อcolumn เลือกmodeด้วยtie-breakที่deterministicแล้วเก็บstate. ['b',None,'a','b']fillเป็นb; all-missingต้องfallbackที่ประกาศหรือreject ไม่เลือกcategoryจากvalidation.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-7-result"><summary>ผลการทดลอง</summary><p>นับค่าที่ไม่missingต่อcolumn เลือกmodeด้วยtie-breakที่deterministicแล้วเก็บstate. ['b',None,'a','b']fillเป็นb; all-missingต้องfallbackที่ประกาศหรือreject ไม่เลือกcategoryจากvalidation.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-7"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-8" class="source-topic"><span id="source-04-data-canonical-8-numeric-imputation" class="legacy-anchor"></span><h3>8. Numeric Imputation</h3>
+<p>Simple options:</p>
+<ul>
+<li>mean</li>
+<li>median</li>
+<li>constant</li>
+<li>model-based methods ในบทขั้นสูง</li>
+</ul>
+<p>median มักทน outlier กว่า mean</p>
+<p>สำคัญที่สุด:</p>
+<pre><code class="language-text">fit imputer on TRAIN
+transform TRAIN
+transform VALIDATION
+transform TEST
+</code></pre>
+<p>ห้ามคำนวณ median จาก full dataset ก่อน split</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>Medianใช้ลำดับจึงไวต่อextreme magnitudeน้อยกว่าmean. [1,2,100]mean34.33,median2; fitmedianจากtrainและเพิ่มmissingindicatorเมื่อmissingมีความหมาย. Robustไม่แปลว่าปลอดbiasทุกmissingness mechanism.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-8-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Medianใช้ลำดับจึงไวต่อextreme magnitudeน้อยกว่าmean. [1,2,100]mean34.33,median2; fitmedianจากtrainและเพิ่มmissingindicatorเมื่อmissingมีความหมาย. Robustไม่แปลว่าปลอดbiasทุกmissingness mechanism.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-8-equation"><summary>สมการ</summary><p>Medianใช้ลำดับจึงไวต่อextreme magnitudeน้อยกว่าmean. [1,2,100]mean34.33,median2; fitmedianจากtrainและเพิ่มmissingindicatorเมื่อmissingมีความหมาย. Robustไม่แปลว่าปลอดbiasทุกmissingness mechanism.</p></details><details id="help-topic-8-visual"><summary>ภาพและ shape</summary><p>Medianใช้ลำดับจึงไวต่อextreme magnitudeน้อยกว่าmean. [1,2,100]mean34.33,median2; fitmedianจากtrainและเพิ่มmissingindicatorเมื่อmissingมีความหมาย. Robustไม่แปลว่าปลอดbiasทุกmissingness mechanism.</p></details><details id="help-topic-8-code"><summary>โค้ด</summary><p>Medianใช้ลำดับจึงไวต่อextreme magnitudeน้อยกว่าmean. [1,2,100]mean34.33,median2; fitmedianจากtrainและเพิ่มmissingindicatorเมื่อmissingมีความหมาย. Robustไม่แปลว่าปลอดbiasทุกmissingness mechanism.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-8-result"><summary>ผลการทดลอง</summary><p>Medianใช้ลำดับจึงไวต่อextreme magnitudeน้อยกว่าmean. [1,2,100]mean34.33,median2; fitmedianจากtrainและเพิ่มmissingindicatorเมื่อmissingมีความหมาย. Robustไม่แปลว่าปลอดbiasทุกmissingness mechanism.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-8"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-9" class="source-topic"><span id="source-04-data-canonical-9-categorical-encoding" class="legacy-anchor"></span><span id="source-04-data-canonical-one-hot-encoding" class="legacy-anchor"></span><span id="source-04-data-canonical-ordinal-encoding" class="legacy-anchor"></span><h3>9. Categorical Encoding</h3>
+<h4>One-hot encoding</h4>
+<p>category:</p>
+<pre><code class="language-text">color ∈ {red, green, blue}
+</code></pre>
+<p>แปลงเป็น indicator columns</p>
+<pre><code class="language-text">color_red
+color_green
+color_blue
+</code></pre>
+<p>สำหรับ unseen category ใน production ต้องกำหนด policy เช่น ignore/unknown bucket</p>
+<h4>Ordinal encoding</h4>
+<p>ใช้เมื่อ order มีความหมายจริง เช่น:</p>
+<pre><code class="language-text">low &lt; medium &lt; high
+</code></pre>
+<p>อย่าสร้าง order ปลอมให้ nominal categories</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>One-hot ใช้ nominal categories ที่ไม่มีลำดับเชิงปริมาณ. train['red','blue']สร้างสองcolumns; categoryใหม่ต้อง rejectหรือใช้unknown bucket/ignoreตามpolicyที่บันทึก ไม่fit vocabularyใหม่ในproductionจนcolumnorderเปลี่ยน.</p><p>นับค่าที่ไม่missingต่อcolumn เลือกmodeด้วยtie-breakที่deterministicแล้วเก็บstate. ['b',None,'a','b']fillเป็นb; all-missingต้องfallbackที่ประกาศหรือreject ไม่เลือกcategoryจากvalidation.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-9-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>One-hot ใช้ nominal categories ที่ไม่มีลำดับเชิงปริมาณ. train['red','blue']สร้างสองcolumns; categoryใหม่ต้อง rejectหรือใช้unknown bucket/ignoreตามpolicyที่บันทึก ไม่fit vocabularyใหม่ในproductionจนcolumnorderเปลี่ยน.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-9-equation"><summary>สมการ</summary><p>One-hot ใช้ nominal categories ที่ไม่มีลำดับเชิงปริมาณ. train['red','blue']สร้างสองcolumns; categoryใหม่ต้อง rejectหรือใช้unknown bucket/ignoreตามpolicyที่บันทึก ไม่fit vocabularyใหม่ในproductionจนcolumnorderเปลี่ยน.</p></details><details id="help-topic-9-visual"><summary>ภาพและ shape</summary><p>One-hot ใช้ nominal categories ที่ไม่มีลำดับเชิงปริมาณ. train['red','blue']สร้างสองcolumns; categoryใหม่ต้อง rejectหรือใช้unknown bucket/ignoreตามpolicyที่บันทึก ไม่fit vocabularyใหม่ในproductionจนcolumnorderเปลี่ยน.</p></details><details id="help-topic-9-code"><summary>โค้ด</summary><p>One-hot ใช้ nominal categories ที่ไม่มีลำดับเชิงปริมาณ. train['red','blue']สร้างสองcolumns; categoryใหม่ต้อง rejectหรือใช้unknown bucket/ignoreตามpolicyที่บันทึก ไม่fit vocabularyใหม่ในproductionจนcolumnorderเปลี่ยน.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-9-result"><summary>ผลการทดลอง</summary><p>One-hot ใช้ nominal categories ที่ไม่มีลำดับเชิงปริมาณ. train['red','blue']สร้างสองcolumns; categoryใหม่ต้อง rejectหรือใช้unknown bucket/ignoreตามpolicyที่บันทึก ไม่fit vocabularyใหม่ในproductionจนcolumnorderเปลี่ยน.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-9"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-10" class="source-topic"><span id="source-04-data-canonical-10-scaling" class="legacy-anchor"></span><span id="source-04-data-canonical-standardization" class="legacy-anchor"></span><span id="source-04-data-canonical-min-max-scaling" class="legacy-anchor"></span><h3>10. Scaling</h3>
+<h4>Standardization</h4>
+<pre><code class="language-text">z = (x - μ_train) / σ_train
+</code></pre>
+<p>mean/std ต้องมาจาก training set</p>
+<h4>Min-Max Scaling</h4>
+<pre><code class="language-text">x' = (x - min_train)/(max_train-min_train)
+</code></pre>
+<p>outlier มีผลมากกว่า standardization</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p><code>z=(x−μ_train)/σ_train</code>. train[1,3]มีμ2,σ_population1 จึงz[-1,1]; held-out5ได้3โดยใช้stateเดิม. σ0ต้องมีpolicy เช่นsafe denominator1 ไม่หารศูนย์.</p><p>fitmin/maxต่อfeatureบนtrain, transform=(X−min)/(max−min)โดยsafe denominator1สำหรับconstant. train[2,4]→[0,1],held-out6→2ซึ่งถูกต้องสำหรับextrapolation; อย่าclipโดยไม่ประกาศpolicy.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-10-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p><code>z=(x−μ_train)/σ_train</code>. train[1,3]มีμ2,σ_population1 จึงz[-1,1]; held-out5ได้3โดยใช้stateเดิม. σ0ต้องมีpolicy เช่นsafe denominator1 ไม่หารศูนย์.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-10-equation"><summary>สมการ</summary><p><code>z=(x−μ_train)/σ_train</code>. train[1,3]มีμ2,σ_population1 จึงz[-1,1]; held-out5ได้3โดยใช้stateเดิม. σ0ต้องมีpolicy เช่นsafe denominator1 ไม่หารศูนย์.</p></details><details id="help-topic-10-visual"><summary>ภาพและ shape</summary><p><code>z=(x−μ_train)/σ_train</code>. train[1,3]มีμ2,σ_population1 จึงz[-1,1]; held-out5ได้3โดยใช้stateเดิม. σ0ต้องมีpolicy เช่นsafe denominator1 ไม่หารศูนย์.</p></details><details id="help-topic-10-code"><summary>โค้ด</summary><p><code>z=(x−μ_train)/σ_train</code>. train[1,3]มีμ2,σ_population1 จึงz[-1,1]; held-out5ได้3โดยใช้stateเดิม. σ0ต้องมีpolicy เช่นsafe denominator1 ไม่หารศูนย์.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-10-result"><summary>ผลการทดลอง</summary><p><code>z=(x−μ_train)/σ_train</code>. train[1,3]มีμ2,σ_population1 จึงz[-1,1]; held-out5ได้3โดยใช้stateเดิม. σ0ต้องมีpolicy เช่นsafe denominator1 ไม่หารศูนย์.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-10"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-11" class="source-topic"><span id="source-04-data-canonical-11-outliers" class="legacy-anchor"></span><h3>11. Outliers</h3>
+<p>outlier อาจเป็น:</p>
+<ul>
+<li>sensor error</li>
+<li>data entry error</li>
+<li>rare but valid event</li>
+<li>target population จริง</li>
+</ul>
+<p>อย่าทำ:</p>
+<pre><code class="language-text">outlier → delete
+</code></pre>
+<p>โดยอัตโนมัติ</p>
+<p>ให้ตรวจ context, plot และ data provenance ก่อน</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>Medianใช้ลำดับจึงไวต่อextreme magnitudeน้อยกว่าmean. [1,2,100]mean34.33,median2; fitmedianจากtrainและเพิ่มmissingindicatorเมื่อmissingมีความหมาย. Robustไม่แปลว่าปลอดbiasทุกmissingness mechanism.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-11-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Medianใช้ลำดับจึงไวต่อextreme magnitudeน้อยกว่าmean. [1,2,100]mean34.33,median2; fitmedianจากtrainและเพิ่มmissingindicatorเมื่อmissingมีความหมาย. Robustไม่แปลว่าปลอดbiasทุกmissingness mechanism.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-11-equation"><summary>สมการ</summary><p>Medianใช้ลำดับจึงไวต่อextreme magnitudeน้อยกว่าmean. [1,2,100]mean34.33,median2; fitmedianจากtrainและเพิ่มmissingindicatorเมื่อmissingมีความหมาย. Robustไม่แปลว่าปลอดbiasทุกmissingness mechanism.</p></details><details id="help-topic-11-visual"><summary>ภาพและ shape</summary><p>Medianใช้ลำดับจึงไวต่อextreme magnitudeน้อยกว่าmean. [1,2,100]mean34.33,median2; fitmedianจากtrainและเพิ่มmissingindicatorเมื่อmissingมีความหมาย. Robustไม่แปลว่าปลอดbiasทุกmissingness mechanism.</p></details><details id="help-topic-11-code"><summary>โค้ด</summary><p>Medianใช้ลำดับจึงไวต่อextreme magnitudeน้อยกว่าmean. [1,2,100]mean34.33,median2; fitmedianจากtrainและเพิ่มmissingindicatorเมื่อmissingมีความหมาย. Robustไม่แปลว่าปลอดbiasทุกmissingness mechanism.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-11-result"><summary>ผลการทดลอง</summary><p>Medianใช้ลำดับจึงไวต่อextreme magnitudeน้อยกว่าmean. [1,2,100]mean34.33,median2; fitmedianจากtrainและเพิ่มmissingindicatorเมื่อmissingมีความหมาย. Robustไม่แปลว่าปลอดbiasทุกmissingness mechanism.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-11"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-12" class="source-topic"><span id="source-04-data-canonical-12-duplicates" class="legacy-anchor"></span><h3>12. Duplicates</h3>
+<p><code>df.duplicated()</code> หา row ซ้ำเชิงค่า แต่ไม่ได้ตอบว่าซ้ำ “เชิงความหมาย” หรือไม่</p>
+<p>เช่น purchase สองรายการที่เหมือนกันทุก column อาจเป็น transaction คนละเหตุการณ์</p>
+<p>ต้องรู้ key เช่น:</p>
+<pre><code class="language-text">event_id
+customer_id + timestamp + sequence
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>แถวเหมือนกันอาจเป็นretryduplicate eventหรือคนซื้อสินค้าซ้ำจริง. ใช้event_id/source_time/ingestionidตามcontractเพื่อdedup ไม่ใช้drop_duplicatesทุกcolumnsจนลบvalidrepeatและเปลี่ยนfrequency.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-12-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>แถวเหมือนกันอาจเป็นretryduplicate eventหรือคนซื้อสินค้าซ้ำจริง. ใช้event_id/source_time/ingestionidตามcontractเพื่อdedup ไม่ใช้drop_duplicatesทุกcolumnsจนลบvalidrepeatและเปลี่ยนfrequency.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-12-equation"><summary>สมการ</summary><p>แถวเหมือนกันอาจเป็นretryduplicate eventหรือคนซื้อสินค้าซ้ำจริง. ใช้event_id/source_time/ingestionidตามcontractเพื่อdedup ไม่ใช้drop_duplicatesทุกcolumnsจนลบvalidrepeatและเปลี่ยนfrequency.</p></details><details id="help-topic-12-visual"><summary>ภาพและ shape</summary><p>แถวเหมือนกันอาจเป็นretryduplicate eventหรือคนซื้อสินค้าซ้ำจริง. ใช้event_id/source_time/ingestionidตามcontractเพื่อdedup ไม่ใช้drop_duplicatesทุกcolumnsจนลบvalidrepeatและเปลี่ยนfrequency.</p></details><details id="help-topic-12-code"><summary>โค้ด</summary><p>แถวเหมือนกันอาจเป็นretryduplicate eventหรือคนซื้อสินค้าซ้ำจริง. ใช้event_id/source_time/ingestionidตามcontractเพื่อdedup ไม่ใช้drop_duplicatesทุกcolumnsจนลบvalidrepeatและเปลี่ยนfrequency.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-12-result"><summary>ผลการทดลอง</summary><p>แถวเหมือนกันอาจเป็นretryduplicate eventหรือคนซื้อสินค้าซ้ำจริง. ใช้event_id/source_time/ingestionidตามcontractเพื่อdedup ไม่ใช้drop_duplicatesทุกcolumnsจนลบvalidrepeatและเปลี่ยนfrequency.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-12"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-13" class="source-topic"><span id="source-04-data-canonical-13-feature-engineering" class="legacy-anchor"></span><h3>13. Feature Engineering</h3>
+<p>ตัวอย่าง:</p>
+<ul>
+<li>age จาก birth_date</li>
+<li>total_price = quantity × unit_price</li>
+<li>hour/day-of-week จาก timestamp</li>
+<li>log transform สำหรับ positive skew</li>
+<li>interaction terms</li>
+</ul>
+<p>กฎสำคัญ:</p>
+<blockquote>
+<p>ทุก feature ต้องสร้างได้ด้วยข้อมูลที่มี ณ เวลาทำนายจริง</p>
+</blockquote>
+<p>ถ้าใช้ข้อมูลอนาคต = leakage</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>IDอาจเป็นlabelระบุentity ไม่ใช่quantityที่ระยะห่างมีความหมาย. ID100กับ101ไม่ได้แปลว่าใกล้กว่าระหว่าง100กับ500เชิงพฤติกรรม; ตรวจentityleakageและใช้encodingที่เหมาะกับdeploymentgroups.</p><p>สร้างindicatorจากmissingmaskก่อนimputation เช่น[1,NaN,3]→indicator[0,1,0]. fitmedianแล้วเติมค่าคนละขั้น เก็บลำดับcolumns; missingindicatorของtargetไม่ควรเป็นfeatureที่deploymentไม่มี.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-13-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>IDอาจเป็นlabelระบุentity ไม่ใช่quantityที่ระยะห่างมีความหมาย. ID100กับ101ไม่ได้แปลว่าใกล้กว่าระหว่าง100กับ500เชิงพฤติกรรม; ตรวจentityleakageและใช้encodingที่เหมาะกับdeploymentgroups.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-13-equation"><summary>สมการ</summary><p>IDอาจเป็นlabelระบุentity ไม่ใช่quantityที่ระยะห่างมีความหมาย. ID100กับ101ไม่ได้แปลว่าใกล้กว่าระหว่าง100กับ500เชิงพฤติกรรม; ตรวจentityleakageและใช้encodingที่เหมาะกับdeploymentgroups.</p></details><details id="help-topic-13-visual"><summary>ภาพและ shape</summary><p>IDอาจเป็นlabelระบุentity ไม่ใช่quantityที่ระยะห่างมีความหมาย. ID100กับ101ไม่ได้แปลว่าใกล้กว่าระหว่าง100กับ500เชิงพฤติกรรม; ตรวจentityleakageและใช้encodingที่เหมาะกับdeploymentgroups.</p></details><details id="help-topic-13-code"><summary>โค้ด</summary><p>IDอาจเป็นlabelระบุentity ไม่ใช่quantityที่ระยะห่างมีความหมาย. ID100กับ101ไม่ได้แปลว่าใกล้กว่าระหว่าง100กับ500เชิงพฤติกรรม; ตรวจentityleakageและใช้encodingที่เหมาะกับdeploymentgroups.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-13-result"><summary>ผลการทดลอง</summary><p>IDอาจเป็นlabelระบุentity ไม่ใช่quantityที่ระยะห่างมีความหมาย. ID100กับ101ไม่ได้แปลว่าใกล้กว่าระหว่าง100กับ500เชิงพฤติกรรม; ตรวจentityleakageและใช้encodingที่เหมาะกับdeploymentgroups.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-13"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-14" class="source-topic"><span id="source-04-data-canonical-14-dataset-splitting" class="legacy-anchor"></span><h3>14. Dataset Splitting</h3>
+<p>ทั่วไป:</p>
+<ul>
+<li>training — fit parameters</li>
+<li>validation — เลือก hyperparameters/model</li>
+<li>test — final unbiased estimate หลังตัดสินใจเสร็จ</li>
+</ul>
+<p>ตัวอย่าง:</p>
+<pre><code class="language-text">70% train
+15% validation
+15% test
+</code></pre>
+<p>ไม่มีกฎว่าต้องเป็นสัดส่วนนี้เสมอ</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>Splitก่อนfitเพื่อให้ μ/σ/median/category vocabularyมาจากtrainเท่านั้น. เปลี่ยน held-out outlier แล้ว stateของpreprocessorต้องไม่เปลี่ยน; ถ้าใช้CVต้องfitภายในแต่ละfold ไม่fitครั้งเดียวก่อนแบ่งfold.</p><p>ใช้<code>df.iloc[indices]</code>เมื่อsplitterคืนpositionalindices ไม่ใช่locที่อิงindexlabels. ทดสอบindexlabels[10,20,30]กับtrain_idx[0,2]ต้องได้rows10,30; ตรวจsplitsไม่ซ้ำและครอบคลุมตามcontract.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-14-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Splitก่อนfitเพื่อให้ μ/σ/median/category vocabularyมาจากtrainเท่านั้น. เปลี่ยน held-out outlier แล้ว stateของpreprocessorต้องไม่เปลี่ยน; ถ้าใช้CVต้องfitภายในแต่ละfold ไม่fitครั้งเดียวก่อนแบ่งfold.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-14-equation"><summary>สมการ</summary><p>Splitก่อนfitเพื่อให้ μ/σ/median/category vocabularyมาจากtrainเท่านั้น. เปลี่ยน held-out outlier แล้ว stateของpreprocessorต้องไม่เปลี่ยน; ถ้าใช้CVต้องfitภายในแต่ละfold ไม่fitครั้งเดียวก่อนแบ่งfold.</p></details><details id="help-topic-14-visual"><summary>ภาพและ shape</summary><p>Splitก่อนfitเพื่อให้ μ/σ/median/category vocabularyมาจากtrainเท่านั้น. เปลี่ยน held-out outlier แล้ว stateของpreprocessorต้องไม่เปลี่ยน; ถ้าใช้CVต้องfitภายในแต่ละfold ไม่fitครั้งเดียวก่อนแบ่งfold.</p></details><details id="help-topic-14-code"><summary>โค้ด</summary><p>Splitก่อนfitเพื่อให้ μ/σ/median/category vocabularyมาจากtrainเท่านั้น. เปลี่ยน held-out outlier แล้ว stateของpreprocessorต้องไม่เปลี่ยน; ถ้าใช้CVต้องfitภายในแต่ละfold ไม่fitครั้งเดียวก่อนแบ่งfold.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-14-result"><summary>ผลการทดลอง</summary><p>Splitก่อนfitเพื่อให้ μ/σ/median/category vocabularyมาจากtrainเท่านั้น. เปลี่ยน held-out outlier แล้ว stateของpreprocessorต้องไม่เปลี่ยน; ถ้าใช้CVต้องfitภายในแต่ละfold ไม่fitครั้งเดียวก่อนแบ่งfold.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-14"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-15" class="source-topic"><span id="source-04-data-canonical-15-random-split-vs-time-split" class="legacy-anchor"></span><h3>15. Random Split vs Time Split</h3>
+<p>Random split เหมาะเมื่อ samples approximately exchangeable</p>
+<p>Time-dependent data:</p>
+<pre><code class="language-text">past → train
+later → validation
+future → test
+</code></pre>
+<p>ห้าม shuffle future เข้าอดีตถ้า deployment จริงทำนายอนาคต</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>Randomshuffleทำให้ข้อมูลอนาคตเข้าฝึกก่อนพยากรณ์อดีตและอาจให้rollingfeaturesข้ามเวลา. ใช้time-orderedหรือwalk-forward splitและgapเมื่อlabelwindowsซ้อนกัน; testsตรวจmax(train_time)&lt;min(val_time).</p><p>ตรวจว่าตัวอย่างของentityเดียวกันหรือwindowซ้อนกันข้ามsplitหรือไม่ ตรวจfeatureที่มีtargetในอนาคต. เปลี่ยนเป็นwalk-forwardพร้อมtraining-onlypreprocessingแล้วเทียบnaivebaseline; อย่าแก้ด้วยrandomseedที่ทำscoreดูต่ำลงเฉย ๆ.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-15-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Randomshuffleทำให้ข้อมูลอนาคตเข้าฝึกก่อนพยากรณ์อดีตและอาจให้rollingfeaturesข้ามเวลา. ใช้time-orderedหรือwalk-forward splitและgapเมื่อlabelwindowsซ้อนกัน; testsตรวจmax(train_time)&lt;min(val_time).</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-15-equation"><summary>สมการ</summary><p>Randomshuffleทำให้ข้อมูลอนาคตเข้าฝึกก่อนพยากรณ์อดีตและอาจให้rollingfeaturesข้ามเวลา. ใช้time-orderedหรือwalk-forward splitและgapเมื่อlabelwindowsซ้อนกัน; testsตรวจmax(train_time)&lt;min(val_time).</p></details><details id="help-topic-15-visual"><summary>ภาพและ shape</summary><p>Randomshuffleทำให้ข้อมูลอนาคตเข้าฝึกก่อนพยากรณ์อดีตและอาจให้rollingfeaturesข้ามเวลา. ใช้time-orderedหรือwalk-forward splitและgapเมื่อlabelwindowsซ้อนกัน; testsตรวจmax(train_time)&lt;min(val_time).</p></details><details id="help-topic-15-code"><summary>โค้ด</summary><p>Randomshuffleทำให้ข้อมูลอนาคตเข้าฝึกก่อนพยากรณ์อดีตและอาจให้rollingfeaturesข้ามเวลา. ใช้time-orderedหรือwalk-forward splitและgapเมื่อlabelwindowsซ้อนกัน; testsตรวจmax(train_time)&lt;min(val_time).</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-15-result"><summary>ผลการทดลอง</summary><p>Randomshuffleทำให้ข้อมูลอนาคตเข้าฝึกก่อนพยากรณ์อดีตและอาจให้rollingfeaturesข้ามเวลา. ใช้time-orderedหรือwalk-forward splitและgapเมื่อlabelwindowsซ้อนกัน; testsตรวจmax(train_time)&lt;min(val_time).</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-15"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-16" class="source-topic"><span id="source-04-data-canonical-16-stratification" class="legacy-anchor"></span><h3>16. Stratification</h3>
+<p>Classification dataset ที่ class imbalance มาก อาจใช้ stratified split เพื่อรักษาสัดส่วน classes ใกล้เคียงกัน</p>
+<p>แต่ stratification ไม่แก้ปัญหา imbalance ทั้งหมด</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-16-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>16. Stratification</h3>
+<p>Classification dataset ที่ class imbalance มาก อาจใช้ stratified split เพื่อรักษาสัดส่วน classes ใกล้เคียงกัน</p>
+<p>แต่ stratification ไม่แก้ปัญหา imbalance ทั้งหมด</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-16-equation"><summary>สมการ</summary><h3>16. Stratification</h3>
+<p>Classification dataset ที่ class imbalance มาก อาจใช้ stratified split เพื่อรักษาสัดส่วน classes ใกล้เคียงกัน</p>
+<p>แต่ stratification ไม่แก้ปัญหา imbalance ทั้งหมด</p></details><details id="help-topic-16-visual"><summary>ภาพและ shape</summary><h3>16. Stratification</h3>
+<p>Classification dataset ที่ class imbalance มาก อาจใช้ stratified split เพื่อรักษาสัดส่วน classes ใกล้เคียงกัน</p>
+<p>แต่ stratification ไม่แก้ปัญหา imbalance ทั้งหมด</p></details><details id="help-topic-16-code"><summary>โค้ด</summary><h3>16. Stratification</h3>
+<p>Classification dataset ที่ class imbalance มาก อาจใช้ stratified split เพื่อรักษาสัดส่วน classes ใกล้เคียงกัน</p>
+<p>แต่ stratification ไม่แก้ปัญหา imbalance ทั้งหมด</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-16-result"><summary>ผลการทดลอง</summary><h3>16. Stratification</h3>
+<p>Classification dataset ที่ class imbalance มาก อาจใช้ stratified split เพื่อรักษาสัดส่วน classes ใกล้เคียงกัน</p>
+<p>แต่ stratification ไม่แก้ปัญหา imbalance ทั้งหมด</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-16"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-17" class="source-topic"><span id="source-04-data-canonical-17-data-leakage" class="legacy-anchor"></span><span id="source-04-data-canonical-target-leakage" class="legacy-anchor"></span><span id="source-04-data-canonical-train-test-contamination" class="legacy-anchor"></span><span id="source-04-data-canonical-duplicate-leakage" class="legacy-anchor"></span><span id="source-04-data-canonical-group-leakage" class="legacy-anchor"></span><span id="source-04-data-canonical-time-leakage" class="legacy-anchor"></span><h3>17. Data Leakage</h3>
+<h4>Target leakage</h4>
+<p>feature มีข้อมูลที่เกิดหลัง target หรือ encode target โดยตรง</p>
+<h4>Train-test contamination</h4>
+<p>fit preprocessing กับ full dataset</p>
+<h4>Duplicate leakage</h4>
+<p>record/บุคคล/เหตุการณ์เดียวกันโผล่ทั้ง train และ test</p>
+<h4>Group leakage</h4>
+<p>ตัวอย่างจาก entity เดียวกันกระจายหลาย split ทั้งที่ deployment เจอ entity ใหม่</p>
+<h4>Time leakage</h4>
+<p>ใช้ future information ทำนายอดีต</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>Leakage คือการใช้ข้อมูลที่ไม่ควรรู้ ณ ขั้นฝึก/เลือกโมเดล เช่นscalerfitจากtest หรือfeatureสร้างจากlabelอนาคต. ตรวจ data lineageและเวลาที่แต่ละfeatureพร้อมใช้; scoreสูงผิดปกติเป็นสัญญาณ ไม่ใช่หลักฐานสรุปสาเหตุอย่างเดียว.</p><p>Splitก่อนfitเพื่อให้ μ/σ/median/category vocabularyมาจากtrainเท่านั้น. เปลี่ยน held-out outlier แล้ว stateของpreprocessorต้องไม่เปลี่ยน; ถ้าใช้CVต้องfitภายในแต่ละfold ไม่fitครั้งเดียวก่อนแบ่งfold.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-17-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Leakage คือการใช้ข้อมูลที่ไม่ควรรู้ ณ ขั้นฝึก/เลือกโมเดล เช่นscalerfitจากtest หรือfeatureสร้างจากlabelอนาคต. ตรวจ data lineageและเวลาที่แต่ละfeatureพร้อมใช้; scoreสูงผิดปกติเป็นสัญญาณ ไม่ใช่หลักฐานสรุปสาเหตุอย่างเดียว.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-17-equation"><summary>สมการ</summary><p>Leakage คือการใช้ข้อมูลที่ไม่ควรรู้ ณ ขั้นฝึก/เลือกโมเดล เช่นscalerfitจากtest หรือfeatureสร้างจากlabelอนาคต. ตรวจ data lineageและเวลาที่แต่ละfeatureพร้อมใช้; scoreสูงผิดปกติเป็นสัญญาณ ไม่ใช่หลักฐานสรุปสาเหตุอย่างเดียว.</p></details><details id="help-topic-17-visual"><summary>ภาพและ shape</summary><p>Leakage คือการใช้ข้อมูลที่ไม่ควรรู้ ณ ขั้นฝึก/เลือกโมเดล เช่นscalerfitจากtest หรือfeatureสร้างจากlabelอนาคต. ตรวจ data lineageและเวลาที่แต่ละfeatureพร้อมใช้; scoreสูงผิดปกติเป็นสัญญาณ ไม่ใช่หลักฐานสรุปสาเหตุอย่างเดียว.</p></details><details id="help-topic-17-code"><summary>โค้ด</summary><p>Leakage คือการใช้ข้อมูลที่ไม่ควรรู้ ณ ขั้นฝึก/เลือกโมเดล เช่นscalerfitจากtest หรือfeatureสร้างจากlabelอนาคต. ตรวจ data lineageและเวลาที่แต่ละfeatureพร้อมใช้; scoreสูงผิดปกติเป็นสัญญาณ ไม่ใช่หลักฐานสรุปสาเหตุอย่างเดียว.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-17-result"><summary>ผลการทดลอง</summary><p>Leakage คือการใช้ข้อมูลที่ไม่ควรรู้ ณ ขั้นฝึก/เลือกโมเดล เช่นscalerfitจากtest หรือfeatureสร้างจากlabelอนาคต. ตรวจ data lineageและเวลาที่แต่ละfeatureพร้อมใช้; scoreสูงผิดปกติเป็นสัญญาณ ไม่ใช่หลักฐานสรุปสาเหตุอย่างเดียว.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-17"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-18" class="source-topic"><span id="source-04-data-canonical-18-imbalanced-data" class="legacy-anchor"></span><h3>18. Imbalanced Data</h3>
+<p>Accuracy อาจหลอกได้</p>
+<p>ถ้า 99% เป็น class 0 การทาย 0 ตลอดได้ accuracy 99% แต่ model ไม่มีประโยชน์ต่อ minority class</p>
+<p>บท classification จะเรียน precision/recall/F1/ROC/PR ลึกขึ้น</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-18-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>18. Imbalanced Data</h3>
+<p>Accuracy อาจหลอกได้</p>
+<p>ถ้า 99% เป็น class 0 การทาย 0 ตลอดได้ accuracy 99% แต่ model ไม่มีประโยชน์ต่อ minority class</p>
+<p>บท classification จะเรียน precision/recall/F1/ROC/PR ลึกขึ้น</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-18-equation"><summary>สมการ</summary><h3>18. Imbalanced Data</h3>
+<p>Accuracy อาจหลอกได้</p>
+<p>ถ้า 99% เป็น class 0 การทาย 0 ตลอดได้ accuracy 99% แต่ model ไม่มีประโยชน์ต่อ minority class</p>
+<p>บท classification จะเรียน precision/recall/F1/ROC/PR ลึกขึ้น</p></details><details id="help-topic-18-visual"><summary>ภาพและ shape</summary><h3>18. Imbalanced Data</h3>
+<p>Accuracy อาจหลอกได้</p>
+<p>ถ้า 99% เป็น class 0 การทาย 0 ตลอดได้ accuracy 99% แต่ model ไม่มีประโยชน์ต่อ minority class</p>
+<p>บท classification จะเรียน precision/recall/F1/ROC/PR ลึกขึ้น</p></details><details id="help-topic-18-code"><summary>โค้ด</summary><h3>18. Imbalanced Data</h3>
+<p>Accuracy อาจหลอกได้</p>
+<p>ถ้า 99% เป็น class 0 การทาย 0 ตลอดได้ accuracy 99% แต่ model ไม่มีประโยชน์ต่อ minority class</p>
+<p>บท classification จะเรียน precision/recall/F1/ROC/PR ลึกขึ้น</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-18-result"><summary>ผลการทดลอง</summary><h3>18. Imbalanced Data</h3>
+<p>Accuracy อาจหลอกได้</p>
+<p>ถ้า 99% เป็น class 0 การทาย 0 ตลอดได้ accuracy 99% แต่ model ไม่มีประโยชน์ต่อ minority class</p>
+<p>บท classification จะเรียน precision/recall/F1/ROC/PR ลึกขึ้น</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-18"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-19" class="source-topic"><span id="source-04-data-canonical-19-data-contracts" class="legacy-anchor"></span><h3>19. Data Contracts</h3>
+<p>กำหนดอย่างน้อย:</p>
+<ul>
+<li>column names</li>
+<li>required/optional</li>
+<li>types</li>
+<li>ranges</li>
+<li>allowed categories</li>
+<li>uniqueness</li>
+<li>null policy</li>
+</ul>
+<p>ตัวอย่าง:</p>
+<pre><code class="language-text">age: float, nullable, 0..120
+country: string, required
+customer_id: string, unique
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>Schema ระบุชื่อ/ชนิด/range/nullabilityและความหมายของข้อมูล. ตัวอย่าง age:int≥0,target∈{0,1}; CSVที่อ่านผ่านยังผิด schemaได้. แยก missing optional column ออกจาก required columnหายและรายงาน path/rowที่ผิด.</p><p>ตรวจfinite,typeและlower/upperboundsที่รวม/ไม่รวมขอบตามschema. age[0,120]ผ่านเมื่อboundsinclusive; -1,121,NaNต้องมีissueที่ระบุrow,column,rule โดยไม่แปลงเป็น0เงียบ ๆ.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-19-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Schema ระบุชื่อ/ชนิด/range/nullabilityและความหมายของข้อมูล. ตัวอย่าง age:int≥0,target∈{0,1}; CSVที่อ่านผ่านยังผิด schemaได้. แยก missing optional column ออกจาก required columnหายและรายงาน path/rowที่ผิด.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-19-equation"><summary>สมการ</summary><p>Schema ระบุชื่อ/ชนิด/range/nullabilityและความหมายของข้อมูล. ตัวอย่าง age:int≥0,target∈{0,1}; CSVที่อ่านผ่านยังผิด schemaได้. แยก missing optional column ออกจาก required columnหายและรายงาน path/rowที่ผิด.</p></details><details id="help-topic-19-visual"><summary>ภาพและ shape</summary><p>Schema ระบุชื่อ/ชนิด/range/nullabilityและความหมายของข้อมูล. ตัวอย่าง age:int≥0,target∈{0,1}; CSVที่อ่านผ่านยังผิด schemaได้. แยก missing optional column ออกจาก required columnหายและรายงาน path/rowที่ผิด.</p></details><details id="help-topic-19-code"><summary>โค้ด</summary><p>Schema ระบุชื่อ/ชนิด/range/nullabilityและความหมายของข้อมูล. ตัวอย่าง age:int≥0,target∈{0,1}; CSVที่อ่านผ่านยังผิด schemaได้. แยก missing optional column ออกจาก required columnหายและรายงาน path/rowที่ผิด.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-19-result"><summary>ผลการทดลอง</summary><p>Schema ระบุชื่อ/ชนิด/range/nullabilityและความหมายของข้อมูล. ตัวอย่าง age:int≥0,target∈{0,1}; CSVที่อ่านผ่านยังผิด schemaได้. แยก missing optional column ออกจาก required columnหายและรายงาน path/rowที่ผิด.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-19"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-20" class="source-topic"><span id="source-04-data-canonical-20-from-scratch" class="legacy-anchor"></span><h3>20. From Scratch</h3>
+<p>ดู <a href="../04-data/src/preprocessing.py">src/preprocessing.py</a></p>
+<p>เราสร้าง:</p>
+<ul>
+<li>train/validation/test index split</li>
+<li>Standardizer ที่มี <code>fit</code> / <code>transform</code></li>
+<li>median imputer</li>
+<li>one-hot encoder แบบพื้นฐาน</li>
+</ul>
+<p>เป้าหมายคือเข้าใจ state ที่ preprocessing เรียนจาก train</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>fitmin/maxต่อfeatureบนtrain, transform=(X−min)/(max−min)โดยsafe denominator1สำหรับconstant. train[2,4]→[0,1],held-out6→2ซึ่งถูกต้องสำหรับextrapolation; อย่าclipโดยไม่ประกาศpolicy.</p><p>CLIอ่านschema/dataแล้วคืน0เมื่อผ่าน,nonzeroเมื่อfail พร้อมรายงานissuesแบบmachine-readable. ทดสอบrequiredcolumnหาย,typeผิด,out-of-rangeและไฟล์หาย; วัดว่ารายงานระบุแถวแรกที่ผิดและไม่บันทึกartifactว่าvalidหลังfail.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-20-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>fitmin/maxต่อfeatureบนtrain, transform=(X−min)/(max−min)โดยsafe denominator1สำหรับconstant. train[2,4]→[0,1],held-out6→2ซึ่งถูกต้องสำหรับextrapolation; อย่าclipโดยไม่ประกาศpolicy.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-20-equation"><summary>สมการ</summary><p>fitmin/maxต่อfeatureบนtrain, transform=(X−min)/(max−min)โดยsafe denominator1สำหรับconstant. train[2,4]→[0,1],held-out6→2ซึ่งถูกต้องสำหรับextrapolation; อย่าclipโดยไม่ประกาศpolicy.</p></details><details id="help-topic-20-visual"><summary>ภาพและ shape</summary><p>fitmin/maxต่อfeatureบนtrain, transform=(X−min)/(max−min)โดยsafe denominator1สำหรับconstant. train[2,4]→[0,1],held-out6→2ซึ่งถูกต้องสำหรับextrapolation; อย่าclipโดยไม่ประกาศpolicy.</p></details><details id="help-topic-20-code"><summary>โค้ด</summary><p>fitmin/maxต่อfeatureบนtrain, transform=(X−min)/(max−min)โดยsafe denominator1สำหรับconstant. train[2,4]→[0,1],held-out6→2ซึ่งถูกต้องสำหรับextrapolation; อย่าclipโดยไม่ประกาศpolicy.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-20-result"><summary>ผลการทดลอง</summary><p>fitmin/maxต่อfeatureบนtrain, transform=(X−min)/(max−min)โดยsafe denominator1สำหรับconstant. train[2,4]→[0,1],held-out6→2ซึ่งถูกต้องสำหรับextrapolation; อย่าclipโดยไม่ประกาศpolicy.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-20"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-21" class="source-topic"><span id="source-04-data-canonical-21-scikit-learn-perspective" class="legacy-anchor"></span><h3>21. scikit-learn Perspective</h3>
+<p>ใน production-oriented workflow นิยมประกอบ preprocessing ด้วย:</p>
+<ul>
+<li><code>SimpleImputer</code></li>
+<li><code>StandardScaler</code></li>
+<li><code>OneHotEncoder</code></li>
+<li><code>ColumnTransformer</code></li>
+<li><code>Pipeline</code></li>
+</ul>
+<p>ข้อดีคือ fit/transform state ถูกผูกกับ pipeline ลดโอกาส leakage</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-21-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>21. scikit-learn Perspective</h3>
+<p>ใน production-oriented workflow นิยมประกอบ preprocessing ด้วย:</p>
+<ul>
+<li><code>SimpleImputer</code></li>
+<li><code>StandardScaler</code></li>
+<li><code>OneHotEncoder</code></li>
+<li><code>ColumnTransformer</code></li>
+<li><code>Pipeline</code></li>
+</ul>
+<p>ข้อดีคือ fit/transform state ถูกผูกกับ pipeline ลดโอกาส leakage</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-21-equation"><summary>สมการ</summary><h3>21. scikit-learn Perspective</h3>
+<p>ใน production-oriented workflow นิยมประกอบ preprocessing ด้วย:</p>
+<ul>
+<li><code>SimpleImputer</code></li>
+<li><code>StandardScaler</code></li>
+<li><code>OneHotEncoder</code></li>
+<li><code>ColumnTransformer</code></li>
+<li><code>Pipeline</code></li>
+</ul>
+<p>ข้อดีคือ fit/transform state ถูกผูกกับ pipeline ลดโอกาส leakage</p></details><details id="help-topic-21-visual"><summary>ภาพและ shape</summary><h3>21. scikit-learn Perspective</h3>
+<p>ใน production-oriented workflow นิยมประกอบ preprocessing ด้วย:</p>
+<ul>
+<li><code>SimpleImputer</code></li>
+<li><code>StandardScaler</code></li>
+<li><code>OneHotEncoder</code></li>
+<li><code>ColumnTransformer</code></li>
+<li><code>Pipeline</code></li>
+</ul>
+<p>ข้อดีคือ fit/transform state ถูกผูกกับ pipeline ลดโอกาส leakage</p></details><details id="help-topic-21-code"><summary>โค้ด</summary><h3>21. scikit-learn Perspective</h3>
+<p>ใน production-oriented workflow นิยมประกอบ preprocessing ด้วย:</p>
+<ul>
+<li><code>SimpleImputer</code></li>
+<li><code>StandardScaler</code></li>
+<li><code>OneHotEncoder</code></li>
+<li><code>ColumnTransformer</code></li>
+<li><code>Pipeline</code></li>
+</ul>
+<p>ข้อดีคือ fit/transform state ถูกผูกกับ pipeline ลดโอกาส leakage</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-21-result"><summary>ผลการทดลอง</summary><h3>21. scikit-learn Perspective</h3>
+<p>ใน production-oriented workflow นิยมประกอบ preprocessing ด้วย:</p>
+<ul>
+<li><code>SimpleImputer</code></li>
+<li><code>StandardScaler</code></li>
+<li><code>OneHotEncoder</code></li>
+<li><code>ColumnTransformer</code></li>
+<li><code>Pipeline</code></li>
+</ul>
+<p>ข้อดีคือ fit/transform state ถูกผูกกับ pipeline ลดโอกาส leakage</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-21"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-22" class="source-topic"><span id="source-04-data-canonical-22-debugging-checklist" class="legacy-anchor"></span><h3>22. Debugging Checklist</h3>
+<p>ก่อน train model:</p>
+<pre><code class="language-python">print(df.shape)
+print(df.dtypes)
+print(df.isna().sum())
+print(df.duplicated().sum())
+print(df.head())
+</code></pre>
+<p>หลัง preprocess:</p>
+<ul>
+<li>shape ตรงคาดไหม?</li>
+<li>NaN เหลือไหม?</li>
+<li>category ใหม่ handle อย่างไร?</li>
+<li>scaler fit จาก train เท่านั้นไหม?</li>
+<li>target หลุดเข้า X หรือไม่?</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-22-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>22. Debugging Checklist</h3>
+<p>ก่อน train model:</p>
+<pre><code class="language-python">print(df.shape)
+print(df.dtypes)
+print(df.isna().sum())
+print(df.duplicated().sum())
+print(df.head())
+</code></pre>
+<p>หลัง preprocess:</p>
+<ul>
+<li>shape ตรงคาดไหม?</li>
+<li>NaN เหลือไหม?</li>
+<li>category ใหม่ handle อย่างไร?</li>
+<li>scaler fit จาก train เท่านั้นไหม?</li>
+<li>target หลุดเข้า X หรือไม่?</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-22-equation"><summary>สมการ</summary><h3>22. Debugging Checklist</h3>
+<p>ก่อน train model:</p>
+<pre><code class="language-python">print(df.shape)
+print(df.dtypes)
+print(df.isna().sum())
+print(df.duplicated().sum())
+print(df.head())
+</code></pre>
+<p>หลัง preprocess:</p>
+<ul>
+<li>shape ตรงคาดไหม?</li>
+<li>NaN เหลือไหม?</li>
+<li>category ใหม่ handle อย่างไร?</li>
+<li>scaler fit จาก train เท่านั้นไหม?</li>
+<li>target หลุดเข้า X หรือไม่?</li>
+</ul></details><details id="help-topic-22-visual"><summary>ภาพและ shape</summary><h3>22. Debugging Checklist</h3>
+<p>ก่อน train model:</p>
+<pre><code class="language-python">print(df.shape)
+print(df.dtypes)
+print(df.isna().sum())
+print(df.duplicated().sum())
+print(df.head())
+</code></pre>
+<p>หลัง preprocess:</p>
+<ul>
+<li>shape ตรงคาดไหม?</li>
+<li>NaN เหลือไหม?</li>
+<li>category ใหม่ handle อย่างไร?</li>
+<li>scaler fit จาก train เท่านั้นไหม?</li>
+<li>target หลุดเข้า X หรือไม่?</li>
+</ul></details><details id="help-topic-22-code"><summary>โค้ด</summary><h3>22. Debugging Checklist</h3>
+<p>ก่อน train model:</p>
+<pre><code class="language-python">print(df.shape)
+print(df.dtypes)
+print(df.isna().sum())
+print(df.duplicated().sum())
+print(df.head())
+</code></pre>
+<p>หลัง preprocess:</p>
+<ul>
+<li>shape ตรงคาดไหม?</li>
+<li>NaN เหลือไหม?</li>
+<li>category ใหม่ handle อย่างไร?</li>
+<li>scaler fit จาก train เท่านั้นไหม?</li>
+<li>target หลุดเข้า X หรือไม่?</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-22-result"><summary>ผลการทดลอง</summary><h3>22. Debugging Checklist</h3>
+<p>ก่อน train model:</p>
+<pre><code class="language-python">print(df.shape)
+print(df.dtypes)
+print(df.isna().sum())
+print(df.duplicated().sum())
+print(df.head())
+</code></pre>
+<p>หลัง preprocess:</p>
+<ul>
+<li>shape ตรงคาดไหม?</li>
+<li>NaN เหลือไหม?</li>
+<li>category ใหม่ handle อย่างไร?</li>
+<li>scaler fit จาก train เท่านั้นไหม?</li>
+<li>target หลุดเข้า X หรือไม่?</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-22"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-23" class="source-topic"><span id="source-04-data-canonical-23-common-mistakes" class="legacy-anchor"></span><h3>23. Common Mistakes</h3>
+<ol>
+<li>impute ก่อน split</li>
+<li>scale ก่อน split</li>
+<li>encode target เป็น feature</li>
+<li>ใช้ ID เป็น continuous feature</li>
+<li>drop outlier ทุกตัว</li>
+<li>drop missing ทุก row</li>
+<li>random split time series</li>
+<li>duplicate entity ข้าม splits</li>
+<li>one-hot แล้ว production เจอ category ใหม่จนพัง</li>
+<li>fit preprocessing แยกจาก model แล้วลืมใช้ตัวเดิมตอน inference</li>
+<li>feature จากอนาคต</li>
+<li>evaluate ซ้ำบน test จน test กลายเป็น validation</li>
+</ol><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-23-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>23. Common Mistakes</h3>
+<ol>
+<li>impute ก่อน split</li>
+<li>scale ก่อน split</li>
+<li>encode target เป็น feature</li>
+<li>ใช้ ID เป็น continuous feature</li>
+<li>drop outlier ทุกตัว</li>
+<li>drop missing ทุก row</li>
+<li>random split time series</li>
+<li>duplicate entity ข้าม splits</li>
+<li>one-hot แล้ว production เจอ category ใหม่จนพัง</li>
+<li>fit preprocessing แยกจาก model แล้วลืมใช้ตัวเดิมตอน inference</li>
+<li>feature จากอนาคต</li>
+<li>evaluate ซ้ำบน test จน test กลายเป็น validation</li>
+</ol><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-23-equation"><summary>สมการ</summary><h3>23. Common Mistakes</h3>
+<ol>
+<li>impute ก่อน split</li>
+<li>scale ก่อน split</li>
+<li>encode target เป็น feature</li>
+<li>ใช้ ID เป็น continuous feature</li>
+<li>drop outlier ทุกตัว</li>
+<li>drop missing ทุก row</li>
+<li>random split time series</li>
+<li>duplicate entity ข้าม splits</li>
+<li>one-hot แล้ว production เจอ category ใหม่จนพัง</li>
+<li>fit preprocessing แยกจาก model แล้วลืมใช้ตัวเดิมตอน inference</li>
+<li>feature จากอนาคต</li>
+<li>evaluate ซ้ำบน test จน test กลายเป็น validation</li>
+</ol></details><details id="help-topic-23-visual"><summary>ภาพและ shape</summary><h3>23. Common Mistakes</h3>
+<ol>
+<li>impute ก่อน split</li>
+<li>scale ก่อน split</li>
+<li>encode target เป็น feature</li>
+<li>ใช้ ID เป็น continuous feature</li>
+<li>drop outlier ทุกตัว</li>
+<li>drop missing ทุก row</li>
+<li>random split time series</li>
+<li>duplicate entity ข้าม splits</li>
+<li>one-hot แล้ว production เจอ category ใหม่จนพัง</li>
+<li>fit preprocessing แยกจาก model แล้วลืมใช้ตัวเดิมตอน inference</li>
+<li>feature จากอนาคต</li>
+<li>evaluate ซ้ำบน test จน test กลายเป็น validation</li>
+</ol></details><details id="help-topic-23-code"><summary>โค้ด</summary><h3>23. Common Mistakes</h3>
+<ol>
+<li>impute ก่อน split</li>
+<li>scale ก่อน split</li>
+<li>encode target เป็น feature</li>
+<li>ใช้ ID เป็น continuous feature</li>
+<li>drop outlier ทุกตัว</li>
+<li>drop missing ทุก row</li>
+<li>random split time series</li>
+<li>duplicate entity ข้าม splits</li>
+<li>one-hot แล้ว production เจอ category ใหม่จนพัง</li>
+<li>fit preprocessing แยกจาก model แล้วลืมใช้ตัวเดิมตอน inference</li>
+<li>feature จากอนาคต</li>
+<li>evaluate ซ้ำบน test จน test กลายเป็น validation</li>
+</ol><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-23-result"><summary>ผลการทดลอง</summary><h3>23. Common Mistakes</h3>
+<ol>
+<li>impute ก่อน split</li>
+<li>scale ก่อน split</li>
+<li>encode target เป็น feature</li>
+<li>ใช้ ID เป็น continuous feature</li>
+<li>drop outlier ทุกตัว</li>
+<li>drop missing ทุก row</li>
+<li>random split time series</li>
+<li>duplicate entity ข้าม splits</li>
+<li>one-hot แล้ว production เจอ category ใหม่จนพัง</li>
+<li>fit preprocessing แยกจาก model แล้วลืมใช้ตัวเดิมตอน inference</li>
+<li>feature จากอนาคต</li>
+<li>evaluate ซ้ำบน test จน test กลายเป็น validation</li>
+</ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-23"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-24" class="source-topic"><span id="source-04-data-canonical-24-exercises-project" class="legacy-anchor"></span><h3>24. Exercises / Project</h3>
+<ul>
+<li><a href="../04-data/exercises/README.md">Exercises</a></li>
+<li><a href="../04-data/solutions/README.md">Solutions</a></li>
+<li><a href="../04-data/mini-project/README.md">Mini Project</a></li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-24-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>24. Exercises / Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-24-equation"><summary>สมการ</summary><h3>24. Exercises / Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-24-visual"><summary>ภาพและ shape</summary><h3>24. Exercises / Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-24-code"><summary>โค้ด</summary><h3>24. Exercises / Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-24-result"><summary>ผลการทดลอง</summary><h3>24. Exercises / Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-24"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-25" class="source-topic"><span id="source-04-data-canonical-25-checklist" class="legacy-anchor"></span><h3>25. Checklist</h3>
+<ul>
+<li>[ ] อธิบาย sample/feature/target</li>
+<li>[ ] ทำ schema audit</li>
+<li>[ ] วิเคราะห์ missing/outliers/duplicates</li>
+<li>[ ] split ก่อน fit transforms</li>
+<li>[ ] implement standardizer</li>
+<li>[ ] explain leakage 5 แบบ</li>
+<li>[ ] encode categorical data</li>
+<li>[ ] อธิบาย time split</li>
+<li>[ ] test preprocessing ผ่าน</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-25-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>25. Checklist</h3>
+<ul>
+<li>[ ] อธิบาย sample/feature/target</li>
+<li>[ ] ทำ schema audit</li>
+<li>[ ] วิเคราะห์ missing/outliers/duplicates</li>
+<li>[ ] split ก่อน fit transforms</li>
+<li>[ ] implement standardizer</li>
+<li>[ ] explain leakage 5 แบบ</li>
+<li>[ ] encode categorical data</li>
+<li>[ ] อธิบาย time split</li>
+<li>[ ] test preprocessing ผ่าน</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-25-equation"><summary>สมการ</summary><h3>25. Checklist</h3>
+<ul>
+<li>[ ] อธิบาย sample/feature/target</li>
+<li>[ ] ทำ schema audit</li>
+<li>[ ] วิเคราะห์ missing/outliers/duplicates</li>
+<li>[ ] split ก่อน fit transforms</li>
+<li>[ ] implement standardizer</li>
+<li>[ ] explain leakage 5 แบบ</li>
+<li>[ ] encode categorical data</li>
+<li>[ ] อธิบาย time split</li>
+<li>[ ] test preprocessing ผ่าน</li>
+</ul></details><details id="help-topic-25-visual"><summary>ภาพและ shape</summary><h3>25. Checklist</h3>
+<ul>
+<li>[ ] อธิบาย sample/feature/target</li>
+<li>[ ] ทำ schema audit</li>
+<li>[ ] วิเคราะห์ missing/outliers/duplicates</li>
+<li>[ ] split ก่อน fit transforms</li>
+<li>[ ] implement standardizer</li>
+<li>[ ] explain leakage 5 แบบ</li>
+<li>[ ] encode categorical data</li>
+<li>[ ] อธิบาย time split</li>
+<li>[ ] test preprocessing ผ่าน</li>
+</ul></details><details id="help-topic-25-code"><summary>โค้ด</summary><h3>25. Checklist</h3>
+<ul>
+<li>[ ] อธิบาย sample/feature/target</li>
+<li>[ ] ทำ schema audit</li>
+<li>[ ] วิเคราะห์ missing/outliers/duplicates</li>
+<li>[ ] split ก่อน fit transforms</li>
+<li>[ ] implement standardizer</li>
+<li>[ ] explain leakage 5 แบบ</li>
+<li>[ ] encode categorical data</li>
+<li>[ ] อธิบาย time split</li>
+<li>[ ] test preprocessing ผ่าน</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-25-result"><summary>ผลการทดลอง</summary><h3>25. Checklist</h3>
+<ul>
+<li>[ ] อธิบาย sample/feature/target</li>
+<li>[ ] ทำ schema audit</li>
+<li>[ ] วิเคราะห์ missing/outliers/duplicates</li>
+<li>[ ] split ก่อน fit transforms</li>
+<li>[ ] implement standardizer</li>
+<li>[ ] explain leakage 5 แบบ</li>
+<li>[ ] encode categorical data</li>
+<li>[ ] อธิบาย time split</li>
+<li>[ ] test preprocessing ผ่าน</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-25"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-26" class="source-topic"><span id="source-04-data-canonical-26-whats-next" class="legacy-anchor"></span><h3>26. What's Next</h3>
+<p>Chapter 05 จะนิยามว่า “Machine Learning” กำลัง optimize อะไร วัดอย่างไร และทำไม model ที่ train loss ต่ำยังอาจใช้งานจริงได้แย่</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-26-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>26. What's Next</h3>
+<p>Chapter 05 จะนิยามว่า “Machine Learning” กำลัง optimize อะไร วัดอย่างไร และทำไม model ที่ train loss ต่ำยังอาจใช้งานจริงได้แย่</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-26-equation"><summary>สมการ</summary><h3>26. What's Next</h3>
+<p>Chapter 05 จะนิยามว่า “Machine Learning” กำลัง optimize อะไร วัดอย่างไร และทำไม model ที่ train loss ต่ำยังอาจใช้งานจริงได้แย่</p></details><details id="help-topic-26-visual"><summary>ภาพและ shape</summary><h3>26. What's Next</h3>
+<p>Chapter 05 จะนิยามว่า “Machine Learning” กำลัง optimize อะไร วัดอย่างไร และทำไม model ที่ train loss ต่ำยังอาจใช้งานจริงได้แย่</p></details><details id="help-topic-26-code"><summary>โค้ด</summary><h3>26. What's Next</h3>
+<p>Chapter 05 จะนิยามว่า “Machine Learning” กำลัง optimize อะไร วัดอย่างไร และทำไม model ที่ train loss ต่ำยังอาจใช้งานจริงได้แย่</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-26-result"><summary>ผลการทดลอง</summary><h3>26. What's Next</h3>
+<p>Chapter 05 จะนิยามว่า “Machine Learning” กำลัง optimize อะไร วัดอย่างไร และทำไม model ที่ train loss ต่ำยังอาจใช้งานจริงได้แย่</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-26"> อ่านหัวข้อนี้แล้ว</label></section></section><section id="objective-evidence" class="canonical-section"><h2>พิสูจน์ความสามารถทีละ objective</h2><p>ทำกรณีใหม่ก่อนเปิด reference แล้วบันทึกงานด้านล่าง ให้ผู้ตรวจใช้ rubric ตรวจคำอธิบาย ผลคำนวณ โค้ด และข้อจำกัด บันทึกเก็บในเบราว์เซอร์เครื่องนี้ กดส่งออกเพื่อสำรองหรือส่งให้ผู้ตรวจ เว็บไม่ได้รันโค้ดหรือตัดสินผลงานแทนผู้ตรวจ</p><button type="button" class="secondary-button" data-export-evidence>ส่งออกหลักฐานบทนี้เป็น JSON</button><p role="status" id="evidence-export-status"></p><details id="ch04-objective-01" class="objective-proof"><summary>แยก sample / feature / target</summary><p>แยก sample / feature / target: ใช้กรณีในหัวข้อ Core Vocabulary เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch04-evidence-01"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch04-evidence-01-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch04-evidence-01-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch04-evidence-01-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch04-evidence-01-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch04-evidence-01-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch04-evidence-01-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch04-evidence-01-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch04-evidence-01-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>Sample คือหน่วยตัวอย่างหนึ่งหน่วย,feature คือข้อมูลที่รู้ตอนทำนาย,target คือสิ่งที่ต้องทำนาย. งานพยากรณ์รายวัน sample=(ร้าน,วันที่),feature=ยอดอดีต,target=ยอดวันถัดไป; targetอนาคตห้ามหลุดกลับเข้า features.</p><h3>5. Core Vocabulary</h3>
+<ul>
+<li><strong>Sample / observation</strong> — หนึ่งตัวอย่าง</li>
+<li><strong>Feature</strong> — input variable</li>
+<li><strong>Target / label</strong> — สิ่งที่ต้องการทำนาย</li>
+<li><strong>Schema</strong> — ข้อตกลงเรื่อง columns, types, ranges, nullable rules</li>
+<li><strong>Preprocessing</strong> — การแปลงข้อมูลก่อนเข้า model</li>
+<li><strong>Feature engineering</strong> — สร้าง feature ใหม่จากข้อมูลเดิม</li>
+<li><strong>Leakage</strong> — model ได้ข้อมูลที่ตอนใช้งานจริงไม่ควรมี</li>
+</ul></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch04-objective-02" class="objective-proof"><summary>ตรวจ schema และ data types</summary><p>ตรวจ schema และ data types: ใช้กรณีในหัวข้อ Data Contracts เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch04-evidence-02"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch04-evidence-02-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch04-evidence-02-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch04-evidence-02-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch04-evidence-02-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch04-evidence-02-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch04-evidence-02-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch04-evidence-02-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch04-evidence-02-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>Schema ระบุชื่อ/ชนิด/range/nullabilityและความหมายของข้อมูล. ตัวอย่าง age:int≥0,target∈{0,1}; CSVที่อ่านผ่านยังผิด schemaได้. แยก missing optional column ออกจาก required columnหายและรายงาน path/rowที่ผิด.</p><h3>19. Data Contracts</h3>
+<p>กำหนดอย่างน้อย:</p>
+<ul>
+<li>column names</li>
+<li>required/optional</li>
+<li>types</li>
+<li>ranges</li>
+<li>allowed categories</li>
+<li>uniqueness</li>
+<li>null policy</li>
+</ul>
+<p>ตัวอย่าง:</p>
+<pre><code class="language-text">age: float, nullable, 0..120
+country: string, required
+customer_id: string, unique
+</code></pre></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch04-objective-03" class="objective-proof"><summary>วิเคราะห์ missing values</summary><p>วิเคราะห์ missing values: ใช้กรณีในหัวข้อ Missing Values, Numeric Imputation เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch04-evidence-03"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch04-evidence-03-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch04-evidence-03-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch04-evidence-03-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch04-evidence-03-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch04-evidence-03-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch04-evidence-03-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch04-evidence-03-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch04-evidence-03-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>Medianใช้ลำดับจึงไวต่อextreme magnitudeน้อยกว่าmean. [1,2,100]mean34.33,median2; fitmedianจากtrainและเพิ่มmissingindicatorเมื่อmissingมีความหมาย. Robustไม่แปลว่าปลอดbiasทุกmissingness mechanism.</p><h3>7. Missing Values</h3>
+<p>ถามก่อนเติมค่า:</p>
+<ol>
+<li>missing เพราะอะไร?</li>
+<li>เกิดใน train และ production แบบเดียวกันหรือไม่?</li>
+<li>missing เองมี information หรือไม่?</li>
+<li>การ drop row ทำให้ sample bias หรือไม่?</li>
+</ol>
+<p>แนวคิดที่ควรรู้:</p>
+<ul>
+<li>MCAR — Missing Completely At Random</li>
+<li>MAR — Missing At Random เมื่อ conditioned บน observed variables</li>
+<li>MNAR — Missing Not At Random</li>
+</ul>
+<p>นี่เป็นกรอบความคิด ไม่ใช่ label ที่พิสูจน์ได้จากตารางเดียวเสมอ</p>
+<h3>8. Numeric Imputation</h3>
+<p>Simple options:</p>
+<ul>
+<li>mean</li>
+<li>median</li>
+<li>constant</li>
+<li>model-based methods ในบทขั้นสูง</li>
+</ul>
+<p>median มักทน outlier กว่า mean</p>
+<p>สำคัญที่สุด:</p>
+<pre><code class="language-text">fit imputer on TRAIN
+transform TRAIN
+transform VALIDATION
+transform TEST
+</code></pre>
+<p>ห้ามคำนวณ median จาก full dataset ก่อน split</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch04-objective-04" class="objective-proof"><summary>แยก duplicate จริงออกจาก repeated legitimate events</summary><p>แยก duplicate จริงออกจาก repeated legitimate events: ใช้กรณีในหัวข้อ Duplicates เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch04-evidence-04"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch04-evidence-04-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch04-evidence-04-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch04-evidence-04-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch04-evidence-04-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch04-evidence-04-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch04-evidence-04-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch04-evidence-04-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch04-evidence-04-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>แถวเหมือนกันอาจเป็นretryduplicate eventหรือคนซื้อสินค้าซ้ำจริง. ใช้event_id/source_time/ingestionidตามcontractเพื่อdedup ไม่ใช้drop_duplicatesทุกcolumnsจนลบvalidrepeatและเปลี่ยนfrequency.</p><h3>12. Duplicates</h3>
+<p><code>df.duplicated()</code> หา row ซ้ำเชิงค่า แต่ไม่ได้ตอบว่าซ้ำ “เชิงความหมาย” หรือไม่</p>
+<p>เช่น purchase สองรายการที่เหมือนกันทุก column อาจเป็น transaction คนละเหตุการณ์</p>
+<p>ต้องรู้ key เช่น:</p>
+<pre><code class="language-text">event_id
+customer_id + timestamp + sequence
+</code></pre></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch04-objective-05" class="objective-proof"><summary>ตรวจ outliers โดยไม่ลบทิ้งอัตโนมัติ</summary><p>ตรวจ outliers โดยไม่ลบทิ้งอัตโนมัติ: ใช้กรณีในหัวข้อ Outliers เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch04-evidence-05"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch04-evidence-05-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch04-evidence-05-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch04-evidence-05-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch04-evidence-05-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch04-evidence-05-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch04-evidence-05-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch04-evidence-05-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch04-evidence-05-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>Medianใช้ลำดับจึงไวต่อextreme magnitudeน้อยกว่าmean. [1,2,100]mean34.33,median2; fitmedianจากtrainและเพิ่มmissingindicatorเมื่อmissingมีความหมาย. Robustไม่แปลว่าปลอดbiasทุกmissingness mechanism.</p><h3>11. Outliers</h3>
+<p>outlier อาจเป็น:</p>
+<ul>
+<li>sensor error</li>
+<li>data entry error</li>
+<li>rare but valid event</li>
+<li>target population จริง</li>
+</ul>
+<p>อย่าทำ:</p>
+<pre><code class="language-text">outlier → delete
+</code></pre>
+<p>โดยอัตโนมัติ</p>
+<p>ให้ตรวจ context, plot และ data provenance ก่อน</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch04-objective-06" class="objective-proof"><summary>ใช้ standardization / min-max scaling</summary><p>ใช้ standardization / min-max scaling: ใช้กรณีในหัวข้อ Scaling เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch04-evidence-06"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch04-evidence-06-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch04-evidence-06-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch04-evidence-06-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch04-evidence-06-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch04-evidence-06-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch04-evidence-06-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch04-evidence-06-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch04-evidence-06-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p><code>z=(x−μ_train)/σ_train</code>. train[1,3]มีμ2,σ_population1 จึงz[-1,1]; held-out5ได้3โดยใช้stateเดิม. σ0ต้องมีpolicy เช่นsafe denominator1 ไม่หารศูนย์.</p><h3>10. Scaling</h3>
+<h4>Standardization</h4>
+<pre><code class="language-text">z = (x - μ_train) / σ_train
+</code></pre>
+<p>mean/std ต้องมาจาก training set</p>
+<h4>Min-Max Scaling</h4>
+<pre><code class="language-text">x' = (x - min_train)/(max_train-min_train)
+</code></pre>
+<p>outlier มีผลมากกว่า standardization</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch04-objective-07" class="objective-proof"><summary>encode categorical features</summary><p>encode categorical features: ใช้กรณีในหัวข้อ Categorical Encoding เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch04-evidence-07"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch04-evidence-07-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch04-evidence-07-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch04-evidence-07-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch04-evidence-07-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch04-evidence-07-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch04-evidence-07-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch04-evidence-07-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch04-evidence-07-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>One-hot ใช้ nominal categories ที่ไม่มีลำดับเชิงปริมาณ. train['red','blue']สร้างสองcolumns; categoryใหม่ต้อง rejectหรือใช้unknown bucket/ignoreตามpolicyที่บันทึก ไม่fit vocabularyใหม่ในproductionจนcolumnorderเปลี่ยน.</p><h3>9. Categorical Encoding</h3>
+<h4>One-hot encoding</h4>
+<p>category:</p>
+<pre><code class="language-text">color ∈ {red, green, blue}
+</code></pre>
+<p>แปลงเป็น indicator columns</p>
+<pre><code class="language-text">color_red
+color_green
+color_blue
+</code></pre>
+<p>สำหรับ unseen category ใน production ต้องกำหนด policy เช่น ignore/unknown bucket</p>
+<h4>Ordinal encoding</h4>
+<p>ใช้เมื่อ order มีความหมายจริง เช่น:</p>
+<pre><code class="language-text">low &lt; medium &lt; high
+</code></pre>
+<p>อย่าสร้าง order ปลอมให้ nominal categories</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch04-objective-08" class="objective-proof"><summary>สร้าง features โดยไม่ใช้ข้อมูลอนาคต</summary><p>สร้าง features โดยไม่ใช้ข้อมูลอนาคต: ใช้กรณีในหัวข้อ Feature Engineering เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch04-evidence-08"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch04-evidence-08-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch04-evidence-08-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch04-evidence-08-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch04-evidence-08-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch04-evidence-08-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch04-evidence-08-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch04-evidence-08-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch04-evidence-08-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>IDอาจเป็นlabelระบุentity ไม่ใช่quantityที่ระยะห่างมีความหมาย. ID100กับ101ไม่ได้แปลว่าใกล้กว่าระหว่าง100กับ500เชิงพฤติกรรม; ตรวจentityleakageและใช้encodingที่เหมาะกับdeploymentgroups.</p><h3>13. Feature Engineering</h3>
+<p>ตัวอย่าง:</p>
+<ul>
+<li>age จาก birth_date</li>
+<li>total_price = quantity × unit_price</li>
+<li>hour/day-of-week จาก timestamp</li>
+<li>log transform สำหรับ positive skew</li>
+<li>interaction terms</li>
+</ul>
+<p>กฎสำคัญ:</p>
+<blockquote>
+<p>ทุก feature ต้องสร้างได้ด้วยข้อมูลที่มี ณ เวลาทำนายจริง</p>
+</blockquote>
+<p>ถ้าใช้ข้อมูลอนาคต = leakage</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch04-objective-09" class="objective-proof"><summary>split train / validation / test</summary><p>split train / validation / test: ใช้กรณีในหัวข้อ Dataset Splitting, Random Split vs Time Split, Stratification เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch04-evidence-09"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch04-evidence-09-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch04-evidence-09-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch04-evidence-09-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch04-evidence-09-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch04-evidence-09-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch04-evidence-09-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch04-evidence-09-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch04-evidence-09-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>Splitก่อนfitเพื่อให้ μ/σ/median/category vocabularyมาจากtrainเท่านั้น. เปลี่ยน held-out outlier แล้ว stateของpreprocessorต้องไม่เปลี่ยน; ถ้าใช้CVต้องfitภายในแต่ละfold ไม่fitครั้งเดียวก่อนแบ่งfold.</p><h3>14. Dataset Splitting</h3>
+<p>ทั่วไป:</p>
+<ul>
+<li>training — fit parameters</li>
+<li>validation — เลือก hyperparameters/model</li>
+<li>test — final unbiased estimate หลังตัดสินใจเสร็จ</li>
+</ul>
+<p>ตัวอย่าง:</p>
+<pre><code class="language-text">70% train
+15% validation
+15% test
+</code></pre>
+<p>ไม่มีกฎว่าต้องเป็นสัดส่วนนี้เสมอ</p>
+<h3>15. Random Split vs Time Split</h3>
+<p>Random split เหมาะเมื่อ samples approximately exchangeable</p>
+<p>Time-dependent data:</p>
+<pre><code class="language-text">past → train
+later → validation
+future → test
+</code></pre>
+<p>ห้าม shuffle future เข้าอดีตถ้า deployment จริงทำนายอนาคต</p>
+<h3>16. Stratification</h3>
+<p>Classification dataset ที่ class imbalance มาก อาจใช้ stratified split เพื่อรักษาสัดส่วน classes ใกล้เคียงกัน</p>
+<p>แต่ stratification ไม่แก้ปัญหา imbalance ทั้งหมด</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch04-objective-10" class="objective-proof"><summary>อธิบาย data leakage หลายชนิด</summary><p>อธิบาย data leakage หลายชนิด: ใช้กรณีในหัวข้อ Data Leakage เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch04-evidence-10"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch04-evidence-10-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch04-evidence-10-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch04-evidence-10-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch04-evidence-10-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch04-evidence-10-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch04-evidence-10-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch04-evidence-10-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch04-evidence-10-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>Leakage คือการใช้ข้อมูลที่ไม่ควรรู้ ณ ขั้นฝึก/เลือกโมเดล เช่นscalerfitจากtest หรือfeatureสร้างจากlabelอนาคต. ตรวจ data lineageและเวลาที่แต่ละfeatureพร้อมใช้; scoreสูงผิดปกติเป็นสัญญาณ ไม่ใช่หลักฐานสรุปสาเหตุอย่างเดียว.</p><h3>17. Data Leakage</h3>
+<h4>Target leakage</h4>
+<p>feature มีข้อมูลที่เกิดหลัง target หรือ encode target โดยตรง</p>
+<h4>Train-test contamination</h4>
+<p>fit preprocessing กับ full dataset</p>
+<h4>Duplicate leakage</h4>
+<p>record/บุคคล/เหตุการณ์เดียวกันโผล่ทั้ง train และ test</p>
+<h4>Group leakage</h4>
+<p>ตัวอย่างจาก entity เดียวกันกระจายหลาย split ทั้งที่ deployment เจอ entity ใหม่</p>
+<h4>Time leakage</h4>
+<p>ใช้ future information ทำนายอดีต</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch04-objective-11" class="objective-proof"><summary>รับมือ class imbalance ในระดับพื้นฐาน</summary><p>รับมือ class imbalance ในระดับพื้นฐาน: ใช้กรณีในหัวข้อ Imbalanced Data เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch04-evidence-11"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch04-evidence-11-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch04-evidence-11-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch04-evidence-11-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch04-evidence-11-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch04-evidence-11-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch04-evidence-11-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch04-evidence-11-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch04-evidence-11-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>18. Imbalanced Data</h3>
+<p>Accuracy อาจหลอกได้</p>
+<p>ถ้า 99% เป็น class 0 การทาย 0 ตลอดได้ accuracy 99% แต่ model ไม่มีประโยชน์ต่อ minority class</p>
+<p>บท classification จะเรียน precision/recall/F1/ROC/PR ลึกขึ้น</p><h3>18. Imbalanced Data</h3>
+<p>Accuracy อาจหลอกได้</p>
+<p>ถ้า 99% เป็น class 0 การทาย 0 ตลอดได้ accuracy 99% แต่ model ไม่มีประโยชน์ต่อ minority class</p>
+<p>บท classification จะเรียน precision/recall/F1/ROC/PR ลึกขึ้น</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch04-objective-12" class="objective-proof"><summary>สร้าง reusable preprocessing pipeline</summary><p>สร้าง reusable preprocessing pipeline: ใช้กรณีในหัวข้อ From Scratch, scikit-learn Perspective เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch04-evidence-12"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch04-evidence-12-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch04-evidence-12-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch04-evidence-12-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch04-evidence-12-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch04-evidence-12-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch04-evidence-12-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch04-evidence-12-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch04-evidence-12-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>fitmin/maxต่อfeatureบนtrain, transform=(X−min)/(max−min)โดยsafe denominator1สำหรับconstant. train[2,4]→[0,1],held-out6→2ซึ่งถูกต้องสำหรับextrapolation; อย่าclipโดยไม่ประกาศpolicy.</p><h3>20. From Scratch</h3>
+<p>ดู <a href="src/preprocessing.py">src/preprocessing.py</a></p>
+<p>เราสร้าง:</p>
+<ul>
+<li>train/validation/test index split</li>
+<li>Standardizer ที่มี <code>fit</code> / <code>transform</code></li>
+<li>median imputer</li>
+<li>one-hot encoder แบบพื้นฐาน</li>
+</ul>
+<p>เป้าหมายคือเข้าใจ state ที่ preprocessing เรียนจาก train</p>
+<h3>21. scikit-learn Perspective</h3>
+<p>ใน production-oriented workflow นิยมประกอบ preprocessing ด้วย:</p>
+<ul>
+<li><code>SimpleImputer</code></li>
+<li><code>StandardScaler</code></li>
+<li><code>OneHotEncoder</code></li>
+<li><code>ColumnTransformer</code></li>
+<li><code>Pipeline</code></li>
+</ul>
+<p>ข้อดีคือ fit/transform state ถูกผูกกับ pipeline ลดโอกาส leakage</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details></section><section id="implementation" class="canonical-section"><h2>Implementation และ tests ที่รันบนเครื่องได้</h2><details><summary>04-data/src/preprocessing.py</summary><pre><code>&quot;&quot;&quot;Educational preprocessing utilities implemented from first principles.&quot;&quot;&quot;
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Hashable, Sequence
+
+import numpy as np
+
+
+def split_indices(
+    n_samples: int,
+    *,
+    train_fraction: float = 0.7,
+    validation_fraction: float = 0.15,
+    seed: int = 42,
+) -&gt; tuple[np.ndarray, np.ndarray, np.ndarray]:
+    if n_samples &lt;= 0:
+        raise ValueError(&quot;n_samples must be positive&quot;)
+    if not 0 &lt; train_fraction &lt; 1:
+        raise ValueError(&quot;train_fraction must be in (0, 1)&quot;)
+    if not 0 &lt;= validation_fraction &lt; 1:
+        raise ValueError(&quot;validation_fraction must be in [0, 1)&quot;)
+    if train_fraction + validation_fraction &gt;= 1:
+        raise ValueError(&quot;train + validation fractions must be &lt; 1&quot;)
+
+    rng = np.random.default_rng(seed)
+    indices = rng.permutation(n_samples)
+
+    train_end = int(n_samples * train_fraction)
+    validation_end = train_end + int(n_samples * validation_fraction)
+
+    return (
+        indices[:train_end],
+        indices[train_end:validation_end],
+        indices[validation_end:],
+    )
+
+
+@dataclass
+class Standardizer:
+    mean_: np.ndarray | None = None
+    scale_: np.ndarray | None = None
+
+    def fit(self, X: np.ndarray) -&gt; &quot;Standardizer&quot;:
+        X = _as_2d_float(X)
+        self.mean_ = X.mean(axis=0)
+        scale = X.std(axis=0, ddof=0)
+        self.scale_ = np.where(scale == 0.0, 1.0, scale)
+        return self
+
+    def transform(self, X: np.ndarray) -&gt; np.ndarray:
+        if self.mean_ is None or self.scale_ is None:
+            raise RuntimeError(&quot;Standardizer must be fit before transform&quot;)
+        X = _as_2d_float(X)
+        if X.shape[1] != self.mean_.shape[0]:
+            raise ValueError(&quot;feature count differs from fitted data&quot;)
+        return (X - self.mean_) / self.scale_
+
+    def fit_transform(self, X: np.ndarray) -&gt; np.ndarray:
+        return self.fit(X).transform(X)
+
+
+@dataclass
+class MedianImputer:
+    median_: np.ndarray | None = None
+
+    def fit(self, X: np.ndarray) -&gt; &quot;MedianImputer&quot;:
+        X = _as_2d_float(X)
+        if np.any(np.all(np.isnan(X), axis=0)):
+            raise ValueError(&quot;cannot fit a column containing only NaN&quot;)
+        self.median_ = np.nanmedian(X, axis=0)
+        return self
+
+    def transform(self, X: np.ndarray) -&gt; np.ndarray:
+        if self.median_ is None:
+            raise RuntimeError(&quot;MedianImputer must be fit before transform&quot;)
+        X = _as_2d_float(X).copy()
+        if X.shape[1] != self.median_.shape[0]:
+            raise ValueError(&quot;feature count differs from fitted data&quot;)
+        rows, cols = np.where(np.isnan(X))
+        X[rows, cols] = self.median_[cols]
+        return X
+
+
+@dataclass
+class SimpleOneHotEncoder:
+    categories_: list[list[Hashable]] | None = None
+
+    def fit(self, X: Sequence[Sequence[Hashable]]) -&gt; &quot;SimpleOneHotEncoder&quot;:
+        rows = [list(row) for row in X]
+        if not rows:
+            raise ValueError(&quot;X must not be empty&quot;)
+        width = len(rows[0])
+        if width == 0 or any(len(row) != width for row in rows):
+            raise ValueError(&quot;X must be a non-empty rectangular table&quot;)
+
+        self.categories_ = []
+        for column in range(width):
+            values = sorted({row[column] for row in rows}, key=str)
+            self.categories_.append(values)
+        return self
+
+    def transform(self, X: Sequence[Sequence[Hashable]]) -&gt; np.ndarray:
+        if self.categories_ is None:
+            raise RuntimeError(&quot;encoder must be fit before transform&quot;)
+
+        rows = [list(row) for row in X]
+        width = len(self.categories_)
+        if any(len(row) != width for row in rows):
+            raise ValueError(&quot;feature count differs from fitted data&quot;)
+
+        output_width = sum(len(cats) for cats in self.categories_)
+        output = np.zeros((len(rows), output_width), dtype=float)
+
+        offsets = np.cumsum([0] + [len(cats) for cats in self.categories_[:-1]])
+        for row_index, row in enumerate(rows):
+            for column_index, value in enumerate(row):
+                categories = self.categories_[column_index]
+                if value in categories:
+                    category_index = categories.index(value)
+                    output[row_index, offsets[column_index] + category_index] = 1.0
+                # Unknown categories intentionally become all-zero for this column.
+        return output
+
+
+def _as_2d_float(X: np.ndarray) -&gt; np.ndarray:
+    array = np.asarray(X, dtype=float)
+    if array.ndim != 2:
+        raise ValueError(f&quot;expected 2D array, got shape {array.shape}&quot;)
+    if array.shape[0] == 0 or array.shape[1] == 0:
+        raise ValueError(&quot;array must have at least one row and one column&quot;)
+    return array
+</code></pre></details><details><summary>04-data/tests/test_preprocessing.py</summary><pre><code>from pathlib import Path
+import importlib.util
+import sys
+
+import numpy as np
+import pytest
+
+
+MODULE_PATH = Path(__file__).parents[1] / &quot;src&quot; / &quot;preprocessing.py&quot;
+SPEC = importlib.util.spec_from_file_location(&quot;preprocessing&quot;, MODULE_PATH)
+assert SPEC and SPEC.loader
+prep = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = prep
+SPEC.loader.exec_module(prep)
+
+
+def test_split_indices_are_disjoint_and_complete() -&gt; None:
+    train, val, test = prep.split_indices(20, seed=7)
+    combined = np.concatenate([train, val, test])
+
+    assert len(set(train) &amp; set(val)) == 0
+    assert len(set(train) &amp; set(test)) == 0
+    assert len(set(val) &amp; set(test)) == 0
+    assert sorted(combined.tolist()) == list(range(20))
+
+
+def test_standardizer_fits_training_statistics() -&gt; None:
+    X_train = np.array([[1.0, 10.0], [3.0, 10.0], [5.0, 10.0]])
+    scaler = prep.Standardizer().fit(X_train)
+
+    transformed = scaler.transform(X_train)
+
+    assert transformed[:, 0].mean() == pytest.approx(0.0)
+    assert transformed[:, 0].std(ddof=0) == pytest.approx(1.0)
+    assert np.all(transformed[:, 1] == 0.0)
+
+
+def test_standardizer_uses_same_train_state_for_test() -&gt; None:
+    X_train = np.array([[0.0], [2.0]])
+    X_test = np.array([[10.0]])
+
+    scaler = prep.Standardizer().fit(X_train)
+
+    assert scaler.transform(X_test)[0, 0] == pytest.approx(9.0)
+
+
+def test_median_imputer() -&gt; None:
+    X_train = np.array([[1.0, 10.0], [3.0, np.nan], [100.0, 30.0]])
+    imputer = prep.MedianImputer().fit(X_train)
+    result = imputer.transform(np.array([[np.nan, np.nan]]))
+
+    assert result[0, 0] == 3.0
+    assert result[0, 1] == 20.0
+
+
+def test_one_hot_unknown_category_is_all_zero_for_feature() -&gt; None:
+    encoder = prep.SimpleOneHotEncoder().fit([[&quot;red&quot;], [&quot;blue&quot;]])
+    encoded = encoder.transform([[&quot;green&quot;]])
+
+    assert encoded.shape == (1, 2)
+    assert encoded.sum() == 0.0
+</code></pre></details></section><section id="glossary" class="canonical-section"><h2>อภิธานศัพท์ — คำไทย ความหมาย และข้อควรตรวจ</h2><dl><dt>tensor</dt><dd>เทนเซอร์: ชุดตัวเลขที่มีแกน เช่น scalar ไม่มีแกน, vector หนึ่งแกน, matrix สองแกน; shape บอกขนาดแต่ละแกน ไม่บอกความหมายของแกนจนกว่าจะระบุ</dd><dt>shape</dt><dd>รูปทรงข้อมูล: (B,T,d) หมายถึง batch × เวลา/ตำแหน่ง × features; ใช้ชื่อแกนกำกับเสมอ การ transpose เปลี่ยนแกนแต่ไม่ใช่แค่เปลี่ยนชื่อ</dd><dt>batch</dt><dd>กลุ่มตัวอย่างที่คำนวณร่วมกันหนึ่งครั้ง; B คือจำนวนตัวอย่าง ไม่ใช่จำนวน features หรือจำนวน optimizer updates</dd><dt>weight w / θ</dt><dd>น้ำหนักหรือพารามิเตอร์ที่โมเดลใช้คำนวณ; แก้ด้วยมือทำ forward ใหม่ ส่วน optimizer ต้องรับ gradient แล้วกด update จึงแก้ state</dd><dt>bias b</dt><dd>ค่าคงที่ที่บวกกับผลเชิงเส้น; regression scalar bias เพิ่ม Δ ทำให้ prediction ทุกจุดเพิ่ม Δ เท่ากัน</dd><dt>prediction ŷ</dt><dd>ค่าที่โมเดลทำนายจาก input และพารามิเตอร์ปัจจุบัน; เครื่องหมายหมวกแยกจาก target y ที่มาจากข้อมูล</dd><dt>residual e</dt><dd>ความคลาดเคลื่อน ในเว็บนี้นิยาม prediction − target; บางตำราใช้เครื่องหมายกลับกัน จึงต้องตรวจนิยามก่อนเทียบสูตร gradient</dd><dt>MSE</dt><dd>mean squared error = ผลรวม residual กำลังสองหารจำนวนรายการที่ระบุ; มีหน่วยเป็น target ยกกำลังสอง และการใช้ sum แทน mean เปลี่ยน scale gradient</dd><dt>loss L / objective J</dt><dd>จำนวนที่ optimizer ต้องการลด; objective อาจรวม data loss และ regularization จึงต้องดูองค์ประกอบและ reduction ให้ตรง implementation</dd><dt>gradient ∇ / ∂</dt><dd>เวกเตอร์ของ partial derivatives บอกอัตราเปลี่ยน loss ต่อพารามิเตอร์แต่ละตัว; ∂ ใช้เมื่อเปลี่ยนตัวหนึ่งโดยตรึงตัวอื่น</dd><dt>chain rule</dt><dd>กฎลูกโซ่: คูณอนุพันธ์ตามเส้นทาง และบวก contribution จากทุกเส้นทางที่มารวมกัน ใช้ย้อนจาก loss ถึง weights</dd><dt>learning rate η</dt><dd>ขนาดตัวคูณ gradient ใน update θnew=θ−ηg; η≥0, ศูนย์หมายถึงไม่มีการขยับพารามิเตอร์ ก้าวใหญ่เกินอาจ diverge</dd><dt>regularization λ</dt><dd>ตัวคูณค่าลงโทษ ต้อง λ≥0 ตามนิยามการลงโทษ; Ridge λΣw² เพิ่ม gradient 2λw โดยบท Regression นี้ไม่ลงโทษ bias</dd><dt>baseline</dt><dd>สถานะอ้างอิงที่ตรึงไว้สำหรับเทียบ; ต้องเก็บ snapshot ไม่อ้าง object ปัจจุบันที่แก้ตามไปด้วย</dd><dt>invariant</dt><dd>คุณสมบัติที่กลไกต้องรักษา เช่น probability รวม1, shape สอดคล้อง, queue ไม่เกิน capacity; ใช้ tests ตรวจได้มากกว่าดูภาพสวย</dd><dt>optimizer state</dt><dd>ความจำของอัลกอริทึม เช่น velocity, moments และ completed updates; คืนเฉพาะ weights ยังไม่เท่ากับเริ่มการฝึกใหม่ทั้งหมด</dd><dt>finite difference</dt><dd>ประมาณ derivative ด้วย [f(x+h)−f(x−h)]/(2h); h&gt;0, ใช้ smooth point และลองหลาย h เพื่อแยก truncation error จาก roundoff</dd><dt>softmax</dt><dd>แปลง logits เป็นความน่าจะเป็นตามแกนที่กำหนด; ลบ max ก่อน exp เพื่อความเสถียร และ fully masked row ต้องมีนโยบายชัดเจน</dd><dt>logit</dt><dd>คะแนนก่อน sigmoid/softmax ไม่ใช่ probability; อาจเป็นจำนวนจริงติดลบหรือเกิน1ได้ จึงห้ามส่งให้ loss ที่คาด probability โดยไม่แปลง</dd><dt>temperature τ / T</dt><dd>ตัวหาร logits ก่อน softmax; ต้องเป็นบวก ค่าเล็กทำ distribution แหลมขึ้น โดยไม่เท่ากับ retrain weights</dd><dt>mask</dt><dd>ตัวกำหนดตำแหน่งที่อ่านหรือคิด loss ได้; causal mask ปิดอนาคต, padding mask ปิดข้อมูลเติม, loss mask เลือก target แต่ละอย่างคนละหน้าที่</dd><dt>Q / K / V</dt><dd>query ใช้ค้นข้อมูล, key ใช้จับคู่ query, value เป็นข้อมูลที่ถูกถัวเฉลี่ย; เป็น learned projections ของ representation ไม่ใช่ป้ายความหมายตายตัว</dd><dt>head</dt><dd>ส่วนของ feature representation ที่ทำ attention แยกกัน แล้ว concat/project กลับ; ต้องตรวจ d_model หารจำนวน heads ลงตัว</dd><dt>ε-neighborhood</dt><dd>เพื่อนบ้านทั้งหมดที่มีระยะไม่เกิน ε รวมจุดตัวเองใน DBSCAN นี้; ε มีหน่วยเดียวกับพิกัด ไม่ใช่จำนวน k ที่ใช้โหวต</dd><dt>core / border / noise</dt><dd>DBSCAN core มีเพื่อนบ้านรวมตัวเองถึง min_samples; border อยู่ใกล้ core แต่เพื่อนบ้านไม่ถึง; noise ไม่ถูกเชื่อมกับ core cluster ใด</dd><dt>bootstrap</dt><dd>สุ่ม observations แบบ replacement ขนาดเท่าเดิมซ้ำหลายครั้งแล้วคำนวณ statistic ใหม่; seed ทำให้ตรวจซ้ำได้ แต่ไม่แก้สมมติฐาน IID ที่ผิด</dd><dt>confidence interval</dt><dd>ช่วงที่สร้างด้วย procedure ที่มี coverage ตามสมมติฐาน; ช่วงหนึ่งที่ได้แล้วไม่ใช่ posterior probability ของ parameter และ sample เล็กยังไม่แน่นอนมาก</dd><dt>validation / test</dt><dd>validation ใช้เลือกโมเดล/ค่าตั้ง ส่วน test ใช้ประเมินหลัง freeze การตัดสินใจ; fit preprocessing/tokenizer จาก test เป็น leakage</dd><dt>leakage</dt><dd>ข้อมูลที่ควรยังไม่รู้ไหลเข้า training/การเลือกโมเดล เช่น future feature หรือเอกสารซ้ำข้าม split ทำให้ metric ดูดีเกินการใช้งานจริง</dd><dt>queue / capacity</dt><dd>queue คือรายการรอ, capacity การให้บริการรวม = workers × service rate ตามแบบจำลอง; เพิ่ม timeout ไม่เพิ่มกำลังประมวลผล</dd><dt>state transition</dt><dd>การเปลี่ยนสถานะเมื่อเกิดเหตุการณ์ที่อนุญาต เช่น queued→active→done; ต้องระบุ guard, side effect และเหตุผลเมื่อ transition ถูกปฏิเสธ</dd><dt>latency / throughput</dt><dd>latency คือเวลาต่อคำขอ, throughput คือปริมาณงานต่อหน่วยเวลา; batching อาจเพิ่ม throughput แต่เพิ่มเวลารอ จึงต้องวัดทั้งคู่</dd><dt>idempotency</dt><dd>ทำคำขอ business operation เดิมซ้ำแล้ว side effect เกิดครั้งเดียวตาม key และ transaction protocol; ไม่ได้รับประกันจากการใช้ UUID ใหม่ทุก attempt</dd><dt>local lab</dt><dd>โปรแกรม Python และ tests ที่ผู้เรียนรันบนเครื่อง; เว็บเก็บเพียงคำยืนยันของผู้เรียน การผ่าน tests ของโค้ดต้นแบบไม่ใช่ผลตรวจโค้ดผู้เรียน</dd></dl></section></article>
+<section id="practice" class="practice-section"><span class="eyebrow">PRACTICE · DEBUG · BUILD</span><h2>พิสูจน์ด้วยการลงมือทำ</h2><div id="web-checks"></div><div class="retry-actions"><button class="secondary-button" id="retry-checks">เริ่มทำโจทย์ในเว็บใหม่</button><button class="text-button" id="undo-retry" hidden>คืนผลก่อนเริ่มใหม่</button></div><div id="exercise-content"><h2>แบบฝึก 20 ข้อ — เฉลยเฉพาะข้อ</h2><p>ทำคำตอบก่อนเปิด hints; โจทย์ปลายเปิดให้ใช้ตัวอย่างคำตอบและหลักฐานราย objective ตรวจงานจริง</p><section id="exercise-1" class="exercise-item"><h3>ข้อ 1</h3><p>sample, feature, target ต่างกันอย่างไร?</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Core Vocabulary: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): Sample คือหน่วยตัวอย่างหนึ่งหน่วย,feature คือข้อมูลที่รู้ตอนทำนาย,target คือสิ่งที…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: Sample คือหน่วยตัวอย่างหนึ่งหน่วย,feature คือข้อมูลที่รู้ตอนทำนาย,target คือสิ่งที่ต้องทำนาย. งานพยากรณ์รายวัน sample=(ร้าน,วันที่),feature=ยอดอดีต…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>Sample คือหน่วยตัวอย่างหนึ่งหน่วย,feature คือข้อมูลที่รู้ตอนทำนาย,target คือสิ่งที่ต้องทำนาย. งานพยากรณ์รายวัน sample=(ร้าน,วันที่),feature=ยอดอดีต,target=ยอดวันถัดไป; targetอนาคตห้ามหลุดกลับเข้า features.</p><p>อ้างอิง: <a href="#chapter-4/section/topic-5">Core Vocabulary</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch04-exercise-01"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-2" class="exercise-item"><h3>ข้อ 2</h3><p>schema คืออะไร?</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Data Contracts: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): Schema ระบุชื่อ/ชนิด/range/nullabilityและความหมายของข้อมูล. ตัวอย่าง age:int≥0,ta…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: Schema ระบุชื่อ/ชนิด/range/nullabilityและความหมายของข้อมูล. ตัวอย่าง age:int≥0,target∈{0,1}; CSVที่อ่านผ่านยังผิด schemaได้. แยก missing optional …</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>Schema ระบุชื่อ/ชนิด/range/nullabilityและความหมายของข้อมูล. ตัวอย่าง age:int≥0,target∈{0,1}; CSVที่อ่านผ่านยังผิด schemaได้. แยก missing optional column ออกจาก required columnหายและรายงาน path/rowที่ผิด.</p><p>อ้างอิง: <a href="#chapter-4/section/topic-19">Data Contracts</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch04-exercise-02"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-3" class="exercise-item"><h3>ข้อ 3</h3><p>standardization สูตรอะไร?</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Scaling: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): <code>z=(x−μ_train)/σ_train</code>. train[1,3]มีμ2,σ_population1 จึงz…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: <code>z=(x−μ_train)/σ_train</code>. train[1,3]มีμ2,σ_population1 จึงz[-1,1]; held-out5ได้3โดยใช้stateเดิม. σ0ต้องมี…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p><code>z=(x−μ_train)/σ_train</code>. train[1,3]มีμ2,σ_population1 จึงz[-1,1]; held-out5ได้3โดยใช้stateเดิม. σ0ต้องมีpolicy เช่นsafe denominator1 ไม่หารศูนย์.</p><p>อ้างอิง: <a href="#chapter-4/section/topic-10">Scaling</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch04-exercise-03"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-4" class="exercise-item"><h3>ข้อ 4</h3><p>one-hot encoding ใช้กับข้อมูลแบบใด?</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Categorical Encoding: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): One-hot ใช้ nominal categories ที่ไม่มีลำดับเชิงปริมาณ. train['red','blue']สร้างสองcol…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: One-hot ใช้ nominal categories ที่ไม่มีลำดับเชิงปริมาณ. train['red','blue']สร้างสองcolumns; categoryใหม่ต้อง rejectหรือใช้unknown bucket/ignoreตามpolicyที่…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>One-hot ใช้ nominal categories ที่ไม่มีลำดับเชิงปริมาณ. train['red','blue']สร้างสองcolumns; categoryใหม่ต้อง rejectหรือใช้unknown bucket/ignoreตามpolicyที่บันทึก ไม่fit vocabularyใหม่ในproductionจนcolumnorderเปลี่ยน.</p><p>อ้างอิง: <a href="#chapter-4/section/topic-9">Categorical Encoding</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch04-exercise-04"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-5" class="exercise-item"><h3>ข้อ 5</h3><p>data leakage คืออะไร?</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Data Leakage: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): Leakage คือการใช้ข้อมูลที่ไม่ควรรู้ ณ ขั้นฝึก/เลือกโมเดล เช่นscalerfitจากtest หรือfeatu…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: Leakage คือการใช้ข้อมูลที่ไม่ควรรู้ ณ ขั้นฝึก/เลือกโมเดล เช่นscalerfitจากtest หรือfeatureสร้างจากlabelอนาคต. ตรวจ data lineageและเวลาที่แต่ละfeatureพร้อมใช้…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>Leakage คือการใช้ข้อมูลที่ไม่ควรรู้ ณ ขั้นฝึก/เลือกโมเดล เช่นscalerfitจากtest หรือfeatureสร้างจากlabelอนาคต. ตรวจ data lineageและเวลาที่แต่ละfeatureพร้อมใช้; scoreสูงผิดปกติเป็นสัญญาณ ไม่ใช่หลักฐานสรุปสาเหตุอย่างเดียว.</p><p>อ้างอิง: <a href="#chapter-4/section/topic-17">Data Leakage</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch04-exercise-05"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-6" class="exercise-item"><h3>ข้อ 6</h3><p>ทำไมต้อง split ก่อน fit scaler?</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Dataset Splitting, Data Leakage: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): Splitก่อนfitเพื่อให้ μ/σ/median/category vocabularyมาจากtrainเท่านั้น. เปลี่ยน…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: Splitก่อนfitเพื่อให้ μ/σ/median/category vocabularyมาจากtrainเท่านั้น. เปลี่ยน held-out outlier แล้ว stateของpreprocessorต้องไม่เปลี่ยน; ถ้าใ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>Splitก่อนfitเพื่อให้ μ/σ/median/category vocabularyมาจากtrainเท่านั้น. เปลี่ยน held-out outlier แล้ว stateของpreprocessorต้องไม่เปลี่ยน; ถ้าใช้CVต้องfitภายในแต่ละfold ไม่fitครั้งเดียวก่อนแบ่งfold.</p><p>อ้างอิง: <a href="#chapter-4/section/topic-14">Dataset Splitting</a>, <a href="#chapter-4/section/topic-17">Data Leakage</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch04-exercise-06"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-7" class="exercise-item"><h3>ข้อ 7</h3><p>ทำไม ID ไม่ควรถือเป็น continuous feature โดยอัตโนมัติ?</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Data Types, Feature Engineering: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): IDอาจเป็นlabelระบุentity ไม่ใช่quantityที่ระยะห่างมีความหมาย. ID100กับ10…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: IDอาจเป็นlabelระบุentity ไม่ใช่quantityที่ระยะห่างมีความหมาย. ID100กับ101ไม่ได้แปลว่าใกล้กว่าระหว่าง100กับ500เชิงพฤติกรรม; ตรวจenti…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>IDอาจเป็นlabelระบุentity ไม่ใช่quantityที่ระยะห่างมีความหมาย. ID100กับ101ไม่ได้แปลว่าใกล้กว่าระหว่าง100กับ500เชิงพฤติกรรม; ตรวจentityleakageและใช้encodingที่เหมาะกับdeploymentgroups.</p><p>อ้างอิง: <a href="#chapter-4/section/topic-6">Data Types</a>, <a href="#chapter-4/section/topic-13">Feature Engineering</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch04-exercise-07"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-8" class="exercise-item"><h3>ข้อ 8</h3><p>median imputation มีข้อดีอะไรเมื่อมี outlier?</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Numeric Imputation, Outliers: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): Medianใช้ลำดับจึงไวต่อextreme magnitudeน้อยกว่าmean. [1,2,100]mean34.33,media…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: Medianใช้ลำดับจึงไวต่อextreme magnitudeน้อยกว่าmean. [1,2,100]mean34.33,median2; fitmedianจากtrainและเพิ่มmissingindicatorเมื่อmissingมีควา…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>Medianใช้ลำดับจึงไวต่อextreme magnitudeน้อยกว่าmean. [1,2,100]mean34.33,median2; fitmedianจากtrainและเพิ่มmissingindicatorเมื่อmissingมีความหมาย. Robustไม่แปลว่าปลอดbiasทุกmissingness mechanism.</p><p>อ้างอิง: <a href="#chapter-4/section/topic-8">Numeric Imputation</a>, <a href="#chapter-4/section/topic-11">Outliers</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch04-exercise-08"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-9" class="exercise-item"><h3>ข้อ 9</h3><p>random split ผิดอย่างไรใน forecasting?</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Random Split vs Time Split: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): Randomshuffleทำให้ข้อมูลอนาคตเข้าฝึกก่อนพยากรณ์อดีตและอาจให้rollingfeaturesข้…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: Randomshuffleทำให้ข้อมูลอนาคตเข้าฝึกก่อนพยากรณ์อดีตและอาจให้rollingfeaturesข้ามเวลา. ใช้time-orderedหรือwalk-forward splitและgapเมื่อlabel…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>Randomshuffleทำให้ข้อมูลอนาคตเข้าฝึกก่อนพยากรณ์อดีตและอาจให้rollingfeaturesข้ามเวลา. ใช้time-orderedหรือwalk-forward splitและgapเมื่อlabelwindowsซ้อนกัน; testsตรวจmax(train_time)&lt;min(val_time).</p><p>อ้างอิง: <a href="#chapter-4/section/topic-15">Random Split vs Time Split</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch04-exercise-09"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-10" class="exercise-item"><h3>ข้อ 10</h3><p>duplicate row กับ duplicate event ต่างกันอย่างไร?</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Duplicates: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): แถวเหมือนกันอาจเป็นretryduplicate eventหรือคนซื้อสินค้าซ้ำจริง. ใช้event_i…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: แถวเหมือนกันอาจเป็นretryduplicate eventหรือคนซื้อสินค้าซ้ำจริง. ใช้event_id/source_time/ingestionidตามcontractเพื่อdedup ไม่ใช้drop_du…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>แถวเหมือนกันอาจเป็นretryduplicate eventหรือคนซื้อสินค้าซ้ำจริง. ใช้event_id/source_time/ingestionidตามcontractเพื่อdedup ไม่ใช้drop_duplicatesทุกcolumnsจนลบvalidrepeatและเปลี่ยนfrequency.</p><p>อ้างอิง: <a href="#chapter-4/section/topic-12">Duplicates</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch04-exercise-10"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-11" class="exercise-item"><h3>ข้อ 11</h3><p>เพิ่ม MinMaxScaler ใน <code>preprocessing.py</code></p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Scaling, From Scratch: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): fitmin/maxต่อfeatureบนtrain, transform=(X−min)/(max−min)โดยsafe denomin…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: fitmin/maxต่อfeatureบนtrain, transform=(X−min)/(max−min)โดยsafe denominator1สำหรับconstant. train[2,4]→[0,1],held-out6→2ซึ่งถูกต…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>fitmin/maxต่อfeatureบนtrain, transform=(X−min)/(max−min)โดยsafe denominator1สำหรับconstant. train[2,4]→[0,1],held-out6→2ซึ่งถูกต้องสำหรับextrapolation; อย่าclipโดยไม่ประกาศpolicy.</p><p>อ้างอิง: <a href="#chapter-4/section/topic-10">Scaling</a>, <a href="#chapter-4/section/topic-20">From Scratch</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch04-exercise-11"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-12" class="exercise-item"><h3>ข้อ 12</h3><p>เพิ่ม most-frequent categorical imputer</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Missing Values, Categorical Encoding: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): นับค่าที่ไม่missingต่อcolumn เลือกmodeด้วยtie-breakที่deterministicแล้วเก…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: นับค่าที่ไม่missingต่อcolumn เลือกmodeด้วยtie-breakที่deterministicแล้วเก็บstate. ['b',None,'a','b']fillเป็นb; all-missingต้องfallba…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>นับค่าที่ไม่missingต่อcolumn เลือกmodeด้วยtie-breakที่deterministicแล้วเก็บstate. ['b',None,'a','b']fillเป็นb; all-missingต้องfallbackที่ประกาศหรือreject ไม่เลือกcategoryจากvalidation.</p><p>อ้างอิง: <a href="#chapter-4/section/topic-7">Missing Values</a>, <a href="#chapter-4/section/topic-9">Categorical Encoding</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch04-exercise-12"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-13" class="exercise-item"><h3>ข้อ 13</h3><p>เขียน function ตรวจ numeric range ตาม schema</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Data Contracts: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ตรวจfinite,typeและlower/upperboundsที่รวม/ไม่รวมขอบตามschema. age[…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ตรวจfinite,typeและlower/upperboundsที่รวม/ไม่รวมขอบตามschema. age[0,120]ผ่านเมื่อboundsinclusive; -1,121,NaNต้องมีissu…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ตรวจfinite,typeและlower/upperboundsที่รวม/ไม่รวมขอบตามschema. age[0,120]ผ่านเมื่อboundsinclusive; -1,121,NaNต้องมีissueที่ระบุrow,column,rule โดยไม่แปลงเป็น0เงียบ ๆ.</p><p>อ้างอิง: <a href="#chapter-4/section/topic-19">Data Contracts</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch04-exercise-13"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-14" class="exercise-item"><h3>ข้อ 14</h3><p>split DataFrame ตาม indices ที่สร้าง</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Dataset Splitting: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ใช้<code>df.iloc[indices]</code>เมื่อsplitterคืนpositionalindices ไม่ใช่locที่อิงind…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ใช้<code>df.iloc[indices]</code>เมื่อsplitterคืนpositionalindices ไม่ใช่locที่อิงindexlabels. ทดสอบindexlabels[10,20,30]กับtrain_idx[0,2]ต้องไ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ใช้<code>df.iloc[indices]</code>เมื่อsplitterคืนpositionalindices ไม่ใช่locที่อิงindexlabels. ทดสอบindexlabels[10,20,30]กับtrain_idx[0,2]ต้องได้rows10,30; ตรวจsplitsไม่ซ้ำและครอบคลุมตามcontract.</p><p>อ้างอิง: <a href="#chapter-4/section/topic-14">Dataset Splitting</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch04-exercise-14"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-15" class="exercise-item"><h3>ข้อ 15</h3><p>สร้าง missing-indicator feature</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Missing Values, Feature Engineering: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): สร้างindicatorจากmissingmaskก่อนimputation เช่น[1,NaN,3]→indicator[0,1,0]…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: สร้างindicatorจากmissingmaskก่อนimputation เช่น[1,NaN,3]→indicator[0,1,0]. fitmedianแล้วเติมค่าคนละขั้น เก็บลำดับcolumns; missingin…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>สร้างindicatorจากmissingmaskก่อนimputation เช่น[1,NaN,3]→indicator[0,1,0]. fitmedianแล้วเติมค่าคนละขั้น เก็บลำดับcolumns; missingindicatorของtargetไม่ควรเป็นfeatureที่deploymentไม่มี.</p><p>อ้างอิง: <a href="#chapter-4/section/topic-7">Missing Values</a>, <a href="#chapter-4/section/topic-13">Feature Engineering</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch04-exercise-15"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-16" class="exercise-item"><h3>ข้อ 16</h3><p>scaler ถูก fit บน full dataset — อธิบาย leakage และแก้</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Data Leakage: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ย้ายscaler.fitเข้าtrain-onlypipelineหรือแต่ละCVfold. เปลี่ยนtestoutlierจา…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ย้ายscaler.fitเข้าtrain-onlypipelineหรือแต่ละCVfold. เปลี่ยนtestoutlierจาก10เป็น1000แล้วtrain-scaledvaluesต้องเท่าเดิม; retrainด้วย…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ย้ายscaler.fitเข้าtrain-onlypipelineหรือแต่ละCVfold. เปลี่ยนtestoutlierจาก10เป็น1000แล้วtrain-scaledvaluesต้องเท่าเดิม; retrainด้วยsplitเดิมและรายงานscoreใหม่แทนเก็บscoreที่มีleakage.</p><p>อ้างอิง: <a href="#chapter-4/section/topic-17">Data Leakage</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch04-exercise-16"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-17" class="exercise-item"><h3>ข้อ 17</h3><p>one-hot production พังเมื่อ category ใหม่ — เสนอ policy 2 แบบ</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Categorical Encoding: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): Policy1 rejectunknownพร้อมerrorที่อ่านได้; policy2 mapเข้าunknownbucketหรือall-ze…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: Policy1 rejectunknownพร้อมerrorที่อ่านได้; policy2 mapเข้าunknownbucketหรือall-zeroเมื่อhandle_unknown=ignore. ทดสอบshape/columnorderคงเดิมและแยกu…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>Policy1 rejectunknownพร้อมerrorที่อ่านได้; policy2 mapเข้าunknownbucketหรือall-zeroเมื่อhandle_unknown=ignore. ทดสอบshape/columnorderคงเดิมและแยกunknownจากmissing; เลือกpolicyจากความหมาย/ความเสี่ยงของงาน.</p><p>อ้างอิง: <a href="#chapter-4/section/topic-9">Categorical Encoding</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch04-exercise-17"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-18" class="exercise-item"><h3>ข้อ 18</h3><p>time series score ดีผิดปกติหลัง random shuffle — วิเคราะห์</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Random Split vs Time Split: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ตรวจว่าตัวอย่างของentityเดียวกันหรือwindowซ้อนกันข้ามsplitหรือไม่ ตรวจfeatureที่มีtarge…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ตรวจว่าตัวอย่างของentityเดียวกันหรือwindowซ้อนกันข้ามsplitหรือไม่ ตรวจfeatureที่มีtargetในอนาคต. เปลี่ยนเป็นwalk-forwardพร้อมtraining-onlypreprocessingแล้วเท…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ตรวจว่าตัวอย่างของentityเดียวกันหรือwindowซ้อนกันข้ามsplitหรือไม่ ตรวจfeatureที่มีtargetในอนาคต. เปลี่ยนเป็นwalk-forwardพร้อมtraining-onlypreprocessingแล้วเทียบnaivebaseline; อย่าแก้ด้วยrandomseedที่ทำscoreดูต่ำลงเฉย ๆ.</p><p>อ้างอิง: <a href="#chapter-4/section/topic-15">Random Split vs Time Split</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch04-exercise-18"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-19" class="exercise-item"><h3>ข้อ 19</h3><p>สร้าง group-aware splitter ที่ไม่ให้ group เดียวกันข้าม split</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Dataset Splitting: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): แบ่งuniquegroupsก่อนแล้วmaprowsกลับ; assert intersectionของgroup setsว่างทุก…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: แบ่งuniquegroupsก่อนแล้วmaprowsกลับ; assert intersectionของgroup setsว่างทุกคู่. groups[A,A,B,C]ห้ามให้Aอยู่ทั้งtrain/val; รายงานclassba…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>แบ่งuniquegroupsก่อนแล้วmaprowsกลับ; assert intersectionของgroup setsว่างทุกคู่. groups[A,A,B,C]ห้ามให้Aอยู่ทั้งtrain/val; รายงานclassbalanceและจำนวนgroupsเพราะrowratioอาจไม่ตรงเป้าหมายเป๊ะ.</p><p>อ้างอิง: <a href="#chapter-4/section/topic-14">Dataset Splitting</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch04-exercise-19"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-20" class="exercise-item"><h3>ข้อ 20</h3><p>สร้าง data-quality audit CLI ที่คืน non-zero exit code เมื่อ schema fail</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Data Contracts, From Scratch: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): CLIอ่านschema/dataแล้วคืน0เมื่อผ่าน,nonzeroเมื่อfail พร้อมรายงานissuesแบบmachine-rea…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: CLIอ่านschema/dataแล้วคืน0เมื่อผ่าน,nonzeroเมื่อfail พร้อมรายงานissuesแบบmachine-readable. ทดสอบrequiredcolumnหาย,typeผิด,out-of-rangeและไฟล์หาย; วัดว่…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>CLIอ่านschema/dataแล้วคืน0เมื่อผ่าน,nonzeroเมื่อfail พร้อมรายงานissuesแบบmachine-readable. ทดสอบrequiredcolumnหาย,typeผิด,out-of-rangeและไฟล์หาย; วัดว่ารายงานระบุแถวแรกที่ผิดและไม่บันทึกartifactว่าvalidหลังfail.</p><p>อ้างอิง: <a href="#chapter-4/section/topic-19">Data Contracts</a>, <a href="#chapter-4/section/topic-20">From Scratch</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch04-exercise-20"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section></div><div id="local-lab-content"><section id="local-lab"><h2>Local lab: Python 3.12 บน CPU</h2><p>รันจาก repository root; ใช้ Python 3.12 แยก environment สำหรับ framework ตาม requirements ของชุดบท</p><pre><code>python3.12 -m venv .venv-course
+source .venv-course/bin/activate
+python -m pip install -r requirements-batch02.txt pytest
+(cd 04-data &amp;&amp; python -m pytest tests -q -rs)</code></pre><p>ผลที่คาดหวัง: required tests ผ่านและไม่มี required test ถูก skip; GPU/integrations ที่ยังไม่รันต้องระบุแยก Python 3.15 ที่มากับเครื่องอาจใช้กับ framework wheels เหล่านี้ไม่ได้</p><h2>Mini Project — Data Quality &amp; Preprocessing Pipeline</h2>
+<p>ใช้ dataset จาก Chapter 03 หรือ CSV ของตัวเอง</p>
+<h3>Required</h3>
+<p>สร้าง CLI ที่:</p>
+<ol>
+<li>load CSV</li>
+<li>validate required columns</li>
+<li>รายงาน dtypes/missing/duplicates</li>
+<li>split train/validation/test</li>
+<li>fit median imputer เฉพาะ train</li>
+<li>fit standardizer เฉพาะ train</li>
+<li>transform ทั้งสาม splits</li>
+<li>save preprocessing metadata</li>
+<li>save Markdown data-quality report</li>
+<li>มี tests ป้องกัน leakage</li>
+</ol>
+<h3>Leakage test ที่ต้องมี</h3>
+<p>สร้าง test data ที่ test set มีค่า extreme เช่น 10,000</p>
+<p>ถ้า scaler mean เปลี่ยนตาม test value แปลว่า implementation รั่วข้อมูล</p>
+<h3>Deliverables</h3>
+<pre><code class="language-text">mini-project/
+├── src/
+├── tests/
+└── REPORT.md
+</code></pre>
+<p>ใน REPORT ต้องอธิบายว่า feature ใดไม่ควรถูกใช้และเพราะอะไร</p><h2>Batch 02 Integration Project — Leakage-Safe Regression System</h2>
+<p>โปรเจกต์นี้รวม Chapters 04–06:</p>
+<pre><code class="language-text">raw tabular data
+      ↓
+schema / missing / feature audit       Chapter 04
+      ↓
+train / validation / test
+      ↓
+fit preprocessing on TRAIN only        Chapter 04
+      ↓
+baseline + metrics + experiment design Chapter 05
+      ↓
+Linear / Ridge / Lasso                 Chapter 06
+      ↓
+validation model selection
+      ↓
+one final test evaluation
+      ↓
+JSON report
+</code></pre>
+<h3>Goal</h3>
+<p>สร้าง regression experiment ที่ไม่รั่วข้อมูลและ reproduce ได้</p>
+<p>Starter implementation ใช้ synthetic tabular data ที่มี:</p>
+<ul>
+<li>numeric features</li>
+<li>categorical feature</li>
+<li>missing values</li>
+<li>noise</li>
+<li>known ground-truth structure</li>
+</ul>
+<p>เหตุผลที่ใช้ synthetic data: เรารู้ว่าข้อมูลถูกสร้างมาอย่างไร จึงตรวจ pipeline และ reasoning ได้ง่ายก่อนใช้ real-world dataset</p>
+<h3>Run</h3>
+<pre><code class="language-bash">source .venv/bin/activate
+python -m pip install -r requirements-batch02.txt
+
+python integration-project-batch02/src/regression_pipeline.py \
+  --output-dir reports/batch02 \
+  --seed 42
+</code></pre>
+<p>Output:</p>
+<pre><code class="language-text">reports/batch02/
+└── report.json
+</code></pre>
+<h3>What the code demonstrates</h3>
+<h4>Chapter 04</h4>
+<ul>
+<li>DataFrame schema</li>
+<li>numeric/categorical feature separation</li>
+<li>missing numeric values</li>
+<li><code>SimpleImputer</code></li>
+<li><code>StandardScaler</code></li>
+<li><code>OneHotEncoder</code></li>
+<li><code>ColumnTransformer</code></li>
+<li>split before fit</li>
+</ul>
+<h4>Chapter 05</h4>
+<ul>
+<li>mean baseline</li>
+<li>MSE / MAE / R²</li>
+<li>validation-based model selection</li>
+<li>reproducible seed</li>
+<li>final test used after selection</li>
+</ul>
+<h4>Chapter 06</h4>
+<ul>
+<li>Linear Regression</li>
+<li>Ridge</li>
+<li>Lasso</li>
+<li>coefficient regularization concept</li>
+</ul>
+<h3>Critical leakage rule</h3>
+<p>Pipeline ถูก <code>fit</code> ด้วย training set เท่านั้น</p>
+<p>scikit-learn จะ fit:</p>
+<ul>
+<li>numeric median</li>
+<li>numeric mean/std</li>
+<li>categorical vocabulary</li>
+<li>regression parameters</li>
+</ul>
+<p>จาก train ใน call เดียว</p>
+<p>จากนั้น <code>.predict(validation)</code> และ <code>.predict(test)</code> ใช้ state เดิม</p>
+<h3>Required extensions</h3>
+<p>ก่อนถือว่าผ่าน Batch 02 ให้เพิ่ม:</p>
+<ol>
+<li>Polynomial Regression candidate</li>
+<li>Elastic Net candidate</li>
+<li>K-fold validation แทน validation split เดียว</li>
+<li>residual plot</li>
+<li>prediction-vs-truth plot</li>
+<li>coefficient table หลัง preprocessing</li>
+<li>command สำหรับอ่าน CSV จริง</li>
+<li>data-quality warnings</li>
+<li>test unknown categorical value ใน test</li>
+<li>test extreme test value ไม่เปลี่ยน scaler state</li>
+</ol>
+<h3>Mastery Questions</h3>
+<ol>
+<li>ถ้า validation ดีกว่า test มาก คุณจะตรวจอะไร?</li>
+<li>ทำไม preprocessing ต้องอยู่ใน Pipeline?</li>
+<li>ทำไม mean baseline ต้องใช้ mean ของ train?</li>
+<li>alpha ของ Ridge/Lasso ควรเลือกจากข้อมูลชุดไหน?</li>
+<li>ถ้า coefficient เป็นบวก เราสรุป causality ได้ไหม?</li>
+</ol>
+<p>ตอบได้พร้อมอธิบาย code path ถือว่าพร้อมไป Chapter 07</p></section></div><label class="local-confirm"><input type="checkbox" id="local-lab-confirm"> ฉันรัน local lab และตรวจผลตาม rubric ด้วยตัวเองแล้ว</label><p class="local-note">สถานะนี้เป็นคำยืนยันของผู้เรียน เว็บไม่ได้รันหรือตรวจ Python บนเครื่องแทนคุณ</p></section>
+<section id="mastery-review" class="practice-section"><h2>หลักฐานตามเกณฑ์การเรียนรู้</h2><p>ทุก objective ต้องแสดงหลักฐานอธิบาย ทำนาย คำนวณ อ่าน shape/state debug และประยุกต์ พร้อมกรณีใหม่ ผลรัน source ผู้เรียนจริง และการประเมินซ้ำ เกณฑ์นี้ไม่รับประกันความเข้าใจทุกสถานการณ์ เปิด JavaScript เพื่อดูรายการที่ยังขาดและนำเข้ารายงานผู้ตรวจ</p></section><section class="coverage-section"><h2>แผนที่สิ่งที่เรียน → สิ่งที่ต้องแสดงให้ได้</h2><div id="coverage-table"></div></section><footer><span>ZERO TO ELITE AI ENGINEER · LEARNING STUDIO</span><span>อ่าน · derive · implement · debug · experiment · build</span></footer></div></main><noscript><style>.workbench,.sidebar,.reading-route,.lesson-toc,.mastery-status,#web-checks{display:none}main{margin-left:0}</style>อ่านเนื้อหา HTML ได้ตามปกติ เปิด JavaScript เพื่อใช้ห้องทดลองและตรวจคำตอบ</noscript></body></html>

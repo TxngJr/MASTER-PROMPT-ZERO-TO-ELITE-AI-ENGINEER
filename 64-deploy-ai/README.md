@@ -1,5 +1,11 @@
 # Chapter 64 — Deploy AI: API, Docker, Kubernetes & Cloud
 
+## Interactive Animation Lab
+
+[เปิดภาพจำลองของบทนี้](animation.html) · [เลือกจากทั้ง 80 บท](../visual-lab/index.html)
+
+ดู flow ทีละขั้น → ทดลองเปลี่ยนค่า → อ่านสมการและโค้ด → ตอบคำถามเช็กความเข้าใจ แล้วกลับมาทำแบบฝึกหัดในบทนี้
+
 ## 1. Deployment Is a System Problem
 
 Training creates an artifact. Deployment makes that artifact reliably reachable under real traffic.

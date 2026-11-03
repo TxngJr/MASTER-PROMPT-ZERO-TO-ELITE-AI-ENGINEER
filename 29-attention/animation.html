@@ -1,0 +1,1337 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="บทเรียน AI Engineer ภาษาไทย พร้อมคณิตศาสตร์ทีละขั้นและห้องทดลองที่คำนวณจริง"><title>Attention: QK scores → mask → softmax → AV · AI Engineer Studio</title><link rel="stylesheet" href="../visual-lab/assets/styles.css"><link rel="stylesheet" href="../visual-lab/assets/course.css"><script defer src="../visual-lab/assets/lessons.js"></script><script defer src="../visual-lab/assets/chapter-meta.js"></script><script defer src="../visual-lab/assets/course-math.js"></script><script defer src="../visual-lab/assets/course-models.js"></script><script defer src="../visual-lab/assets/course-models-v3.js"></script><script defer src="../visual-lab/assets/course-assessment.js"></script><script defer src="../visual-lab/assets/course-mastery.js"></script><script defer src="../visual-lab/assets/course-catalog.js"></script><script defer src="../visual-lab/assets/book-content.js"></script><script defer src="../visual-lab/assets/course-render.js"></script><script defer src="../visual-lab/assets/course-mastery-panel.js"></script><script defer src="../visual-lab/assets/quality-report.js"></script><script defer src="../visual-lab/assets/course-app.js"></script></head>
+<body data-chapter="29" data-root="../"><a class="skip-link" href="#main">ข้ามไปบทเรียน</a>
+<aside class="sidebar" id="sidebar" aria-label="เลือกบทเรียน"><a class="brand" href="../visual-lab/index.html"><span class="brand-mark">ai</span><span>AI ENGINEER<small>LEARN · DERIVE · BUILD</small></span></a><div class="sidebar-intro">อ่านให้เข้าใจ · คำนวณให้เห็น · เขียนให้เป็น</div><label class="search-box"><input id="search" type="search" placeholder="ค้นหาบท / attention" aria-label="ค้นหาบทเรียน"></label><label class="filter-label" for="phase-filter">เส้นทางการเรียน <span id="nav-count"></span></label><select id="phase-filter"><option value="">ทุก Phase</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option></select><nav id="chapter-list" class="chapter-list" aria-label="รายชื่อบท"></nav><div class="course-progress"><div><span>ผ่านโจทย์ในเว็บ</span><strong id="progress-count">0 / 80</strong></div><progress id="course-progress" max="80" value="0" aria-label="บทที่ผ่านโจทย์"></progress><a id="resume-link" href="#chapter-1">อ่านต่อจากเดิม →</a></div></aside>
+<button class="nav-backdrop" id="nav-backdrop" aria-label="ปิดเมนู" hidden></button>
+<main id="main" tabindex="-1"><header class="topbar"><div><button id="nav-toggle" class="icon-button mobile-menu" aria-label="เปิดเมนูบทเรียน" aria-expanded="false" aria-controls="sidebar">☰</button><span id="breadcrumb"></span></div><span class="local-badge"><i></i> คำนวณในเครื่อง · ไม่มี API</span></header><div class="content">
+<div class="chapter-navigation"><label for="chapter-select" class="sr-only">เลือกบทเรียน</label><select id="chapter-select"></select><div class="chapter-arrows"><button id="prev-chapter" class="icon-button" aria-label="บทก่อนหน้า">←</button><button id="next-chapter" class="icon-button" aria-label="บทถัดไป">→</button></div></div>
+<section class="chapter-hero"><div><p id="chapter-kicker" class="eyebrow"></p><h1 id="chapter-title">Attention: QK scores → mask → softmax → AV</h1><p class="english-title" id="chapter-english"></p></div><span class="hero-symbol">f(x) ↗</span></section>
+<p id="quality-status" class="quality-status"></p><div id="mastery-status" class="mastery-status"></div><div class="reading-route"><a href="#chapter-29/section/overview">01 อ่านบทเรียน</a><a href="#workbench">02 ทดลองสมการ</a><a href="#practice">03 ฝึกและตรวจงาน</a><a href="#mastery-review">04 หลักฐานตามเกณฑ์</a></div>
+<nav id="lesson-toc" class="lesson-toc" aria-label="สารบัญบท"></nav>
+<section id="overview" class="course-overview"><span class="eyebrow">THE LEARNING CONTRACT</span><h2>เรียนบทนี้แล้วต้องทำอะไรได้</h2><p id="chapter-purpose"></p><div id="chapter-objectives"></div><div class="learning-hint">ทำนาย → เปลี่ยนทีละค่า → ตรวจตัวเลข → อธิบายเหตุผล → เขียนด้วย Python เอง</div></section>
+<section class="workbench lab-card" id="workbench" aria-label="ห้องทดลองคำนวณจริง"><div class="card-header"><div><span class="live-dot"></span><span class="eyebrow">COMPUTATION WORKBENCH</span></div><span class="simulation-label">ทุกภาพใช้ผลคำนวณชุดเดียวกัน</span></div><div class="lab-top"><label for="lab-select">เลือกกลไกที่ต้องการทดลอง</label><select id="lab-select"></select><p id="lab-question"></p></div><div class="workbench-grid"><div class="viz-column"><div class="compare-labels"><span>เส้นทึบ: ปัจจุบัน</span><span>เส้นประ: baseline ที่ตรึงไว้</span></div><div id="simulation" class="simulation"></div><div id="metrics" class="metrics"></div><div id="baseline-diff" class="baseline-diff"></div><div class="playback"><div class="playback-buttons"><button class="primary-button" id="update-once">อัปเดตหนึ่งก้าว</button><button class="secondary-button" id="train-many">▶ ฝึก 30 ก้าว</button><button class="icon-button" id="back-state" aria-label="ย้อนประวัติ">↶</button><button class="icon-button" id="forward-state" aria-label="ประวัติถัดไป">↷</button></div></div><div class="lab-secondary-actions"><button id="pin-baseline" class="text-button">ตรึง baseline ปัจจุบัน</button><button id="reset-lab" class="text-button">คืนค่าเริ่มต้น</button><button id="download-state" class="text-button">บันทึกผล JSON</button><span id="history-status"></span></div><p id="simulation-note" class="simulation-note"></p><p class="lab-error" id="lab-error" role="alert" hidden></p></div><div class="controls-column"><h3>เปลี่ยนทีละตัว แล้วสังเกตผล</h3><div id="lab-controls"></div><p class="control-note">แก้ weight ด้วยมือจะคำนวณ forward ใหม่; optimizer เปลี่ยน weights เมื่อกดอัปเดตเท่านั้น</p></div></div>
+<div class="trace-section"><div class="trace-toolbar"><h3>เดินสมการทีละ operation</h3><div><button id="trace-prev" class="icon-button" aria-label="operation ก่อนหน้า">←</button><button id="play-trace" class="secondary-button" aria-pressed="false">▶ เล่น flow</button><button id="trace-next" class="icon-button" aria-label="operation ถัดไป">→</button><span id="stage-counter"></span></div></div><label class="motion-control"><input id="reduce-motion" type="checkbox"> ลดภาพเคลื่อนไหว (หยุดการเล่นที่ค้างอยู่)</label><div id="operation-steps" class="operation-steps"></div><div id="flow-diagram" class="flow-diagram"></div><div id="active-operation" class="active-operation" aria-live="polite"></div><p class="control-note">ตัวเลขบนภาพปัดเศษเพื่อให้อ่านง่าย; บันทึก JSON เพื่อดูค่าที่ใช้คำนวณเต็ม precision</p><details open><summary>ตารางค่าระหว่างทาง — ตรวจด้วยมือได้</summary><div id="result-table"></div></details><div id="tensor-tables" class="tensor-tables"></div><details id="surface-details"><summary>ดู loss surface และเส้นทางของ w₁,b (ตรึง controls อื่น)</summary><div id="surface-chart"></div><p>surface คำนวณ objective ปัจจุบันโดยตรึง degree, penalty, ข้อมูล และ weights อื่น เส้นทางแสดงเฉพาะ snapshots ที่ค่าเหล่านี้ตรงกัน; นอกช่วง w=[−1,5], b=[−2,4] ให้ตรวจค่าจริงใน history</p></details><details><summary>ประวัติการเปลี่ยนค่า</summary><div id="history-table"></div></details></div></section>
+<article id="chapter-article" class="chapter-article"><section id="mechanism-1" class="teaching-section"><span class="section-kicker">CHAPTER 29 · ภาพ → สมการ → โค้ด</span><h2>1. query/key ตัดสินว่าจะอ่านใคร ส่วน value คือข้อมูลที่อ่าน</h2><h3>โจทย์และเหตุผล</h3><p>เปลี่ยน V อย่างเดียวไม่ควรเปลี่ยน weights แต่ output เปลี่ยนตาม a_jΔV_j เปลี่ยน Q หรือ K ทำให้ scores และ weights เปลี่ยนก่อน weighted sum</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Define query.</p><p>query Q=XWQแทนสิ่งที่tokenตำแหน่งนั้นกำลังค้น; X(3,2),WQ(2,2)ได้Q(3,2),ไม่ใช่vectorคำถามจากผู้ใช้เสมอ</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>q1: query q₁,initial=1; q2: query q₂,initial=0; k11: key1 coordinate1,initial=1; k12: key1 coordinate2,initial=0; v1: value1,initial=1; temperature: extra temperature,initial=1; queryPosition: query position,initial=2; window: window size,initial=4; mask: mask,initial=none</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>q in R²; K (4,2); V (4,1) = [1, 0]; scalar values ใช้เพื่ออ่าน output ได้; learned projections ในบทเต็ม</li><li>score_j=q·k_j/√2/temperature = [0.7071067811865475, 0, 0.7071067811865475, -0.7071067811865475]; หาร √d_k ลดขนาด score ตามมิติ; extra temperature แยกเพื่อทดลองความคม</li><li>disallowed scores → −∞ = [0.7071067811865475, 0, 0.7071067811865475, -0.7071067811865475]; mask ต้องมาก่อน normalize จึงได้ weight ศูนย์จริง</li><li>a=exp(score−max)/sum(exp(score−max)) = [0.3654723070154712, 0.1802029521613177, 0.3654723070154712, 0.08885243380773993]; ผลรวมหนึ่งต่อ query; ห้าม mask ทุก key</li><li>output=Σ_j a_j v_j = 2.1777048676154798; ค่าทุกตำแหน่งมีส่วนตาม attention weight ไม่ใช่ hard select</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="attention-q-k-v--เปล--ยน-similarit">เปิดการทดลองนี้</a><p class="failure-box">subtractrowmaxก่อนexp; fullymaskedrowmax−∞ทำNaNจึงrejectหรือกำหนดemptyrowpolicy; logitsfp16อาจoverflowก่อนsoftmaxให้accumulateFP32; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>query Q=XWQแทนสิ่งที่tokenตำแหน่งนั้นกำลังค้น; X(3,2),WQ(2,2)ได้Q(3,2),ไม่ใช่vectorคำถามจากผู้ใช้เสมอ</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-1-equation"><summary>สมการ</summary><ol><li><code>q in R²; K (4,2); V (4,1)</code> = [1, 0]<p>scalar values ใช้เพื่ออ่าน output ได้; learned projections ในบทเต็ม</p></li><li><code>score_j=q·k_j/√2/temperature</code> = [0.7071067811865475, 0, 0.7071067811865475, -0.7071067811865475]<p>หาร √d_k ลดขนาด score ตามมิติ; extra temperature แยกเพื่อทดลองความคม</p></li><li><code>disallowed scores → −∞</code> = [0.7071067811865475, 0, 0.7071067811865475, -0.7071067811865475]<p>mask ต้องมาก่อน normalize จึงได้ weight ศูนย์จริง</p></li><li><code>a=exp(score−max)/sum(exp(score−max))</code> = [0.3654723070154712, 0.1802029521613177, 0.3654723070154712, 0.08885243380773993]<p>ผลรวมหนึ่งต่อ query; ห้าม mask ทุก key</p></li><li><code>output=Σ_j a_j v_j</code> = 2.1777048676154798<p>ค่าทุกตำแหน่งมีส่วนตาม attention weight ไม่ใช่ hard select</p></li></ol></details><details id="help-mechanism-1-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>q in R²; K (4,2); V (4,1)</code> = [1, 0]<p>scalar values ใช้เพื่ออ่าน output ได้; learned projections ในบทเต็ม</p></li><li><code>score_j=q·k_j/√2/temperature</code> = [0.7071067811865475, 0, 0.7071067811865475, -0.7071067811865475]<p>หาร √d_k ลดขนาด score ตามมิติ; extra temperature แยกเพื่อทดลองความคม</p></li><li><code>disallowed scores → −∞</code> = [0.7071067811865475, 0, 0.7071067811865475, -0.7071067811865475]<p>mask ต้องมาก่อน normalize จึงได้ weight ศูนย์จริง</p></li><li><code>a=exp(score−max)/sum(exp(score−max))</code> = [0.3654723070154712, 0.1802029521613177, 0.3654723070154712, 0.08885243380773993]<p>ผลรวมหนึ่งต่อ query; ห้าม mask ทุก key</p></li><li><code>output=Σ_j a_j v_j</code> = 2.1777048676154798<p>ค่าทุกตำแหน่งมีส่วนตาม attention weight ไม่ใช่ hard select</p></li></ol></details><details id="help-mechanism-1-code"><summary>โค้ด</summary><p>query Q=XWQแทนสิ่งที่tokenตำแหน่งนั้นกำลังค้น; X(3,2),WQ(2,2)ได้Q(3,2),ไม่ใช่vectorคำถามจากผู้ใช้เสมอ</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-1-result"><summary>ผลการทดลอง</summary><ol><li><code>q in R²; K (4,2); V (4,1)</code> = [1, 0]<p>scalar values ใช้เพื่ออ่าน output ได้; learned projections ในบทเต็ม</p></li><li><code>score_j=q·k_j/√2/temperature</code> = [0.7071067811865475, 0, 0.7071067811865475, -0.7071067811865475]<p>หาร √d_k ลดขนาด score ตามมิติ; extra temperature แยกเพื่อทดลองความคม</p></li><li><code>disallowed scores → −∞</code> = [0.7071067811865475, 0, 0.7071067811865475, -0.7071067811865475]<p>mask ต้องมาก่อน normalize จึงได้ weight ศูนย์จริง</p></li><li><code>a=exp(score−max)/sum(exp(score−max))</code> = [0.3654723070154712, 0.1802029521613177, 0.3654723070154712, 0.08885243380773993]<p>ผลรวมหนึ่งต่อ query; ห้าม mask ทุก key</p></li><li><code>output=Σ_j a_j v_j</code> = 2.1777048676154798<p>ค่าทุกตำแหน่งมีส่วนตาม attention weight ไม่ใช่ hard select</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-1"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-2" class="teaching-section"><span class="section-kicker">CHAPTER 29 · ภาพ → สมการ → โค้ด</span><h2>2. mask ต้องมาก่อน normalize</h2><h3>โจทย์และเหตุผล</h3><p>ตำแหน่งที่ห้ามอ่านถูกแทน score ด้วย -∞ แล้ว softmax ให้ weight 0 ถ้าลบ probabilities ทีหลังโดยไม่ normalize ใหม่ ผลรวมจะไม่ใช่หนึ่งและ output ผิด</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Explain a common limitation involving causal mask.</p><p>causalmaskต้องปิดfuturej&gt;iก่อนsoftmax; maskหลังsoftmaxแล้วไม่renormalizeทำrowmass&lt;1; inferencecachepositionต้องตรงabsoluteoffset</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>q1: query q₁,initial=1; q2: query q₂,initial=0; k11: key1 coordinate1,initial=1; k12: key1 coordinate2,initial=0; v1: value1,initial=1; temperature: extra temperature,initial=1; queryPosition: query position,initial=2; window: window size,initial=4; mask: mask,initial=causal</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>q in R²; K (4,2); V (4,1) = [1, 0]; scalar values ใช้เพื่ออ่าน output ได้; learned projections ในบทเต็ม</li><li>score_j=q·k_j/√2/temperature = [0.7071067811865475, 0, 0.7071067811865475, -0.7071067811865475]; หาร √d_k ลดขนาด score ตามมิติ; extra temperature แยกเพื่อทดลองความคม</li><li>disallowed scores → −∞ = [0.7071067811865475, 0, 0.7071067811865475, &quot;−∞&quot;]; mask ต้องมาก่อน normalize จึงได้ weight ศูนย์จริง</li><li>a=exp(score−max)/sum(exp(score−max)) = [0.4011120926797859, 0.1977758146404282, 0.4011120926797859, 0]; ผลรวมหนึ่งต่อ query; ห้าม mask ทุก key</li><li>output=Σ_j a_j v_j = 2; ค่าทุกตำแหน่งมีส่วนตาม attention weight ไม่ใช่ hard select</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="attention-causal-mask-ทำ-weight-ขอ">เปิดการทดลองนี้</a><p class="failure-box">subtractrowmaxก่อนexp; fullymaskedrowmax−∞ทำNaNจึงrejectหรือกำหนดemptyrowpolicy; logitsfp16อาจoverflowก่อนsoftmaxให้accumulateFP32; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>causalmaskต้องปิดfuturej&gt;iก่อนsoftmax; maskหลังsoftmaxแล้วไม่renormalizeทำrowmass&lt;1; inferencecachepositionต้องตรงabsoluteoffset</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-2-equation"><summary>สมการ</summary><ol><li><code>q in R²; K (4,2); V (4,1)</code> = [1, 0]<p>scalar values ใช้เพื่ออ่าน output ได้; learned projections ในบทเต็ม</p></li><li><code>score_j=q·k_j/√2/temperature</code> = [0.7071067811865475, 0, 0.7071067811865475, -0.7071067811865475]<p>หาร √d_k ลดขนาด score ตามมิติ; extra temperature แยกเพื่อทดลองความคม</p></li><li><code>disallowed scores → −∞</code> = [0.7071067811865475, 0, 0.7071067811865475, &quot;−∞&quot;]<p>mask ต้องมาก่อน normalize จึงได้ weight ศูนย์จริง</p></li><li><code>a=exp(score−max)/sum(exp(score−max))</code> = [0.4011120926797859, 0.1977758146404282, 0.4011120926797859, 0]<p>ผลรวมหนึ่งต่อ query; ห้าม mask ทุก key</p></li><li><code>output=Σ_j a_j v_j</code> = 2<p>ค่าทุกตำแหน่งมีส่วนตาม attention weight ไม่ใช่ hard select</p></li></ol></details><details id="help-mechanism-2-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>q in R²; K (4,2); V (4,1)</code> = [1, 0]<p>scalar values ใช้เพื่ออ่าน output ได้; learned projections ในบทเต็ม</p></li><li><code>score_j=q·k_j/√2/temperature</code> = [0.7071067811865475, 0, 0.7071067811865475, -0.7071067811865475]<p>หาร √d_k ลดขนาด score ตามมิติ; extra temperature แยกเพื่อทดลองความคม</p></li><li><code>disallowed scores → −∞</code> = [0.7071067811865475, 0, 0.7071067811865475, &quot;−∞&quot;]<p>mask ต้องมาก่อน normalize จึงได้ weight ศูนย์จริง</p></li><li><code>a=exp(score−max)/sum(exp(score−max))</code> = [0.4011120926797859, 0.1977758146404282, 0.4011120926797859, 0]<p>ผลรวมหนึ่งต่อ query; ห้าม mask ทุก key</p></li><li><code>output=Σ_j a_j v_j</code> = 2<p>ค่าทุกตำแหน่งมีส่วนตาม attention weight ไม่ใช่ hard select</p></li></ol></details><details id="help-mechanism-2-code"><summary>โค้ด</summary><p>causalmaskต้องปิดfuturej&gt;iก่อนsoftmax; maskหลังsoftmaxแล้วไม่renormalizeทำrowmass&lt;1; inferencecachepositionต้องตรงabsoluteoffset</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-2-result"><summary>ผลการทดลอง</summary><ol><li><code>q in R²; K (4,2); V (4,1)</code> = [1, 0]<p>scalar values ใช้เพื่ออ่าน output ได้; learned projections ในบทเต็ม</p></li><li><code>score_j=q·k_j/√2/temperature</code> = [0.7071067811865475, 0, 0.7071067811865475, -0.7071067811865475]<p>หาร √d_k ลดขนาด score ตามมิติ; extra temperature แยกเพื่อทดลองความคม</p></li><li><code>disallowed scores → −∞</code> = [0.7071067811865475, 0, 0.7071067811865475, &quot;−∞&quot;]<p>mask ต้องมาก่อน normalize จึงได้ weight ศูนย์จริง</p></li><li><code>a=exp(score−max)/sum(exp(score−max))</code> = [0.4011120926797859, 0.1977758146404282, 0.4011120926797859, 0]<p>ผลรวมหนึ่งต่อ query; ห้าม mask ทุก key</p></li><li><code>output=Σ_j a_j v_j</code> = 2<p>ค่าทุกตำแหน่งมีส่วนตาม attention weight ไม่ใช่ hard select</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-2"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-3" class="teaching-section"><span class="section-kicker">CHAPTER 29 · ภาพ → สมการ → โค้ด</span><h2>3. sqrt(d_k) กับ stable softmax แก้คนละเรื่อง</h2><h3>โจทย์และเหตุผล</h3><p>การ scale คุมขนาด dot scores ตาม dimension ส่วนลบ row max ป้องกัน exponent overflow ตรวจ row sums, fully masked row และ API mask semantics ก่อนขยายหลาย heads</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Explain how scaled dot-product attention changes model behavior.</p><p>Q=[1,0],K=[[1,0],[0,1]],dk2ให้scores[.707107,0],weights≈[.669762,.330238]; weightsรวม1ทุกqueryที่ไม่fullymasked</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>q1: query q₁,initial=1; q2: query q₂,initial=0; k11: key1 coordinate1,initial=1; k12: key1 coordinate2,initial=0; v1: value1,initial=1; temperature: extra temperature,initial=2; queryPosition: query position,initial=2; window: window size,initial=4; mask: mask,initial=none</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>q in R²; K (4,2); V (4,1) = [1, 0]; scalar values ใช้เพื่ออ่าน output ได้; learned projections ในบทเต็ม</li><li>score_j=q·k_j/√2/temperature = [0.35355339059327373, 0, 0.35355339059327373, -0.35355339059327373]; หาร √d_k ลดขนาด score ตามมิติ; extra temperature แยกเพื่อทดลองความคม</li><li>disallowed scores → −∞ = [0.35355339059327373, 0, 0.35355339059327373, -0.35355339059327373]; mask ต้องมาก่อน normalize จึงได้ weight ศูนย์จริง</li><li>a=exp(score−max)/sum(exp(score−max)) = [0.31296385226134965, 0.21975961838878394, 0.31296385226134965, 0.15431267708851684]; ผลรวมหนึ่งต่อ query; ห้าม mask ทุก key</li><li>output=Σ_j a_j v_j = 2.308625354177034; ค่าทุกตำแหน่งมีส่วนตาม attention weight ไม่ใช่ hard select</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="attention-temperature-ก-บการกระจาย">เปิดการทดลองนี้</a><p class="failure-box">subtractrowmaxก่อนexp; fullymaskedrowmax−∞ทำNaNจึงrejectหรือกำหนดemptyrowpolicy; logitsfp16อาจoverflowก่อนsoftmaxให้accumulateFP32; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Q=[1,0],K=[[1,0],[0,1]],dk2ให้scores[.707107,0],weights≈[.669762,.330238]; weightsรวม1ทุกqueryที่ไม่fullymasked</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-3-equation"><summary>สมการ</summary><ol><li><code>q in R²; K (4,2); V (4,1)</code> = [1, 0]<p>scalar values ใช้เพื่ออ่าน output ได้; learned projections ในบทเต็ม</p></li><li><code>score_j=q·k_j/√2/temperature</code> = [0.35355339059327373, 0, 0.35355339059327373, -0.35355339059327373]<p>หาร √d_k ลดขนาด score ตามมิติ; extra temperature แยกเพื่อทดลองความคม</p></li><li><code>disallowed scores → −∞</code> = [0.35355339059327373, 0, 0.35355339059327373, -0.35355339059327373]<p>mask ต้องมาก่อน normalize จึงได้ weight ศูนย์จริง</p></li><li><code>a=exp(score−max)/sum(exp(score−max))</code> = [0.31296385226134965, 0.21975961838878394, 0.31296385226134965, 0.15431267708851684]<p>ผลรวมหนึ่งต่อ query; ห้าม mask ทุก key</p></li><li><code>output=Σ_j a_j v_j</code> = 2.308625354177034<p>ค่าทุกตำแหน่งมีส่วนตาม attention weight ไม่ใช่ hard select</p></li></ol></details><details id="help-mechanism-3-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>q in R²; K (4,2); V (4,1)</code> = [1, 0]<p>scalar values ใช้เพื่ออ่าน output ได้; learned projections ในบทเต็ม</p></li><li><code>score_j=q·k_j/√2/temperature</code> = [0.35355339059327373, 0, 0.35355339059327373, -0.35355339059327373]<p>หาร √d_k ลดขนาด score ตามมิติ; extra temperature แยกเพื่อทดลองความคม</p></li><li><code>disallowed scores → −∞</code> = [0.35355339059327373, 0, 0.35355339059327373, -0.35355339059327373]<p>mask ต้องมาก่อน normalize จึงได้ weight ศูนย์จริง</p></li><li><code>a=exp(score−max)/sum(exp(score−max))</code> = [0.31296385226134965, 0.21975961838878394, 0.31296385226134965, 0.15431267708851684]<p>ผลรวมหนึ่งต่อ query; ห้าม mask ทุก key</p></li><li><code>output=Σ_j a_j v_j</code> = 2.308625354177034<p>ค่าทุกตำแหน่งมีส่วนตาม attention weight ไม่ใช่ hard select</p></li></ol></details><details id="help-mechanism-3-code"><summary>โค้ด</summary><p>Q=[1,0],K=[[1,0],[0,1]],dk2ให้scores[.707107,0],weights≈[.669762,.330238]; weightsรวม1ทุกqueryที่ไม่fullymasked</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-3-result"><summary>ผลการทดลอง</summary><ol><li><code>q in R²; K (4,2); V (4,1)</code> = [1, 0]<p>scalar values ใช้เพื่ออ่าน output ได้; learned projections ในบทเต็ม</p></li><li><code>score_j=q·k_j/√2/temperature</code> = [0.35355339059327373, 0, 0.35355339059327373, -0.35355339059327373]<p>หาร √d_k ลดขนาด score ตามมิติ; extra temperature แยกเพื่อทดลองความคม</p></li><li><code>disallowed scores → −∞</code> = [0.35355339059327373, 0, 0.35355339059327373, -0.35355339059327373]<p>mask ต้องมาก่อน normalize จึงได้ weight ศูนย์จริง</p></li><li><code>a=exp(score−max)/sum(exp(score−max))</code> = [0.31296385226134965, 0.21975961838878394, 0.31296385226134965, 0.15431267708851684]<p>ผลรวมหนึ่งต่อ query; ห้าม mask ทุก key</p></li><li><code>output=Σ_j a_j v_j</code> = 2.308625354177034<p>ค่าทุกตำแหน่งมีส่วนตาม attention weight ไม่ใช่ hard select</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-3"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="projections-multihead" class="teaching-section"><span class="section-kicker">CHAPTER 29 · ภาพ → สมการ → โค้ด</span><h2>4. จาก X ผ่าน Q/K/V projections ไปหลาย heads</h2><h3>โจทย์และเหตุผล</h3><p>projections เป็น weights ที่เรียนรู้ ส่วน heads แบ่ง feature ก่อนคำนวณ attention จึงต้องเห็นทั้งสอง operation แยกกัน</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Implement a small example of query.</p><p>X=[[1,0],[0,1],[1,1]],WQ=Iได้Q=X; เปลี่ยนWQ00เป็น2ได้Q[[2,0],[0,1],[2,1]]ก่อนคำนวณscoresใหม่</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>x00: X[0,0],initial=1; wq: W_Q[0,0],initial=1; wk: W_K[0,0],initial=1; wv: W_V[0,0],initial=1; heads: จำนวน heads,initial=2; mask: mask,initial=causal</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>Q=XW_Q; K=XW_K; V=XW_V = [[[1, 0], [0, 1], [1, 1]], [[1, 0], [0, 1], [1, 1]], [[1, 0], [0, 1], [1, 1]]]; X:(3,2), projections:(2,2), Q/K/V:(3,2)</li><li>(T,2) → heads × (T,d_k) = [2, 3, 1]; ไม่คัดลอก features เดิมให้ทุก head; แต่ละ head อ่านคนละช่วงคอลัมน์</li><li>S_h=Q_h K_hᵀ/√d_k; future→−∞ = [[1, &quot;−∞&quot;, &quot;−∞&quot;], [0, 0, &quot;−∞&quot;], [1, 0, 1]]; แต่ละแถวเป็นหนึ่ง query และแต่ละคอลัมน์เป็นหนึ่ง key</li><li>A_h[i,:]=softmax(S_h[i,:]) = [[1, 0, 0], [0.5, 0.5, 0], [0.4223187982515182, 0.15536240349696362, 0.4223187982515182]]; normalize แยกต่อ query ต่อ head</li><li>O_h=A_h V_h; O=concat(O_h) = [[1, 0], [0.5, 0.7310585786300049], [0.8446375965030364, 0.8446375965030364]]; ตัวอย่างใช้ W_O=I เพื่อให้เห็น concat โดยตรง</li></ol><p>เปลี่ยน W_V อย่างเดียว: A คงเดิมหรือไม่? แล้วเปลี่ยน W_Q และอ่าน Q,K,V ของแต่ละ head</p><a href="#workbench" data-open-lab="projected-multihead">เปิดการทดลองนี้</a><p class="failure-box">subtractrowmaxก่อนexp; fullymaskedrowmax−∞ทำNaNจึงrejectหรือกำหนดemptyrowpolicy; logitsfp16อาจoverflowก่อนsoftmaxให้accumulateFP32; 3 tokens × 2 features; learned projection entries ควบคุมแยกกัน; W_O=I, ไม่มี dropout เพื่อเทียบ NumPy/PyTorch อย่างตรงกัน</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-projections-multihead-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>X=[[1,0],[0,1],[1,1]],WQ=Iได้Q=X; เปลี่ยนWQ00เป็น2ได้Q[[2,0],[0,1],[2,1]]ก่อนคำนวณscoresใหม่</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-projections-multihead-equation"><summary>สมการ</summary><ol><li><code>Q=XW_Q; K=XW_K; V=XW_V</code> = [[[1, 0], [0, 1], [1, 1]], [[1, 0], [0, 1], [1, 1]], [[1, 0], [0, 1], [1, 1]]]<p>X:(3,2), projections:(2,2), Q/K/V:(3,2)</p></li><li><code>(T,2) → heads × (T,d_k)</code> = [2, 3, 1]<p>ไม่คัดลอก features เดิมให้ทุก head; แต่ละ head อ่านคนละช่วงคอลัมน์</p></li><li><code>S_h=Q_h K_hᵀ/√d_k; future→−∞</code> = [[1, &quot;−∞&quot;, &quot;−∞&quot;], [0, 0, &quot;−∞&quot;], [1, 0, 1]]<p>แต่ละแถวเป็นหนึ่ง query และแต่ละคอลัมน์เป็นหนึ่ง key</p></li><li><code>A_h[i,:]=softmax(S_h[i,:])</code> = [[1, 0, 0], [0.5, 0.5, 0], [0.4223187982515182, 0.15536240349696362, 0.4223187982515182]]<p>normalize แยกต่อ query ต่อ head</p></li><li><code>O_h=A_h V_h; O=concat(O_h)</code> = [[1, 0], [0.5, 0.7310585786300049], [0.8446375965030364, 0.8446375965030364]]<p>ตัวอย่างใช้ W_O=I เพื่อให้เห็น concat โดยตรง</p></li></ol></details><details id="help-projections-multihead-visual"><summary>ภาพและ shape</summary><p>3 tokens × 2 features; learned projection entries ควบคุมแยกกัน; W_O=I, ไม่มี dropout เพื่อเทียบ NumPy/PyTorch อย่างตรงกัน</p><ol><li><code>Q=XW_Q; K=XW_K; V=XW_V</code> = [[[1, 0], [0, 1], [1, 1]], [[1, 0], [0, 1], [1, 1]], [[1, 0], [0, 1], [1, 1]]]<p>X:(3,2), projections:(2,2), Q/K/V:(3,2)</p></li><li><code>(T,2) → heads × (T,d_k)</code> = [2, 3, 1]<p>ไม่คัดลอก features เดิมให้ทุก head; แต่ละ head อ่านคนละช่วงคอลัมน์</p></li><li><code>S_h=Q_h K_hᵀ/√d_k; future→−∞</code> = [[1, &quot;−∞&quot;, &quot;−∞&quot;], [0, 0, &quot;−∞&quot;], [1, 0, 1]]<p>แต่ละแถวเป็นหนึ่ง query และแต่ละคอลัมน์เป็นหนึ่ง key</p></li><li><code>A_h[i,:]=softmax(S_h[i,:])</code> = [[1, 0, 0], [0.5, 0.5, 0], [0.4223187982515182, 0.15536240349696362, 0.4223187982515182]]<p>normalize แยกต่อ query ต่อ head</p></li><li><code>O_h=A_h V_h; O=concat(O_h)</code> = [[1, 0], [0.5, 0.7310585786300049], [0.8446375965030364, 0.8446375965030364]]<p>ตัวอย่างใช้ W_O=I เพื่อให้เห็น concat โดยตรง</p></li></ol></details><details id="help-projections-multihead-code"><summary>โค้ด</summary><p>X=[[1,0],[0,1],[1,1]],WQ=Iได้Q=X; เปลี่ยนWQ00เป็น2ได้Q[[2,0],[0,1],[2,1]]ก่อนคำนวณscoresใหม่</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-projections-multihead-result"><summary>ผลการทดลอง</summary><ol><li><code>Q=XW_Q; K=XW_K; V=XW_V</code> = [[[1, 0], [0, 1], [1, 1]], [[1, 0], [0, 1], [1, 1]], [[1, 0], [0, 1], [1, 1]]]<p>X:(3,2), projections:(2,2), Q/K/V:(3,2)</p></li><li><code>(T,2) → heads × (T,d_k)</code> = [2, 3, 1]<p>ไม่คัดลอก features เดิมให้ทุก head; แต่ละ head อ่านคนละช่วงคอลัมน์</p></li><li><code>S_h=Q_h K_hᵀ/√d_k; future→−∞</code> = [[1, &quot;−∞&quot;, &quot;−∞&quot;], [0, 0, &quot;−∞&quot;], [1, 0, 1]]<p>แต่ละแถวเป็นหนึ่ง query และแต่ละคอลัมน์เป็นหนึ่ง key</p></li><li><code>A_h[i,:]=softmax(S_h[i,:])</code> = [[1, 0, 0], [0.5, 0.5, 0], [0.4223187982515182, 0.15536240349696362, 0.4223187982515182]]<p>normalize แยกต่อ query ต่อ head</p></li><li><code>O_h=A_h V_h; O=concat(O_h)</code> = [[1, 0], [0.5, 0.7310585786300049], [0.8446375965030364, 0.8446375965030364]]<p>ตัวอย่างใช้ W_O=I เพื่อให้เห็น concat โดยตรง</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="projections-multihead"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="reference" class="canonical-section"><h2>เนื้อหาครบทุกหัวข้อ พร้อมแผนที่ objective</h2><nav class="source-toc"><a href="#chapter-29/section/topic-1">1. Why Attention?</a> <a href="#chapter-29/section/topic-2">2. Learning Objectives</a> <a href="#chapter-29/section/topic-3">3. Query, Key, Value</a> <a href="#chapter-29/section/topic-4">4. Dot-Product Scores</a> <a href="#chapter-29/section/topic-5">5. Why Scale by sqrt(d_k)?</a> <a href="#chapter-29/section/topic-6">6. Softmax</a> <a href="#chapter-29/section/topic-7">7. Stable Softmax</a> <a href="#chapter-29/section/topic-8">8. Full Formula</a> <a href="#chapter-29/section/topic-9">9. Self-Attention</a> <a href="#chapter-29/section/topic-10">10. Cross-Attention</a> <a href="#chapter-29/section/topic-11">11. Causal Mask</a> <a href="#chapter-29/section/topic-12">12. Padding Mask</a> <a href="#chapter-29/section/topic-13">13. Mask Semantics Are API-Specific</a> <a href="#chapter-29/section/topic-14">14. Multi-Head Attention</a> <a href="#chapter-29/section/topic-15">15. Shapes</a> <a href="#chapter-29/section/topic-16">16. Why Multiple Heads?</a> <a href="#chapter-29/section/topic-17">17. Output Projection</a> <a href="#chapter-29/section/topic-18">18. Attention Complexity</a> <a href="#chapter-29/section/topic-19">19. Attention vs RNN</a> <a href="#chapter-29/section/topic-20">20. Attention vs Convolution</a> <a href="#chapter-29/section/topic-21">21. PyTorch SDPA</a> <a href="#chapter-29/section/topic-22">22. is_causal</a> <a href="#chapter-29/section/topic-23">23. Dropout</a> <a href="#chapter-29/section/topic-24">24. From Scratch</a> <a href="#chapter-29/section/topic-25">25. Numerical Debugging</a> <a href="#chapter-29/section/topic-26">26. Fully Masked Rows</a> <a href="#chapter-29/section/topic-27">27. Common Mistakes</a> <a href="#chapter-29/section/topic-28">28. Exercises / Mini Project</a> <a href="#chapter-29/section/topic-29">29. Checklist</a> <a href="#chapter-29/section/topic-30">30. What&#x27;s Next</a> </nav><section id="topic-1" class="source-topic"><span id="source-29-attention-canonical-chapter-29-attention" class="legacy-anchor"></span><span id="source-29-attention-canonical-1-why-attention" class="legacy-anchor"></span><h3>1. Why Attention?</h3>
+<p>RNNs compress past information through a recurrent state.</p>
+<p>Attention allows a query position to directly read from many positions:</p>
+<pre><code class="language-text">Query
+  ↓
+compare with Keys
+  ↓
+attention weights
+  ↓
+weighted sum of Values
+</code></pre>
+<p>This creates short paths between distant positions.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>1. Why Attention?</h3>
+<p>RNNs compress past information through a recurrent state.</p>
+<p>Attention allows a query position to directly read from many positions:</p>
+<pre><code class="language-text">Query
+  ↓
+compare with Keys
+  ↓
+attention weights
+  ↓
+weighted sum of Values
+</code></pre>
+<p>This creates short paths between distant positions.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-1-equation"><summary>สมการ</summary><h3>1. Why Attention?</h3>
+<p>RNNs compress past information through a recurrent state.</p>
+<p>Attention allows a query position to directly read from many positions:</p>
+<pre><code class="language-text">Query
+  ↓
+compare with Keys
+  ↓
+attention weights
+  ↓
+weighted sum of Values
+</code></pre>
+<p>This creates short paths between distant positions.</p></details><details id="help-topic-1-visual"><summary>ภาพและ shape</summary><h3>1. Why Attention?</h3>
+<p>RNNs compress past information through a recurrent state.</p>
+<p>Attention allows a query position to directly read from many positions:</p>
+<pre><code class="language-text">Query
+  ↓
+compare with Keys
+  ↓
+attention weights
+  ↓
+weighted sum of Values
+</code></pre>
+<p>This creates short paths between distant positions.</p></details><details id="help-topic-1-code"><summary>โค้ด</summary><h3>1. Why Attention?</h3>
+<p>RNNs compress past information through a recurrent state.</p>
+<p>Attention allows a query position to directly read from many positions:</p>
+<pre><code class="language-text">Query
+  ↓
+compare with Keys
+  ↓
+attention weights
+  ↓
+weighted sum of Values
+</code></pre>
+<p>This creates short paths between distant positions.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-1-result"><summary>ผลการทดลอง</summary><h3>1. Why Attention?</h3>
+<p>RNNs compress past information through a recurrent state.</p>
+<p>Attention allows a query position to directly read from many positions:</p>
+<pre><code class="language-text">Query
+  ↓
+compare with Keys
+  ↓
+attention weights
+  ↓
+weighted sum of Values
+</code></pre>
+<p>This creates short paths between distant positions.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-1"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-2" class="source-topic"><span id="source-29-attention-canonical-2-learning-objectives" class="legacy-anchor"></span><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>explain Query / Key / Value</li>
+<li>derive dot-product attention</li>
+<li>explain the sqrt(d_k) scale factor</li>
+<li>implement stable softmax attention</li>
+<li>apply padding masks</li>
+<li>apply causal masks</li>
+<li>explain self-attention vs cross-attention</li>
+<li>split/combine attention heads</li>
+<li>implement multi-head attention from scratch</li>
+<li>understand attention score complexity</li>
+<li>use PyTorch scaled_dot_product_attention</li>
+<li>distinguish masking semantics across APIs</li>
+<li>debug attention shapes</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>explain Query / Key / Value</li>
+<li>derive dot-product attention</li>
+<li>explain the sqrt(d_k) scale factor</li>
+<li>implement stable softmax attention</li>
+<li>apply padding masks</li>
+<li>apply causal masks</li>
+<li>explain self-attention vs cross-attention</li>
+<li>split/combine attention heads</li>
+<li>implement multi-head attention from scratch</li>
+<li>understand attention score complexity</li>
+<li>use PyTorch scaled_dot_product_attention</li>
+<li>distinguish masking semantics across APIs</li>
+<li>debug attention shapes</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-2-equation"><summary>สมการ</summary><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>explain Query / Key / Value</li>
+<li>derive dot-product attention</li>
+<li>explain the sqrt(d_k) scale factor</li>
+<li>implement stable softmax attention</li>
+<li>apply padding masks</li>
+<li>apply causal masks</li>
+<li>explain self-attention vs cross-attention</li>
+<li>split/combine attention heads</li>
+<li>implement multi-head attention from scratch</li>
+<li>understand attention score complexity</li>
+<li>use PyTorch scaled_dot_product_attention</li>
+<li>distinguish masking semantics across APIs</li>
+<li>debug attention shapes</li>
+</ul></details><details id="help-topic-2-visual"><summary>ภาพและ shape</summary><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>explain Query / Key / Value</li>
+<li>derive dot-product attention</li>
+<li>explain the sqrt(d_k) scale factor</li>
+<li>implement stable softmax attention</li>
+<li>apply padding masks</li>
+<li>apply causal masks</li>
+<li>explain self-attention vs cross-attention</li>
+<li>split/combine attention heads</li>
+<li>implement multi-head attention from scratch</li>
+<li>understand attention score complexity</li>
+<li>use PyTorch scaled_dot_product_attention</li>
+<li>distinguish masking semantics across APIs</li>
+<li>debug attention shapes</li>
+</ul></details><details id="help-topic-2-code"><summary>โค้ด</summary><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>explain Query / Key / Value</li>
+<li>derive dot-product attention</li>
+<li>explain the sqrt(d_k) scale factor</li>
+<li>implement stable softmax attention</li>
+<li>apply padding masks</li>
+<li>apply causal masks</li>
+<li>explain self-attention vs cross-attention</li>
+<li>split/combine attention heads</li>
+<li>implement multi-head attention from scratch</li>
+<li>understand attention score complexity</li>
+<li>use PyTorch scaled_dot_product_attention</li>
+<li>distinguish masking semantics across APIs</li>
+<li>debug attention shapes</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-2-result"><summary>ผลการทดลอง</summary><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>explain Query / Key / Value</li>
+<li>derive dot-product attention</li>
+<li>explain the sqrt(d_k) scale factor</li>
+<li>implement stable softmax attention</li>
+<li>apply padding masks</li>
+<li>apply causal masks</li>
+<li>explain self-attention vs cross-attention</li>
+<li>split/combine attention heads</li>
+<li>implement multi-head attention from scratch</li>
+<li>understand attention score complexity</li>
+<li>use PyTorch scaled_dot_product_attention</li>
+<li>distinguish masking semantics across APIs</li>
+<li>debug attention shapes</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-2"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-3" class="source-topic"><span id="source-29-attention-canonical-3-query-key-value" class="legacy-anchor"></span><h3>3. Query, Key, Value</h3>
+<p>Given token representations X:</p>
+<pre><code class="language-text">Q = X W_Q
+K = X W_K
+V = X W_V
+</code></pre>
+<p>Interpretation:</p>
+<ul>
+<li>Query: what information am I looking for?</li>
+<li>Key: what information does this position advertise?</li>
+<li>Value: what information should be retrieved if selected?</li>
+</ul>
+<p>These are learned projections, not fixed semantic roles.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>query Q=XWQแทนสิ่งที่tokenตำแหน่งนั้นกำลังค้น; X(3,2),WQ(2,2)ได้Q(3,2),ไม่ใช่vectorคำถามจากผู้ใช้เสมอ</p><p>key K=XWKเป็นaddressที่ใช้จับคู่query; QKᵀให้score(queries,keys),ไม่เอาKเป็นweightedcontentก่อนsoftmax</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>query Q=XWQแทนสิ่งที่tokenตำแหน่งนั้นกำลังค้น; X(3,2),WQ(2,2)ได้Q(3,2),ไม่ใช่vectorคำถามจากผู้ใช้เสมอ</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-3-equation"><summary>สมการ</summary><p>query Q=XWQแทนสิ่งที่tokenตำแหน่งนั้นกำลังค้น; X(3,2),WQ(2,2)ได้Q(3,2),ไม่ใช่vectorคำถามจากผู้ใช้เสมอ</p></details><details id="help-topic-3-visual"><summary>ภาพและ shape</summary><p>query Q=XWQแทนสิ่งที่tokenตำแหน่งนั้นกำลังค้น; X(3,2),WQ(2,2)ได้Q(3,2),ไม่ใช่vectorคำถามจากผู้ใช้เสมอ</p></details><details id="help-topic-3-code"><summary>โค้ด</summary><p>query Q=XWQแทนสิ่งที่tokenตำแหน่งนั้นกำลังค้น; X(3,2),WQ(2,2)ได้Q(3,2),ไม่ใช่vectorคำถามจากผู้ใช้เสมอ</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-3-result"><summary>ผลการทดลอง</summary><p>query Q=XWQแทนสิ่งที่tokenตำแหน่งนั้นกำลังค้น; X(3,2),WQ(2,2)ได้Q(3,2),ไม่ใช่vectorคำถามจากผู้ใช้เสมอ</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-3"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-4" class="source-topic"><span id="source-29-attention-canonical-4-dot-product-scores" class="legacy-anchor"></span><h3>4. Dot-Product Scores</h3>
+<p>For one query q and keys k_j:</p>
+<pre><code class="language-text">score_j = q · k_j
+</code></pre>
+<p>For matrices:</p>
+<pre><code class="language-text">Scores = Q K^T
+</code></pre>
+<p>Shapes:</p>
+<pre><code class="language-text">Q: (T_q, d_k)
+K: (T_k, d_k)
+
+QK^T:
+(T_q, T_k)
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>Q=[1,0],K=[[1,0],[0,1]],dk2ให้scores[.707107,0],weights≈[.669762,.330238]; weightsรวม1ทุกqueryที่ไม่fullymasked</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-4-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Q=[1,0],K=[[1,0],[0,1]],dk2ให้scores[.707107,0],weights≈[.669762,.330238]; weightsรวม1ทุกqueryที่ไม่fullymasked</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-4-equation"><summary>สมการ</summary><p>Q=[1,0],K=[[1,0],[0,1]],dk2ให้scores[.707107,0],weights≈[.669762,.330238]; weightsรวม1ทุกqueryที่ไม่fullymasked</p></details><details id="help-topic-4-visual"><summary>ภาพและ shape</summary><p>Q=[1,0],K=[[1,0],[0,1]],dk2ให้scores[.707107,0],weights≈[.669762,.330238]; weightsรวม1ทุกqueryที่ไม่fullymasked</p></details><details id="help-topic-4-code"><summary>โค้ด</summary><p>Q=[1,0],K=[[1,0],[0,1]],dk2ให้scores[.707107,0],weights≈[.669762,.330238]; weightsรวม1ทุกqueryที่ไม่fullymasked</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-4-result"><summary>ผลการทดลอง</summary><p>Q=[1,0],K=[[1,0],[0,1]],dk2ให้scores[.707107,0],weights≈[.669762,.330238]; weightsรวม1ทุกqueryที่ไม่fullymasked</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-4"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-5" class="source-topic"><span id="source-29-attention-canonical-5-why-scale-by-sqrtd_k" class="legacy-anchor"></span><h3>5. Why Scale by sqrt(d_k)?</h3>
+<p>If query/key coordinates have roughly unit variance, the dot-product variance grows with d_k.</p>
+<p>Large score magnitudes can push softmax into saturation.</p>
+<p>Scaled dot-product attention uses:</p>
+<pre><code class="language-text">Scores =
+QK^T / sqrt(d_k)
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>Q=[1,0],K=[[1,0],[0,1]],dk2ให้scores[.707107,0],weights≈[.669762,.330238]; weightsรวม1ทุกqueryที่ไม่fullymasked</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-5-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Q=[1,0],K=[[1,0],[0,1]],dk2ให้scores[.707107,0],weights≈[.669762,.330238]; weightsรวม1ทุกqueryที่ไม่fullymasked</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-5-equation"><summary>สมการ</summary><p>Q=[1,0],K=[[1,0],[0,1]],dk2ให้scores[.707107,0],weights≈[.669762,.330238]; weightsรวม1ทุกqueryที่ไม่fullymasked</p></details><details id="help-topic-5-visual"><summary>ภาพและ shape</summary><p>Q=[1,0],K=[[1,0],[0,1]],dk2ให้scores[.707107,0],weights≈[.669762,.330238]; weightsรวม1ทุกqueryที่ไม่fullymasked</p></details><details id="help-topic-5-code"><summary>โค้ด</summary><p>Q=[1,0],K=[[1,0],[0,1]],dk2ให้scores[.707107,0],weights≈[.669762,.330238]; weightsรวม1ทุกqueryที่ไม่fullymasked</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-5-result"><summary>ผลการทดลอง</summary><p>Q=[1,0],K=[[1,0],[0,1]],dk2ให้scores[.707107,0],weights≈[.669762,.330238]; weightsรวม1ทุกqueryที่ไม่fullymasked</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-5"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-6" class="source-topic"><span id="source-29-attention-canonical-6-softmax" class="legacy-anchor"></span><h3>6. Softmax</h3>
+<p>Convert scores into weights:</p>
+<pre><code class="language-text">A = softmax(Scores)
+</code></pre>
+<p>Each query row sums to 1.</p>
+<p>Then:</p>
+<pre><code class="language-text">Output = A V
+</code></pre><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-6-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>6. Softmax</h3>
+<p>Convert scores into weights:</p>
+<pre><code class="language-text">A = softmax(Scores)
+</code></pre>
+<p>Each query row sums to 1.</p>
+<p>Then:</p>
+<pre><code class="language-text">Output = A V
+</code></pre><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-6-equation"><summary>สมการ</summary><h3>6. Softmax</h3>
+<p>Convert scores into weights:</p>
+<pre><code class="language-text">A = softmax(Scores)
+</code></pre>
+<p>Each query row sums to 1.</p>
+<p>Then:</p>
+<pre><code class="language-text">Output = A V
+</code></pre></details><details id="help-topic-6-visual"><summary>ภาพและ shape</summary><h3>6. Softmax</h3>
+<p>Convert scores into weights:</p>
+<pre><code class="language-text">A = softmax(Scores)
+</code></pre>
+<p>Each query row sums to 1.</p>
+<p>Then:</p>
+<pre><code class="language-text">Output = A V
+</code></pre></details><details id="help-topic-6-code"><summary>โค้ด</summary><h3>6. Softmax</h3>
+<p>Convert scores into weights:</p>
+<pre><code class="language-text">A = softmax(Scores)
+</code></pre>
+<p>Each query row sums to 1.</p>
+<p>Then:</p>
+<pre><code class="language-text">Output = A V
+</code></pre><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-6-result"><summary>ผลการทดลอง</summary><h3>6. Softmax</h3>
+<p>Convert scores into weights:</p>
+<pre><code class="language-text">A = softmax(Scores)
+</code></pre>
+<p>Each query row sums to 1.</p>
+<p>Then:</p>
+<pre><code class="language-text">Output = A V
+</code></pre><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-6"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-7" class="source-topic"><span id="source-29-attention-canonical-7-stable-softmax" class="legacy-anchor"></span><h3>7. Stable Softmax</h3>
+<p>Before exponentiation:</p>
+<pre><code class="language-text">scores =
+scores - row_max(scores)
+</code></pre>
+<p>This avoids overflow for large positive values.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>subtractrowmaxก่อนexp; fullymaskedrowmax−∞ทำNaNจึงrejectหรือกำหนดemptyrowpolicy; logitsfp16อาจoverflowก่อนsoftmaxให้accumulateFP32</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-7-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>subtractrowmaxก่อนexp; fullymaskedrowmax−∞ทำNaNจึงrejectหรือกำหนดemptyrowpolicy; logitsfp16อาจoverflowก่อนsoftmaxให้accumulateFP32</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-7-equation"><summary>สมการ</summary><p>subtractrowmaxก่อนexp; fullymaskedrowmax−∞ทำNaNจึงrejectหรือกำหนดemptyrowpolicy; logitsfp16อาจoverflowก่อนsoftmaxให้accumulateFP32</p></details><details id="help-topic-7-visual"><summary>ภาพและ shape</summary><p>subtractrowmaxก่อนexp; fullymaskedrowmax−∞ทำNaNจึงrejectหรือกำหนดemptyrowpolicy; logitsfp16อาจoverflowก่อนsoftmaxให้accumulateFP32</p></details><details id="help-topic-7-code"><summary>โค้ด</summary><p>subtractrowmaxก่อนexp; fullymaskedrowmax−∞ทำNaNจึงrejectหรือกำหนดemptyrowpolicy; logitsfp16อาจoverflowก่อนsoftmaxให้accumulateFP32</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-7-result"><summary>ผลการทดลอง</summary><p>subtractrowmaxก่อนexp; fullymaskedrowmax−∞ทำNaNจึงrejectหรือกำหนดemptyrowpolicy; logitsfp16อาจoverflowก่อนsoftmaxให้accumulateFP32</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-7"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-8" class="source-topic"><span id="source-29-attention-canonical-8-full-formula" class="legacy-anchor"></span><h3>8. Full Formula</h3>
+<pre><code class="language-text">Attention(Q,K,V)
+=
+softmax(
+    QK^T / sqrt(d_k)
+)
+V
+</code></pre>
+<p>With additive mask M:</p>
+<pre><code class="language-text">softmax(
+    QK^T / sqrt(d_k)
+    + M
+)
+V
+</code></pre>
+<p>Masked positions receive a very negative score or are excluded by equivalent API semantics.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>scaledattention A=softmax(QKᵀ/√dk+mask),O=AV; scaleลดvarianceของdotproductเมื่อdimensionสูง ไม่ใช่normalizeV</p><p>คำนวณV=XWVแล้วO=A@V; A=[.25,.75],V=[[2,0],[0,4]]ให้O=[.5,3] ไม่ใช่เลือกvalueของmaxweightอย่างเดียว</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-8-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>scaledattention A=softmax(QKᵀ/√dk+mask),O=AV; scaleลดvarianceของdotproductเมื่อdimensionสูง ไม่ใช่normalizeV</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-8-equation"><summary>สมการ</summary><p>scaledattention A=softmax(QKᵀ/√dk+mask),O=AV; scaleลดvarianceของdotproductเมื่อdimensionสูง ไม่ใช่normalizeV</p></details><details id="help-topic-8-visual"><summary>ภาพและ shape</summary><p>scaledattention A=softmax(QKᵀ/√dk+mask),O=AV; scaleลดvarianceของdotproductเมื่อdimensionสูง ไม่ใช่normalizeV</p></details><details id="help-topic-8-code"><summary>โค้ด</summary><p>scaledattention A=softmax(QKᵀ/√dk+mask),O=AV; scaleลดvarianceของdotproductเมื่อdimensionสูง ไม่ใช่normalizeV</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-8-result"><summary>ผลการทดลอง</summary><p>scaledattention A=softmax(QKᵀ/√dk+mask),O=AV; scaleลดvarianceของdotproductเมื่อdimensionสูง ไม่ใช่normalizeV</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-8"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-9" class="source-topic"><span id="source-29-attention-canonical-9-self-attention" class="legacy-anchor"></span><h3>9. Self-Attention</h3>
+<p>Q, K, V come from the same sequence:</p>
+<pre><code class="language-text">X
+├→ W_Q → Q
+├→ W_K → K
+└→ W_V → V
+</code></pre>
+<p>Each position can interact with other positions according to the mask.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-9-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>9. Self-Attention</h3>
+<p>Q, K, V come from the same sequence:</p>
+<pre><code class="language-text">X
+├→ W_Q → Q
+├→ W_K → K
+└→ W_V → V
+</code></pre>
+<p>Each position can interact with other positions according to the mask.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-9-equation"><summary>สมการ</summary><h3>9. Self-Attention</h3>
+<p>Q, K, V come from the same sequence:</p>
+<pre><code class="language-text">X
+├→ W_Q → Q
+├→ W_K → K
+└→ W_V → V
+</code></pre>
+<p>Each position can interact with other positions according to the mask.</p></details><details id="help-topic-9-visual"><summary>ภาพและ shape</summary><h3>9. Self-Attention</h3>
+<p>Q, K, V come from the same sequence:</p>
+<pre><code class="language-text">X
+├→ W_Q → Q
+├→ W_K → K
+└→ W_V → V
+</code></pre>
+<p>Each position can interact with other positions according to the mask.</p></details><details id="help-topic-9-code"><summary>โค้ด</summary><h3>9. Self-Attention</h3>
+<p>Q, K, V come from the same sequence:</p>
+<pre><code class="language-text">X
+├→ W_Q → Q
+├→ W_K → K
+└→ W_V → V
+</code></pre>
+<p>Each position can interact with other positions according to the mask.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-9-result"><summary>ผลการทดลอง</summary><h3>9. Self-Attention</h3>
+<p>Q, K, V come from the same sequence:</p>
+<pre><code class="language-text">X
+├→ W_Q → Q
+├→ W_K → K
+└→ W_V → V
+</code></pre>
+<p>Each position can interact with other positions according to the mask.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-9"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-10" class="source-topic"><span id="source-29-attention-canonical-10-cross-attention" class="legacy-anchor"></span><h3>10. Cross-Attention</h3>
+<p>Queries come from one representation, keys/values from another.</p>
+<p>Example:</p>
+<pre><code class="language-text">decoder states → Q
+encoder states → K,V
+</code></pre>
+<p>This appears in encoder-decoder Transformers.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-10-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>10. Cross-Attention</h3>
+<p>Queries come from one representation, keys/values from another.</p>
+<p>Example:</p>
+<pre><code class="language-text">decoder states → Q
+encoder states → K,V
+</code></pre>
+<p>This appears in encoder-decoder Transformers.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-10-equation"><summary>สมการ</summary><h3>10. Cross-Attention</h3>
+<p>Queries come from one representation, keys/values from another.</p>
+<p>Example:</p>
+<pre><code class="language-text">decoder states → Q
+encoder states → K,V
+</code></pre>
+<p>This appears in encoder-decoder Transformers.</p></details><details id="help-topic-10-visual"><summary>ภาพและ shape</summary><h3>10. Cross-Attention</h3>
+<p>Queries come from one representation, keys/values from another.</p>
+<p>Example:</p>
+<pre><code class="language-text">decoder states → Q
+encoder states → K,V
+</code></pre>
+<p>This appears in encoder-decoder Transformers.</p></details><details id="help-topic-10-code"><summary>โค้ด</summary><h3>10. Cross-Attention</h3>
+<p>Queries come from one representation, keys/values from another.</p>
+<p>Example:</p>
+<pre><code class="language-text">decoder states → Q
+encoder states → K,V
+</code></pre>
+<p>This appears in encoder-decoder Transformers.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-10-result"><summary>ผลการทดลอง</summary><h3>10. Cross-Attention</h3>
+<p>Queries come from one representation, keys/values from another.</p>
+<p>Example:</p>
+<pre><code class="language-text">decoder states → Q
+encoder states → K,V
+</code></pre>
+<p>This appears in encoder-decoder Transformers.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-10"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-11" class="source-topic"><span id="source-29-attention-canonical-11-causal-mask" class="legacy-anchor"></span><h3>11. Causal Mask</h3>
+<p>Autoregressive language modeling must not read future positions.</p>
+<p>For T=4:</p>
+<pre><code class="language-text">allowed:
+
+q0 → k0
+q1 → k0,k1
+q2 → k0,k1,k2
+q3 → k0,k1,k2,k3
+</code></pre>
+<p>Matrix:</p>
+<pre><code class="language-text">1 0 0 0
+1 1 0 0
+1 1 1 0
+1 1 1 1
+</code></pre>
+<p>The upper triangle is masked.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>causalmaskต้องปิดfuturej&gt;iก่อนsoftmax; maskหลังsoftmaxแล้วไม่renormalizeทำrowmass&lt;1; inferencecachepositionต้องตรงabsoluteoffset</p><p>คงQKVเปลี่ยนmasknone→causal; outputtoken0ต้องอ่านเฉพาะV0และfuturemass0,tokenท้ายอาจเท่าเดิม; gradientห้ามไหลไปfutureinput</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-11-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>causalmaskต้องปิดfuturej&gt;iก่อนsoftmax; maskหลังsoftmaxแล้วไม่renormalizeทำrowmass&lt;1; inferencecachepositionต้องตรงabsoluteoffset</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-11-equation"><summary>สมการ</summary><p>causalmaskต้องปิดfuturej&gt;iก่อนsoftmax; maskหลังsoftmaxแล้วไม่renormalizeทำrowmass&lt;1; inferencecachepositionต้องตรงabsoluteoffset</p></details><details id="help-topic-11-visual"><summary>ภาพและ shape</summary><p>causalmaskต้องปิดfuturej&gt;iก่อนsoftmax; maskหลังsoftmaxแล้วไม่renormalizeทำrowmass&lt;1; inferencecachepositionต้องตรงabsoluteoffset</p></details><details id="help-topic-11-code"><summary>โค้ด</summary><p>causalmaskต้องปิดfuturej&gt;iก่อนsoftmax; maskหลังsoftmaxแล้วไม่renormalizeทำrowmass&lt;1; inferencecachepositionต้องตรงabsoluteoffset</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-11-result"><summary>ผลการทดลอง</summary><p>causalmaskต้องปิดfuturej&gt;iก่อนsoftmax; maskหลังsoftmaxแล้วไม่renormalizeทำrowmass&lt;1; inferencecachepositionต้องตรงabsoluteoffset</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-11"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-12" class="source-topic"><span id="source-29-attention-canonical-12-padding-mask" class="legacy-anchor"></span><h3>12. Padding Mask</h3>
+<p>Sequences in a batch can have different valid lengths.</p>
+<p>Padding positions should not contribute as keys/values.</p>
+<p>A padding mask and a causal mask solve different problems:</p>
+<ul>
+<li>causal: future information</li>
+<li>padding: nonexistent tokens</li>
+</ul>
+<p>Sometimes both are needed.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>fitprojectionsบนtrain; causallanguagevalidationห้ามfutureattention; paddingmaskและlossmaskคนละหน้าที่ต้องตรวจทั้งคู่</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-12-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>fitprojectionsบนtrain; causallanguagevalidationห้ามfutureattention; paddingmaskและlossmaskคนละหน้าที่ต้องตรวจทั้งคู่</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-12-equation"><summary>สมการ</summary><p>fitprojectionsบนtrain; causallanguagevalidationห้ามfutureattention; paddingmaskและlossmaskคนละหน้าที่ต้องตรวจทั้งคู่</p></details><details id="help-topic-12-visual"><summary>ภาพและ shape</summary><p>fitprojectionsบนtrain; causallanguagevalidationห้ามfutureattention; paddingmaskและlossmaskคนละหน้าที่ต้องตรวจทั้งคู่</p></details><details id="help-topic-12-code"><summary>โค้ด</summary><p>fitprojectionsบนtrain; causallanguagevalidationห้ามfutureattention; paddingmaskและlossmaskคนละหน้าที่ต้องตรวจทั้งคู่</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-12-result"><summary>ผลการทดลอง</summary><p>fitprojectionsบนtrain; causallanguagevalidationห้ามfutureattention; paddingmaskและlossmaskคนละหน้าที่ต้องตรวจทั้งคู่</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-12"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-13" class="source-topic"><span id="source-29-attention-canonical-13-mask-semantics-are-api-specific" class="legacy-anchor"></span><h3>13. Mask Semantics Are API-Specific</h3>
+<p>Some APIs use:
+- True = keep
+- True = mask
+- additive 0 / -inf masks</p>
+<p>Never copy a mask from one API to another without reading its semantics.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>คงQKVเปลี่ยนmasknone→causal; outputtoken0ต้องอ่านเฉพาะV0และfuturemass0,tokenท้ายอาจเท่าเดิม; gradientห้ามไหลไปfutureinput</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-13-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>คงQKVเปลี่ยนmasknone→causal; outputtoken0ต้องอ่านเฉพาะV0และfuturemass0,tokenท้ายอาจเท่าเดิม; gradientห้ามไหลไปfutureinput</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-13-equation"><summary>สมการ</summary><p>คงQKVเปลี่ยนmasknone→causal; outputtoken0ต้องอ่านเฉพาะV0และfuturemass0,tokenท้ายอาจเท่าเดิม; gradientห้ามไหลไปfutureinput</p></details><details id="help-topic-13-visual"><summary>ภาพและ shape</summary><p>คงQKVเปลี่ยนmasknone→causal; outputtoken0ต้องอ่านเฉพาะV0และfuturemass0,tokenท้ายอาจเท่าเดิม; gradientห้ามไหลไปfutureinput</p></details><details id="help-topic-13-code"><summary>โค้ด</summary><p>คงQKVเปลี่ยนmasknone→causal; outputtoken0ต้องอ่านเฉพาะV0และfuturemass0,tokenท้ายอาจเท่าเดิม; gradientห้ามไหลไปfutureinput</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-13-result"><summary>ผลการทดลอง</summary><p>คงQKVเปลี่ยนmasknone→causal; outputtoken0ต้องอ่านเฉพาะV0และfuturemass0,tokenท้ายอาจเท่าเดิม; gradientห้ามไหลไปfutureinput</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-13"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-14" class="source-topic"><span id="source-29-attention-canonical-14-multi-head-attention" class="legacy-anchor"></span><h3>14. Multi-Head Attention</h3>
+<p>Instead of one attention operation with full dimension, split representation into h heads.</p>
+<pre><code class="language-text">d_model = h * d_head
+</code></pre>
+<p>Each head learns separate projections and attention patterns.</p>
+<p>For head i:</p>
+<pre><code class="language-text">head_i =
+Attention(
+    Q_i,
+    K_i,
+    V_i
+)
+</code></pre>
+<p>Then:</p>
+<pre><code class="language-text">Concat(head_1,...,head_h) W_O
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>multiheadแบ่งfeaturesให้headsแต่ละชุดเรียนrepresentationต่างกัน; dmodelต้องหารheadsลงตัวและcostscoreO(BhT²); ไม่คัดลอกweightsheadเดียวแล้วอ้างหลายกลไก</p><p>seed7X/projectionsfixed; compareheads1/2โดยdk2/1,recordQ/K/V/A/O; เปลี่ยนheadsอย่างเดียวแบ่งfeatureใหม่จึงoutputอาจเปลี่ยนตามจริง</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-14-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>multiheadแบ่งfeaturesให้headsแต่ละชุดเรียนrepresentationต่างกัน; dmodelต้องหารheadsลงตัวและcostscoreO(BhT²); ไม่คัดลอกweightsheadเดียวแล้วอ้างหลายกลไก</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-14-equation"><summary>สมการ</summary><p>multiheadแบ่งfeaturesให้headsแต่ละชุดเรียนrepresentationต่างกัน; dmodelต้องหารheadsลงตัวและcostscoreO(BhT²); ไม่คัดลอกweightsheadเดียวแล้วอ้างหลายกลไก</p></details><details id="help-topic-14-visual"><summary>ภาพและ shape</summary><p>multiheadแบ่งfeaturesให้headsแต่ละชุดเรียนrepresentationต่างกัน; dmodelต้องหารheadsลงตัวและcostscoreO(BhT²); ไม่คัดลอกweightsheadเดียวแล้วอ้างหลายกลไก</p></details><details id="help-topic-14-code"><summary>โค้ด</summary><p>multiheadแบ่งfeaturesให้headsแต่ละชุดเรียนrepresentationต่างกัน; dmodelต้องหารheadsลงตัวและcostscoreO(BhT²); ไม่คัดลอกweightsheadเดียวแล้วอ้างหลายกลไก</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-14-result"><summary>ผลการทดลอง</summary><p>multiheadแบ่งfeaturesให้headsแต่ละชุดเรียนrepresentationต่างกัน; dmodelต้องหารheadsลงตัวและcostscoreO(BhT²); ไม่คัดลอกweightsheadเดียวแล้วอ้างหลายกลไก</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-14"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-15" class="source-topic"><span id="source-29-attention-canonical-15-shapes" class="legacy-anchor"></span><h3>15. Shapes</h3>
+<p>Batch-first self-attention:</p>
+<pre><code class="language-text">X:
+(B,T,D)
+
+Q/K/V:
+(B,T,D)
+
+split heads:
+(B,H,T,D_head)
+
+scores:
+(B,H,T,T)
+
+weights:
+(B,H,T,T)
+
+head output:
+(B,H,T,D_head)
+
+combine:
+(B,T,D)
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>seed7X/projectionsfixed; compareheads1/2โดยdk2/1,recordQ/K/V/A/O; เปลี่ยนheadsอย่างเดียวแบ่งfeatureใหม่จึงoutputอาจเปลี่ยนตามจริง</p><p>Q(B,h,Tq,dk)@K.transpose(−2,−1)→(B,h,Tq,Tk); maskต้องbroadcastตรงaxes ไม่สลับqueryกับkey; Vlastdimdvอาจต่างdk</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-15-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>seed7X/projectionsfixed; compareheads1/2โดยdk2/1,recordQ/K/V/A/O; เปลี่ยนheadsอย่างเดียวแบ่งfeatureใหม่จึงoutputอาจเปลี่ยนตามจริง</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-15-equation"><summary>สมการ</summary><p>seed7X/projectionsfixed; compareheads1/2โดยdk2/1,recordQ/K/V/A/O; เปลี่ยนheadsอย่างเดียวแบ่งfeatureใหม่จึงoutputอาจเปลี่ยนตามจริง</p></details><details id="help-topic-15-visual"><summary>ภาพและ shape</summary><p>seed7X/projectionsfixed; compareheads1/2โดยdk2/1,recordQ/K/V/A/O; เปลี่ยนheadsอย่างเดียวแบ่งfeatureใหม่จึงoutputอาจเปลี่ยนตามจริง</p></details><details id="help-topic-15-code"><summary>โค้ด</summary><p>seed7X/projectionsfixed; compareheads1/2โดยdk2/1,recordQ/K/V/A/O; เปลี่ยนheadsอย่างเดียวแบ่งfeatureใหม่จึงoutputอาจเปลี่ยนตามจริง</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-15-result"><summary>ผลการทดลอง</summary><p>seed7X/projectionsfixed; compareheads1/2โดยdk2/1,recordQ/K/V/A/O; เปลี่ยนheadsอย่างเดียวแบ่งfeatureใหม่จึงoutputอาจเปลี่ยนตามจริง</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-15"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-16" class="source-topic"><span id="source-29-attention-canonical-16-why-multiple-heads" class="legacy-anchor"></span><h3>16. Why Multiple Heads?</h3>
+<p>Different heads can learn different projection subspaces and interaction patterns.</p>
+<p>However:
+- a head is not guaranteed to correspond to one human concept
+- visual attention maps alone are not complete explanations of model decisions</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>multiheadแบ่งfeaturesให้headsแต่ละชุดเรียนrepresentationต่างกัน; dmodelต้องหารheadsลงตัวและcostscoreO(BhT²); ไม่คัดลอกweightsheadเดียวแล้วอ้างหลายกลไก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-16-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>multiheadแบ่งfeaturesให้headsแต่ละชุดเรียนrepresentationต่างกัน; dmodelต้องหารheadsลงตัวและcostscoreO(BhT²); ไม่คัดลอกweightsheadเดียวแล้วอ้างหลายกลไก</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-16-equation"><summary>สมการ</summary><p>multiheadแบ่งfeaturesให้headsแต่ละชุดเรียนrepresentationต่างกัน; dmodelต้องหารheadsลงตัวและcostscoreO(BhT²); ไม่คัดลอกweightsheadเดียวแล้วอ้างหลายกลไก</p></details><details id="help-topic-16-visual"><summary>ภาพและ shape</summary><p>multiheadแบ่งfeaturesให้headsแต่ละชุดเรียนrepresentationต่างกัน; dmodelต้องหารheadsลงตัวและcostscoreO(BhT²); ไม่คัดลอกweightsheadเดียวแล้วอ้างหลายกลไก</p></details><details id="help-topic-16-code"><summary>โค้ด</summary><p>multiheadแบ่งfeaturesให้headsแต่ละชุดเรียนrepresentationต่างกัน; dmodelต้องหารheadsลงตัวและcostscoreO(BhT²); ไม่คัดลอกweightsheadเดียวแล้วอ้างหลายกลไก</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-16-result"><summary>ผลการทดลอง</summary><p>multiheadแบ่งfeaturesให้headsแต่ละชุดเรียนrepresentationต่างกัน; dmodelต้องหารheadsลงตัวและcostscoreO(BhT²); ไม่คัดลอกweightsheadเดียวแล้วอ้างหลายกลไก</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-16"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-17" class="source-topic"><span id="source-29-attention-canonical-17-output-projection" class="legacy-anchor"></span><h3>17. Output Projection</h3>
+<p>Concatenated heads are mixed by:</p>
+<pre><code class="language-text">W_O
+</code></pre>
+<p>Without this projection, heads would remain independently partitioned at the block output.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>X→QKVprojections→reshape/splitheads→scaledQKᵀ→mask→rowsoftmax→AV→concat→WO; ใช้multiheadlabดูtensorทุกขั้น</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-17-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>X→QKVprojections→reshape/splitheads→scaledQKᵀ→mask→rowsoftmax→AV→concat→WO; ใช้multiheadlabดูtensorทุกขั้น</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-17-equation"><summary>สมการ</summary><p>X→QKVprojections→reshape/splitheads→scaledQKᵀ→mask→rowsoftmax→AV→concat→WO; ใช้multiheadlabดูtensorทุกขั้น</p></details><details id="help-topic-17-visual"><summary>ภาพและ shape</summary><p>X→QKVprojections→reshape/splitheads→scaledQKᵀ→mask→rowsoftmax→AV→concat→WO; ใช้multiheadlabดูtensorทุกขั้น</p></details><details id="help-topic-17-code"><summary>โค้ด</summary><p>X→QKVprojections→reshape/splitheads→scaledQKᵀ→mask→rowsoftmax→AV→concat→WO; ใช้multiheadlabดูtensorทุกขั้น</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-17-result"><summary>ผลการทดลอง</summary><p>X→QKVprojections→reshape/splitheads→scaledQKᵀ→mask→rowsoftmax→AV→concat→WO; ใช้multiheadlabดูtensorทุกขั้น</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-17"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-18" class="source-topic"><span id="source-29-attention-canonical-18-attention-complexity" class="legacy-anchor"></span><h3>18. Attention Complexity</h3>
+<p>For self-attention sequence length T:</p>
+<pre><code class="language-text">score matrix size ~ T²
+</code></pre>
+<p>Compute roughly includes:</p>
+<pre><code class="language-text">QK^T: O(T² d)
+A V:  O(T² d)
+</code></pre>
+<p>Memory for dense attention weights can also grow quadratically.</p>
+<p>This becomes a core challenge for long context.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>fullattention O(BhT²dk)เวลาและO(BhT²)scorememory; projectionsO(BTdmodel²); fusedattentionลดmaterializedmemoryแต่ไม่เปลี่ยนสมการพื้นฐาน</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-18-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>fullattention O(BhT²dk)เวลาและO(BhT²)scorememory; projectionsO(BTdmodel²); fusedattentionลดmaterializedmemoryแต่ไม่เปลี่ยนสมการพื้นฐาน</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-18-equation"><summary>สมการ</summary><p>fullattention O(BhT²dk)เวลาและO(BhT²)scorememory; projectionsO(BTdmodel²); fusedattentionลดmaterializedmemoryแต่ไม่เปลี่ยนสมการพื้นฐาน</p></details><details id="help-topic-18-visual"><summary>ภาพและ shape</summary><p>fullattention O(BhT²dk)เวลาและO(BhT²)scorememory; projectionsO(BTdmodel²); fusedattentionลดmaterializedmemoryแต่ไม่เปลี่ยนสมการพื้นฐาน</p></details><details id="help-topic-18-code"><summary>โค้ด</summary><p>fullattention O(BhT²dk)เวลาและO(BhT²)scorememory; projectionsO(BTdmodel²); fusedattentionลดmaterializedmemoryแต่ไม่เปลี่ยนสมการพื้นฐาน</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-18-result"><summary>ผลการทดลอง</summary><p>fullattention O(BhT²dk)เวลาและO(BhT²)scorememory; projectionsO(BTdmodel²); fusedattentionลดmaterializedmemoryแต่ไม่เปลี่ยนสมการพื้นฐาน</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-18"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-19" class="source-topic"><span id="source-29-attention-canonical-19-attention-vs-rnn" class="legacy-anchor"></span><h3>19. Attention vs RNN</h3>
+<p>RNN:
+- sequential recurrence
+- O(T) state transitions
+- long gradient path</p>
+<p>Self-attention:
+- pairwise interactions
+- highly parallel over sequence positions
+- O(T²) dense score interactions</p>
+<p>Neither dominates every latency/memory setting.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>บันทึกprojectionweights/headsplit/scalefactor/mask/dtype; ทดลอง2headsช่วยcopy-two-relationsเทียบ1headด้วยparameterbudgetใกล้กันและholdouttask</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-19-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>บันทึกprojectionweights/headsplit/scalefactor/mask/dtype; ทดลอง2headsช่วยcopy-two-relationsเทียบ1headด้วยparameterbudgetใกล้กันและholdouttask</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-19-equation"><summary>สมการ</summary><p>บันทึกprojectionweights/headsplit/scalefactor/mask/dtype; ทดลอง2headsช่วยcopy-two-relationsเทียบ1headด้วยparameterbudgetใกล้กันและholdouttask</p></details><details id="help-topic-19-visual"><summary>ภาพและ shape</summary><p>บันทึกprojectionweights/headsplit/scalefactor/mask/dtype; ทดลอง2headsช่วยcopy-two-relationsเทียบ1headด้วยparameterbudgetใกล้กันและholdouttask</p></details><details id="help-topic-19-code"><summary>โค้ด</summary><p>บันทึกprojectionweights/headsplit/scalefactor/mask/dtype; ทดลอง2headsช่วยcopy-two-relationsเทียบ1headด้วยparameterbudgetใกล้กันและholdouttask</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-19-result"><summary>ผลการทดลอง</summary><p>บันทึกprojectionweights/headsplit/scalefactor/mask/dtype; ทดลอง2headsช่วยcopy-two-relationsเทียบ1headด้วยparameterbudgetใกล้กันและholdouttask</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-19"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-20" class="source-topic"><span id="source-29-attention-canonical-20-attention-vs-convolution" class="legacy-anchor"></span><h3>20. Attention vs Convolution</h3>
+<p>Convolution:
+- local fixed kernel pattern
+- strong locality bias</p>
+<p>Attention:
+- content-dependent interactions
+- can directly connect distant positions</p>
+<p>Modern architectures sometimes combine both.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>บันทึกprojectionweights/headsplit/scalefactor/mask/dtype; ทดลอง2headsช่วยcopy-two-relationsเทียบ1headด้วยparameterbudgetใกล้กันและholdouttask</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-20-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>บันทึกprojectionweights/headsplit/scalefactor/mask/dtype; ทดลอง2headsช่วยcopy-two-relationsเทียบ1headด้วยparameterbudgetใกล้กันและholdouttask</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-20-equation"><summary>สมการ</summary><p>บันทึกprojectionweights/headsplit/scalefactor/mask/dtype; ทดลอง2headsช่วยcopy-two-relationsเทียบ1headด้วยparameterbudgetใกล้กันและholdouttask</p></details><details id="help-topic-20-visual"><summary>ภาพและ shape</summary><p>บันทึกprojectionweights/headsplit/scalefactor/mask/dtype; ทดลอง2headsช่วยcopy-two-relationsเทียบ1headด้วยparameterbudgetใกล้กันและholdouttask</p></details><details id="help-topic-20-code"><summary>โค้ด</summary><p>บันทึกprojectionweights/headsplit/scalefactor/mask/dtype; ทดลอง2headsช่วยcopy-two-relationsเทียบ1headด้วยparameterbudgetใกล้กันและholdouttask</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-20-result"><summary>ผลการทดลอง</summary><p>บันทึกprojectionweights/headsplit/scalefactor/mask/dtype; ทดลอง2headsช่วยcopy-two-relationsเทียบ1headด้วยparameterbudgetใกล้กันและholdouttask</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-20"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-21" class="source-topic"><span id="source-29-attention-canonical-21-pytorch-sdpa" class="legacy-anchor"></span><h3>21. PyTorch SDPA</h3>
+<p>PyTorch provides:</p>
+<pre><code class="language-python">torch.nn.functional.scaled_dot_product_attention(
+    query,
+    key,
+    value,
+    ...
+)
+</code></pre>
+<p>Modern PyTorch can dispatch to optimized fused implementations depending on hardware/input/settings.</p>
+<p>Use this primitive after understanding the manual formula.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>torch.scaled_dot_product_attentionรับbooleanmasksemanticsต่างบางAPI; convertmaskชัดเจน,dropout_p0,dtypefloat64แล้วcompareQKV/O</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-21-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>torch.scaled_dot_product_attentionรับbooleanmasksemanticsต่างบางAPI; convertmaskชัดเจน,dropout_p0,dtypefloat64แล้วcompareQKV/O</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-21-equation"><summary>สมการ</summary><p>torch.scaled_dot_product_attentionรับbooleanmasksemanticsต่างบางAPI; convertmaskชัดเจน,dropout_p0,dtypefloat64แล้วcompareQKV/O</p></details><details id="help-topic-21-visual"><summary>ภาพและ shape</summary><p>torch.scaled_dot_product_attentionรับbooleanmasksemanticsต่างบางAPI; convertmaskชัดเจน,dropout_p0,dtypefloat64แล้วcompareQKV/O</p></details><details id="help-topic-21-code"><summary>โค้ด</summary><p>torch.scaled_dot_product_attentionรับbooleanmasksemanticsต่างบางAPI; convertmaskชัดเจน,dropout_p0,dtypefloat64แล้วcompareQKV/O</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-21-result"><summary>ผลการทดลอง</summary><p>torch.scaled_dot_product_attentionรับbooleanmasksemanticsต่างบางAPI; convertmaskชัดเจน,dropout_p0,dtypefloat64แล้วcompareQKV/O</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-21"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-22" class="source-topic"><span id="source-29-attention-canonical-22-is_causal" class="legacy-anchor"></span><h3>22. is_causal</h3>
+<p>Current SDPA supports causal behavior through an is_causal argument.</p>
+<p>Do not combine causal configuration and arbitrary masks without verifying API constraints/semantics for the PyTorch version in use.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-22-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>22. is_causal</h3>
+<p>Current SDPA supports causal behavior through an is_causal argument.</p>
+<p>Do not combine causal configuration and arbitrary masks without verifying API constraints/semantics for the PyTorch version in use.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-22-equation"><summary>สมการ</summary><h3>22. is_causal</h3>
+<p>Current SDPA supports causal behavior through an is_causal argument.</p>
+<p>Do not combine causal configuration and arbitrary masks without verifying API constraints/semantics for the PyTorch version in use.</p></details><details id="help-topic-22-visual"><summary>ภาพและ shape</summary><h3>22. is_causal</h3>
+<p>Current SDPA supports causal behavior through an is_causal argument.</p>
+<p>Do not combine causal configuration and arbitrary masks without verifying API constraints/semantics for the PyTorch version in use.</p></details><details id="help-topic-22-code"><summary>โค้ด</summary><h3>22. is_causal</h3>
+<p>Current SDPA supports causal behavior through an is_causal argument.</p>
+<p>Do not combine causal configuration and arbitrary masks without verifying API constraints/semantics for the PyTorch version in use.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-22-result"><summary>ผลการทดลอง</summary><h3>22. is_causal</h3>
+<p>Current SDPA supports causal behavior through an is_causal argument.</p>
+<p>Do not combine causal configuration and arbitrary masks without verifying API constraints/semantics for the PyTorch version in use.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-22"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-23" class="source-topic"><span id="source-29-attention-canonical-23-dropout" class="legacy-anchor"></span><h3>23. Dropout</h3>
+<p>Attention dropout is applied to attention probabilities during training in common implementations.</p>
+<p>Important:
+some low-level APIs require you to explicitly pass dropout_p=0 during evaluation rather than automatically reading module training state.</p>
+<p>Read the specific API documentation.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-23-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>23. Dropout</h3>
+<p>Attention dropout is applied to attention probabilities during training in common implementations.</p>
+<p>Important:
+some low-level APIs require you to explicitly pass dropout_p=0 during evaluation rather than automatically reading module training state.</p>
+<p>Read the specific API documentation.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-23-equation"><summary>สมการ</summary><h3>23. Dropout</h3>
+<p>Attention dropout is applied to attention probabilities during training in common implementations.</p>
+<p>Important:
+some low-level APIs require you to explicitly pass dropout_p=0 during evaluation rather than automatically reading module training state.</p>
+<p>Read the specific API documentation.</p></details><details id="help-topic-23-visual"><summary>ภาพและ shape</summary><h3>23. Dropout</h3>
+<p>Attention dropout is applied to attention probabilities during training in common implementations.</p>
+<p>Important:
+some low-level APIs require you to explicitly pass dropout_p=0 during evaluation rather than automatically reading module training state.</p>
+<p>Read the specific API documentation.</p></details><details id="help-topic-23-code"><summary>โค้ด</summary><h3>23. Dropout</h3>
+<p>Attention dropout is applied to attention probabilities during training in common implementations.</p>
+<p>Important:
+some low-level APIs require you to explicitly pass dropout_p=0 during evaluation rather than automatically reading module training state.</p>
+<p>Read the specific API documentation.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-23-result"><summary>ผลการทดลอง</summary><h3>23. Dropout</h3>
+<p>Attention dropout is applied to attention probabilities during training in common implementations.</p>
+<p>Important:
+some low-level APIs require you to explicitly pass dropout_p=0 during evaluation rather than automatically reading module training state.</p>
+<p>Read the specific API documentation.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-23"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-24" class="source-topic"><span id="source-29-attention-canonical-24-from-scratch" class="legacy-anchor"></span><h3>24. From Scratch</h3>
+<p>src/attention_numpy.py includes:</p>
+<ul>
+<li>stable_softmax</li>
+<li>causal_mask</li>
+<li>scaled_dot_product_attention</li>
+<li>split_heads</li>
+<li>combine_heads</li>
+<li>MultiHeadSelfAttentionNumPy</li>
+</ul><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>X=[[1,0],[0,1],[1,1]],WQ=Iได้Q=X; เปลี่ยนWQ00เป็น2ได้Q[[2,0],[0,1],[2,1]]ก่อนคำนวณscoresใหม่</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-24-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>X=[[1,0],[0,1],[1,1]],WQ=Iได้Q=X; เปลี่ยนWQ00เป็น2ได้Q[[2,0],[0,1],[2,1]]ก่อนคำนวณscoresใหม่</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-24-equation"><summary>สมการ</summary><p>X=[[1,0],[0,1],[1,1]],WQ=Iได้Q=X; เปลี่ยนWQ00เป็น2ได้Q[[2,0],[0,1],[2,1]]ก่อนคำนวณscoresใหม่</p></details><details id="help-topic-24-visual"><summary>ภาพและ shape</summary><p>X=[[1,0],[0,1],[1,1]],WQ=Iได้Q=X; เปลี่ยนWQ00เป็น2ได้Q[[2,0],[0,1],[2,1]]ก่อนคำนวณscoresใหม่</p></details><details id="help-topic-24-code"><summary>โค้ด</summary><p>X=[[1,0],[0,1],[1,1]],WQ=Iได้Q=X; เปลี่ยนWQ00เป็น2ได้Q[[2,0],[0,1],[2,1]]ก่อนคำนวณscoresใหม่</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-24-result"><summary>ผลการทดลอง</summary><p>X=[[1,0],[0,1],[1,1]],WQ=Iได้Q=X; เปลี่ยนWQ00เป็น2ได้Q[[2,0],[0,1],[2,1]]ก่อนคำนวณscoresใหม่</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-24"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-25" class="source-topic"><span id="source-29-attention-canonical-25-numerical-debugging" class="legacy-anchor"></span><h3>25. Numerical Debugging</h3>
+<p>Inspect:</p>
+<pre><code class="language-text">Q/K/V shapes
+score min/max
+mask
+softmax row sums
+attention entropy
+output shape
+NaN/Inf
+</code></pre>
+<p>If all attention weights are nearly one-hot immediately:
+- projections may have large scale
+- missing sqrt(d_k)
+- initialization may be too large</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>assertQshape(3,2),changingWQchangesQ/scores,changingWVdoesnotchangeA; causalfuturemass0และallrowsum1; fullymaskedrowต้องerror</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-25-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>assertQshape(3,2),changingWQchangesQ/scores,changingWVdoesnotchangeA; causalfuturemass0และallrowsum1; fullymaskedrowต้องerror</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-25-equation"><summary>สมการ</summary><p>assertQshape(3,2),changingWQchangesQ/scores,changingWVdoesnotchangeA; causalfuturemass0และallrowsum1; fullymaskedrowต้องerror</p></details><details id="help-topic-25-visual"><summary>ภาพและ shape</summary><p>assertQshape(3,2),changingWQchangesQ/scores,changingWVdoesnotchangeA; causalfuturemass0และallrowsum1; fullymaskedrowต้องerror</p></details><details id="help-topic-25-code"><summary>โค้ด</summary><p>assertQshape(3,2),changingWQchangesQ/scores,changingWVdoesnotchangeA; causalfuturemass0และallrowsum1; fullymaskedrowต้องerror</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-25-result"><summary>ผลการทดลอง</summary><p>assertQshape(3,2),changingWQchangesQ/scores,changingWVdoesnotchangeA; causalfuturemass0และallrowsum1; fullymaskedrowต้องerror</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-25"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-26" class="source-topic"><span id="source-29-attention-canonical-26-fully-masked-rows" class="legacy-anchor"></span><h3>26. Fully Masked Rows</h3>
+<p>A fully masked query row has no valid key to attend to.</p>
+<p>Mathematically, softmax over an empty valid set is undefined.</p>
+<p>Production APIs may choose a defined fallback behavior.</p>
+<p>Design masks so query rows have intended valid context and test edge cases explicitly.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>assertQshape(3,2),changingWQchangesQ/scores,changingWVdoesnotchangeA; causalfuturemass0และallrowsum1; fullymaskedrowต้องerror</p><p>subtractrowmaxก่อนexp; fullymaskedrowmax−∞ทำNaNจึงrejectหรือกำหนดemptyrowpolicy; logitsfp16อาจoverflowก่อนsoftmaxให้accumulateFP32</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-26-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>assertQshape(3,2),changingWQchangesQ/scores,changingWVdoesnotchangeA; causalfuturemass0และallrowsum1; fullymaskedrowต้องerror</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-26-equation"><summary>สมการ</summary><p>assertQshape(3,2),changingWQchangesQ/scores,changingWVdoesnotchangeA; causalfuturemass0และallrowsum1; fullymaskedrowต้องerror</p></details><details id="help-topic-26-visual"><summary>ภาพและ shape</summary><p>assertQshape(3,2),changingWQchangesQ/scores,changingWVdoesnotchangeA; causalfuturemass0และallrowsum1; fullymaskedrowต้องerror</p></details><details id="help-topic-26-code"><summary>โค้ด</summary><p>assertQshape(3,2),changingWQchangesQ/scores,changingWVdoesnotchangeA; causalfuturemass0และallrowsum1; fullymaskedrowต้องerror</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-26-result"><summary>ผลการทดลอง</summary><p>assertQshape(3,2),changingWQchangesQ/scores,changingWVdoesnotchangeA; causalfuturemass0และallrowsum1; fullymaskedrowต้องerror</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-26"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-27" class="source-topic"><span id="source-29-attention-canonical-27-common-mistakes" class="legacy-anchor"></span><h3>27. Common Mistakes</h3>
+<ol>
+<li>transpose wrong axes</li>
+<li>divide by sqrt(d_model) instead of sqrt(d_head)</li>
+<li>mask after softmax</li>
+<li>causal mask reversed</li>
+<li>padding mask semantics copied blindly</li>
+<li>d_model not divisible by heads</li>
+<li>combine heads without correct transpose</li>
+<li>softmax across wrong axis</li>
+<li>interpreting attention weight as causality</li>
+<li>ignoring T² memory</li>
+</ol><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-27-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>27. Common Mistakes</h3>
+<ol>
+<li>transpose wrong axes</li>
+<li>divide by sqrt(d_model) instead of sqrt(d_head)</li>
+<li>mask after softmax</li>
+<li>causal mask reversed</li>
+<li>padding mask semantics copied blindly</li>
+<li>d_model not divisible by heads</li>
+<li>combine heads without correct transpose</li>
+<li>softmax across wrong axis</li>
+<li>interpreting attention weight as causality</li>
+<li>ignoring T² memory</li>
+</ol><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-27-equation"><summary>สมการ</summary><h3>27. Common Mistakes</h3>
+<ol>
+<li>transpose wrong axes</li>
+<li>divide by sqrt(d_model) instead of sqrt(d_head)</li>
+<li>mask after softmax</li>
+<li>causal mask reversed</li>
+<li>padding mask semantics copied blindly</li>
+<li>d_model not divisible by heads</li>
+<li>combine heads without correct transpose</li>
+<li>softmax across wrong axis</li>
+<li>interpreting attention weight as causality</li>
+<li>ignoring T² memory</li>
+</ol></details><details id="help-topic-27-visual"><summary>ภาพและ shape</summary><h3>27. Common Mistakes</h3>
+<ol>
+<li>transpose wrong axes</li>
+<li>divide by sqrt(d_model) instead of sqrt(d_head)</li>
+<li>mask after softmax</li>
+<li>causal mask reversed</li>
+<li>padding mask semantics copied blindly</li>
+<li>d_model not divisible by heads</li>
+<li>combine heads without correct transpose</li>
+<li>softmax across wrong axis</li>
+<li>interpreting attention weight as causality</li>
+<li>ignoring T² memory</li>
+</ol></details><details id="help-topic-27-code"><summary>โค้ด</summary><h3>27. Common Mistakes</h3>
+<ol>
+<li>transpose wrong axes</li>
+<li>divide by sqrt(d_model) instead of sqrt(d_head)</li>
+<li>mask after softmax</li>
+<li>causal mask reversed</li>
+<li>padding mask semantics copied blindly</li>
+<li>d_model not divisible by heads</li>
+<li>combine heads without correct transpose</li>
+<li>softmax across wrong axis</li>
+<li>interpreting attention weight as causality</li>
+<li>ignoring T² memory</li>
+</ol><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-27-result"><summary>ผลการทดลอง</summary><h3>27. Common Mistakes</h3>
+<ol>
+<li>transpose wrong axes</li>
+<li>divide by sqrt(d_model) instead of sqrt(d_head)</li>
+<li>mask after softmax</li>
+<li>causal mask reversed</li>
+<li>padding mask semantics copied blindly</li>
+<li>d_model not divisible by heads</li>
+<li>combine heads without correct transpose</li>
+<li>softmax across wrong axis</li>
+<li>interpreting attention weight as causality</li>
+<li>ignoring T² memory</li>
+</ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-27"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-28" class="source-topic"><span id="source-29-attention-canonical-28-exercises-mini-project" class="legacy-anchor"></span><h3>28. Exercises / Mini Project</h3>
+<ul>
+<li><a href="../29-attention/exercises/README.md">Exercises</a></li>
+<li><a href="../29-attention/solutions/README.md">Solutions</a></li>
+<li><a href="../29-attention/mini-project/README.md">Mini Project</a></li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-28-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>28. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-28-equation"><summary>สมการ</summary><h3>28. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-28-visual"><summary>ภาพและ shape</summary><h3>28. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-28-code"><summary>โค้ด</summary><h3>28. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-28-result"><summary>ผลการทดลอง</summary><h3>28. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-28"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-29" class="source-topic"><span id="source-29-attention-canonical-29-checklist" class="legacy-anchor"></span><h3>29. Checklist</h3>
+<ul>
+<li>[ ] Q/K/V</li>
+<li>[ ] scaled scores</li>
+<li>[ ] stable softmax</li>
+<li>[ ] causal mask</li>
+<li>[ ] padding mask</li>
+<li>[ ] self vs cross attention</li>
+<li>[ ] multi-head split/combine</li>
+<li>[ ] output projection</li>
+<li>[ ] T² complexity</li>
+<li>[ ] PyTorch SDPA</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-29-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>29. Checklist</h3>
+<ul>
+<li>[ ] Q/K/V</li>
+<li>[ ] scaled scores</li>
+<li>[ ] stable softmax</li>
+<li>[ ] causal mask</li>
+<li>[ ] padding mask</li>
+<li>[ ] self vs cross attention</li>
+<li>[ ] multi-head split/combine</li>
+<li>[ ] output projection</li>
+<li>[ ] T² complexity</li>
+<li>[ ] PyTorch SDPA</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-29-equation"><summary>สมการ</summary><h3>29. Checklist</h3>
+<ul>
+<li>[ ] Q/K/V</li>
+<li>[ ] scaled scores</li>
+<li>[ ] stable softmax</li>
+<li>[ ] causal mask</li>
+<li>[ ] padding mask</li>
+<li>[ ] self vs cross attention</li>
+<li>[ ] multi-head split/combine</li>
+<li>[ ] output projection</li>
+<li>[ ] T² complexity</li>
+<li>[ ] PyTorch SDPA</li>
+</ul></details><details id="help-topic-29-visual"><summary>ภาพและ shape</summary><h3>29. Checklist</h3>
+<ul>
+<li>[ ] Q/K/V</li>
+<li>[ ] scaled scores</li>
+<li>[ ] stable softmax</li>
+<li>[ ] causal mask</li>
+<li>[ ] padding mask</li>
+<li>[ ] self vs cross attention</li>
+<li>[ ] multi-head split/combine</li>
+<li>[ ] output projection</li>
+<li>[ ] T² complexity</li>
+<li>[ ] PyTorch SDPA</li>
+</ul></details><details id="help-topic-29-code"><summary>โค้ด</summary><h3>29. Checklist</h3>
+<ul>
+<li>[ ] Q/K/V</li>
+<li>[ ] scaled scores</li>
+<li>[ ] stable softmax</li>
+<li>[ ] causal mask</li>
+<li>[ ] padding mask</li>
+<li>[ ] self vs cross attention</li>
+<li>[ ] multi-head split/combine</li>
+<li>[ ] output projection</li>
+<li>[ ] T² complexity</li>
+<li>[ ] PyTorch SDPA</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-29-result"><summary>ผลการทดลอง</summary><h3>29. Checklist</h3>
+<ul>
+<li>[ ] Q/K/V</li>
+<li>[ ] scaled scores</li>
+<li>[ ] stable softmax</li>
+<li>[ ] causal mask</li>
+<li>[ ] padding mask</li>
+<li>[ ] self vs cross attention</li>
+<li>[ ] multi-head split/combine</li>
+<li>[ ] output projection</li>
+<li>[ ] T² complexity</li>
+<li>[ ] PyTorch SDPA</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-29"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-30" class="source-topic"><span id="source-29-attention-canonical-30-whats-next" class="legacy-anchor"></span><span id="source-29-attention-canonical-29-attention-attention" class="legacy-anchor"></span><h3>30. What's Next</h3>
+<p>Chapter 30 wraps attention inside residual, normalization, feed-forward, embedding and positional machinery to build the Transformer.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-30-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>30. What's Next</h3>
+<p>Chapter 30 wraps attention inside residual, normalization, feed-forward, embedding and positional machinery to build the Transformer.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-30-equation"><summary>สมการ</summary><h3>30. What's Next</h3>
+<p>Chapter 30 wraps attention inside residual, normalization, feed-forward, embedding and positional machinery to build the Transformer.</p></details><details id="help-topic-30-visual"><summary>ภาพและ shape</summary><h3>30. What's Next</h3>
+<p>Chapter 30 wraps attention inside residual, normalization, feed-forward, embedding and positional machinery to build the Transformer.</p></details><details id="help-topic-30-code"><summary>โค้ด</summary><h3>30. What's Next</h3>
+<p>Chapter 30 wraps attention inside residual, normalization, feed-forward, embedding and positional machinery to build the Transformer.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-30-result"><summary>ผลการทดลอง</summary><h3>30. What's Next</h3>
+<p>Chapter 30 wraps attention inside residual, normalization, feed-forward, embedding and positional machinery to build the Transformer.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-30"> อ่านหัวข้อนี้แล้ว</label></section><details><summary>รายละเอียดเพิ่มเติมและข้อกำหนดของ local lab</summary><h3>29-attention — Attention</h3>
+<p><strong>Prerequisites:</strong> Complete 28-gan; be able to trace array/tensor shapes, separate train/validation/test data, and explain the core objective of the current chapter.</p>
+<p><strong>Mental model:</strong> Treat Attention as a pipeline: input representation → central mechanism → objective/state update → observable output. At every boundary, state shape/state, allowed information flow, and the invariant that should remain true.</p>
+<p><strong>Code walkthrough:</strong> Read public API first, then input checks, state/shape transformations, numerical core, returned values and tests. Connect each important code block to the equation or algorithm in the chapter README.</p>
+<p><strong>Visualization / inspection:</strong> Use a tiny case. Inspect intermediate values, distributions, norms, scores, states or trajectories appropriate to Attention; do not rely only on the final metric.</p>
+<p><strong>Experiment:</strong> Run a baseline, one controlled parameter change, one edge case and one repeated seeded comparison. Record seed, environment, data version, configuration and metric.</p>
+<p><strong>Limitations:</strong> List at least one assumption, one data-related limitation, one numerical/optimization limitation and one scaling limitation for Attention.</p>
+<p><strong>Analysis workflow:</strong> Check inputs → preprocessing → shapes/state → finite numerical values → objective/update → evaluation protocol. The earliest unexpected state is more informative than a downstream metric.</p>
+<p><strong>Performance:</strong> Identify the dominant time and memory terms and measure them on the local learning run before attempting optimization.</p>
+<p><strong>Production perspective:</strong> Define input validation, artifact/configuration versioning, quality and resource measurements, staged release criteria and a way to return to the previous known-good artifact.</p>
+<p><strong>Research perspective:</strong> State a falsifiable hypothesis, baseline, one-factor change, metric, repeated-run plan when stochastic, and how negative results will be recorded.</p>
+<p><strong>Interview questions:</strong>
+1. Explain Attention from first principles without naming a library API.
+2. Trace one input through the central mechanism and give the important intermediate shapes/state.
+3. Name the strongest assumption and a case where it fails.
+4. State the dominant compute/memory cost.
+5. Describe how you would validate a new implementation against a trusted baseline.</p>
+<p><strong>Summary / exit condition:</strong> You may move on when you can explain, derive or trace, implement, test, analyze, measure and evaluate Attention, and when the chapter mini-project plus twenty total exercises are complete.</p></details></section><section id="objective-evidence" class="canonical-section"><h2>พิสูจน์ความสามารถทีละ objective</h2><p>ทำกรณีใหม่ก่อนเปิด reference แล้วบันทึกงานด้านล่าง ให้ผู้ตรวจใช้ rubric ตรวจคำอธิบาย ผลคำนวณ โค้ด และข้อจำกัด บันทึกเก็บในเบราว์เซอร์เครื่องนี้ กดส่งออกเพื่อสำรองหรือส่งให้ผู้ตรวจ เว็บไม่ได้รันโค้ดหรือตัดสินผลงานแทนผู้ตรวจ</p><button type="button" class="secondary-button" data-export-evidence>ส่งออกหลักฐานบทนี้เป็น JSON</button><p role="status" id="evidence-export-status"></p><details id="ch29-objective-01" class="objective-proof"><summary>explain Query / Key / Value</summary><p>explain Query / Key / Value: ใช้กรณีในหัวข้อ Query, Key, Value เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch29-evidence-01"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch29-evidence-01-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch29-evidence-01-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch29-evidence-01-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch29-evidence-01-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch29-evidence-01-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch29-evidence-01-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch29-evidence-01-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch29-evidence-01-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>query Q=XWQแทนสิ่งที่tokenตำแหน่งนั้นกำลังค้น; X(3,2),WQ(2,2)ได้Q(3,2),ไม่ใช่vectorคำถามจากผู้ใช้เสมอ</p><h3>3. Query, Key, Value</h3>
+<p>Given token representations X:</p>
+<pre><code class="language-text">Q = X W_Q
+K = X W_K
+V = X W_V
+</code></pre>
+<p>Interpretation:</p>
+<ul>
+<li>Query: what information am I looking for?</li>
+<li>Key: what information does this position advertise?</li>
+<li>Value: what information should be retrieved if selected?</li>
+</ul>
+<p>These are learned projections, not fixed semantic roles.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch29-objective-02" class="objective-proof"><summary>derive dot-product attention</summary><p>derive dot-product attention: ใช้กรณีในหัวข้อ Dot-Product Scores, Full Formula เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch29-evidence-02"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch29-evidence-02-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch29-evidence-02-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch29-evidence-02-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch29-evidence-02-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch29-evidence-02-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch29-evidence-02-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch29-evidence-02-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch29-evidence-02-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>scaledattention A=softmax(QKᵀ/√dk+mask),O=AV; scaleลดvarianceของdotproductเมื่อdimensionสูง ไม่ใช่normalizeV</p><h3>4. Dot-Product Scores</h3>
+<p>For one query q and keys k_j:</p>
+<pre><code class="language-text">score_j = q · k_j
+</code></pre>
+<p>For matrices:</p>
+<pre><code class="language-text">Scores = Q K^T
+</code></pre>
+<p>Shapes:</p>
+<pre><code class="language-text">Q: (T_q, d_k)
+K: (T_k, d_k)
+
+QK^T:
+(T_q, T_k)
+</code></pre>
+<h3>8. Full Formula</h3>
+<pre><code class="language-text">Attention(Q,K,V)
+=
+softmax(
+    QK^T / sqrt(d_k)
+)
+V
+</code></pre>
+<p>With additive mask M:</p>
+<pre><code class="language-text">softmax(
+    QK^T / sqrt(d_k)
+    + M
+)
+V
+</code></pre>
+<p>Masked positions receive a very negative score or are excluded by equivalent API semantics.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch29-objective-03" class="objective-proof"><summary>explain the sqrt(d_k) scale factor</summary><p>explain the sqrt(d_k) scale factor: ใช้กรณีในหัวข้อ Why Scale by sqrt(d_k)? เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch29-evidence-03"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch29-evidence-03-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch29-evidence-03-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch29-evidence-03-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch29-evidence-03-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch29-evidence-03-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch29-evidence-03-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch29-evidence-03-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch29-evidence-03-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>Q=[1,0],K=[[1,0],[0,1]],dk2ให้scores[.707107,0],weights≈[.669762,.330238]; weightsรวม1ทุกqueryที่ไม่fullymasked</p><h3>5. Why Scale by sqrt(d_k)?</h3>
+<p>If query/key coordinates have roughly unit variance, the dot-product variance grows with d_k.</p>
+<p>Large score magnitudes can push softmax into saturation.</p>
+<p>Scaled dot-product attention uses:</p>
+<pre><code class="language-text">Scores =
+QK^T / sqrt(d_k)
+</code></pre></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch29-objective-04" class="objective-proof"><summary>implement stable softmax attention</summary><p>implement stable softmax attention: ใช้กรณีในหัวข้อ Softmax, Stable Softmax เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch29-evidence-04"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch29-evidence-04-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch29-evidence-04-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch29-evidence-04-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch29-evidence-04-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch29-evidence-04-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch29-evidence-04-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch29-evidence-04-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch29-evidence-04-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>subtractrowmaxก่อนexp; fullymaskedrowmax−∞ทำNaNจึงrejectหรือกำหนดemptyrowpolicy; logitsfp16อาจoverflowก่อนsoftmaxให้accumulateFP32</p><h3>6. Softmax</h3>
+<p>Convert scores into weights:</p>
+<pre><code class="language-text">A = softmax(Scores)
+</code></pre>
+<p>Each query row sums to 1.</p>
+<p>Then:</p>
+<pre><code class="language-text">Output = A V
+</code></pre>
+<h3>7. Stable Softmax</h3>
+<p>Before exponentiation:</p>
+<pre><code class="language-text">scores =
+scores - row_max(scores)
+</code></pre>
+<p>This avoids overflow for large positive values.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch29-objective-05" class="objective-proof"><summary>apply padding masks</summary><p>apply padding masks: ใช้กรณีในหัวข้อ Padding Mask เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch29-evidence-05"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch29-evidence-05-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch29-evidence-05-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch29-evidence-05-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch29-evidence-05-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch29-evidence-05-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch29-evidence-05-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch29-evidence-05-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch29-evidence-05-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>fitprojectionsบนtrain; causallanguagevalidationห้ามfutureattention; paddingmaskและlossmaskคนละหน้าที่ต้องตรวจทั้งคู่</p><h3>12. Padding Mask</h3>
+<p>Sequences in a batch can have different valid lengths.</p>
+<p>Padding positions should not contribute as keys/values.</p>
+<p>A padding mask and a causal mask solve different problems:</p>
+<ul>
+<li>causal: future information</li>
+<li>padding: nonexistent tokens</li>
+</ul>
+<p>Sometimes both are needed.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch29-objective-06" class="objective-proof"><summary>apply causal masks</summary><p>apply causal masks: ใช้กรณีในหัวข้อ Causal Mask เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch29-evidence-06"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch29-evidence-06-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch29-evidence-06-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch29-evidence-06-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch29-evidence-06-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch29-evidence-06-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch29-evidence-06-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch29-evidence-06-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch29-evidence-06-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>causalmaskต้องปิดfuturej&gt;iก่อนsoftmax; maskหลังsoftmaxแล้วไม่renormalizeทำrowmass&lt;1; inferencecachepositionต้องตรงabsoluteoffset</p><h3>11. Causal Mask</h3>
+<p>Autoregressive language modeling must not read future positions.</p>
+<p>For T=4:</p>
+<pre><code class="language-text">allowed:
+
+q0 → k0
+q1 → k0,k1
+q2 → k0,k1,k2
+q3 → k0,k1,k2,k3
+</code></pre>
+<p>Matrix:</p>
+<pre><code class="language-text">1 0 0 0
+1 1 0 0
+1 1 1 0
+1 1 1 1
+</code></pre>
+<p>The upper triangle is masked.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch29-objective-07" class="objective-proof"><summary>explain self-attention vs cross-attention</summary><p>explain self-attention vs cross-attention: ใช้กรณีในหัวข้อ Self-Attention, Cross-Attention เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch29-evidence-07"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch29-evidence-07-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch29-evidence-07-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch29-evidence-07-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch29-evidence-07-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch29-evidence-07-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch29-evidence-07-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch29-evidence-07-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch29-evidence-07-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>9. Self-Attention</h3>
+<p>Q, K, V come from the same sequence:</p>
+<pre><code class="language-text">X
+├→ W_Q → Q
+├→ W_K → K
+└→ W_V → V
+</code></pre>
+<p>Each position can interact with other positions according to the mask.</p>
+<h3>10. Cross-Attention</h3>
+<p>Queries come from one representation, keys/values from another.</p>
+<p>Example:</p>
+<pre><code class="language-text">decoder states → Q
+encoder states → K,V
+</code></pre>
+<p>This appears in encoder-decoder Transformers.</p><h3>9. Self-Attention</h3>
+<p>Q, K, V come from the same sequence:</p>
+<pre><code class="language-text">X
+├→ W_Q → Q
+├→ W_K → K
+└→ W_V → V
+</code></pre>
+<p>Each position can interact with other positions according to the mask.</p>
+<h3>10. Cross-Attention</h3>
+<p>Queries come from one representation, keys/values from another.</p>
+<p>Example:</p>
+<pre><code class="language-text">decoder states → Q
+encoder states → K,V
+</code></pre>
+<p>This appears in encoder-decoder Transformers.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch29-objective-08" class="objective-proof"><summary>split/combine attention heads</summary><p>split/combine attention heads: ใช้กรณีในหัวข้อ Multi-Head Attention, Shapes เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch29-evidence-08"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch29-evidence-08-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch29-evidence-08-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch29-evidence-08-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch29-evidence-08-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch29-evidence-08-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch29-evidence-08-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch29-evidence-08-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch29-evidence-08-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>multiheadแบ่งfeaturesให้headsแต่ละชุดเรียนrepresentationต่างกัน; dmodelต้องหารheadsลงตัวและcostscoreO(BhT²); ไม่คัดลอกweightsheadเดียวแล้วอ้างหลายกลไก</p><h3>14. Multi-Head Attention</h3>
+<p>Instead of one attention operation with full dimension, split representation into h heads.</p>
+<pre><code class="language-text">d_model = h * d_head
+</code></pre>
+<p>Each head learns separate projections and attention patterns.</p>
+<p>For head i:</p>
+<pre><code class="language-text">head_i =
+Attention(
+    Q_i,
+    K_i,
+    V_i
+)
+</code></pre>
+<p>Then:</p>
+<pre><code class="language-text">Concat(head_1,...,head_h) W_O
+</code></pre>
+<h3>15. Shapes</h3>
+<p>Batch-first self-attention:</p>
+<pre><code class="language-text">X:
+(B,T,D)
+
+Q/K/V:
+(B,T,D)
+
+split heads:
+(B,H,T,D_head)
+
+scores:
+(B,H,T,T)
+
+weights:
+(B,H,T,T)
+
+head output:
+(B,H,T,D_head)
+
+combine:
+(B,T,D)
+</code></pre></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch29-objective-09" class="objective-proof"><summary>implement multi-head attention from scratch</summary><p>implement multi-head attention from scratch: ใช้กรณีในหัวข้อ Why Multiple Heads?, Output Projection, From Scratch เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch29-evidence-09"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch29-evidence-09-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch29-evidence-09-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch29-evidence-09-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch29-evidence-09-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch29-evidence-09-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch29-evidence-09-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch29-evidence-09-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch29-evidence-09-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>multiheadแบ่งfeaturesให้headsแต่ละชุดเรียนrepresentationต่างกัน; dmodelต้องหารheadsลงตัวและcostscoreO(BhT²); ไม่คัดลอกweightsheadเดียวแล้วอ้างหลายกลไก</p><h3>16. Why Multiple Heads?</h3>
+<p>Different heads can learn different projection subspaces and interaction patterns.</p>
+<p>However:
+- a head is not guaranteed to correspond to one human concept
+- visual attention maps alone are not complete explanations of model decisions</p>
+<h3>17. Output Projection</h3>
+<p>Concatenated heads are mixed by:</p>
+<pre><code class="language-text">W_O
+</code></pre>
+<p>Without this projection, heads would remain independently partitioned at the block output.</p>
+<h3>24. From Scratch</h3>
+<p>src/attention_numpy.py includes:</p>
+<ul>
+<li>stable_softmax</li>
+<li>causal_mask</li>
+<li>scaled_dot_product_attention</li>
+<li>split_heads</li>
+<li>combine_heads</li>
+<li>MultiHeadSelfAttentionNumPy</li>
+</ul></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch29-objective-10" class="objective-proof"><summary>understand attention score complexity</summary><p>understand attention score complexity: ใช้กรณีในหัวข้อ Attention Complexity เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch29-evidence-10"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch29-evidence-10-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch29-evidence-10-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch29-evidence-10-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch29-evidence-10-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch29-evidence-10-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch29-evidence-10-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch29-evidence-10-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch29-evidence-10-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>fullattention O(BhT²dk)เวลาและO(BhT²)scorememory; projectionsO(BTdmodel²); fusedattentionลดmaterializedmemoryแต่ไม่เปลี่ยนสมการพื้นฐาน</p><h3>18. Attention Complexity</h3>
+<p>For self-attention sequence length T:</p>
+<pre><code class="language-text">score matrix size ~ T²
+</code></pre>
+<p>Compute roughly includes:</p>
+<pre><code class="language-text">QK^T: O(T² d)
+A V:  O(T² d)
+</code></pre>
+<p>Memory for dense attention weights can also grow quadratically.</p>
+<p>This becomes a core challenge for long context.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch29-objective-11" class="objective-proof"><summary>use PyTorch scaled_dot_product_attention</summary><p>use PyTorch scaled_dot_product_attention: ใช้กรณีในหัวข้อ PyTorch SDPA เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch29-evidence-11"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch29-evidence-11-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch29-evidence-11-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch29-evidence-11-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch29-evidence-11-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch29-evidence-11-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch29-evidence-11-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch29-evidence-11-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch29-evidence-11-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>torch.scaled_dot_product_attentionรับbooleanmasksemanticsต่างบางAPI; convertmaskชัดเจน,dropout_p0,dtypefloat64แล้วcompareQKV/O</p><h3>21. PyTorch SDPA</h3>
+<p>PyTorch provides:</p>
+<pre><code class="language-python">torch.nn.functional.scaled_dot_product_attention(
+    query,
+    key,
+    value,
+    ...
+)
+</code></pre>
+<p>Modern PyTorch can dispatch to optimized fused implementations depending on hardware/input/settings.</p>
+<p>Use this primitive after understanding the manual formula.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch29-objective-12" class="objective-proof"><summary>distinguish masking semantics across APIs</summary><p>distinguish masking semantics across APIs: ใช้กรณีในหัวข้อ Mask Semantics Are API-Specific เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch29-evidence-12"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch29-evidence-12-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch29-evidence-12-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch29-evidence-12-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch29-evidence-12-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch29-evidence-12-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch29-evidence-12-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch29-evidence-12-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch29-evidence-12-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>คงQKVเปลี่ยนmasknone→causal; outputtoken0ต้องอ่านเฉพาะV0และfuturemass0,tokenท้ายอาจเท่าเดิม; gradientห้ามไหลไปfutureinput</p><h3>13. Mask Semantics Are API-Specific</h3>
+<p>Some APIs use:
+- True = keep
+- True = mask
+- additive 0 / -inf masks</p>
+<p>Never copy a mask from one API to another without reading its semantics.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch29-objective-13" class="objective-proof"><summary>debug attention shapes</summary><p>debug attention shapes: ใช้กรณีในหัวข้อ Shapes, Numerical Debugging, Fully Masked Rows เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch29-evidence-13"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch29-evidence-13-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch29-evidence-13-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch29-evidence-13-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch29-evidence-13-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch29-evidence-13-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch29-evidence-13-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch29-evidence-13-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch29-evidence-13-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>assertQshape(3,2),changingWQchangesQ/scores,changingWVdoesnotchangeA; causalfuturemass0และallrowsum1; fullymaskedrowต้องerror</p><h3>15. Shapes</h3>
+<p>Batch-first self-attention:</p>
+<pre><code class="language-text">X:
+(B,T,D)
+
+Q/K/V:
+(B,T,D)
+
+split heads:
+(B,H,T,D_head)
+
+scores:
+(B,H,T,T)
+
+weights:
+(B,H,T,T)
+
+head output:
+(B,H,T,D_head)
+
+combine:
+(B,T,D)
+</code></pre>
+<h3>25. Numerical Debugging</h3>
+<p>Inspect:</p>
+<pre><code class="language-text">Q/K/V shapes
+score min/max
+mask
+softmax row sums
+attention entropy
+output shape
+NaN/Inf
+</code></pre>
+<p>If all attention weights are nearly one-hot immediately:
+- projections may have large scale
+- missing sqrt(d_k)
+- initialization may be too large</p>
+<h3>26. Fully Masked Rows</h3>
+<p>A fully masked query row has no valid key to attend to.</p>
+<p>Mathematically, softmax over an empty valid set is undefined.</p>
+<p>Production APIs may choose a defined fallback behavior.</p>
+<p>Design masks so query rows have intended valid context and test edge cases explicitly.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch29-objective-14" class="objective-proof"><summary>Attention vs RNN / Attention vs Convolution</summary><p>Attention vs RNN / Attention vs Convolution: ใช้กรณีในหัวข้อ Attention vs RNN, Attention vs Convolution เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch29-evidence-14"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch29-evidence-14-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch29-evidence-14-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch29-evidence-14-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch29-evidence-14-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch29-evidence-14-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch29-evidence-14-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch29-evidence-14-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch29-evidence-14-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>บันทึกprojectionweights/headsplit/scalefactor/mask/dtype; ทดลอง2headsช่วยcopy-two-relationsเทียบ1headด้วยparameterbudgetใกล้กันและholdouttask</p><h3>19. Attention vs RNN</h3>
+<p>RNN:
+- sequential recurrence
+- O(T) state transitions
+- long gradient path</p>
+<p>Self-attention:
+- pairwise interactions
+- highly parallel over sequence positions
+- O(T²) dense score interactions</p>
+<p>Neither dominates every latency/memory setting.</p>
+<h3>20. Attention vs Convolution</h3>
+<p>Convolution:
+- local fixed kernel pattern
+- strong locality bias</p>
+<p>Attention:
+- content-dependent interactions
+- can directly connect distant positions</p>
+<p>Modern architectures sometimes combine both.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details></section><section id="implementation" class="canonical-section"><h2>Implementation และ tests ที่รันบนเครื่องได้</h2><details><summary>29-attention/src/attention_numpy.py</summary><pre><code>&quot;&quot;&quot;Scaled dot-product and multi-head self-attention implemented with NumPy.&quot;&quot;&quot;
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+import numpy as np
+
+
+def stable_softmax(x: np.ndarray, axis: int = -1) -&gt; np.ndarray:
+    values = np.asarray(x, dtype=float)
+    shifted = values - np.max(values, axis=axis, keepdims=True)
+    exp_values = np.exp(shifted)
+    denom = np.sum(exp_values, axis=axis, keepdims=True)
+    return exp_values / denom
+
+
+def causal_mask(query_length: int, key_length: int | None = None) -&gt; np.ndarray:
+    if query_length &lt;= 0:
+        raise ValueError(&quot;query_length must be positive&quot;)
+    if key_length is None:
+        key_length = query_length
+    if key_length &lt;= 0:
+        raise ValueError(&quot;key_length must be positive&quot;)
+
+    q_index = np.arange(query_length)[:, None]
+    k_index = np.arange(key_length)[None, :]
+    return k_index &lt;= q_index
+
+
+def scaled_dot_product_attention(
+    query: np.ndarray,
+    key: np.ndarray,
+    value: np.ndarray,
+    *,
+    keep_mask: np.ndarray | None = None,
+) -&gt; tuple[np.ndarray, np.ndarray]:
+    q = np.asarray(query, dtype=float)
+    k = np.asarray(key, dtype=float)
+    v = np.asarray(value, dtype=float)
+
+    if q.ndim &lt; 2 or k.ndim &lt; 2 or v.ndim &lt; 2:
+        raise ValueError(&quot;Q/K/V must have at least 2 dimensions&quot;)
+    if q.shape[:-2] != k.shape[:-2] or q.shape[:-2] != v.shape[:-2]:
+        raise ValueError(&quot;batch/head prefixes must match&quot;)
+    if q.shape[-1] != k.shape[-1]:
+        raise ValueError(&quot;query/key dimensions must match&quot;)
+    if k.shape[-2] != v.shape[-2]:
+        raise ValueError(&quot;key/value sequence lengths must match&quot;)
+
+    scores = q @ np.swapaxes(k, -1, -2)
+    scores = scores / np.sqrt(q.shape[-1])
+
+    if keep_mask is not None:
+        mask = np.asarray(keep_mask, dtype=bool)
+        try:
+            mask = np.broadcast_to(mask, scores.shape)
+        except ValueError as exc:
+            raise ValueError(&quot;mask is not broadcastable to attention scores&quot;) from exc
+
+        valid_rows = np.any(mask, axis=-1)
+        if not np.all(valid_rows):
+            raise ValueError(&quot;every query row must keep at least one key&quot;)
+
+        scores = np.where(mask, scores, -np.inf)
+
+    weights = stable_softmax(scores, axis=-1)
+    output = weights @ v
+    return output, weights
+
+
+def split_heads(x: np.ndarray, num_heads: int) -&gt; np.ndarray:
+    values = np.asarray(x, dtype=float)
+    if values.ndim != 3:
+        raise ValueError(&quot;expected shape (B,T,D)&quot;)
+    if num_heads &lt;= 0 or values.shape[-1] % num_heads != 0:
+        raise ValueError(&quot;D must be divisible by num_heads&quot;)
+
+    batch, time, model_dim = values.shape
+    head_dim = model_dim // num_heads
+
+    return (
+        values.reshape(batch, time, num_heads, head_dim)
+        .transpose(0, 2, 1, 3)
+    )
+
+
+def combine_heads(x: np.ndarray) -&gt; np.ndarray:
+    values = np.asarray(x, dtype=float)
+    if values.ndim != 4:
+        raise ValueError(&quot;expected shape (B,H,T,Dh)&quot;)
+
+    batch, heads, time, head_dim = values.shape
+    return (
+        values.transpose(0, 2, 1, 3)
+        .reshape(batch, time, heads * head_dim)
+    )
+
+
+@dataclass
+class MultiHeadSelfAttentionNumPy:
+    model_dim: int
+    num_heads: int
+    seed: int = 42
+
+    def __post_init__(self) -&gt; None:
+        if self.model_dim &lt;= 0 or self.num_heads &lt;= 0:
+            raise ValueError(&quot;dimensions must be positive&quot;)
+        if self.model_dim % self.num_heads != 0:
+            raise ValueError(&quot;model_dim must be divisible by num_heads&quot;)
+
+        rng = np.random.default_rng(self.seed)
+        scale = 1.0 / np.sqrt(self.model_dim)
+
+        self.w_q = rng.normal(0.0, scale, (self.model_dim, self.model_dim))
+        self.w_k = rng.normal(0.0, scale, (self.model_dim, self.model_dim))
+        self.w_v = rng.normal(0.0, scale, (self.model_dim, self.model_dim))
+        self.w_o = rng.normal(0.0, scale, (self.model_dim, self.model_dim))
+
+    def forward(
+        self,
+        x: np.ndarray,
+        *,
+        causal: bool = False,
+    ) -&gt; tuple[np.ndarray, np.ndarray]:
+        values = np.asarray(x, dtype=float)
+        if values.ndim != 3 or values.shape[-1] != self.model_dim:
+            raise ValueError(&quot;expected shape (B,T,model_dim)&quot;)
+
+        q = split_heads(values @ self.w_q, self.num_heads)
+        k = split_heads(values @ self.w_k, self.num_heads)
+        v = split_heads(values @ self.w_v, self.num_heads)
+
+        mask = None
+        if causal:
+            time = values.shape[1]
+            mask = causal_mask(time)[None, None, :, :]
+
+        heads, weights = scaled_dot_product_attention(
+            q,
+            k,
+            v,
+            keep_mask=mask,
+        )
+        output = combine_heads(heads) @ self.w_o
+        return output, weights
+</code></pre></details><details><summary>29-attention/tests/test_attention_numpy.py</summary><pre><code>from pathlib import Path
+import importlib.util
+import sys
+
+import numpy as np
+
+
+MODULE_PATH = Path(__file__).parents[1] / &quot;src&quot; / &quot;attention_numpy.py&quot;
+SPEC = importlib.util.spec_from_file_location(&quot;attention_numpy_course&quot;, MODULE_PATH)
+assert SPEC and SPEC.loader
+mod = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = mod
+SPEC.loader.exec_module(mod)
+
+
+def test_softmax_rows_sum_to_one() -&gt; None:
+    x = np.array([[1000.0, 1001.0, 1002.0]])
+    p = mod.stable_softmax(x)
+    np.testing.assert_allclose(p.sum(axis=-1), 1.0)
+
+
+def test_attention_known_equal_scores_average_values() -&gt; None:
+    q = np.zeros((1, 2, 3))
+    k = np.zeros((1, 2, 3))
+    v = np.array([[[1.0, 0.0], [3.0, 2.0]]])
+
+    output, weights = mod.scaled_dot_product_attention(q, k, v)
+
+    expected = np.array([[[2.0, 1.0], [2.0, 1.0]]])
+    np.testing.assert_allclose(output, expected)
+    np.testing.assert_allclose(weights, 0.5)
+
+
+def test_causal_mask_blocks_future() -&gt; None:
+    q = np.ones((1, 3, 2))
+    k = np.ones((1, 3, 2))
+    v = np.array([[[1.0], [2.0], [100.0]]])
+    keep = mod.causal_mask(3)[None, :, :]
+
+    output, weights = mod.scaled_dot_product_attention(
+        q,
+        k,
+        v,
+        keep_mask=keep,
+    )
+
+    assert weights[0, 0, 1] == 0.0
+    assert weights[0, 0, 2] == 0.0
+    np.testing.assert_allclose(output[0, 0, 0], 1.0)
+
+
+def test_split_combine_round_trip() -&gt; None:
+    rng = np.random.default_rng(3)
+    x = rng.normal(size=(2, 5, 12))
+    heads = mod.split_heads(x, 3)
+    rebuilt = mod.combine_heads(heads)
+    np.testing.assert_allclose(rebuilt, x)
+
+
+def test_multihead_causal_shapes() -&gt; None:
+    model = mod.MultiHeadSelfAttentionNumPy(
+        model_dim=12,
+        num_heads=3,
+        seed=4,
+    )
+    x = np.ones((2, 6, 12))
+
+    output, weights = model.forward(x, causal=True)
+
+    assert output.shape == (2, 6, 12)
+    assert weights.shape == (2, 3, 6, 6)
+    assert np.allclose(np.triu(weights, k=1), 0.0)
+</code></pre></details><details><summary>29-attention/tests/test_batch10_attention_pytorch.py</summary><pre><code>from pathlib import Path
+import importlib.util
+import sys
+
+import numpy as np
+import pytest
+
+torch = pytest.importorskip(&quot;torch&quot;)
+F = torch.nn.functional
+
+
+MODULE_PATH = Path(__file__).parents[1] / &quot;src&quot; / &quot;attention_numpy.py&quot;
+SPEC = importlib.util.spec_from_file_location(&quot;attention_numpy_torch_compare&quot;, MODULE_PATH)
+assert SPEC and SPEC.loader
+mod = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = mod
+SPEC.loader.exec_module(mod)
+
+
+def test_numpy_attention_matches_pytorch_sdpa_without_dropout() -&gt; None:
+    rng = np.random.default_rng(11)
+    q = rng.normal(size=(2, 3, 5, 4))
+    k = rng.normal(size=(2, 3, 5, 4))
+    v = rng.normal(size=(2, 3, 5, 6))
+
+    ours, _ = mod.scaled_dot_product_attention(q, k, v)
+
+    reference = F.scaled_dot_product_attention(
+        torch.tensor(q, dtype=torch.float64),
+        torch.tensor(k, dtype=torch.float64),
+        torch.tensor(v, dtype=torch.float64),
+        dropout_p=0.0,
+    ).numpy()
+
+    np.testing.assert_allclose(ours, reference, rtol=1e-10, atol=1e-10)
+</code></pre></details></section><section id="glossary" class="canonical-section"><h2>อภิธานศัพท์ — คำไทย ความหมาย และข้อควรตรวจ</h2><dl><dt>tensor</dt><dd>เทนเซอร์: ชุดตัวเลขที่มีแกน เช่น scalar ไม่มีแกน, vector หนึ่งแกน, matrix สองแกน; shape บอกขนาดแต่ละแกน ไม่บอกความหมายของแกนจนกว่าจะระบุ</dd><dt>shape</dt><dd>รูปทรงข้อมูล: (B,T,d) หมายถึง batch × เวลา/ตำแหน่ง × features; ใช้ชื่อแกนกำกับเสมอ การ transpose เปลี่ยนแกนแต่ไม่ใช่แค่เปลี่ยนชื่อ</dd><dt>batch</dt><dd>กลุ่มตัวอย่างที่คำนวณร่วมกันหนึ่งครั้ง; B คือจำนวนตัวอย่าง ไม่ใช่จำนวน features หรือจำนวน optimizer updates</dd><dt>weight w / θ</dt><dd>น้ำหนักหรือพารามิเตอร์ที่โมเดลใช้คำนวณ; แก้ด้วยมือทำ forward ใหม่ ส่วน optimizer ต้องรับ gradient แล้วกด update จึงแก้ state</dd><dt>bias b</dt><dd>ค่าคงที่ที่บวกกับผลเชิงเส้น; regression scalar bias เพิ่ม Δ ทำให้ prediction ทุกจุดเพิ่ม Δ เท่ากัน</dd><dt>prediction ŷ</dt><dd>ค่าที่โมเดลทำนายจาก input และพารามิเตอร์ปัจจุบัน; เครื่องหมายหมวกแยกจาก target y ที่มาจากข้อมูล</dd><dt>residual e</dt><dd>ความคลาดเคลื่อน ในเว็บนี้นิยาม prediction − target; บางตำราใช้เครื่องหมายกลับกัน จึงต้องตรวจนิยามก่อนเทียบสูตร gradient</dd><dt>MSE</dt><dd>mean squared error = ผลรวม residual กำลังสองหารจำนวนรายการที่ระบุ; มีหน่วยเป็น target ยกกำลังสอง และการใช้ sum แทน mean เปลี่ยน scale gradient</dd><dt>loss L / objective J</dt><dd>จำนวนที่ optimizer ต้องการลด; objective อาจรวม data loss และ regularization จึงต้องดูองค์ประกอบและ reduction ให้ตรง implementation</dd><dt>gradient ∇ / ∂</dt><dd>เวกเตอร์ของ partial derivatives บอกอัตราเปลี่ยน loss ต่อพารามิเตอร์แต่ละตัว; ∂ ใช้เมื่อเปลี่ยนตัวหนึ่งโดยตรึงตัวอื่น</dd><dt>chain rule</dt><dd>กฎลูกโซ่: คูณอนุพันธ์ตามเส้นทาง และบวก contribution จากทุกเส้นทางที่มารวมกัน ใช้ย้อนจาก loss ถึง weights</dd><dt>learning rate η</dt><dd>ขนาดตัวคูณ gradient ใน update θnew=θ−ηg; η≥0, ศูนย์หมายถึงไม่มีการขยับพารามิเตอร์ ก้าวใหญ่เกินอาจ diverge</dd><dt>regularization λ</dt><dd>ตัวคูณค่าลงโทษ ต้อง λ≥0 ตามนิยามการลงโทษ; Ridge λΣw² เพิ่ม gradient 2λw โดยบท Regression นี้ไม่ลงโทษ bias</dd><dt>baseline</dt><dd>สถานะอ้างอิงที่ตรึงไว้สำหรับเทียบ; ต้องเก็บ snapshot ไม่อ้าง object ปัจจุบันที่แก้ตามไปด้วย</dd><dt>invariant</dt><dd>คุณสมบัติที่กลไกต้องรักษา เช่น probability รวม1, shape สอดคล้อง, queue ไม่เกิน capacity; ใช้ tests ตรวจได้มากกว่าดูภาพสวย</dd><dt>optimizer state</dt><dd>ความจำของอัลกอริทึม เช่น velocity, moments และ completed updates; คืนเฉพาะ weights ยังไม่เท่ากับเริ่มการฝึกใหม่ทั้งหมด</dd><dt>finite difference</dt><dd>ประมาณ derivative ด้วย [f(x+h)−f(x−h)]/(2h); h&gt;0, ใช้ smooth point และลองหลาย h เพื่อแยก truncation error จาก roundoff</dd><dt>softmax</dt><dd>แปลง logits เป็นความน่าจะเป็นตามแกนที่กำหนด; ลบ max ก่อน exp เพื่อความเสถียร และ fully masked row ต้องมีนโยบายชัดเจน</dd><dt>logit</dt><dd>คะแนนก่อน sigmoid/softmax ไม่ใช่ probability; อาจเป็นจำนวนจริงติดลบหรือเกิน1ได้ จึงห้ามส่งให้ loss ที่คาด probability โดยไม่แปลง</dd><dt>temperature τ / T</dt><dd>ตัวหาร logits ก่อน softmax; ต้องเป็นบวก ค่าเล็กทำ distribution แหลมขึ้น โดยไม่เท่ากับ retrain weights</dd><dt>mask</dt><dd>ตัวกำหนดตำแหน่งที่อ่านหรือคิด loss ได้; causal mask ปิดอนาคต, padding mask ปิดข้อมูลเติม, loss mask เลือก target แต่ละอย่างคนละหน้าที่</dd><dt>Q / K / V</dt><dd>query ใช้ค้นข้อมูล, key ใช้จับคู่ query, value เป็นข้อมูลที่ถูกถัวเฉลี่ย; เป็น learned projections ของ representation ไม่ใช่ป้ายความหมายตายตัว</dd><dt>head</dt><dd>ส่วนของ feature representation ที่ทำ attention แยกกัน แล้ว concat/project กลับ; ต้องตรวจ d_model หารจำนวน heads ลงตัว</dd><dt>ε-neighborhood</dt><dd>เพื่อนบ้านทั้งหมดที่มีระยะไม่เกิน ε รวมจุดตัวเองใน DBSCAN นี้; ε มีหน่วยเดียวกับพิกัด ไม่ใช่จำนวน k ที่ใช้โหวต</dd><dt>core / border / noise</dt><dd>DBSCAN core มีเพื่อนบ้านรวมตัวเองถึง min_samples; border อยู่ใกล้ core แต่เพื่อนบ้านไม่ถึง; noise ไม่ถูกเชื่อมกับ core cluster ใด</dd><dt>bootstrap</dt><dd>สุ่ม observations แบบ replacement ขนาดเท่าเดิมซ้ำหลายครั้งแล้วคำนวณ statistic ใหม่; seed ทำให้ตรวจซ้ำได้ แต่ไม่แก้สมมติฐาน IID ที่ผิด</dd><dt>confidence interval</dt><dd>ช่วงที่สร้างด้วย procedure ที่มี coverage ตามสมมติฐาน; ช่วงหนึ่งที่ได้แล้วไม่ใช่ posterior probability ของ parameter และ sample เล็กยังไม่แน่นอนมาก</dd><dt>validation / test</dt><dd>validation ใช้เลือกโมเดล/ค่าตั้ง ส่วน test ใช้ประเมินหลัง freeze การตัดสินใจ; fit preprocessing/tokenizer จาก test เป็น leakage</dd><dt>leakage</dt><dd>ข้อมูลที่ควรยังไม่รู้ไหลเข้า training/การเลือกโมเดล เช่น future feature หรือเอกสารซ้ำข้าม split ทำให้ metric ดูดีเกินการใช้งานจริง</dd><dt>queue / capacity</dt><dd>queue คือรายการรอ, capacity การให้บริการรวม = workers × service rate ตามแบบจำลอง; เพิ่ม timeout ไม่เพิ่มกำลังประมวลผล</dd><dt>state transition</dt><dd>การเปลี่ยนสถานะเมื่อเกิดเหตุการณ์ที่อนุญาต เช่น queued→active→done; ต้องระบุ guard, side effect และเหตุผลเมื่อ transition ถูกปฏิเสธ</dd><dt>latency / throughput</dt><dd>latency คือเวลาต่อคำขอ, throughput คือปริมาณงานต่อหน่วยเวลา; batching อาจเพิ่ม throughput แต่เพิ่มเวลารอ จึงต้องวัดทั้งคู่</dd><dt>idempotency</dt><dd>ทำคำขอ business operation เดิมซ้ำแล้ว side effect เกิดครั้งเดียวตาม key และ transaction protocol; ไม่ได้รับประกันจากการใช้ UUID ใหม่ทุก attempt</dd><dt>local lab</dt><dd>โปรแกรม Python และ tests ที่ผู้เรียนรันบนเครื่อง; เว็บเก็บเพียงคำยืนยันของผู้เรียน การผ่าน tests ของโค้ดต้นแบบไม่ใช่ผลตรวจโค้ดผู้เรียน</dd></dl></section></article>
+<section id="practice" class="practice-section"><span class="eyebrow">PRACTICE · DEBUG · BUILD</span><h2>พิสูจน์ด้วยการลงมือทำ</h2><div id="web-checks"></div><div class="retry-actions"><button class="secondary-button" id="retry-checks">เริ่มทำโจทย์ในเว็บใหม่</button><button class="text-button" id="undo-retry" hidden>คืนผลก่อนเริ่มใหม่</button></div><div id="exercise-content"><h2>แบบฝึก 20 ข้อ — เฉลยเฉพาะข้อ</h2><p>ทำคำตอบก่อนเปิด hints; โจทย์ปลายเปิดให้ใช้ตัวอย่างคำตอบและหลักฐานราย objective ตรวจงานจริง</p><section id="exercise-1" class="exercise-item"><h3>ข้อ 1</h3><p>Define query.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>query แทนสิ่งที่แต่ละ token ค้นหา จึงมีหนึ่งแถวต่อ token ที่ถาม</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>เริ่มจาก Q=XWQ; ตรวจ inner dimensions ของ matrix multiplication</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>ใช้ X=[[1,0],[0,1],[1,1]],WQ=I: คำนวณแถวแรก [1,0]@I ก่อน แล้วลองเปลี่ยน WQ00 เป็น 2</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>query Q=XWQแทนสิ่งที่tokenตำแหน่งนั้นกำลังค้น; X(3,2),WQ(2,2)ได้Q(3,2),ไม่ใช่vectorคำถามจากผู้ใช้เสมอ</p><p>อ้างอิง: <a href="#chapter-29/section/topic-3">Query, Key, Value</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch29-exercise-01"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-2" class="exercise-item"><h3>ข้อ 2</h3><p>Define key.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>key เป็น representation สำหรับการจับคู่กับ query</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>หา K=XWK จากนั้นคะแนนต้องมีหนึ่งช่องต่อคู่ query–key</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>ถ้า Q มี Tq แถว และ K มี Tk แถว ลองเขียน shape QKᵀ ก่อนคำนวณ dot product ของคู่แรก</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>key K=XWKเป็นaddressที่ใช้จับคู่query; QKᵀให้score(queries,keys),ไม่เอาKเป็นweightedcontentก่อนsoftmax</p><p>อ้างอิง: <a href="#chapter-29/section/topic-3">Query, Key, Value</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch29-exercise-02"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-3" class="exercise-item"><h3>ข้อ 3</h3><p>Explain value.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>value คือเนื้อหาที่ถูกนำมาถัวเฉลี่ย ไม่ใช่คะแนนการเลือก</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>คำนวณ V=XWV แล้ว O=AV โดย A มาจาก Q และ K</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>ตรึง Q,K และ mask ไว้ เปลี่ยน WV00 จาก 1 เป็น 2 แล้วตรวจว่า A หรือ V ส่วนใดต้องเปลี่ยน</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>value V=XWVเป็นcontentที่นำมาถัวเฉลี่ยด้วยA; เปลี่ยนWVอย่างเดียวAคงเดิมแต่outputAVเปลี่ยน</p><p>อ้างอิง: <a href="#chapter-29/section/topic-3">Query, Key, Value</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch29-exercise-03"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-4" class="exercise-item"><h3>ข้อ 4</h3><p>Explain scaled dot-product attention.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>attention มีสองช่วง: หาน้ำหนักจากความเข้ากัน แล้วใช้น้ำหนักรวมเนื้อหา</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ไล่ QKᵀ → หาร √dk → บวก mask → softmax รายแถว → คูณ V</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>ลอง q=[1,0],keys=[[1,0],[0,1]],dk=2: dot products เป็น [1,0] ก่อนหาร √2; ยังไม่คูณ V ในขั้นนี้</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>scaledattention A=softmax(QKᵀ/√dk+mask),O=AV; scaleลดvarianceของdotproductเมื่อdimensionสูง ไม่ใช่normalizeV</p><p>อ้างอิง: <a href="#chapter-29/section/topic-8">Full Formula</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch29-exercise-04"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-5" class="exercise-item"><h3>ข้อ 5</h3><p>Compare query and key.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>query และ key มีบทบาทต่างกัน แม้ self-attention จะเริ่มจาก sequence เดียวกัน</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>เขียนแหล่งของ Q กับ K ใน cross-attention: Q จาก decoder, K จาก encoder</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>สมมติ decoder มี 2 tokens และ encoder มี 5 tokens: QKᵀ ต้องมี 2×5 ช่อง แม้ hidden dimension จะเท่ากัน</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>queryถาม/keyจับคู่; crossattentionQจากdecoder,KจากencoderจึงTqกับTkต่างได้ ส่วนselfattentionมาจากsequenceเดียวแต่projectionsคนละตัว</p><p>อ้างอิง: <a href="#chapter-29/section/topic-3">Query, Key, Value</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch29-exercise-05"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-6" class="exercise-item"><h3>ข้อ 6</h3><p>Explain how scaled dot-product attention changes model behavior.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>การหาร √dk คุมขนาด logits ก่อน softmax; softmax อ่านความต่างของคะแนน</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>จาก q=[1,0] และ keys สองตัว ได้ scores [1/√2,0] แล้วคำนวณ exp ของแต่ละช่อง</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>น้ำหนักช่องแรกคือ exp(.707107)/(exp(.707107)+1); คำนวณช่องที่สองและตรวจผลรวมก่อนใช้ V</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>Q=[1,0],K=[[1,0],[0,1]],dk2ให้scores[.707107,0],weights≈[.669762,.330238]; weightsรวม1ทุกqueryที่ไม่fullymasked</p><p>อ้างอิง: <a href="#chapter-29/section/topic-4">Dot-Product Scores</a>, <a href="#chapter-29/section/topic-5">Why Scale by sqrt(d_k)?</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch29-exercise-06"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-7" class="exercise-item"><h3>ข้อ 7</h3><p>Explain a common limitation involving causal mask.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>causal หมายถึง query ตำแหน่ง i ใช้ key อนาคต j&gt;i ไม่ได้</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>กำหนด logits ของช่องอนาคตเป็น −∞ ก่อน softmax; อย่าลบความน่าจะเป็นหลัง normalize</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>แถว i=0 ของ sequence 3 tokens ต้องเข้าถึงได้เพียง key0; ลองตรวจผลรวมแถวเมื่อใช้ mask หลัง softmax โดยไม่ normalize ใหม่</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>causalmaskต้องปิดfuturej&gt;iก่อนsoftmax; maskหลังsoftmaxแล้วไม่renormalizeทำrowmass&lt;1; inferencecachepositionต้องตรงabsoluteoffset</p><p>อ้างอิง: <a href="#chapter-29/section/topic-11">Causal Mask</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch29-exercise-07"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-8" class="exercise-item"><h3>ข้อ 8</h3><p>Explain the tradeoff introduced by multi-head attention.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>แต่ละ head ทำ attention บน feature ส่วนของตัวเอง แล้วค่อยรวมกลับ</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>d_model ต้องหาร heads ลงตัว; head ใช้ dk=d_model/heads และมี score matrix ต่อ head</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>ใน lab d_model=2: ทดลอง heads=1 กับ 2 แล้วดู dk=2 เทียบ 1, จำนวน score matrices และผล concat; อย่าสรุปว่าต้องให้ output เดิม</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>multiheadแบ่งfeaturesให้headsแต่ละชุดเรียนrepresentationต่างกัน; dmodelต้องหารheadsลงตัวและcostscoreO(BhT²); ไม่คัดลอกweightsheadเดียวแล้วอ้างหลายกลไก</p><p>อ้างอิง: <a href="#chapter-29/section/topic-14">Multi-Head Attention</a>, <a href="#chapter-29/section/topic-16">Why Multiple Heads?</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch29-exercise-08"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-9" class="exercise-item"><h3>ข้อ 9</h3><p>Implement a small example of query.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>เริ่มเฉพาะ projection ของ query ก่อนยังไม่ต้อง softmax</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ใช้ X(3,2) และ WQ(2,2); เขียน np.matmul(X,WQ) และ assertion shape</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เริ่ม WQ=I ให้ Q แถวแรก [1,0] แล้วเปลี่ยน WQ00 เป็น 2; คำนวณแถวที่สามเองเพื่อทดสอบว่า projection ใช้ทุก token</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>X=[[1,0],[0,1],[1,1]],WQ=Iได้Q=X; เปลี่ยนWQ00เป็น2ได้Q[[2,0],[0,1],[2,1]]ก่อนคำนวณscoresใหม่</p><p>อ้างอิง: <a href="#chapter-29/section/topic-24">From Scratch</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch29-exercise-09"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-10" class="exercise-item"><h3>ข้อ 10</h3><p>Add deterministic tests for Exercise 9.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>tests ต้องจับการคูณผิดแกน และการนำ value ไปเปลี่ยนน้ำหนักเลือก</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>เพิ่ม invariant ของ Q shape, softmax row sums, future mass และการแยกผลของ WQ/WV</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>ตรึง Q,K แล้วแก้ WV: assert A เท่าเดิมแต่ O เปลี่ยน; อีกกรณี fully masked row ต้องถูกปฏิเสธ แทนคืน NaN เงียบ ๆ</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>assertQshape(3,2),changingWQchangesQ/scores,changingWVdoesnotchangeA; causalfuturemass0และallrowsum1; fullymaskedrowต้องerror</p><p>อ้างอิง: <a href="#chapter-29/section/topic-25">Numerical Debugging</a>, <a href="#chapter-29/section/topic-26">Fully Masked Rows</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch29-exercise-10"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-11" class="exercise-item"><h3>ข้อ 11</h3><p>Implement the main calculation behind value.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Query, Key, Value, Full Formula: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): คำนวณV=XWVแล้วO=A@V; A=[.25,.75],V=[[2,…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: คำนวณV=XWVแล้วO=A@V; A=[.25,.75],V=[[2,0],[0,4]]ให้O=[.5,3] ไม่ใช่เลือ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>คำนวณV=XWVแล้วO=A@V; A=[.25,.75],V=[[2,0],[0,4]]ให้O=[.5,3] ไม่ใช่เลือกvalueของmaxweightอย่างเดียว</p><p>อ้างอิง: <a href="#chapter-29/section/topic-3">Query, Key, Value</a>, <a href="#chapter-29/section/topic-8">Full Formula</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch29-exercise-11"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-12" class="exercise-item"><h3>ข้อ 12</h3><p>Run a small seeded experiment using key, scaled dot-product attention, and multi-head attention.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Multi-Head Attention, Shapes: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): seed7X/projectionsfixed; compareheads1/2โดยdk2/1,re…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: seed7X/projectionsfixed; compareheads1/2โดยdk2/1,recordQ/K/V/A/O; เปลี่ยนheadsอย่างเดียวแบ่ง…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>seed7X/projectionsfixed; compareheads1/2โดยdk2/1,recordQ/K/V/A/O; เปลี่ยนheadsอย่างเดียวแบ่งfeatureใหม่จึงoutputอาจเปลี่ยนตามจริง</p><p>อ้างอิง: <a href="#chapter-29/section/topic-14">Multi-Head Attention</a>, <a href="#chapter-29/section/topic-15">Shapes</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch29-exercise-12"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-13" class="exercise-item"><h3>ข้อ 13</h3><p>Explain a common shape or data mismatch.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Shapes: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): Q(B,h,Tq,dk)@K.transpose(−2,−1)→(B,h,Tq,Tk)…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: Q(B,h,Tq,dk)@K.transpose(−2,−1)→(B,h,Tq,Tk); maskต้องbroadcastตรงaxes ไม่สลับq…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>Q(B,h,Tq,dk)@K.transpose(−2,−1)→(B,h,Tq,Tk); maskต้องbroadcastตรงaxes ไม่สลับqueryกับkey; Vlastdimdvอาจต่างdk</p><p>อ้างอิง: <a href="#chapter-29/section/topic-15">Shapes</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch29-exercise-13"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-14" class="exercise-item"><h3>ข้อ 14</h3><p>Explain one numerical-stability concern.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Stable Softmax, Fully Masked Rows: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): subtractrowmaxก่อนexp; fullymaskedrowmax−∞ทำNaNจึงre…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: subtractrowmaxก่อนexp; fullymaskedrowmax−∞ทำNaNจึงrejectหรือกำหนดemptyrowpolicy; logitsfp16อา…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>subtractrowmaxก่อนexp; fullymaskedrowmax−∞ทำNaNจึงrejectหรือกำหนดemptyrowpolicy; logitsfp16อาจoverflowก่อนsoftmaxให้accumulateFP32</p><p>อ้างอิง: <a href="#chapter-29/section/topic-7">Stable Softmax</a>, <a href="#chapter-29/section/topic-26">Fully Masked Rows</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch29-exercise-14"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-15" class="exercise-item"><h3>ข้อ 15</h3><p>Explain a correct train, validation, and test workflow.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Padding Mask: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): fitprojectionsบนtrain; causallanguagevalidatio…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: fitprojectionsบนtrain; causallanguagevalidationห้ามfutureattention; paddingmaskและl…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>fitprojectionsบนtrain; causallanguagevalidationห้ามfutureattention; paddingmaskและlossmaskคนละหน้าที่ต้องตรวจทั้งคู่</p><p>อ้างอิง: <a href="#chapter-29/section/topic-12">Padding Mask</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch29-exercise-15"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-16" class="exercise-item"><h3>ข้อ 16</h3><p>Measure runtime and memory of the main calculation.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Attention Complexity: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): fullattention O(BhT²dk)เวลาและO(BhT²)scorememory; pro…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: fullattention O(BhT²dk)เวลาและO(BhT²)scorememory; projectionsO(BTdmodel²); fusedattentionลดmater…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>fullattention O(BhT²dk)เวลาและO(BhT²)scorememory; projectionsO(BTdmodel²); fusedattentionลดmaterializedmemoryแต่ไม่เปลี่ยนสมการพื้นฐาน</p><p>อ้างอิง: <a href="#chapter-29/section/topic-18">Attention Complexity</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch29-exercise-16"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-17" class="exercise-item"><h3>ข้อ 17</h3><p>Derive the main input-to-output algorithm for Attention.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Multi-Head Attention, Output Projection: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): X→QKVprojections→reshape/splitheads→scaled…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: X→QKVprojections→reshape/splitheads→scaledQKᵀ→mask→rowsoftmax→AV→concat→WO; …</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>X→QKVprojections→reshape/splitheads→scaledQKᵀ→mask→rowsoftmax→AV→concat→WO; ใช้multiheadlabดูtensorทุกขั้น</p><p>อ้างอิง: <a href="#chapter-29/section/topic-14">Multi-Head Attention</a>, <a href="#chapter-29/section/topic-17">Output Projection</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch29-exercise-17"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-18" class="exercise-item"><h3>ข้อ 18</h3><p>Compare a scratch implementation with a trusted library on identical data.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ PyTorch SDPA: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): torch.scaled_dot_product_attentionรับbooleanmaskse…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: torch.scaled_dot_product_attentionรับbooleanmasksemanticsต่างบางAPI; convertmaskชัดเจน,dro…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>torch.scaled_dot_product_attentionรับbooleanmasksemanticsต่างบางAPI; convertmaskชัดเจน,dropout_p0,dtypefloat64แล้วcompareQKV/O</p><p>อ้างอิง: <a href="#chapter-29/section/topic-21">PyTorch SDPA</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch29-exercise-18"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-19" class="exercise-item"><h3>ข้อ 19</h3><p>Compare a baseline with one controlled change involving causal mask.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Causal Mask, Mask Semantics Are API-Specific: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): คงQKVเปลี่ยนmasknone→causal; outputtoken0ต้องอ่า…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: คงQKVเปลี่ยนmasknone→causal; outputtoken0ต้องอ่านเฉพาะV0และfuturemass0,tokenท้ายอาจเท่า…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>คงQKVเปลี่ยนmasknone→causal; outputtoken0ต้องอ่านเฉพาะV0และfuturemass0,tokenท้ายอาจเท่าเดิม; gradientห้ามไหลไปfutureinput</p><p>อ้างอิง: <a href="#chapter-29/section/topic-11">Causal Mask</a>, <a href="#chapter-29/section/topic-13">Mask Semantics Are API-Specific</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch29-exercise-19"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-20" class="exercise-item"><h3>ข้อ 20</h3><p>Summarize validation, reproducibility, and one open research question.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Attention vs RNN, Attention vs Convolution: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): บันทึกprojectionweights/headsplit/scalefactor/mask/dtype…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: บันทึกprojectionweights/headsplit/scalefactor/mask/dtype; ทดลอง2headsช่วยcopy-two-relationsเทียบ1head…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>บันทึกprojectionweights/headsplit/scalefactor/mask/dtype; ทดลอง2headsช่วยcopy-two-relationsเทียบ1headด้วยparameterbudgetใกล้กันและholdouttask</p><p>อ้างอิง: <a href="#chapter-29/section/topic-19">Attention vs RNN</a>, <a href="#chapter-29/section/topic-20">Attention vs Convolution</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch29-exercise-20"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section></div><div id="local-lab-content"><section id="local-lab"><h2>Local lab: Python 3.12 บน CPU</h2><p>รันจาก repository root; ใช้ Python 3.12 แยก environment สำหรับ framework ตาม requirements ของชุดบท</p><pre><code>python3.12 -m venv .venv-course
+source .venv-course/bin/activate
+python -m pip install -r requirements-batch10.txt pytest
+(cd 29-attention &amp;&amp; python -m pytest tests -q -rs)</code></pre><p>ผลที่คาดหวัง: required tests ผ่านและไม่มี required test ถูก skip; GPU/integrations ที่ยังไม่รันต้องระบุแยก Python 3.15 ที่มากับเครื่องอาจใช้กับ framework wheels เหล่านี้ไม่ได้</p><h2>Mini Project — Attention Microscope</h2>
+<p>Create short synthetic token sequences.</p>
+<p>Implement and inspect:
+- single-head attention
+- multi-head attention
+- causal attention
+- cross-attention extension</p>
+<p>Report:
+- Q/K/V shapes
+- score matrices
+- mask matrices
+- attention row sums
+- entropy
+- output shapes
+- runtime vs sequence length</p>
+<p>Then compare the NumPy output against PyTorch scaled_dot_product_attention for equivalent tensors.</p><h2>Batch 10 Integration Project — Adversarial &amp; Transformer Lab</h2>
+<p>Batch 10 combines two different generative paradigms:</p>
+<h3>Part A — GAN on a 2D Distribution</h3>
+<pre><code class="language-text">noise z
+  ↓
+Generator
+  ↓
+fake 2D points
+
+real 2D points ─┐
+fake 2D points ─┼→ Discriminator
+</code></pre>
+<p>Track:
+- generator loss
+- discriminator loss
+- real/fake mean
+- real/fake covariance
+- mode coverage
+- fixed latent probes</p>
+<h3>Part B — Tiny Decoder-Only Transformer</h3>
+<pre><code class="language-text">text corpus
+↓
+character vocabulary
+↓
+context windows
+↓
+token embedding + position
+↓
+causal Transformer blocks
+↓
+vocabulary logits
+↓
+next-token cross-entropy
+</code></pre>
+<p>Track:
+- train loss
+- validation loss
+- parameter count
+- generated sample
+- context length
+- device</p>
+<h3>Why Put These Together?</h3>
+<p>GANs and autoregressive Transformers are both generative models, but their training signals differ radically:</p>
+<p>GAN:
+- adversarial game
+- no explicit likelihood</p>
+<p>Transformer LM:
+- next-token conditional likelihood
+- teacher-forced cross-entropy</p>
+<p>The comparison teaches that “generative AI” is not one objective.</p>
+<h3>Run GAN</h3>
+<pre><code class="language-bash">python integration-project-batch10/src/generative_transformer_lab.py \
+  --mode gan \
+  --steps 200 \
+  --output-dir reports/batch10-gan
+</code></pre>
+<h3>Run Transformer LM</h3>
+<pre><code class="language-bash">python integration-project-batch10/src/generative_transformer_lab.py \
+  --mode transformer \
+  --steps 200 \
+  --output-dir reports/batch10-transformer
+</code></pre>
+<h3>Methodology Rules</h3>
+<h4>GAN</h4>
+<ul>
+<li>fixed seed</li>
+<li>fixed latent probe</li>
+<li>separate G/D optimizer steps</li>
+<li>fake detached for D update</li>
+<li>fake not detached for G update</li>
+</ul>
+<h4>Transformer</h4>
+<ul>
+<li>train/validation split by corpus position</li>
+<li>no validation tokens inserted into training windows</li>
+<li>causal attention</li>
+<li>raw logits into cross-entropy</li>
+<li>generation separated from training</li>
+</ul>
+<h3>Required Extensions</h3>
+<ol>
+<li>WGAN-GP toy experiment</li>
+<li>GAN mode-coverage metric</li>
+<li>top-k sampling</li>
+<li>temperature sampling sweep</li>
+<li>learned vs sinusoidal positions</li>
+<li>pre-norm vs post-norm</li>
+<li>context-length sweep</li>
+<li>attention-map inspection</li>
+<li>tokens/second benchmark</li>
+<li>KV-cache preview implementation</li>
+</ol>
+<h3>Mastery Questions</h3>
+<ul>
+<li>Why can GAN losses oscillate while training still improves?</li>
+<li>Why does fake.detach() belong in the D step?</li>
+<li>Why must decoder self-attention be causal?</li>
+<li>Why is teacher forcing different from generation?</li>
+<li>Why does dense attention grow quadratically with context length?</li>
+</ul></section></div><label class="local-confirm"><input type="checkbox" id="local-lab-confirm"> ฉันรัน local lab และตรวจผลตาม rubric ด้วยตัวเองแล้ว</label><p class="local-note">สถานะนี้เป็นคำยืนยันของผู้เรียน เว็บไม่ได้รันหรือตรวจ Python บนเครื่องแทนคุณ</p></section>
+<section id="mastery-review" class="practice-section"><h2>หลักฐานตามเกณฑ์การเรียนรู้</h2><p>ทุก objective ต้องแสดงหลักฐานอธิบาย ทำนาย คำนวณ อ่าน shape/state debug และประยุกต์ พร้อมกรณีใหม่ ผลรัน source ผู้เรียนจริง และการประเมินซ้ำ เกณฑ์นี้ไม่รับประกันความเข้าใจทุกสถานการณ์ เปิด JavaScript เพื่อดูรายการที่ยังขาดและนำเข้ารายงานผู้ตรวจ</p></section><section class="coverage-section"><h2>แผนที่สิ่งที่เรียน → สิ่งที่ต้องแสดงให้ได้</h2><div id="coverage-table"></div></section><footer><span>ZERO TO ELITE AI ENGINEER · LEARNING STUDIO</span><span>อ่าน · derive · implement · debug · experiment · build</span></footer></div></main><noscript><style>.workbench,.sidebar,.reading-route,.lesson-toc,.mastery-status,#web-checks{display:none}main{margin-left:0}</style>อ่านเนื้อหา HTML ได้ตามปกติ เปิด JavaScript เพื่อใช้ห้องทดลองและตรวจคำตอบ</noscript></body></html>

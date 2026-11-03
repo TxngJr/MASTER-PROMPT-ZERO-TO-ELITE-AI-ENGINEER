@@ -1,0 +1,1008 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="บทเรียน AI Engineer ภาษาไทย พร้อมคณิตศาสตร์ทีละขั้นและห้องทดลองที่คำนวณจริง"><title>Fine-Tuning: เริ่มจากสิ่งที่เรียนแล้วและวัดสิ่งที่หาย · AI Engineer Studio</title><link rel="stylesheet" href="../visual-lab/assets/styles.css"><link rel="stylesheet" href="../visual-lab/assets/course.css"><script defer src="../visual-lab/assets/lessons.js"></script><script defer src="../visual-lab/assets/chapter-meta.js"></script><script defer src="../visual-lab/assets/course-math.js"></script><script defer src="../visual-lab/assets/course-models.js"></script><script defer src="../visual-lab/assets/course-models-v3.js"></script><script defer src="../visual-lab/assets/course-assessment.js"></script><script defer src="../visual-lab/assets/course-mastery.js"></script><script defer src="../visual-lab/assets/course-catalog.js"></script><script defer src="../visual-lab/assets/book-content.js"></script><script defer src="../visual-lab/assets/course-render.js"></script><script defer src="../visual-lab/assets/course-mastery-panel.js"></script><script defer src="../visual-lab/assets/quality-report.js"></script><script defer src="../visual-lab/assets/course-app.js"></script></head>
+<body data-chapter="55" data-root="../"><a class="skip-link" href="#main">ข้ามไปบทเรียน</a>
+<aside class="sidebar" id="sidebar" aria-label="เลือกบทเรียน"><a class="brand" href="../visual-lab/index.html"><span class="brand-mark">ai</span><span>AI ENGINEER<small>LEARN · DERIVE · BUILD</small></span></a><div class="sidebar-intro">อ่านให้เข้าใจ · คำนวณให้เห็น · เขียนให้เป็น</div><label class="search-box"><input id="search" type="search" placeholder="ค้นหาบท / attention" aria-label="ค้นหาบทเรียน"></label><label class="filter-label" for="phase-filter">เส้นทางการเรียน <span id="nav-count"></span></label><select id="phase-filter"><option value="">ทุก Phase</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option></select><nav id="chapter-list" class="chapter-list" aria-label="รายชื่อบท"></nav><div class="course-progress"><div><span>ผ่านโจทย์ในเว็บ</span><strong id="progress-count">0 / 80</strong></div><progress id="course-progress" max="80" value="0" aria-label="บทที่ผ่านโจทย์"></progress><a id="resume-link" href="#chapter-1">อ่านต่อจากเดิม →</a></div></aside>
+<button class="nav-backdrop" id="nav-backdrop" aria-label="ปิดเมนู" hidden></button>
+<main id="main" tabindex="-1"><header class="topbar"><div><button id="nav-toggle" class="icon-button mobile-menu" aria-label="เปิดเมนูบทเรียน" aria-expanded="false" aria-controls="sidebar">☰</button><span id="breadcrumb"></span></div><span class="local-badge"><i></i> คำนวณในเครื่อง · ไม่มี API</span></header><div class="content">
+<div class="chapter-navigation"><label for="chapter-select" class="sr-only">เลือกบทเรียน</label><select id="chapter-select"></select><div class="chapter-arrows"><button id="prev-chapter" class="icon-button" aria-label="บทก่อนหน้า">←</button><button id="next-chapter" class="icon-button" aria-label="บทถัดไป">→</button></div></div>
+<section class="chapter-hero"><div><p id="chapter-kicker" class="eyebrow"></p><h1 id="chapter-title">Fine-Tuning: เริ่มจากสิ่งที่เรียนแล้วและวัดสิ่งที่หาย</h1><p class="english-title" id="chapter-english"></p></div><span class="hero-symbol">f(x) ↗</span></section>
+<p id="quality-status" class="quality-status"></p><div id="mastery-status" class="mastery-status"></div><div class="reading-route"><a href="#chapter-55/section/overview">01 อ่านบทเรียน</a><a href="#workbench">02 ทดลองสมการ</a><a href="#practice">03 ฝึกและตรวจงาน</a><a href="#mastery-review">04 หลักฐานตามเกณฑ์</a></div>
+<nav id="lesson-toc" class="lesson-toc" aria-label="สารบัญบท"></nav>
+<section id="overview" class="course-overview"><span class="eyebrow">THE LEARNING CONTRACT</span><h2>เรียนบทนี้แล้วต้องทำอะไรได้</h2><p id="chapter-purpose"></p><div id="chapter-objectives"></div><div class="learning-hint">ทำนาย → เปลี่ยนทีละค่า → ตรวจตัวเลข → อธิบายเหตุผล → เขียนด้วย Python เอง</div></section>
+<section class="workbench lab-card" id="workbench" aria-label="ห้องทดลองคำนวณจริง"><div class="card-header"><div><span class="live-dot"></span><span class="eyebrow">COMPUTATION WORKBENCH</span></div><span class="simulation-label">ทุกภาพใช้ผลคำนวณชุดเดียวกัน</span></div><div class="lab-top"><label for="lab-select">เลือกกลไกที่ต้องการทดลอง</label><select id="lab-select"></select><p id="lab-question"></p></div><div class="workbench-grid"><div class="viz-column"><div class="compare-labels"><span>เส้นทึบ: ปัจจุบัน</span><span>เส้นประ: baseline ที่ตรึงไว้</span></div><div id="simulation" class="simulation"></div><div id="metrics" class="metrics"></div><div id="baseline-diff" class="baseline-diff"></div><div class="playback"><div class="playback-buttons"><button class="primary-button" id="update-once">อัปเดตหนึ่งก้าว</button><button class="secondary-button" id="train-many">▶ ฝึก 30 ก้าว</button><button class="icon-button" id="back-state" aria-label="ย้อนประวัติ">↶</button><button class="icon-button" id="forward-state" aria-label="ประวัติถัดไป">↷</button></div></div><div class="lab-secondary-actions"><button id="pin-baseline" class="text-button">ตรึง baseline ปัจจุบัน</button><button id="reset-lab" class="text-button">คืนค่าเริ่มต้น</button><button id="download-state" class="text-button">บันทึกผล JSON</button><span id="history-status"></span></div><p id="simulation-note" class="simulation-note"></p><p class="lab-error" id="lab-error" role="alert" hidden></p></div><div class="controls-column"><h3>เปลี่ยนทีละตัว แล้วสังเกตผล</h3><div id="lab-controls"></div><p class="control-note">แก้ weight ด้วยมือจะคำนวณ forward ใหม่; optimizer เปลี่ยน weights เมื่อกดอัปเดตเท่านั้น</p></div></div>
+<div class="trace-section"><div class="trace-toolbar"><h3>เดินสมการทีละ operation</h3><div><button id="trace-prev" class="icon-button" aria-label="operation ก่อนหน้า">←</button><button id="play-trace" class="secondary-button" aria-pressed="false">▶ เล่น flow</button><button id="trace-next" class="icon-button" aria-label="operation ถัดไป">→</button><span id="stage-counter"></span></div></div><label class="motion-control"><input id="reduce-motion" type="checkbox"> ลดภาพเคลื่อนไหว (หยุดการเล่นที่ค้างอยู่)</label><div id="operation-steps" class="operation-steps"></div><div id="flow-diagram" class="flow-diagram"></div><div id="active-operation" class="active-operation" aria-live="polite"></div><p class="control-note">ตัวเลขบนภาพปัดเศษเพื่อให้อ่านง่าย; บันทึก JSON เพื่อดูค่าที่ใช้คำนวณเต็ม precision</p><details open><summary>ตารางค่าระหว่างทาง — ตรวจด้วยมือได้</summary><div id="result-table"></div></details><div id="tensor-tables" class="tensor-tables"></div><details id="surface-details"><summary>ดู loss surface และเส้นทางของ w₁,b (ตรึง controls อื่น)</summary><div id="surface-chart"></div><p>surface คำนวณ objective ปัจจุบันโดยตรึง degree, penalty, ข้อมูล และ weights อื่น เส้นทางแสดงเฉพาะ snapshots ที่ค่าเหล่านี้ตรงกัน; นอกช่วง w=[−1,5], b=[−2,4] ให้ตรวจค่าจริงใน history</p></details><details><summary>ประวัติการเปลี่ยนค่า</summary><div id="history-table"></div></details></div></section>
+<article id="chapter-article" class="chapter-article"><section id="mechanism-1" class="teaching-section"><span class="section-kicker">CHAPTER 55 · ภาพ → สมการ → โค้ด</span><h2>1. fine-tuning เริ่มจาก weights ที่มีความรู้เดิม</h2><h3>โจทย์และเหตุผล</h3><p>full fine-tuning เปิด parameters ทั้งหมด ส่วน freezing/PEFT จำกัดส่วนที่เปลี่ยน การใช้ learning rate เล็กเป็นวิธีคุมก้าว ไม่ใช่รับประกันว่าไม่เกิด forgetting</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Calculate trainable ratio for head-only tuning.</p><p>backbone9900params,head100ให้trainableratio100/10000=.01=1%; numeratorเฉพาะrequires_gradและdenominatorรวมทุกparameterไม่activation</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>w: weight w₁,initial=1.8; b: bias b,initial=0.8; eta: learning rate η,initial=0.02; sampleX: x ของจุดที่เลือก,initial=2; sampleY: y ของจุดที่เลือก,initial=5; degree: polynomial degree,initial=1; w2: weight x²,initial=0; w3: weight x³,initial=0; w4: weight x⁴,initial=0; regularizer: penalty,initial=none; lambda: regularization λ,initial=0; noise: noise scale (fixed pattern),initial=0</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>φ(x)=[x, …, x^1] = &quot;5 × 1&quot;; แต่ละแถวเป็นตัวอย่าง แต่ละคอลัมน์เป็นกำลังของ x; polynomial ยัง linear in weights</li><li>ŷᵢ=Σⱼwⱼxᵢ^(j+1)+b = [-2.8, -1, 0.8, 2.6, 4.4]; w เปลี่ยน slope/curvature; bias เลื่อนทุก prediction เท่ากัน</li><li>eᵢ=ŷᵢ−yᵢ = [0.20000000000000018, 0, -0.19999999999999996, -0.3999999999999999, -0.5999999999999996]; นิยาม residual ใช้ prediction ลบ target ตลอดทั้งตัวอย่าง</li><li>MSE=Σeᵢ²/5; J=MSE+penalty = 0.11999999999999991; MSE=0.12, penalty=0; ไม่ลงโทษ bias</li><li>∂J/∂wⱼ = mean(2e x^(j+1)) + penalty derivative = [-0.7999999999999998]; คูณ local derivative แล้วเฉลี่ยตัวอย่าง; gradient ติดลบทำให้ weight เพิ่มเมื่อ update</li><li>∂J/∂b=mean(2e) = -0.39999999999999974; เพราะ ∂(wx+b−y)/∂b=1 ทุกตัวอย่าง</li><li>w_new=w−0.02g; b_new=b−0.02g_b = [1.816, 0.808]; นี่เป็นข้อเสนอก้าวถัดไป กด update จึงเปลี่ยนสถานะจริง</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="regression-fine-tune-จาก-pretrained">เปิดการทดลองนี้</a><p class="failure-box">evaluationซ้ำข้อมูลpretrainingหรือuserข้ามsplitทำtargetgainสูงเกิน; auditdedup/sourcegroupsและไม่tuneonretentiontest; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>backbone9900params,head100ให้trainableratio100/10000=.01=1%; numeratorเฉพาะrequires_gradและdenominatorรวมทุกparameterไม่activation</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-1-equation"><summary>สมการ</summary><ol><li><code>φ(x)=[x, …, x^1]</code> = &quot;5 × 1&quot;<p>แต่ละแถวเป็นตัวอย่าง แต่ละคอลัมน์เป็นกำลังของ x; polynomial ยัง linear in weights</p></li><li><code>ŷᵢ=Σⱼwⱼxᵢ^(j+1)+b</code> = [-2.8, -1, 0.8, 2.6, 4.4]<p>w เปลี่ยน slope/curvature; bias เลื่อนทุก prediction เท่ากัน</p></li><li><code>eᵢ=ŷᵢ−yᵢ</code> = [0.20000000000000018, 0, -0.19999999999999996, -0.3999999999999999, -0.5999999999999996]<p>นิยาม residual ใช้ prediction ลบ target ตลอดทั้งตัวอย่าง</p></li><li><code>MSE=Σeᵢ²/5; J=MSE+penalty</code> = 0.11999999999999991<p>MSE=0.12, penalty=0; ไม่ลงโทษ bias</p></li><li><code>∂J/∂wⱼ = mean(2e x^(j+1)) + penalty derivative</code> = [-0.7999999999999998]<p>คูณ local derivative แล้วเฉลี่ยตัวอย่าง; gradient ติดลบทำให้ weight เพิ่มเมื่อ update</p></li><li><code>∂J/∂b=mean(2e)</code> = -0.39999999999999974<p>เพราะ ∂(wx+b−y)/∂b=1 ทุกตัวอย่าง</p></li><li><code>w_new=w−0.02g; b_new=b−0.02g_b</code> = [1.816, 0.808]<p>นี่เป็นข้อเสนอก้าวถัดไป กด update จึงเปลี่ยนสถานะจริง</p></li></ol></details><details id="help-mechanism-1-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>φ(x)=[x, …, x^1]</code> = &quot;5 × 1&quot;<p>แต่ละแถวเป็นตัวอย่าง แต่ละคอลัมน์เป็นกำลังของ x; polynomial ยัง linear in weights</p></li><li><code>ŷᵢ=Σⱼwⱼxᵢ^(j+1)+b</code> = [-2.8, -1, 0.8, 2.6, 4.4]<p>w เปลี่ยน slope/curvature; bias เลื่อนทุก prediction เท่ากัน</p></li><li><code>eᵢ=ŷᵢ−yᵢ</code> = [0.20000000000000018, 0, -0.19999999999999996, -0.3999999999999999, -0.5999999999999996]<p>นิยาม residual ใช้ prediction ลบ target ตลอดทั้งตัวอย่าง</p></li><li><code>MSE=Σeᵢ²/5; J=MSE+penalty</code> = 0.11999999999999991<p>MSE=0.12, penalty=0; ไม่ลงโทษ bias</p></li><li><code>∂J/∂wⱼ = mean(2e x^(j+1)) + penalty derivative</code> = [-0.7999999999999998]<p>คูณ local derivative แล้วเฉลี่ยตัวอย่าง; gradient ติดลบทำให้ weight เพิ่มเมื่อ update</p></li><li><code>∂J/∂b=mean(2e)</code> = -0.39999999999999974<p>เพราะ ∂(wx+b−y)/∂b=1 ทุกตัวอย่าง</p></li><li><code>w_new=w−0.02g; b_new=b−0.02g_b</code> = [1.816, 0.808]<p>นี่เป็นข้อเสนอก้าวถัดไป กด update จึงเปลี่ยนสถานะจริง</p></li></ol></details><details id="help-mechanism-1-code"><summary>โค้ด</summary><p>backbone9900params,head100ให้trainableratio100/10000=.01=1%; numeratorเฉพาะrequires_gradและdenominatorรวมทุกparameterไม่activation</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-1-result"><summary>ผลการทดลอง</summary><ol><li><code>φ(x)=[x, …, x^1]</code> = &quot;5 × 1&quot;<p>แต่ละแถวเป็นตัวอย่าง แต่ละคอลัมน์เป็นกำลังของ x; polynomial ยัง linear in weights</p></li><li><code>ŷᵢ=Σⱼwⱼxᵢ^(j+1)+b</code> = [-2.8, -1, 0.8, 2.6, 4.4]<p>w เปลี่ยน slope/curvature; bias เลื่อนทุก prediction เท่ากัน</p></li><li><code>eᵢ=ŷᵢ−yᵢ</code> = [0.20000000000000018, 0, -0.19999999999999996, -0.3999999999999999, -0.5999999999999996]<p>นิยาม residual ใช้ prediction ลบ target ตลอดทั้งตัวอย่าง</p></li><li><code>MSE=Σeᵢ²/5; J=MSE+penalty</code> = 0.11999999999999991<p>MSE=0.12, penalty=0; ไม่ลงโทษ bias</p></li><li><code>∂J/∂wⱼ = mean(2e x^(j+1)) + penalty derivative</code> = [-0.7999999999999998]<p>คูณ local derivative แล้วเฉลี่ยตัวอย่าง; gradient ติดลบทำให้ weight เพิ่มเมื่อ update</p></li><li><code>∂J/∂b=mean(2e)</code> = -0.39999999999999974<p>เพราะ ∂(wx+b−y)/∂b=1 ทุกตัวอย่าง</p></li><li><code>w_new=w−0.02g; b_new=b−0.02g_b</code> = [1.816, 0.808]<p>นี่เป็นข้อเสนอก้าวถัดไป กด update จึงเปลี่ยนสถานะจริง</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-1"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-2" class="teaching-section"><span class="section-kicker">CHAPTER 55 · ภาพ → สมการ → โค้ด</span><h2>2. baseline ก่อนปรับเป็นหลักฐานจำเป็น</h2><h3>โจทย์และเหตุผล</h3><p>ประเมินทั้ง task ใหม่และชุดทักษะเดิมก่อน/หลัง โดยคง prompts/generation settings และ data protocol เดิม มิฉะนั้นจะไม่รู้ว่าผลต่างมาจาก model หรือวิธีวัด</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Build discriminative LR groups.</p><p>optimizerparamgroupsbackbonelr1e−5,headlr1e−3; groupIDsไม่ซ้ำ/ไม่ตกหล่น,decaypolicyระบุbias/normแยก</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>rank: adapter rank,initial=2; a: A scale,initial=1; b: B scale (initial 0),initial=0; alpha: LoRA alpha,initial=2; target: target output0,initial=2; eta: learning rate,initial=0.1</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = &quot;W=I₄, A=(r,4), B=(4,r)&quot;; กำหนดความหมายและหน่วยของ input ก่อนทดลอง</li><li>W_eff=W+(α/r)BA; y=W_eff x = [1, -1, 0.5, 0]; A/B scales คุม matrices ที่มี pattern คงที่; local lab ฝึก entries ทั้ง matrix อย่างอิสระ</li><li>normal / boundary / comparison = [1, -1, 0.5, 0]; ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="lora-freeze-base-แล-วฝ-ก-adap">เปิดการทดลองนี้</a><p class="failure-box">evaluationซ้ำข้อมูลpretrainingหรือuserข้ามsplitทำtargetgainสูงเกิน; auditdedup/sourcegroupsและไม่tuneonretentiontest; tied-scale adapter demonstration: update ฝึกสอง scales เพื่อเห็น gradient; parameter count แสดงของ full untied A,B</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>optimizerparamgroupsbackbonelr1e−5,headlr1e−3; groupIDsไม่ซ้ำ/ไม่ตกหล่น,decaypolicyระบุbias/normแยก</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-2-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = &quot;W=I₄, A=(r,4), B=(4,r)&quot;<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>W_eff=W+(α/r)BA; y=W_eff x</code> = [1, -1, 0.5, 0]<p>A/B scales คุม matrices ที่มี pattern คงที่; local lab ฝึก entries ทั้ง matrix อย่างอิสระ</p></li><li><code>normal / boundary / comparison</code> = [1, -1, 0.5, 0]<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-2-visual"><summary>ภาพและ shape</summary><p>tied-scale adapter demonstration: update ฝึกสอง scales เพื่อเห็น gradient; parameter count แสดงของ full untied A,B</p><ol><li><code>shape / range</code> = &quot;W=I₄, A=(r,4), B=(4,r)&quot;<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>W_eff=W+(α/r)BA; y=W_eff x</code> = [1, -1, 0.5, 0]<p>A/B scales คุม matrices ที่มี pattern คงที่; local lab ฝึก entries ทั้ง matrix อย่างอิสระ</p></li><li><code>normal / boundary / comparison</code> = [1, -1, 0.5, 0]<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-2-code"><summary>โค้ด</summary><p>optimizerparamgroupsbackbonelr1e−5,headlr1e−3; groupIDsไม่ซ้ำ/ไม่ตกหล่น,decaypolicyระบุbias/normแยก</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-2-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = &quot;W=I₄, A=(r,4), B=(4,r)&quot;<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>W_eff=W+(α/r)BA; y=W_eff x</code> = [1, -1, 0.5, 0]<p>A/B scales คุม matrices ที่มี pattern คงที่; local lab ฝึก entries ทั้ง matrix อย่างอิสระ</p></li><li><code>normal / boundary / comparison</code> = [1, -1, 0.5, 0]<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-2"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-3" class="teaching-section"><span class="section-kicker">CHAPTER 55 · ภาพ → สมการ → โค้ด</span><h2>3. checkpoint selection ต้องไม่มอง test ซ้ำ</h2><h3>โจทย์และเหตุผล</h3><p>ใช้ validation เลือกรอบและ hyperparameters ตรวจ domain shift, imbalance, trainable ratio และ early stopping พร้อมบันทึก base checkpoint identity ก่อนเผยแพร่ adapter/model</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Add early stopping.</p><p>earlystoppingpatience2: val[.5,.4,.41,.42]หยุดหลังสองnonimprovementsและrestoreepoch2; min_delta/tiesต้องกำหนด</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>corpus: corpus over a,b,c,initial=abacaba; eta: learning rate,initial=0.2; temperature: sampling temperature,initial=1; query: query token ID (a=0,b=1,c=2),initial=0; ignorePrefix: ignore first target positions,initial=0; l0: logit W[0,0],initial=0; l1: logit W[0,1],initial=0; l2: logit W[0,2],initial=0; l3: logit W[1,0],initial=0; l4: logit W[1,1],initial=0; l5: logit W[1,2],initial=0; l6: logit W[2,0],initial=0; l7: logit W[2,1],initial=0; l8: logit W[2,2],initial=0</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>inputs=tokens[:-1], targets=tokens[1:] = [0, 1, 0, 2, 0, 1, 0]; causal bigram model ใช้ current token ทำนาย next token</li><li>logits=W[current token] = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]; weights เริ่มจาก 0 จึง probability=1/3; ไม่มี pretrained weights</li><li>valid=t &gt;= ignorePrefix = 6; ignore label ไม่ได้ลบ input; ใช้สอน assistant-only loss</li><li>L=−mean log p(target) = 1.0986122886681098; normalize เฉพาะ valid targets</li><li>∂L/∂W[x,j] += (p_j−1[j=target])/N_valid = [[0.16666666666666666, -0.1666666666666667, -1.850371707708594e-17], [-0.22222222222222224, 0.1111111111111111, 0.1111111111111111], [-0.11111111111111112, 0.05555555555555555, 0.05555555555555555]]; accumulate เมื่อ context token เดียวถูกใช้หลายครั้ง</li><li>softmax(W[query]/temperature) = [0.3333333333333333, 0.3333333333333333, 0.3333333333333333]; temperature ใช้เฉพาะ distribution ตอน inference ไม่แก้ training CE</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="language-task-data-เปล--ยน-object">เปิดการทดลองนี้</a><p class="failure-box">evaluationซ้ำข้อมูลpretrainingหรือuserข้ามsplitทำtargetgainสูงเกิน; auditdedup/sourcegroupsและไม่tuneonretentiontest; tiny trainable bigram LM ใน browser ไม่ใช่ Transformer; full decoder-only implementation และ training loop อยู่ในบทเต็ม/local lab</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>earlystoppingpatience2: val[.5,.4,.41,.42]หยุดหลังสองnonimprovementsและrestoreepoch2; min_delta/tiesต้องกำหนด</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-3-equation"><summary>สมการ</summary><ol><li><code>inputs=tokens[:-1], targets=tokens[1:]</code> = [0, 1, 0, 2, 0, 1, 0]<p>causal bigram model ใช้ current token ทำนาย next token</p></li><li><code>logits=W[current token]</code> = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]<p>weights เริ่มจาก 0 จึง probability=1/3; ไม่มี pretrained weights</p></li><li><code>valid=t &gt;= ignorePrefix</code> = 6<p>ignore label ไม่ได้ลบ input; ใช้สอน assistant-only loss</p></li><li><code>L=−mean log p(target)</code> = 1.0986122886681098<p>normalize เฉพาะ valid targets</p></li><li><code>∂L/∂W[x,j] += (p_j−1[j=target])/N_valid</code> = [[0.16666666666666666, -0.1666666666666667, -1.850371707708594e-17], [-0.22222222222222224, 0.1111111111111111, 0.1111111111111111], [-0.11111111111111112, 0.05555555555555555, 0.05555555555555555]]<p>accumulate เมื่อ context token เดียวถูกใช้หลายครั้ง</p></li><li><code>softmax(W[query]/temperature)</code> = [0.3333333333333333, 0.3333333333333333, 0.3333333333333333]<p>temperature ใช้เฉพาะ distribution ตอน inference ไม่แก้ training CE</p></li></ol></details><details id="help-mechanism-3-visual"><summary>ภาพและ shape</summary><p>tiny trainable bigram LM ใน browser ไม่ใช่ Transformer; full decoder-only implementation และ training loop อยู่ในบทเต็ม/local lab</p><ol><li><code>inputs=tokens[:-1], targets=tokens[1:]</code> = [0, 1, 0, 2, 0, 1, 0]<p>causal bigram model ใช้ current token ทำนาย next token</p></li><li><code>logits=W[current token]</code> = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]<p>weights เริ่มจาก 0 จึง probability=1/3; ไม่มี pretrained weights</p></li><li><code>valid=t &gt;= ignorePrefix</code> = 6<p>ignore label ไม่ได้ลบ input; ใช้สอน assistant-only loss</p></li><li><code>L=−mean log p(target)</code> = 1.0986122886681098<p>normalize เฉพาะ valid targets</p></li><li><code>∂L/∂W[x,j] += (p_j−1[j=target])/N_valid</code> = [[0.16666666666666666, -0.1666666666666667, -1.850371707708594e-17], [-0.22222222222222224, 0.1111111111111111, 0.1111111111111111], [-0.11111111111111112, 0.05555555555555555, 0.05555555555555555]]<p>accumulate เมื่อ context token เดียวถูกใช้หลายครั้ง</p></li><li><code>softmax(W[query]/temperature)</code> = [0.3333333333333333, 0.3333333333333333, 0.3333333333333333]<p>temperature ใช้เฉพาะ distribution ตอน inference ไม่แก้ training CE</p></li></ol></details><details id="help-mechanism-3-code"><summary>โค้ด</summary><p>earlystoppingpatience2: val[.5,.4,.41,.42]หยุดหลังสองnonimprovementsและrestoreepoch2; min_delta/tiesต้องกำหนด</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-3-result"><summary>ผลการทดลอง</summary><ol><li><code>inputs=tokens[:-1], targets=tokens[1:]</code> = [0, 1, 0, 2, 0, 1, 0]<p>causal bigram model ใช้ current token ทำนาย next token</p></li><li><code>logits=W[current token]</code> = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]<p>weights เริ่มจาก 0 จึง probability=1/3; ไม่มี pretrained weights</p></li><li><code>valid=t &gt;= ignorePrefix</code> = 6<p>ignore label ไม่ได้ลบ input; ใช้สอน assistant-only loss</p></li><li><code>L=−mean log p(target)</code> = 1.0986122886681098<p>normalize เฉพาะ valid targets</p></li><li><code>∂L/∂W[x,j] += (p_j−1[j=target])/N_valid</code> = [[0.16666666666666666, -0.1666666666666667, -1.850371707708594e-17], [-0.22222222222222224, 0.1111111111111111, 0.1111111111111111], [-0.11111111111111112, 0.05555555555555555, 0.05555555555555555]]<p>accumulate เมื่อ context token เดียวถูกใช้หลายครั้ง</p></li><li><code>softmax(W[query]/temperature)</code> = [0.3333333333333333, 0.3333333333333333, 0.3333333333333333]<p>temperature ใช้เฉพาะ distribution ตอน inference ไม่แก้ training CE</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-3"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="reference" class="canonical-section"><h2>เนื้อหาครบทุกหัวข้อ พร้อมแผนที่ objective</h2><nav class="source-toc"><a href="#chapter-55/section/topic-1">1. What Is Fine-Tuning?</a> <a href="#chapter-55/section/topic-2">2. Learning Objectives</a> <a href="#chapter-55/section/topic-3">3. Pretraining vs Fine-Tuning</a> <a href="#chapter-55/section/topic-4">4. Continued Pretraining</a> <a href="#chapter-55/section/topic-5">5. Full Fine-Tuning</a> <a href="#chapter-55/section/topic-6">6. Freezing</a> <a href="#chapter-55/section/topic-7">7. Trainable Parameter Ratio</a> <a href="#chapter-55/section/topic-8">8. Fine-Tuning Learning Rate</a> <a href="#chapter-55/section/topic-9">9. Discriminative Learning Rates</a> <a href="#chapter-55/section/topic-10">10. Catastrophic Forgetting</a> <a href="#chapter-55/section/topic-11">11. Dataset Protocol</a> <a href="#chapter-55/section/topic-12">12. Leakage</a> <a href="#chapter-55/section/topic-13">13. Early Stopping</a> <a href="#chapter-55/section/topic-14">14. Checkpoint Selection</a> <a href="#chapter-55/section/topic-15">15. Task Heads</a> <a href="#chapter-55/section/topic-16">16. Class Imbalance</a> <a href="#chapter-55/section/topic-17">17. Regularization</a> <a href="#chapter-55/section/topic-18">18. Domain Shift</a> <a href="#chapter-55/section/topic-19">19. Evaluation Before and After</a> <a href="#chapter-55/section/topic-20">20. From Scratch</a> <a href="#chapter-55/section/topic-21">21. Common Mistakes</a> <a href="#chapter-55/section/topic-22">22. Exercises / Mini Project</a> <a href="#chapter-55/section/topic-23">23. Checklist</a> <a href="#chapter-55/section/topic-24">24. What&#x27;s Next</a> </nav><section id="topic-1" class="source-topic"><span id="source-55-fine-tuning-canonical-chapter-55-fine-tuning" class="legacy-anchor"></span><span id="source-55-fine-tuning-canonical-1-what-is-fine-tuning" class="legacy-anchor"></span><h3>1. What Is Fine-Tuning?</h3>
+<p>Fine-tuning adapts a pretrained model to a narrower task/domain using additional supervised or self-supervised training.</p>
+<pre><code class="language-text">pretrained model
+↓
+task/domain data
+↓
+fine-tuning
+↓
+adapted model
+</code></pre>
+<p>Unlike pretraining, you begin from useful learned representations.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>1. What Is Fine-Tuning?</h3>
+<p>Fine-tuning adapts a pretrained model to a narrower task/domain using additional supervised or self-supervised training.</p>
+<pre><code class="language-text">pretrained model
+↓
+task/domain data
+↓
+fine-tuning
+↓
+adapted model
+</code></pre>
+<p>Unlike pretraining, you begin from useful learned representations.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-1-equation"><summary>สมการ</summary><h3>1. What Is Fine-Tuning?</h3>
+<p>Fine-tuning adapts a pretrained model to a narrower task/domain using additional supervised or self-supervised training.</p>
+<pre><code class="language-text">pretrained model
+↓
+task/domain data
+↓
+fine-tuning
+↓
+adapted model
+</code></pre>
+<p>Unlike pretraining, you begin from useful learned representations.</p></details><details id="help-topic-1-visual"><summary>ภาพและ shape</summary><h3>1. What Is Fine-Tuning?</h3>
+<p>Fine-tuning adapts a pretrained model to a narrower task/domain using additional supervised or self-supervised training.</p>
+<pre><code class="language-text">pretrained model
+↓
+task/domain data
+↓
+fine-tuning
+↓
+adapted model
+</code></pre>
+<p>Unlike pretraining, you begin from useful learned representations.</p></details><details id="help-topic-1-code"><summary>โค้ด</summary><h3>1. What Is Fine-Tuning?</h3>
+<p>Fine-tuning adapts a pretrained model to a narrower task/domain using additional supervised or self-supervised training.</p>
+<pre><code class="language-text">pretrained model
+↓
+task/domain data
+↓
+fine-tuning
+↓
+adapted model
+</code></pre>
+<p>Unlike pretraining, you begin from useful learned representations.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-1-result"><summary>ผลการทดลอง</summary><h3>1. What Is Fine-Tuning?</h3>
+<p>Fine-tuning adapts a pretrained model to a narrower task/domain using additional supervised or self-supervised training.</p>
+<pre><code class="language-text">pretrained model
+↓
+task/domain data
+↓
+fine-tuning
+↓
+adapted model
+</code></pre>
+<p>Unlike pretraining, you begin from useful learned representations.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-1"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-2" class="source-topic"><span id="source-55-fine-tuning-canonical-2-learning-objectives" class="legacy-anchor"></span><h3>2. Learning Objectives</h3>
+<p>You should be able to:</p>
+<ul>
+<li>distinguish pretraining, continued pretraining and fine-tuning</li>
+<li>perform full-parameter fine-tuning</li>
+<li>freeze/unfreeze selected layers</li>
+<li>build discriminative learning-rate groups</li>
+<li>choose a smaller fine-tuning LR</li>
+<li>understand catastrophic forgetting</li>
+<li>design train/validation/test splits</li>
+<li>avoid data leakage</li>
+<li>use early stopping and checkpoint selection correctly</li>
+<li>compare full fine-tuning with PEFT</li>
+<li>understand domain adaptation</li>
+<li>reason about class imbalance and task-specific heads</li>
+<li>preserve tokenizer/model compatibility</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>2. Learning Objectives</h3>
+<p>You should be able to:</p>
+<ul>
+<li>distinguish pretraining, continued pretraining and fine-tuning</li>
+<li>perform full-parameter fine-tuning</li>
+<li>freeze/unfreeze selected layers</li>
+<li>build discriminative learning-rate groups</li>
+<li>choose a smaller fine-tuning LR</li>
+<li>understand catastrophic forgetting</li>
+<li>design train/validation/test splits</li>
+<li>avoid data leakage</li>
+<li>use early stopping and checkpoint selection correctly</li>
+<li>compare full fine-tuning with PEFT</li>
+<li>understand domain adaptation</li>
+<li>reason about class imbalance and task-specific heads</li>
+<li>preserve tokenizer/model compatibility</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-2-equation"><summary>สมการ</summary><h3>2. Learning Objectives</h3>
+<p>You should be able to:</p>
+<ul>
+<li>distinguish pretraining, continued pretraining and fine-tuning</li>
+<li>perform full-parameter fine-tuning</li>
+<li>freeze/unfreeze selected layers</li>
+<li>build discriminative learning-rate groups</li>
+<li>choose a smaller fine-tuning LR</li>
+<li>understand catastrophic forgetting</li>
+<li>design train/validation/test splits</li>
+<li>avoid data leakage</li>
+<li>use early stopping and checkpoint selection correctly</li>
+<li>compare full fine-tuning with PEFT</li>
+<li>understand domain adaptation</li>
+<li>reason about class imbalance and task-specific heads</li>
+<li>preserve tokenizer/model compatibility</li>
+</ul></details><details id="help-topic-2-visual"><summary>ภาพและ shape</summary><h3>2. Learning Objectives</h3>
+<p>You should be able to:</p>
+<ul>
+<li>distinguish pretraining, continued pretraining and fine-tuning</li>
+<li>perform full-parameter fine-tuning</li>
+<li>freeze/unfreeze selected layers</li>
+<li>build discriminative learning-rate groups</li>
+<li>choose a smaller fine-tuning LR</li>
+<li>understand catastrophic forgetting</li>
+<li>design train/validation/test splits</li>
+<li>avoid data leakage</li>
+<li>use early stopping and checkpoint selection correctly</li>
+<li>compare full fine-tuning with PEFT</li>
+<li>understand domain adaptation</li>
+<li>reason about class imbalance and task-specific heads</li>
+<li>preserve tokenizer/model compatibility</li>
+</ul></details><details id="help-topic-2-code"><summary>โค้ด</summary><h3>2. Learning Objectives</h3>
+<p>You should be able to:</p>
+<ul>
+<li>distinguish pretraining, continued pretraining and fine-tuning</li>
+<li>perform full-parameter fine-tuning</li>
+<li>freeze/unfreeze selected layers</li>
+<li>build discriminative learning-rate groups</li>
+<li>choose a smaller fine-tuning LR</li>
+<li>understand catastrophic forgetting</li>
+<li>design train/validation/test splits</li>
+<li>avoid data leakage</li>
+<li>use early stopping and checkpoint selection correctly</li>
+<li>compare full fine-tuning with PEFT</li>
+<li>understand domain adaptation</li>
+<li>reason about class imbalance and task-specific heads</li>
+<li>preserve tokenizer/model compatibility</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-2-result"><summary>ผลการทดลอง</summary><h3>2. Learning Objectives</h3>
+<p>You should be able to:</p>
+<ul>
+<li>distinguish pretraining, continued pretraining and fine-tuning</li>
+<li>perform full-parameter fine-tuning</li>
+<li>freeze/unfreeze selected layers</li>
+<li>build discriminative learning-rate groups</li>
+<li>choose a smaller fine-tuning LR</li>
+<li>understand catastrophic forgetting</li>
+<li>design train/validation/test splits</li>
+<li>avoid data leakage</li>
+<li>use early stopping and checkpoint selection correctly</li>
+<li>compare full fine-tuning with PEFT</li>
+<li>understand domain adaptation</li>
+<li>reason about class imbalance and task-specific heads</li>
+<li>preserve tokenizer/model compatibility</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-2"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-3" class="source-topic"><span id="source-55-fine-tuning-canonical-3-pretraining-vs-fine-tuning" class="legacy-anchor"></span><h3>3. Pretraining vs Fine-Tuning</h3>
+<p>Pretraining:
+- huge generic corpus
+- broad objective
+- expensive
+- learns reusable representations</p>
+<p>Fine-tuning:
+- smaller task/domain dataset
+- narrower objective
+- cheaper
+- adapts behavior or representations</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>pretrainedกับscratchเริ่มคนละweightsแต่architecture/data/budget/splitsเหมือนกัน; reportlearningcurves/targetqualityและcomputeไม่อ้างpretrainedดีทุกdomain</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>pretrainedกับscratchเริ่มคนละweightsแต่architecture/data/budget/splitsเหมือนกัน; reportlearningcurves/targetqualityและcomputeไม่อ้างpretrainedดีทุกdomain</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-3-equation"><summary>สมการ</summary><p>pretrainedกับscratchเริ่มคนละweightsแต่architecture/data/budget/splitsเหมือนกัน; reportlearningcurves/targetqualityและcomputeไม่อ้างpretrainedดีทุกdomain</p></details><details id="help-topic-3-visual"><summary>ภาพและ shape</summary><p>pretrainedกับscratchเริ่มคนละweightsแต่architecture/data/budget/splitsเหมือนกัน; reportlearningcurves/targetqualityและcomputeไม่อ้างpretrainedดีทุกdomain</p></details><details id="help-topic-3-code"><summary>โค้ด</summary><p>pretrainedกับscratchเริ่มคนละweightsแต่architecture/data/budget/splitsเหมือนกัน; reportlearningcurves/targetqualityและcomputeไม่อ้างpretrainedดีทุกdomain</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-3-result"><summary>ผลการทดลอง</summary><p>pretrainedกับscratchเริ่มคนละweightsแต่architecture/data/budget/splitsเหมือนกัน; reportlearningcurves/targetqualityและcomputeไม่อ้างpretrainedดีทุกdomain</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-3"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-4" class="source-topic"><span id="source-55-fine-tuning-canonical-4-continued-pretraining" class="legacy-anchor"></span><h3>4. Continued Pretraining</h3>
+<p>Continued pretraining keeps the language-model objective but changes the data distribution.</p>
+<p>Examples:
+- legal corpus
+- code corpus
+- Thai corpus</p>
+<p>This differs from supervised fine-tuning, where examples explicitly map inputs/instructions to desired outputs.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-4-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>4. Continued Pretraining</h3>
+<p>Continued pretraining keeps the language-model objective but changes the data distribution.</p>
+<p>Examples:
+- legal corpus
+- code corpus
+- Thai corpus</p>
+<p>This differs from supervised fine-tuning, where examples explicitly map inputs/instructions to desired outputs.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-4-equation"><summary>สมการ</summary><h3>4. Continued Pretraining</h3>
+<p>Continued pretraining keeps the language-model objective but changes the data distribution.</p>
+<p>Examples:
+- legal corpus
+- code corpus
+- Thai corpus</p>
+<p>This differs from supervised fine-tuning, where examples explicitly map inputs/instructions to desired outputs.</p></details><details id="help-topic-4-visual"><summary>ภาพและ shape</summary><h3>4. Continued Pretraining</h3>
+<p>Continued pretraining keeps the language-model objective but changes the data distribution.</p>
+<p>Examples:
+- legal corpus
+- code corpus
+- Thai corpus</p>
+<p>This differs from supervised fine-tuning, where examples explicitly map inputs/instructions to desired outputs.</p></details><details id="help-topic-4-code"><summary>โค้ด</summary><h3>4. Continued Pretraining</h3>
+<p>Continued pretraining keeps the language-model objective but changes the data distribution.</p>
+<p>Examples:
+- legal corpus
+- code corpus
+- Thai corpus</p>
+<p>This differs from supervised fine-tuning, where examples explicitly map inputs/instructions to desired outputs.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-4-result"><summary>ผลการทดลอง</summary><h3>4. Continued Pretraining</h3>
+<p>Continued pretraining keeps the language-model objective but changes the data distribution.</p>
+<p>Examples:
+- legal corpus
+- code corpus
+- Thai corpus</p>
+<p>This differs from supervised fine-tuning, where examples explicitly map inputs/instructions to desired outputs.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-4"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-5" class="source-topic"><span id="source-55-fine-tuning-canonical-5-full-fine-tuning" class="legacy-anchor"></span><h3>5. Full Fine-Tuning</h3>
+<p>All parameters remain trainable:</p>
+<pre><code class="language-text">theta' =
+theta - eta * grad_theta L
+</code></pre>
+<p>Pros:
+- maximum adaptation capacity</p>
+<p>Cons:
+- memory expensive
+- optimizer state for all parameters
+- greater forgetting risk
+- one full checkpoint per variant</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>fullFTกับfrozenbackboneใช้samepretrainedcheckpoint/split/seed; reportquality/trainableparams/peakmemory/latencyและ3seeds ไม่ให้headbaselineงบน้อยกว่าโดยไม่บอก</p><p>frozenbackboneยังมีforwardcost; no_gradลดactivationmemoryถ้าไม่ต้องgradientthrough ส่วนfullFTเก็บbackwardactivationsและoptimizerstateO(trainableP)</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-5-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>fullFTกับfrozenbackboneใช้samepretrainedcheckpoint/split/seed; reportquality/trainableparams/peakmemory/latencyและ3seeds ไม่ให้headbaselineงบน้อยกว่าโดยไม่บอก</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-5-equation"><summary>สมการ</summary><p>fullFTกับfrozenbackboneใช้samepretrainedcheckpoint/split/seed; reportquality/trainableparams/peakmemory/latencyและ3seeds ไม่ให้headbaselineงบน้อยกว่าโดยไม่บอก</p></details><details id="help-topic-5-visual"><summary>ภาพและ shape</summary><p>fullFTกับfrozenbackboneใช้samepretrainedcheckpoint/split/seed; reportquality/trainableparams/peakmemory/latencyและ3seeds ไม่ให้headbaselineงบน้อยกว่าโดยไม่บอก</p></details><details id="help-topic-5-code"><summary>โค้ด</summary><p>fullFTกับfrozenbackboneใช้samepretrainedcheckpoint/split/seed; reportquality/trainableparams/peakmemory/latencyและ3seeds ไม่ให้headbaselineงบน้อยกว่าโดยไม่บอก</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-5-result"><summary>ผลการทดลอง</summary><p>fullFTกับfrozenbackboneใช้samepretrainedcheckpoint/split/seed; reportquality/trainableparams/peakmemory/latencyและ3seeds ไม่ให้headbaselineงบน้อยกว่าโดยไม่บอก</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-5"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-6" class="source-topic"><span id="source-55-fine-tuning-canonical-6-freezing" class="legacy-anchor"></span><h3>6. Freezing</h3>
+<p>Frozen parameter:</p>
+<pre><code class="language-text">requires_grad = False
+</code></pre>
+<p>It is excluded from gradient-based updates.</p>
+<p>Common strategies:
+- train final task head only
+- unfreeze top N layers
+- gradually unfreeze
+- full model</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>ตั้งbackbone.requires_grad_(False),optimizerเฉพาะhead; loss.backwardแล้วassertbackbonegradNoneและweightsก่อน/หลังallclose ส่วนheadเปลี่ยน</p><p>unfreezeเฉพาะlast2blocksและเพิ่มparametersเข้าoptimizer/paramgroups; ถ้าoptimizerสร้างก่อนfreeze/unfreezeต้องตรวจรายชื่อไม่ให้trainableหลุด</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-6-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>ตั้งbackbone.requires_grad_(False),optimizerเฉพาะhead; loss.backwardแล้วassertbackbonegradNoneและweightsก่อน/หลังallclose ส่วนheadเปลี่ยน</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-6-equation"><summary>สมการ</summary><p>ตั้งbackbone.requires_grad_(False),optimizerเฉพาะhead; loss.backwardแล้วassertbackbonegradNoneและweightsก่อน/หลังallclose ส่วนheadเปลี่ยน</p></details><details id="help-topic-6-visual"><summary>ภาพและ shape</summary><p>ตั้งbackbone.requires_grad_(False),optimizerเฉพาะhead; loss.backwardแล้วassertbackbonegradNoneและweightsก่อน/หลังallclose ส่วนheadเปลี่ยน</p></details><details id="help-topic-6-code"><summary>โค้ด</summary><p>ตั้งbackbone.requires_grad_(False),optimizerเฉพาะhead; loss.backwardแล้วassertbackbonegradNoneและweightsก่อน/หลังallclose ส่วนheadเปลี่ยน</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-6-result"><summary>ผลการทดลอง</summary><p>ตั้งbackbone.requires_grad_(False),optimizerเฉพาะhead; loss.backwardแล้วassertbackbonegradNoneและweightsก่อน/หลังallclose ส่วนheadเปลี่ยน</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-6"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-7" class="source-topic"><span id="source-55-fine-tuning-canonical-7-trainable-parameter-ratio" class="legacy-anchor"></span><h3>7. Trainable Parameter Ratio</h3>
+<pre><code class="language-text">trainable_ratio =
+trainable_parameters
+/
+total_parameters
+</code></pre>
+<p>Track this for every experiment.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>backbone9900params,head100ให้trainableratio100/10000=.01=1%; numeratorเฉพาะrequires_gradและdenominatorรวมทุกparameterไม่activation</p><p>100trainableจาก10000=1%; ถ้าunfreezeblock200เพิ่มtrainableเป็น300=3%และoptimizerต้องมีทั้ง300จริง</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-7-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>backbone9900params,head100ให้trainableratio100/10000=.01=1%; numeratorเฉพาะrequires_gradและdenominatorรวมทุกparameterไม่activation</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-7-equation"><summary>สมการ</summary><p>backbone9900params,head100ให้trainableratio100/10000=.01=1%; numeratorเฉพาะrequires_gradและdenominatorรวมทุกparameterไม่activation</p></details><details id="help-topic-7-visual"><summary>ภาพและ shape</summary><p>backbone9900params,head100ให้trainableratio100/10000=.01=1%; numeratorเฉพาะrequires_gradและdenominatorรวมทุกparameterไม่activation</p></details><details id="help-topic-7-code"><summary>โค้ด</summary><p>backbone9900params,head100ให้trainableratio100/10000=.01=1%; numeratorเฉพาะrequires_gradและdenominatorรวมทุกparameterไม่activation</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-7-result"><summary>ผลการทดลอง</summary><p>backbone9900params,head100ให้trainableratio100/10000=.01=1%; numeratorเฉพาะrequires_gradและdenominatorรวมทุกparameterไม่activation</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-7"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-8" class="source-topic"><span id="source-55-fine-tuning-canonical-8-fine-tuning-learning-rate" class="legacy-anchor"></span><h3>8. Fine-Tuning Learning Rate</h3>
+<p>Pretrained representations can be damaged by an excessively large LR.</p>
+<p>Typical principle:</p>
+<pre><code class="language-text">fine_tuning_lr
+&lt;
+from_scratch_lr
+</code></pre>
+<p>Exact values depend on:
+- model size
+- dataset size
+- optimizer
+- batch size
+- parameter subset</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>head-onlyเทียบlast2blocksคงdata/budget/init; reporttargetmacroF1/retention/peakbytesพร้อมparametercount</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-8-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>head-onlyเทียบlast2blocksคงdata/budget/init; reporttargetmacroF1/retention/peakbytesพร้อมparametercount</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-8-equation"><summary>สมการ</summary><p>head-onlyเทียบlast2blocksคงdata/budget/init; reporttargetmacroF1/retention/peakbytesพร้อมparametercount</p></details><details id="help-topic-8-visual"><summary>ภาพและ shape</summary><p>head-onlyเทียบlast2blocksคงdata/budget/init; reporttargetmacroF1/retention/peakbytesพร้อมparametercount</p></details><details id="help-topic-8-code"><summary>โค้ด</summary><p>head-onlyเทียบlast2blocksคงdata/budget/init; reporttargetmacroF1/retention/peakbytesพร้อมparametercount</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-8-result"><summary>ผลการทดลอง</summary><p>head-onlyเทียบlast2blocksคงdata/budget/init; reporttargetmacroF1/retention/peakbytesพร้อมparametercount</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-8"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-9" class="source-topic"><span id="source-55-fine-tuning-canonical-9-discriminative-learning-rates" class="legacy-anchor"></span><h3>9. Discriminative Learning Rates</h3>
+<p>Different parameter groups may use different LRs:</p>
+<pre><code class="language-text">bottom pretrained layers → smaller LR
+top pretrained layers    → larger LR
+new task head            → largest LR
+</code></pre>
+<p>This is optional, not universally superior.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>optimizerparamgroupsbackbonelr1e−5,headlr1e−3; groupIDsไม่ซ้ำ/ไม่ตกหล่น,decaypolicyระบุbias/normแยก</p><p>discriminativelrbackbone=head/100เทียบsameLRคงgroups/seed; reporttargetgainและforgettingหลายruns</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-9-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>optimizerparamgroupsbackbonelr1e−5,headlr1e−3; groupIDsไม่ซ้ำ/ไม่ตกหล่น,decaypolicyระบุbias/normแยก</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-9-equation"><summary>สมการ</summary><p>optimizerparamgroupsbackbonelr1e−5,headlr1e−3; groupIDsไม่ซ้ำ/ไม่ตกหล่น,decaypolicyระบุbias/normแยก</p></details><details id="help-topic-9-visual"><summary>ภาพและ shape</summary><p>optimizerparamgroupsbackbonelr1e−5,headlr1e−3; groupIDsไม่ซ้ำ/ไม่ตกหล่น,decaypolicyระบุbias/normแยก</p></details><details id="help-topic-9-code"><summary>โค้ด</summary><p>optimizerparamgroupsbackbonelr1e−5,headlr1e−3; groupIDsไม่ซ้ำ/ไม่ตกหล่น,decaypolicyระบุbias/normแยก</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-9-result"><summary>ผลการทดลอง</summary><p>optimizerparamgroupsbackbonelr1e−5,headlr1e−3; groupIDsไม่ซ้ำ/ไม่ตกหล่น,decaypolicyระบุbias/normแยก</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-9"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-10" class="source-topic"><span id="source-55-fine-tuning-canonical-10-catastrophic-forgetting" class="legacy-anchor"></span><h3>10. Catastrophic Forgetting</h3>
+<p>Aggressive adaptation can hurt previously learned capabilities.</p>
+<p>Symptoms:
+- target task improves
+- broad validation capability drops</p>
+<p>Mitigations:
+- lower LR
+- fewer steps
+- regularization
+- replay/mixed data
+- freeze layers
+- PEFT</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>targetgain=targetmetric_after−before,retention=generalmetric_after−before; reportทั้งคู่เพื่อเห็นcatastrophicforgetting ไม่ใช่targetgainอย่างเดียว</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-10-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>targetgain=targetmetric_after−before,retention=generalmetric_after−before; reportทั้งคู่เพื่อเห็นcatastrophicforgetting ไม่ใช่targetgainอย่างเดียว</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-10-equation"><summary>สมการ</summary><p>targetgain=targetmetric_after−before,retention=generalmetric_after−before; reportทั้งคู่เพื่อเห็นcatastrophicforgetting ไม่ใช่targetgainอย่างเดียว</p></details><details id="help-topic-10-visual"><summary>ภาพและ shape</summary><p>targetgain=targetmetric_after−before,retention=generalmetric_after−before; reportทั้งคู่เพื่อเห็นcatastrophicforgetting ไม่ใช่targetgainอย่างเดียว</p></details><details id="help-topic-10-code"><summary>โค้ด</summary><p>targetgain=targetmetric_after−before,retention=generalmetric_after−before; reportทั้งคู่เพื่อเห็นcatastrophicforgetting ไม่ใช่targetgainอย่างเดียว</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-10-result"><summary>ผลการทดลอง</summary><p>targetgain=targetmetric_after−before,retention=generalmetric_after−before; reportทั้งคู่เพื่อเห็นcatastrophicforgetting ไม่ใช่targetgainอย่างเดียว</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-10"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-11" class="source-topic"><span id="source-55-fine-tuning-canonical-11-dataset-protocol" class="legacy-anchor"></span><h3>11. Dataset Protocol</h3>
+<p>Split before training decisions:</p>
+<pre><code class="language-text">train
+validation
+test
+</code></pre>
+<p>Use:
+- train for gradients
+- validation for hyperparameters/checkpoint selection
+- test once for final evaluation</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>groupIDuser/documentfamilyหนึ่งอยู่splitเดียว; assertset(group_train)disjoint(group_test),near-duplicatesก่อนsplit</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-11-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>groupIDuser/documentfamilyหนึ่งอยู่splitเดียว; assertset(group_train)disjoint(group_test),near-duplicatesก่อนsplit</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-11-equation"><summary>สมการ</summary><p>groupIDuser/documentfamilyหนึ่งอยู่splitเดียว; assertset(group_train)disjoint(group_test),near-duplicatesก่อนsplit</p></details><details id="help-topic-11-visual"><summary>ภาพและ shape</summary><p>groupIDuser/documentfamilyหนึ่งอยู่splitเดียว; assertset(group_train)disjoint(group_test),near-duplicatesก่อนsplit</p></details><details id="help-topic-11-code"><summary>โค้ด</summary><p>groupIDuser/documentfamilyหนึ่งอยู่splitเดียว; assertset(group_train)disjoint(group_test),near-duplicatesก่อนsplit</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-11-result"><summary>ผลการทดลอง</summary><p>groupIDuser/documentfamilyหนึ่งอยู่splitเดียว; assertset(group_train)disjoint(group_test),near-duplicatesก่อนsplit</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-11"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-12" class="source-topic"><span id="source-55-fine-tuning-canonical-12-leakage" class="legacy-anchor"></span><h3>12. Leakage</h3>
+<p>Common leakage:
+- near duplicates across splits
+- same conversation/document split into train and validation
+- target labels embedded in features
+- benchmark examples included in SFT data</p>
+<p>Document-level/group-aware splitting is often required.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>groupIDuser/documentfamilyหนึ่งอยู่splitเดียว; assertset(group_train)disjoint(group_test),near-duplicatesก่อนsplit</p><p>evaluationซ้ำข้อมูลpretrainingหรือuserข้ามsplitทำtargetgainสูงเกิน; auditdedup/sourcegroupsและไม่tuneonretentiontest</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-12-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>groupIDuser/documentfamilyหนึ่งอยู่splitเดียว; assertset(group_train)disjoint(group_test),near-duplicatesก่อนsplit</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-12-equation"><summary>สมการ</summary><p>groupIDuser/documentfamilyหนึ่งอยู่splitเดียว; assertset(group_train)disjoint(group_test),near-duplicatesก่อนsplit</p></details><details id="help-topic-12-visual"><summary>ภาพและ shape</summary><p>groupIDuser/documentfamilyหนึ่งอยู่splitเดียว; assertset(group_train)disjoint(group_test),near-duplicatesก่อนsplit</p></details><details id="help-topic-12-code"><summary>โค้ด</summary><p>groupIDuser/documentfamilyหนึ่งอยู่splitเดียว; assertset(group_train)disjoint(group_test),near-duplicatesก่อนsplit</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-12-result"><summary>ผลการทดลอง</summary><p>groupIDuser/documentfamilyหนึ่งอยู่splitเดียว; assertset(group_train)disjoint(group_test),near-duplicatesก่อนsplit</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-12"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-13" class="source-topic"><span id="source-55-fine-tuning-canonical-13-early-stopping" class="legacy-anchor"></span><h3>13. Early Stopping</h3>
+<p>Monitor validation metric.</p>
+<p>Stop when improvement stalls for a configured patience.</p>
+<p>Never early-stop on test data.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>earlystoppingpatience2: val[.5,.4,.41,.42]หยุดหลังสองnonimprovementsและrestoreepoch2; min_delta/tiesต้องกำหนด</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-13-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>earlystoppingpatience2: val[.5,.4,.41,.42]หยุดหลังสองnonimprovementsและrestoreepoch2; min_delta/tiesต้องกำหนด</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-13-equation"><summary>สมการ</summary><p>earlystoppingpatience2: val[.5,.4,.41,.42]หยุดหลังสองnonimprovementsและrestoreepoch2; min_delta/tiesต้องกำหนด</p></details><details id="help-topic-13-visual"><summary>ภาพและ shape</summary><p>earlystoppingpatience2: val[.5,.4,.41,.42]หยุดหลังสองnonimprovementsและrestoreepoch2; min_delta/tiesต้องกำหนด</p></details><details id="help-topic-13-code"><summary>โค้ด</summary><p>earlystoppingpatience2: val[.5,.4,.41,.42]หยุดหลังสองnonimprovementsและrestoreepoch2; min_delta/tiesต้องกำหนด</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-13-result"><summary>ผลการทดลอง</summary><p>earlystoppingpatience2: val[.5,.4,.41,.42]หยุดหลังสองnonimprovementsและrestoreepoch2; min_delta/tiesต้องกำหนด</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-13"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-14" class="source-topic"><span id="source-55-fine-tuning-canonical-14-checkpoint-selection" class="legacy-anchor"></span><h3>14. Checkpoint Selection</h3>
+<p>Possible criteria:
+- minimum validation loss
+- maximum F1
+- maximum task accuracy
+- domain-specific score</p>
+<p>Store the criterion with the checkpoint.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>checkpointเลือกvalmetricสูงสุดหรือvallossต่ำสุดตามที่ประกาศ; savebestthenloadก่อนtest ไม่ใช้lastโดยเรียกbest</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-14-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>checkpointเลือกvalmetricสูงสุดหรือvallossต่ำสุดตามที่ประกาศ; savebestthenloadก่อนtest ไม่ใช้lastโดยเรียกbest</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-14-equation"><summary>สมการ</summary><p>checkpointเลือกvalmetricสูงสุดหรือvallossต่ำสุดตามที่ประกาศ; savebestthenloadก่อนtest ไม่ใช้lastโดยเรียกbest</p></details><details id="help-topic-14-visual"><summary>ภาพและ shape</summary><p>checkpointเลือกvalmetricสูงสุดหรือvallossต่ำสุดตามที่ประกาศ; savebestthenloadก่อนtest ไม่ใช้lastโดยเรียกbest</p></details><details id="help-topic-14-code"><summary>โค้ด</summary><p>checkpointเลือกvalmetricสูงสุดหรือvallossต่ำสุดตามที่ประกาศ; savebestthenloadก่อนtest ไม่ใช้lastโดยเรียกbest</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-14-result"><summary>ผลการทดลอง</summary><p>checkpointเลือกvalmetricสูงสุดหรือvallossต่ำสุดตามที่ประกาศ; savebestthenloadก่อนtest ไม่ใช้lastโดยเรียกbest</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-14"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-15" class="source-topic"><span id="source-55-fine-tuning-canonical-15-task-heads" class="legacy-anchor"></span><h3>15. Task Heads</h3>
+<p>A pretrained backbone may feed:
+- classification head
+- regression head
+- token classifier
+- causal LM head
+- sequence-to-sequence head</p>
+<p>The loss must match the task.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>recordbackboneoutput(B,d),headlogits(B,C),trainableIDs,gradnormbygroupและtarget/generalmetrics; dropoutmodeของfrozenbackboneต้องชัด</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-15-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>recordbackboneoutput(B,d),headlogits(B,C),trainableIDs,gradnormbygroupและtarget/generalmetrics; dropoutmodeของfrozenbackboneต้องชัด</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-15-equation"><summary>สมการ</summary><p>recordbackboneoutput(B,d),headlogits(B,C),trainableIDs,gradnormbygroupและtarget/generalmetrics; dropoutmodeของfrozenbackboneต้องชัด</p></details><details id="help-topic-15-visual"><summary>ภาพและ shape</summary><p>recordbackboneoutput(B,d),headlogits(B,C),trainableIDs,gradnormbygroupและtarget/generalmetrics; dropoutmodeของfrozenbackboneต้องชัด</p></details><details id="help-topic-15-code"><summary>โค้ด</summary><p>recordbackboneoutput(B,d),headlogits(B,C),trainableIDs,gradnormbygroupและtarget/generalmetrics; dropoutmodeของfrozenbackboneต้องชัด</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-15-result"><summary>ผลการทดลอง</summary><p>recordbackboneoutput(B,d),headlogits(B,C),trainableIDs,gradnormbygroupและtarget/generalmetrics; dropoutmodeของfrozenbackboneต้องชัด</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-15"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-16" class="source-topic"><span id="source-55-fine-tuning-canonical-16-class-imbalance" class="legacy-anchor"></span><h3>16. Class Imbalance</h3>
+<p>For classification:
+- stratified splits
+- class weighting
+- threshold tuning
+- precision/recall/F1</p>
+<p>Accuracy alone can be misleading.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-16-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>16. Class Imbalance</h3>
+<p>For classification:
+- stratified splits
+- class weighting
+- threshold tuning
+- precision/recall/F1</p>
+<p>Accuracy alone can be misleading.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-16-equation"><summary>สมการ</summary><h3>16. Class Imbalance</h3>
+<p>For classification:
+- stratified splits
+- class weighting
+- threshold tuning
+- precision/recall/F1</p>
+<p>Accuracy alone can be misleading.</p></details><details id="help-topic-16-visual"><summary>ภาพและ shape</summary><h3>16. Class Imbalance</h3>
+<p>For classification:
+- stratified splits
+- class weighting
+- threshold tuning
+- precision/recall/F1</p>
+<p>Accuracy alone can be misleading.</p></details><details id="help-topic-16-code"><summary>โค้ด</summary><h3>16. Class Imbalance</h3>
+<p>For classification:
+- stratified splits
+- class weighting
+- threshold tuning
+- precision/recall/F1</p>
+<p>Accuracy alone can be misleading.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-16-result"><summary>ผลการทดลอง</summary><h3>16. Class Imbalance</h3>
+<p>For classification:
+- stratified splits
+- class weighting
+- threshold tuning
+- precision/recall/F1</p>
+<p>Accuracy alone can be misleading.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-16"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-17" class="source-topic"><span id="source-55-fine-tuning-canonical-17-regularization" class="legacy-anchor"></span><h3>17. Regularization</h3>
+<p>Useful options:
+- weight decay
+- dropout
+- smaller LR
+- data augmentation
+- early stopping
+- label smoothing when appropriate</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-17-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>17. Regularization</h3>
+<p>Useful options:
+- weight decay
+- dropout
+- smaller LR
+- data augmentation
+- early stopping
+- label smoothing when appropriate</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-17-equation"><summary>สมการ</summary><h3>17. Regularization</h3>
+<p>Useful options:
+- weight decay
+- dropout
+- smaller LR
+- data augmentation
+- early stopping
+- label smoothing when appropriate</p></details><details id="help-topic-17-visual"><summary>ภาพและ shape</summary><h3>17. Regularization</h3>
+<p>Useful options:
+- weight decay
+- dropout
+- smaller LR
+- data augmentation
+- early stopping
+- label smoothing when appropriate</p></details><details id="help-topic-17-code"><summary>โค้ด</summary><h3>17. Regularization</h3>
+<p>Useful options:
+- weight decay
+- dropout
+- smaller LR
+- data augmentation
+- early stopping
+- label smoothing when appropriate</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-17-result"><summary>ผลการทดลอง</summary><h3>17. Regularization</h3>
+<p>Useful options:
+- weight decay
+- dropout
+- smaller LR
+- data augmentation
+- early stopping
+- label smoothing when appropriate</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-17"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-18" class="source-topic"><span id="source-55-fine-tuning-canonical-18-domain-shift" class="legacy-anchor"></span><h3>18. Domain Shift</h3>
+<p>Fine-tuning data should represent deployment conditions.</p>
+<p>A model fine-tuned on clean benchmark text can fail on:
+- noisy user input
+- different language variety
+- longer context
+- different class prevalence</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>ทดลอง“last2blocksเพิ่มtargetF1≥.03โดยretentionลด≤.01เทียบhead-only”; fixedbudget/pretrainedbaseและpairedholdoutCI</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-18-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>ทดลอง“last2blocksเพิ่มtargetF1≥.03โดยretentionลด≤.01เทียบhead-only”; fixedbudget/pretrainedbaseและpairedholdoutCI</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-18-equation"><summary>สมการ</summary><p>ทดลอง“last2blocksเพิ่มtargetF1≥.03โดยretentionลด≤.01เทียบhead-only”; fixedbudget/pretrainedbaseและpairedholdoutCI</p></details><details id="help-topic-18-visual"><summary>ภาพและ shape</summary><p>ทดลอง“last2blocksเพิ่มtargetF1≥.03โดยretentionลด≤.01เทียบhead-only”; fixedbudget/pretrainedbaseและpairedholdoutCI</p></details><details id="help-topic-18-code"><summary>โค้ด</summary><p>ทดลอง“last2blocksเพิ่มtargetF1≥.03โดยretentionลด≤.01เทียบhead-only”; fixedbudget/pretrainedbaseและpairedholdoutCI</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-18-result"><summary>ผลการทดลอง</summary><p>ทดลอง“last2blocksเพิ่มtargetF1≥.03โดยretentionลด≤.01เทียบhead-only”; fixedbudget/pretrainedbaseและpairedholdoutCI</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-18"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-19" class="source-topic"><span id="source-55-fine-tuning-canonical-19-evaluation-before-and-after" class="legacy-anchor"></span><h3>19. Evaluation Before and After</h3>
+<p>Always record baseline before adaptation.</p>
+<pre><code class="language-text">base model metric
+vs
+fine-tuned model metric
+</code></pre>
+<p>Also monitor retained capabilities where relevant.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>targetgain=targetmetric_after−before,retention=generalmetric_after−before; reportทั้งคู่เพื่อเห็นcatastrophicforgetting ไม่ใช่targetgainอย่างเดียว</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-19-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>targetgain=targetmetric_after−before,retention=generalmetric_after−before; reportทั้งคู่เพื่อเห็นcatastrophicforgetting ไม่ใช่targetgainอย่างเดียว</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-19-equation"><summary>สมการ</summary><p>targetgain=targetmetric_after−before,retention=generalmetric_after−before; reportทั้งคู่เพื่อเห็นcatastrophicforgetting ไม่ใช่targetgainอย่างเดียว</p></details><details id="help-topic-19-visual"><summary>ภาพและ shape</summary><p>targetgain=targetmetric_after−before,retention=generalmetric_after−before; reportทั้งคู่เพื่อเห็นcatastrophicforgetting ไม่ใช่targetgainอย่างเดียว</p></details><details id="help-topic-19-code"><summary>โค้ด</summary><p>targetgain=targetmetric_after−before,retention=generalmetric_after−before; reportทั้งคู่เพื่อเห็นcatastrophicforgetting ไม่ใช่targetgainอย่างเดียว</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-19-result"><summary>ผลการทดลอง</summary><p>targetgain=targetmetric_after−before,retention=generalmetric_after−before; reportทั้งคู่เพื่อเห็นcatastrophicforgetting ไม่ใช่targetgainอย่างเดียว</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-19"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-20" class="source-topic"><span id="source-55-fine-tuning-canonical-20-from-scratch" class="legacy-anchor"></span><h3>20. From Scratch</h3>
+<p>src/fine_tuning_utils.py includes:</p>
+<ul>
+<li>parameter_partition</li>
+<li>trainable_ratio</li>
+<li>freeze_by_prefix</li>
+<li>unfreeze_by_prefix</li>
+<li>discriminative_lr_groups</li>
+<li>early_stopping_update</li>
+<li>select_best_checkpoint</li>
+</ul><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>comparemanualheadlinearforward/gradกับframeworkด้วยcopiedweights; frozenbackbonetestคือparameterdiff0ไม่ใช้lossลดอย่างเดียว</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-20-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>comparemanualheadlinearforward/gradกับframeworkด้วยcopiedweights; frozenbackbonetestคือparameterdiff0ไม่ใช้lossลดอย่างเดียว</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-20-equation"><summary>สมการ</summary><p>comparemanualheadlinearforward/gradกับframeworkด้วยcopiedweights; frozenbackbonetestคือparameterdiff0ไม่ใช้lossลดอย่างเดียว</p></details><details id="help-topic-20-visual"><summary>ภาพและ shape</summary><p>comparemanualheadlinearforward/gradกับframeworkด้วยcopiedweights; frozenbackbonetestคือparameterdiff0ไม่ใช้lossลดอย่างเดียว</p></details><details id="help-topic-20-code"><summary>โค้ด</summary><p>comparemanualheadlinearforward/gradกับframeworkด้วยcopiedweights; frozenbackbonetestคือparameterdiff0ไม่ใช้lossลดอย่างเดียว</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-20-result"><summary>ผลการทดลอง</summary><p>comparemanualheadlinearforward/gradกับframeworkด้วยcopiedweights; frozenbackbonetestคือparameterdiff0ไม่ใช้lossลดอย่างเดียว</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-20"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-21" class="source-topic"><span id="source-55-fine-tuning-canonical-21-common-mistakes" class="legacy-anchor"></span><h3>21. Common Mistakes</h3>
+<ol>
+<li>no baseline before fine-tuning</li>
+<li>test set used for checkpoint selection</li>
+<li>LR copied from pretraining</li>
+<li>tokenizer/model mismatch</li>
+<li>accidental full fine-tuning when only head intended</li>
+<li>forgetting to set train/eval modes</li>
+<li>duplicate documents across splits</li>
+<li>class imbalance ignored</li>
+<li>overfitting tiny dataset</li>
+<li>saving only weights without experiment config</li>
+</ol><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>manifest มีbasecheckpointrevision/datasetsplits/frozenlayerIDs/paramgroups/LRs/decay/earlystop/seed/retentionbenchmark/modeldigest</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-21-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>manifest มีbasecheckpointrevision/datasetsplits/frozenlayerIDs/paramgroups/LRs/decay/earlystop/seed/retentionbenchmark/modeldigest</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-21-equation"><summary>สมการ</summary><p>manifest มีbasecheckpointrevision/datasetsplits/frozenlayerIDs/paramgroups/LRs/decay/earlystop/seed/retentionbenchmark/modeldigest</p></details><details id="help-topic-21-visual"><summary>ภาพและ shape</summary><p>manifest มีbasecheckpointrevision/datasetsplits/frozenlayerIDs/paramgroups/LRs/decay/earlystop/seed/retentionbenchmark/modeldigest</p></details><details id="help-topic-21-code"><summary>โค้ด</summary><p>manifest มีbasecheckpointrevision/datasetsplits/frozenlayerIDs/paramgroups/LRs/decay/earlystop/seed/retentionbenchmark/modeldigest</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-21-result"><summary>ผลการทดลอง</summary><p>manifest มีbasecheckpointrevision/datasetsplits/frozenlayerIDs/paramgroups/LRs/decay/earlystop/seed/retentionbenchmark/modeldigest</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-21"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-22" class="source-topic"><span id="source-55-fine-tuning-canonical-22-exercises-mini-project" class="legacy-anchor"></span><h3>22. Exercises / Mini Project</h3>
+<ul>
+<li><a href="../55-fine-tuning/exercises/README.md">Exercises</a></li>
+<li><a href="../55-fine-tuning/solutions/README.md">Solutions</a></li>
+<li><a href="../55-fine-tuning/mini-project/README.md">Mini Project</a></li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-22-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>22. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-22-equation"><summary>สมการ</summary><h3>22. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-22-visual"><summary>ภาพและ shape</summary><h3>22. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-22-code"><summary>โค้ด</summary><h3>22. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-22-result"><summary>ผลการทดลอง</summary><h3>22. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-22"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-23" class="source-topic"><span id="source-55-fine-tuning-canonical-23-checklist" class="legacy-anchor"></span><h3>23. Checklist</h3>
+<ul>
+<li>[ ] full fine-tuning</li>
+<li>[ ] freezing/unfreezing</li>
+<li>[ ] trainable ratio</li>
+<li>[ ] LR groups</li>
+<li>[ ] validation protocol</li>
+<li>[ ] early stopping</li>
+<li>[ ] checkpoint selection</li>
+<li>[ ] catastrophic forgetting</li>
+<li>[ ] domain shift</li>
+<li>[ ] baseline comparison</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-23-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>23. Checklist</h3>
+<ul>
+<li>[ ] full fine-tuning</li>
+<li>[ ] freezing/unfreezing</li>
+<li>[ ] trainable ratio</li>
+<li>[ ] LR groups</li>
+<li>[ ] validation protocol</li>
+<li>[ ] early stopping</li>
+<li>[ ] checkpoint selection</li>
+<li>[ ] catastrophic forgetting</li>
+<li>[ ] domain shift</li>
+<li>[ ] baseline comparison</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-23-equation"><summary>สมการ</summary><h3>23. Checklist</h3>
+<ul>
+<li>[ ] full fine-tuning</li>
+<li>[ ] freezing/unfreezing</li>
+<li>[ ] trainable ratio</li>
+<li>[ ] LR groups</li>
+<li>[ ] validation protocol</li>
+<li>[ ] early stopping</li>
+<li>[ ] checkpoint selection</li>
+<li>[ ] catastrophic forgetting</li>
+<li>[ ] domain shift</li>
+<li>[ ] baseline comparison</li>
+</ul></details><details id="help-topic-23-visual"><summary>ภาพและ shape</summary><h3>23. Checklist</h3>
+<ul>
+<li>[ ] full fine-tuning</li>
+<li>[ ] freezing/unfreezing</li>
+<li>[ ] trainable ratio</li>
+<li>[ ] LR groups</li>
+<li>[ ] validation protocol</li>
+<li>[ ] early stopping</li>
+<li>[ ] checkpoint selection</li>
+<li>[ ] catastrophic forgetting</li>
+<li>[ ] domain shift</li>
+<li>[ ] baseline comparison</li>
+</ul></details><details id="help-topic-23-code"><summary>โค้ด</summary><h3>23. Checklist</h3>
+<ul>
+<li>[ ] full fine-tuning</li>
+<li>[ ] freezing/unfreezing</li>
+<li>[ ] trainable ratio</li>
+<li>[ ] LR groups</li>
+<li>[ ] validation protocol</li>
+<li>[ ] early stopping</li>
+<li>[ ] checkpoint selection</li>
+<li>[ ] catastrophic forgetting</li>
+<li>[ ] domain shift</li>
+<li>[ ] baseline comparison</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-23-result"><summary>ผลการทดลอง</summary><h3>23. Checklist</h3>
+<ul>
+<li>[ ] full fine-tuning</li>
+<li>[ ] freezing/unfreezing</li>
+<li>[ ] trainable ratio</li>
+<li>[ ] LR groups</li>
+<li>[ ] validation protocol</li>
+<li>[ ] early stopping</li>
+<li>[ ] checkpoint selection</li>
+<li>[ ] catastrophic forgetting</li>
+<li>[ ] domain shift</li>
+<li>[ ] baseline comparison</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-23"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-24" class="source-topic"><span id="source-55-fine-tuning-canonical-24-whats-next" class="legacy-anchor"></span><span id="source-55-fine-tuning-canonical-55-fine-tuning-fine-tuning" class="legacy-anchor"></span><h3>24. What's Next</h3>
+<p>Chapter 56 reduces adaptation cost using LoRA, QLoRA and other parameter-efficient fine-tuning methods.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-24-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>24. What's Next</h3>
+<p>Chapter 56 reduces adaptation cost using LoRA, QLoRA and other parameter-efficient fine-tuning methods.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-24-equation"><summary>สมการ</summary><h3>24. What's Next</h3>
+<p>Chapter 56 reduces adaptation cost using LoRA, QLoRA and other parameter-efficient fine-tuning methods.</p></details><details id="help-topic-24-visual"><summary>ภาพและ shape</summary><h3>24. What's Next</h3>
+<p>Chapter 56 reduces adaptation cost using LoRA, QLoRA and other parameter-efficient fine-tuning methods.</p></details><details id="help-topic-24-code"><summary>โค้ด</summary><h3>24. What's Next</h3>
+<p>Chapter 56 reduces adaptation cost using LoRA, QLoRA and other parameter-efficient fine-tuning methods.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-24-result"><summary>ผลการทดลอง</summary><h3>24. What's Next</h3>
+<p>Chapter 56 reduces adaptation cost using LoRA, QLoRA and other parameter-efficient fine-tuning methods.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-24"> อ่านหัวข้อนี้แล้ว</label></section><details><summary>รายละเอียดเพิ่มเติมและข้อกำหนดของ local lab</summary><h3>55-fine-tuning — Fine-Tuning</h3>
+<p><strong>Prerequisites:</strong> Complete 54-mixed-precision; be able to trace array/tensor shapes, separate train/validation/test data, and explain the core objective of the current chapter.</p>
+<p><strong>Mental model:</strong> Treat Fine-Tuning as a pipeline: input representation → central mechanism → objective/state update → observable output. At every boundary, state shape/state, allowed information flow, and the invariant that should remain true.</p>
+<p><strong>Code walkthrough:</strong> Read public API first, then input checks, state/shape transformations, numerical core, returned values and tests. Connect each important code block to the equation or algorithm in the chapter README.</p>
+<p><strong>Visualization / inspection:</strong> Use a tiny case. Inspect intermediate values, distributions, norms, scores, states or trajectories appropriate to Fine-Tuning; do not rely only on the final metric.</p>
+<p><strong>Experiment:</strong> Run a baseline, one controlled parameter change, one edge case and one repeated seeded comparison. Record seed, environment, data version, configuration and metric.</p>
+<p><strong>Limitations:</strong> List at least one assumption, one data-related limitation, one numerical/optimization limitation and one scaling limitation for Fine-Tuning.</p>
+<p><strong>Analysis workflow:</strong> Check inputs → preprocessing → shapes/state → finite numerical values → objective/update → evaluation protocol. The earliest unexpected state is more informative than a downstream metric.</p>
+<p><strong>Performance:</strong> Identify the dominant time and memory terms and measure them on the local learning run before attempting optimization.</p>
+<p><strong>Production perspective:</strong> Define input validation, artifact/configuration versioning, quality and resource measurements, staged release criteria and a way to return to the previous known-good artifact.</p>
+<p><strong>Research perspective:</strong> State a falsifiable hypothesis, baseline, one-factor change, metric, repeated-run plan when stochastic, and how negative results will be recorded.</p>
+<p><strong>Interview questions:</strong>
+1. Explain Fine-Tuning from first principles without naming a library API.
+2. Trace one input through the central mechanism and give the important intermediate shapes/state.
+3. Name the strongest assumption and a case where it fails.
+4. State the dominant compute/memory cost.
+5. Describe how you would validate a new implementation against a trusted baseline.</p>
+<p><strong>Summary / exit condition:</strong> You may move on when you can explain, derive or trace, implement, test, analyze, measure and evaluate Fine-Tuning, and when the chapter mini-project plus twenty total exercises are complete.</p></details></section><section id="objective-evidence" class="canonical-section"><h2>พิสูจน์ความสามารถทีละ objective</h2><p>ทำกรณีใหม่ก่อนเปิด reference แล้วบันทึกงานด้านล่าง ให้ผู้ตรวจใช้ rubric ตรวจคำอธิบาย ผลคำนวณ โค้ด และข้อจำกัด บันทึกเก็บในเบราว์เซอร์เครื่องนี้ กดส่งออกเพื่อสำรองหรือส่งให้ผู้ตรวจ เว็บไม่ได้รันโค้ดหรือตัดสินผลงานแทนผู้ตรวจ</p><button type="button" class="secondary-button" data-export-evidence>ส่งออกหลักฐานบทนี้เป็น JSON</button><p role="status" id="evidence-export-status"></p><details id="ch55-objective-01" class="objective-proof"><summary>distinguish pretraining, continued pretraining and fine-tuning</summary><p>distinguish pretraining, continued pretraining and fine-tuning: ใช้กรณีในหัวข้อ Pretraining vs Fine-Tuning, Continued Pretraining เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch55-evidence-01"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch55-evidence-01-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch55-evidence-01-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch55-evidence-01-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch55-evidence-01-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch55-evidence-01-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch55-evidence-01-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch55-evidence-01-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch55-evidence-01-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>pretrainedกับscratchเริ่มคนละweightsแต่architecture/data/budget/splitsเหมือนกัน; reportlearningcurves/targetqualityและcomputeไม่อ้างpretrainedดีทุกdomain</p><h3>3. Pretraining vs Fine-Tuning</h3>
+<p>Pretraining:
+- huge generic corpus
+- broad objective
+- expensive
+- learns reusable representations</p>
+<p>Fine-tuning:
+- smaller task/domain dataset
+- narrower objective
+- cheaper
+- adapts behavior or representations</p>
+<h3>4. Continued Pretraining</h3>
+<p>Continued pretraining keeps the language-model objective but changes the data distribution.</p>
+<p>Examples:
+- legal corpus
+- code corpus
+- Thai corpus</p>
+<p>This differs from supervised fine-tuning, where examples explicitly map inputs/instructions to desired outputs.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch55-objective-02" class="objective-proof"><summary>perform full-parameter fine-tuning</summary><p>perform full-parameter fine-tuning: ใช้กรณีในหัวข้อ Full Fine-Tuning เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch55-evidence-02"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch55-evidence-02-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch55-evidence-02-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch55-evidence-02-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch55-evidence-02-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch55-evidence-02-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch55-evidence-02-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch55-evidence-02-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch55-evidence-02-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>fullFTกับfrozenbackboneใช้samepretrainedcheckpoint/split/seed; reportquality/trainableparams/peakmemory/latencyและ3seeds ไม่ให้headbaselineงบน้อยกว่าโดยไม่บอก</p><h3>5. Full Fine-Tuning</h3>
+<p>All parameters remain trainable:</p>
+<pre><code class="language-text">theta' =
+theta - eta * grad_theta L
+</code></pre>
+<p>Pros:
+- maximum adaptation capacity</p>
+<p>Cons:
+- memory expensive
+- optimizer state for all parameters
+- greater forgetting risk
+- one full checkpoint per variant</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch55-objective-03" class="objective-proof"><summary>freeze/unfreeze selected layers</summary><p>freeze/unfreeze selected layers: ใช้กรณีในหัวข้อ Freezing เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch55-evidence-03"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch55-evidence-03-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch55-evidence-03-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch55-evidence-03-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch55-evidence-03-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch55-evidence-03-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch55-evidence-03-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch55-evidence-03-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch55-evidence-03-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>ตั้งbackbone.requires_grad_(False),optimizerเฉพาะhead; loss.backwardแล้วassertbackbonegradNoneและweightsก่อน/หลังallclose ส่วนheadเปลี่ยน</p><h3>6. Freezing</h3>
+<p>Frozen parameter:</p>
+<pre><code class="language-text">requires_grad = False
+</code></pre>
+<p>It is excluded from gradient-based updates.</p>
+<p>Common strategies:
+- train final task head only
+- unfreeze top N layers
+- gradually unfreeze
+- full model</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch55-objective-04" class="objective-proof"><summary>build discriminative learning-rate groups</summary><p>build discriminative learning-rate groups: ใช้กรณีในหัวข้อ Discriminative Learning Rates เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch55-evidence-04"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch55-evidence-04-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch55-evidence-04-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch55-evidence-04-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch55-evidence-04-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch55-evidence-04-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch55-evidence-04-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch55-evidence-04-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch55-evidence-04-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>optimizerparamgroupsbackbonelr1e−5,headlr1e−3; groupIDsไม่ซ้ำ/ไม่ตกหล่น,decaypolicyระบุbias/normแยก</p><h3>9. Discriminative Learning Rates</h3>
+<p>Different parameter groups may use different LRs:</p>
+<pre><code class="language-text">bottom pretrained layers → smaller LR
+top pretrained layers    → larger LR
+new task head            → largest LR
+</code></pre>
+<p>This is optional, not universally superior.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch55-objective-05" class="objective-proof"><summary>choose a smaller fine-tuning LR</summary><p>choose a smaller fine-tuning LR: ใช้กรณีในหัวข้อ Fine-Tuning Learning Rate เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch55-evidence-05"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch55-evidence-05-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch55-evidence-05-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch55-evidence-05-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch55-evidence-05-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch55-evidence-05-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch55-evidence-05-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch55-evidence-05-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch55-evidence-05-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>head-onlyเทียบlast2blocksคงdata/budget/init; reporttargetmacroF1/retention/peakbytesพร้อมparametercount</p><h3>8. Fine-Tuning Learning Rate</h3>
+<p>Pretrained representations can be damaged by an excessively large LR.</p>
+<p>Typical principle:</p>
+<pre><code class="language-text">fine_tuning_lr
+&lt;
+from_scratch_lr
+</code></pre>
+<p>Exact values depend on:
+- model size
+- dataset size
+- optimizer
+- batch size
+- parameter subset</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch55-objective-06" class="objective-proof"><summary>understand catastrophic forgetting</summary><p>understand catastrophic forgetting: ใช้กรณีในหัวข้อ Catastrophic Forgetting เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch55-evidence-06"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch55-evidence-06-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch55-evidence-06-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch55-evidence-06-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch55-evidence-06-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch55-evidence-06-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch55-evidence-06-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch55-evidence-06-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch55-evidence-06-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>targetgain=targetmetric_after−before,retention=generalmetric_after−before; reportทั้งคู่เพื่อเห็นcatastrophicforgetting ไม่ใช่targetgainอย่างเดียว</p><h3>10. Catastrophic Forgetting</h3>
+<p>Aggressive adaptation can hurt previously learned capabilities.</p>
+<p>Symptoms:
+- target task improves
+- broad validation capability drops</p>
+<p>Mitigations:
+- lower LR
+- fewer steps
+- regularization
+- replay/mixed data
+- freeze layers
+- PEFT</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch55-objective-07" class="objective-proof"><summary>design train/validation/test splits</summary><p>design train/validation/test splits: ใช้กรณีในหัวข้อ Dataset Protocol เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch55-evidence-07"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch55-evidence-07-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch55-evidence-07-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch55-evidence-07-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch55-evidence-07-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch55-evidence-07-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch55-evidence-07-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch55-evidence-07-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch55-evidence-07-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>groupIDuser/documentfamilyหนึ่งอยู่splitเดียว; assertset(group_train)disjoint(group_test),near-duplicatesก่อนsplit</p><h3>11. Dataset Protocol</h3>
+<p>Split before training decisions:</p>
+<pre><code class="language-text">train
+validation
+test
+</code></pre>
+<p>Use:
+- train for gradients
+- validation for hyperparameters/checkpoint selection
+- test once for final evaluation</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch55-objective-08" class="objective-proof"><summary>avoid data leakage</summary><p>avoid data leakage: ใช้กรณีในหัวข้อ Leakage เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch55-evidence-08"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch55-evidence-08-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch55-evidence-08-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch55-evidence-08-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch55-evidence-08-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch55-evidence-08-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch55-evidence-08-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch55-evidence-08-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch55-evidence-08-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>groupIDuser/documentfamilyหนึ่งอยู่splitเดียว; assertset(group_train)disjoint(group_test),near-duplicatesก่อนsplit</p><h3>12. Leakage</h3>
+<p>Common leakage:
+- near duplicates across splits
+- same conversation/document split into train and validation
+- target labels embedded in features
+- benchmark examples included in SFT data</p>
+<p>Document-level/group-aware splitting is often required.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch55-objective-09" class="objective-proof"><summary>use early stopping and checkpoint selection correctly</summary><p>use early stopping and checkpoint selection correctly: ใช้กรณีในหัวข้อ Early Stopping, Checkpoint Selection เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch55-evidence-09"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch55-evidence-09-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch55-evidence-09-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch55-evidence-09-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch55-evidence-09-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch55-evidence-09-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch55-evidence-09-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch55-evidence-09-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch55-evidence-09-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>checkpointเลือกvalmetricสูงสุดหรือvallossต่ำสุดตามที่ประกาศ; savebestthenloadก่อนtest ไม่ใช้lastโดยเรียกbest</p><h3>13. Early Stopping</h3>
+<p>Monitor validation metric.</p>
+<p>Stop when improvement stalls for a configured patience.</p>
+<p>Never early-stop on test data.</p>
+<h3>14. Checkpoint Selection</h3>
+<p>Possible criteria:
+- minimum validation loss
+- maximum F1
+- maximum task accuracy
+- domain-specific score</p>
+<p>Store the criterion with the checkpoint.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch55-objective-10" class="objective-proof"><summary>compare full fine-tuning with PEFT</summary><p>compare full fine-tuning with PEFT: ใช้กรณีในหัวข้อ Full Fine-Tuning, Trainable Parameter Ratio เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch55-evidence-10"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch55-evidence-10-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch55-evidence-10-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch55-evidence-10-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch55-evidence-10-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch55-evidence-10-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch55-evidence-10-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch55-evidence-10-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch55-evidence-10-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>backbone9900params,head100ให้trainableratio100/10000=.01=1%; numeratorเฉพาะrequires_gradและdenominatorรวมทุกparameterไม่activation</p><h3>5. Full Fine-Tuning</h3>
+<p>All parameters remain trainable:</p>
+<pre><code class="language-text">theta' =
+theta - eta * grad_theta L
+</code></pre>
+<p>Pros:
+- maximum adaptation capacity</p>
+<p>Cons:
+- memory expensive
+- optimizer state for all parameters
+- greater forgetting risk
+- one full checkpoint per variant</p>
+<h3>7. Trainable Parameter Ratio</h3>
+<pre><code class="language-text">trainable_ratio =
+trainable_parameters
+/
+total_parameters
+</code></pre>
+<p>Track this for every experiment.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch55-objective-11" class="objective-proof"><summary>understand domain adaptation</summary><p>understand domain adaptation: ใช้กรณีในหัวข้อ Domain Shift, Evaluation Before and After เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch55-evidence-11"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch55-evidence-11-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch55-evidence-11-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch55-evidence-11-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch55-evidence-11-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch55-evidence-11-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch55-evidence-11-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch55-evidence-11-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch55-evidence-11-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>targetgain=targetmetric_after−before,retention=generalmetric_after−before; reportทั้งคู่เพื่อเห็นcatastrophicforgetting ไม่ใช่targetgainอย่างเดียว</p><h3>18. Domain Shift</h3>
+<p>Fine-tuning data should represent deployment conditions.</p>
+<p>A model fine-tuned on clean benchmark text can fail on:
+- noisy user input
+- different language variety
+- longer context
+- different class prevalence</p>
+<h3>19. Evaluation Before and After</h3>
+<p>Always record baseline before adaptation.</p>
+<pre><code class="language-text">base model metric
+vs
+fine-tuned model metric
+</code></pre>
+<p>Also monitor retained capabilities where relevant.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch55-objective-12" class="objective-proof"><summary>reason about class imbalance and task-specific heads</summary><p>reason about class imbalance and task-specific heads: ใช้กรณีในหัวข้อ Task Heads, Class Imbalance, Regularization เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch55-evidence-12"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch55-evidence-12-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch55-evidence-12-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch55-evidence-12-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch55-evidence-12-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch55-evidence-12-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch55-evidence-12-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch55-evidence-12-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch55-evidence-12-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>recordbackboneoutput(B,d),headlogits(B,C),trainableIDs,gradnormbygroupและtarget/generalmetrics; dropoutmodeของfrozenbackboneต้องชัด</p><h3>15. Task Heads</h3>
+<p>A pretrained backbone may feed:
+- classification head
+- regression head
+- token classifier
+- causal LM head
+- sequence-to-sequence head</p>
+<p>The loss must match the task.</p>
+<h3>16. Class Imbalance</h3>
+<p>For classification:
+- stratified splits
+- class weighting
+- threshold tuning
+- precision/recall/F1</p>
+<p>Accuracy alone can be misleading.</p>
+<h3>17. Regularization</h3>
+<p>Useful options:
+- weight decay
+- dropout
+- smaller LR
+- data augmentation
+- early stopping
+- label smoothing when appropriate</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch55-objective-13" class="objective-proof"><summary>preserve tokenizer/model compatibility</summary><p>preserve tokenizer/model compatibility: ใช้กรณีในหัวข้อ From Scratch, Common Mistakes เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch55-evidence-13"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch55-evidence-13-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch55-evidence-13-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch55-evidence-13-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch55-evidence-13-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch55-evidence-13-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch55-evidence-13-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch55-evidence-13-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch55-evidence-13-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>comparemanualheadlinearforward/gradกับframeworkด้วยcopiedweights; frozenbackbonetestคือparameterdiff0ไม่ใช้lossลดอย่างเดียว</p><h3>20. From Scratch</h3>
+<p>src/fine_tuning_utils.py includes:</p>
+<ul>
+<li>parameter_partition</li>
+<li>trainable_ratio</li>
+<li>freeze_by_prefix</li>
+<li>unfreeze_by_prefix</li>
+<li>discriminative_lr_groups</li>
+<li>early_stopping_update</li>
+<li>select_best_checkpoint</li>
+</ul>
+<h3>21. Common Mistakes</h3>
+<ol>
+<li>no baseline before fine-tuning</li>
+<li>test set used for checkpoint selection</li>
+<li>LR copied from pretraining</li>
+<li>tokenizer/model mismatch</li>
+<li>accidental full fine-tuning when only head intended</li>
+<li>forgetting to set train/eval modes</li>
+<li>duplicate documents across splits</li>
+<li>class imbalance ignored</li>
+<li>overfitting tiny dataset</li>
+<li>saving only weights without experiment config</li>
+</ol></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details></section><section id="implementation" class="canonical-section"><h2>Implementation และ tests ที่รันบนเครื่องได้</h2><details><summary>55-fine-tuning/src/fine_tuning_utils.py</summary><pre><code>&quot;&quot;&quot;Framework-independent fine-tuning planning utilities.&quot;&quot;&quot;
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+
+def parameter_partition(
+    named_parameter_sizes: dict[str, int],
+    trainable_names: set[str],
+) -&gt; tuple[int, int]:
+    if any(size &lt; 0 for size in named_parameter_sizes.values()):
+        raise ValueError(&quot;parameter sizes must be non-negative&quot;)
+
+    total = sum(named_parameter_sizes.values())
+    trainable = sum(
+        size
+        for name, size in named_parameter_sizes.items()
+        if name in trainable_names
+    )
+    return trainable, total
+
+
+def trainable_ratio(
+    trainable_parameters: int,
+    total_parameters: int,
+) -&gt; float:
+    if trainable_parameters &lt; 0:
+        raise ValueError(&quot;trainable_parameters must be non-negative&quot;)
+    if total_parameters &lt;= 0:
+        raise ValueError(&quot;total_parameters must be positive&quot;)
+    if trainable_parameters &gt; total_parameters:
+        raise ValueError(&quot;trainable cannot exceed total&quot;)
+
+    return float(trainable_parameters / total_parameters)
+
+
+def freeze_by_prefix(
+    parameter_names: list[str],
+    prefixes: tuple[str, ...],
+) -&gt; set[str]:
+    &quot;&quot;&quot;Return names that remain trainable after freezing prefixes.&quot;&quot;&quot;
+    return {
+        name
+        for name in parameter_names
+        if not name.startswith(prefixes)
+    }
+
+
+def unfreeze_by_prefix(
+    parameter_names: list[str],
+    prefixes: tuple[str, ...],
+) -&gt; set[str]:
+    &quot;&quot;&quot;Return only names whose prefix should be trainable.&quot;&quot;&quot;
+    return {
+        name
+        for name in parameter_names
+        if name.startswith(prefixes)
+    }
+
+
+def discriminative_lr_groups(
+    parameter_names: list[str],
+    *,
+    rules: list[tuple[str, float]],
+    default_lr: float,
+) -&gt; dict[str, float]:
+    if default_lr &lt;= 0:
+        raise ValueError(&quot;default_lr must be positive&quot;)
+    if any(lr &lt;= 0 for _, lr in rules):
+        raise ValueError(&quot;all learning rates must be positive&quot;)
+
+    result: dict[str, float] = {}
+
+    for name in parameter_names:
+        learning_rate = default_lr
+
+        for prefix, candidate_lr in rules:
+            if name.startswith(prefix):
+                learning_rate = candidate_lr
+                break
+
+        result[name] = float(learning_rate)
+
+    return result
+
+
+@dataclass(frozen=True)
+class EarlyStoppingState:
+    best_metric: float | None = None
+    bad_epochs: int = 0
+    should_stop: bool = False
+
+
+def early_stopping_update(
+    state: EarlyStoppingState,
+    metric: float,
+    *,
+    patience: int,
+    mode: str = &quot;min&quot;,
+    min_delta: float = 0.0,
+) -&gt; EarlyStoppingState:
+    if patience &lt; 0:
+        raise ValueError(&quot;patience must be non-negative&quot;)
+    if mode not in {&quot;min&quot;, &quot;max&quot;}:
+        raise ValueError(&quot;mode must be min or max&quot;)
+    if min_delta &lt; 0:
+        raise ValueError(&quot;min_delta must be non-negative&quot;)
+
+    if state.best_metric is None:
+        improved = True
+    elif mode == &quot;min&quot;:
+        improved = metric &lt; state.best_metric - min_delta
+    else:
+        improved = metric &gt; state.best_metric + min_delta
+
+    if improved:
+        return EarlyStoppingState(
+            best_metric=float(metric),
+            bad_epochs=0,
+            should_stop=False,
+        )
+
+    bad_epochs = state.bad_epochs + 1
+    return EarlyStoppingState(
+        best_metric=state.best_metric,
+        bad_epochs=bad_epochs,
+        should_stop=bad_epochs &gt; patience,
+    )
+
+
+def select_best_checkpoint(
+    metrics: list[float],
+    *,
+    mode: str = &quot;min&quot;,
+) -&gt; int:
+    if not metrics:
+        raise ValueError(&quot;metrics must be non-empty&quot;)
+    if mode not in {&quot;min&quot;, &quot;max&quot;}:
+        raise ValueError(&quot;mode must be min or max&quot;)
+
+    if mode == &quot;min&quot;:
+        return min(range(len(metrics)), key=metrics.__getitem__)
+    return max(range(len(metrics)), key=metrics.__getitem__)
+</code></pre></details><details><summary>55-fine-tuning/tests/test_fine_tuning_utils.py</summary><pre><code>from pathlib import Path
+import importlib.util
+import sys
+
+
+MODULE_PATH = Path(__file__).parents[1] / &quot;src&quot; / &quot;fine_tuning_utils.py&quot;
+SPEC = importlib.util.spec_from_file_location(&quot;fine_tuning_utils_course&quot;, MODULE_PATH)
+assert SPEC and SPEC.loader
+mod = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = mod
+SPEC.loader.exec_module(mod)
+
+
+def test_trainable_ratio() -&gt; None:
+    trainable, total = mod.parameter_partition(
+        {&quot;backbone.a&quot;: 100, &quot;head.weight&quot;: 20},
+        {&quot;head.weight&quot;},
+    )
+    assert trainable == 20
+    assert total == 120
+    assert mod.trainable_ratio(trainable, total) == 1 / 6
+
+
+def test_freeze_and_unfreeze_prefix() -&gt; None:
+    names = [
+        &quot;encoder.0.weight&quot;,
+        &quot;encoder.1.weight&quot;,
+        &quot;head.weight&quot;,
+    ]
+    assert mod.freeze_by_prefix(names, (&quot;encoder.&quot;,)) == {
+        &quot;head.weight&quot;
+    }
+    assert mod.unfreeze_by_prefix(names, (&quot;head.&quot;,)) == {
+        &quot;head.weight&quot;
+    }
+
+
+def test_discriminative_lr_groups() -&gt; None:
+    groups = mod.discriminative_lr_groups(
+        [&quot;encoder.0.weight&quot;, &quot;head.weight&quot;],
+        rules=[(&quot;encoder.&quot;, 1e-5), (&quot;head.&quot;, 1e-3)],
+        default_lr=1e-4,
+    )
+    assert groups[&quot;encoder.0.weight&quot;] == 1e-5
+    assert groups[&quot;head.weight&quot;] == 1e-3
+
+
+def test_early_stopping() -&gt; None:
+    state = mod.EarlyStoppingState()
+    state = mod.early_stopping_update(
+        state,
+        1.0,
+        patience=1,
+    )
+    assert not state.should_stop
+
+    state = mod.early_stopping_update(
+        state,
+        1.1,
+        patience=1,
+    )
+    assert not state.should_stop
+
+    state = mod.early_stopping_update(
+        state,
+        1.2,
+        patience=1,
+    )
+    assert state.should_stop
+
+
+def test_select_best_checkpoint() -&gt; None:
+    assert mod.select_best_checkpoint(
+        [0.8, 0.5, 0.6],
+        mode=&quot;min&quot;,
+    ) == 1
+    assert mod.select_best_checkpoint(
+        [0.8, 0.5, 0.9],
+        mode=&quot;max&quot;,
+    ) == 2
+</code></pre></details></section><section id="glossary" class="canonical-section"><h2>อภิธานศัพท์ — คำไทย ความหมาย และข้อควรตรวจ</h2><dl><dt>tensor</dt><dd>เทนเซอร์: ชุดตัวเลขที่มีแกน เช่น scalar ไม่มีแกน, vector หนึ่งแกน, matrix สองแกน; shape บอกขนาดแต่ละแกน ไม่บอกความหมายของแกนจนกว่าจะระบุ</dd><dt>shape</dt><dd>รูปทรงข้อมูล: (B,T,d) หมายถึง batch × เวลา/ตำแหน่ง × features; ใช้ชื่อแกนกำกับเสมอ การ transpose เปลี่ยนแกนแต่ไม่ใช่แค่เปลี่ยนชื่อ</dd><dt>batch</dt><dd>กลุ่มตัวอย่างที่คำนวณร่วมกันหนึ่งครั้ง; B คือจำนวนตัวอย่าง ไม่ใช่จำนวน features หรือจำนวน optimizer updates</dd><dt>weight w / θ</dt><dd>น้ำหนักหรือพารามิเตอร์ที่โมเดลใช้คำนวณ; แก้ด้วยมือทำ forward ใหม่ ส่วน optimizer ต้องรับ gradient แล้วกด update จึงแก้ state</dd><dt>bias b</dt><dd>ค่าคงที่ที่บวกกับผลเชิงเส้น; regression scalar bias เพิ่ม Δ ทำให้ prediction ทุกจุดเพิ่ม Δ เท่ากัน</dd><dt>prediction ŷ</dt><dd>ค่าที่โมเดลทำนายจาก input และพารามิเตอร์ปัจจุบัน; เครื่องหมายหมวกแยกจาก target y ที่มาจากข้อมูล</dd><dt>residual e</dt><dd>ความคลาดเคลื่อน ในเว็บนี้นิยาม prediction − target; บางตำราใช้เครื่องหมายกลับกัน จึงต้องตรวจนิยามก่อนเทียบสูตร gradient</dd><dt>MSE</dt><dd>mean squared error = ผลรวม residual กำลังสองหารจำนวนรายการที่ระบุ; มีหน่วยเป็น target ยกกำลังสอง และการใช้ sum แทน mean เปลี่ยน scale gradient</dd><dt>loss L / objective J</dt><dd>จำนวนที่ optimizer ต้องการลด; objective อาจรวม data loss และ regularization จึงต้องดูองค์ประกอบและ reduction ให้ตรง implementation</dd><dt>gradient ∇ / ∂</dt><dd>เวกเตอร์ของ partial derivatives บอกอัตราเปลี่ยน loss ต่อพารามิเตอร์แต่ละตัว; ∂ ใช้เมื่อเปลี่ยนตัวหนึ่งโดยตรึงตัวอื่น</dd><dt>chain rule</dt><dd>กฎลูกโซ่: คูณอนุพันธ์ตามเส้นทาง และบวก contribution จากทุกเส้นทางที่มารวมกัน ใช้ย้อนจาก loss ถึง weights</dd><dt>learning rate η</dt><dd>ขนาดตัวคูณ gradient ใน update θnew=θ−ηg; η≥0, ศูนย์หมายถึงไม่มีการขยับพารามิเตอร์ ก้าวใหญ่เกินอาจ diverge</dd><dt>regularization λ</dt><dd>ตัวคูณค่าลงโทษ ต้อง λ≥0 ตามนิยามการลงโทษ; Ridge λΣw² เพิ่ม gradient 2λw โดยบท Regression นี้ไม่ลงโทษ bias</dd><dt>baseline</dt><dd>สถานะอ้างอิงที่ตรึงไว้สำหรับเทียบ; ต้องเก็บ snapshot ไม่อ้าง object ปัจจุบันที่แก้ตามไปด้วย</dd><dt>invariant</dt><dd>คุณสมบัติที่กลไกต้องรักษา เช่น probability รวม1, shape สอดคล้อง, queue ไม่เกิน capacity; ใช้ tests ตรวจได้มากกว่าดูภาพสวย</dd><dt>optimizer state</dt><dd>ความจำของอัลกอริทึม เช่น velocity, moments และ completed updates; คืนเฉพาะ weights ยังไม่เท่ากับเริ่มการฝึกใหม่ทั้งหมด</dd><dt>finite difference</dt><dd>ประมาณ derivative ด้วย [f(x+h)−f(x−h)]/(2h); h&gt;0, ใช้ smooth point และลองหลาย h เพื่อแยก truncation error จาก roundoff</dd><dt>softmax</dt><dd>แปลง logits เป็นความน่าจะเป็นตามแกนที่กำหนด; ลบ max ก่อน exp เพื่อความเสถียร และ fully masked row ต้องมีนโยบายชัดเจน</dd><dt>logit</dt><dd>คะแนนก่อน sigmoid/softmax ไม่ใช่ probability; อาจเป็นจำนวนจริงติดลบหรือเกิน1ได้ จึงห้ามส่งให้ loss ที่คาด probability โดยไม่แปลง</dd><dt>temperature τ / T</dt><dd>ตัวหาร logits ก่อน softmax; ต้องเป็นบวก ค่าเล็กทำ distribution แหลมขึ้น โดยไม่เท่ากับ retrain weights</dd><dt>mask</dt><dd>ตัวกำหนดตำแหน่งที่อ่านหรือคิด loss ได้; causal mask ปิดอนาคต, padding mask ปิดข้อมูลเติม, loss mask เลือก target แต่ละอย่างคนละหน้าที่</dd><dt>Q / K / V</dt><dd>query ใช้ค้นข้อมูล, key ใช้จับคู่ query, value เป็นข้อมูลที่ถูกถัวเฉลี่ย; เป็น learned projections ของ representation ไม่ใช่ป้ายความหมายตายตัว</dd><dt>head</dt><dd>ส่วนของ feature representation ที่ทำ attention แยกกัน แล้ว concat/project กลับ; ต้องตรวจ d_model หารจำนวน heads ลงตัว</dd><dt>ε-neighborhood</dt><dd>เพื่อนบ้านทั้งหมดที่มีระยะไม่เกิน ε รวมจุดตัวเองใน DBSCAN นี้; ε มีหน่วยเดียวกับพิกัด ไม่ใช่จำนวน k ที่ใช้โหวต</dd><dt>core / border / noise</dt><dd>DBSCAN core มีเพื่อนบ้านรวมตัวเองถึง min_samples; border อยู่ใกล้ core แต่เพื่อนบ้านไม่ถึง; noise ไม่ถูกเชื่อมกับ core cluster ใด</dd><dt>bootstrap</dt><dd>สุ่ม observations แบบ replacement ขนาดเท่าเดิมซ้ำหลายครั้งแล้วคำนวณ statistic ใหม่; seed ทำให้ตรวจซ้ำได้ แต่ไม่แก้สมมติฐาน IID ที่ผิด</dd><dt>confidence interval</dt><dd>ช่วงที่สร้างด้วย procedure ที่มี coverage ตามสมมติฐาน; ช่วงหนึ่งที่ได้แล้วไม่ใช่ posterior probability ของ parameter และ sample เล็กยังไม่แน่นอนมาก</dd><dt>validation / test</dt><dd>validation ใช้เลือกโมเดล/ค่าตั้ง ส่วน test ใช้ประเมินหลัง freeze การตัดสินใจ; fit preprocessing/tokenizer จาก test เป็น leakage</dd><dt>leakage</dt><dd>ข้อมูลที่ควรยังไม่รู้ไหลเข้า training/การเลือกโมเดล เช่น future feature หรือเอกสารซ้ำข้าม split ทำให้ metric ดูดีเกินการใช้งานจริง</dd><dt>queue / capacity</dt><dd>queue คือรายการรอ, capacity การให้บริการรวม = workers × service rate ตามแบบจำลอง; เพิ่ม timeout ไม่เพิ่มกำลังประมวลผล</dd><dt>state transition</dt><dd>การเปลี่ยนสถานะเมื่อเกิดเหตุการณ์ที่อนุญาต เช่น queued→active→done; ต้องระบุ guard, side effect และเหตุผลเมื่อ transition ถูกปฏิเสธ</dd><dt>latency / throughput</dt><dd>latency คือเวลาต่อคำขอ, throughput คือปริมาณงานต่อหน่วยเวลา; batching อาจเพิ่ม throughput แต่เพิ่มเวลารอ จึงต้องวัดทั้งคู่</dd><dt>idempotency</dt><dd>ทำคำขอ business operation เดิมซ้ำแล้ว side effect เกิดครั้งเดียวตาม key และ transaction protocol; ไม่ได้รับประกันจากการใช้ UUID ใหม่ทุก attempt</dd><dt>local lab</dt><dd>โปรแกรม Python และ tests ที่ผู้เรียนรันบนเครื่อง; เว็บเก็บเพียงคำยืนยันของผู้เรียน การผ่าน tests ของโค้ดต้นแบบไม่ใช่ผลตรวจโค้ดผู้เรียน</dd></dl></section></article>
+<section id="practice" class="practice-section"><span class="eyebrow">PRACTICE · DEBUG · BUILD</span><h2>พิสูจน์ด้วยการลงมือทำ</h2><div id="web-checks"></div><div class="retry-actions"><button class="secondary-button" id="retry-checks">เริ่มทำโจทย์ในเว็บใหม่</button><button class="text-button" id="undo-retry" hidden>คืนผลก่อนเริ่มใหม่</button></div><div id="exercise-content"><h2>แบบฝึก 20 ข้อ — เฉลยเฉพาะข้อ</h2><p>ทำคำตอบก่อนเปิด hints; โจทย์ปลายเปิดให้ใช้ตัวอย่างคำตอบและหลักฐานราย objective ตรวจงานจริง</p><section id="exercise-1" class="exercise-item"><h3>ข้อ 1</h3><p>Calculate trainable ratio for head-only tuning.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Trainable Parameter Ratio: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): backbone9900params,head100ให้trainableratio100/10000…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: backbone9900params,head100ให้trainableratio100/10000=.01=1%; numeratorเฉพาะrequires_gradและde…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>backbone9900params,head100ให้trainableratio100/10000=.01=1%; numeratorเฉพาะrequires_gradและdenominatorรวมทุกparameterไม่activation</p><p>อ้างอิง: <a href="#chapter-55/section/topic-7">Trainable Parameter Ratio</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch55-exercise-01"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-2" class="exercise-item"><h3>ข้อ 2</h3><p>Freeze a toy backbone and train only the head.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Freezing: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ตั้งbackbone.requires_grad_(False),optimizerเฉพาะhead;…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ตั้งbackbone.requires_grad_(False),optimizerเฉพาะhead; loss.backwardแล้วassertbackbonegradNoneและw…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ตั้งbackbone.requires_grad_(False),optimizerเฉพาะhead; loss.backwardแล้วassertbackbonegradNoneและweightsก่อน/หลังallclose ส่วนheadเปลี่ยน</p><p>อ้างอิง: <a href="#chapter-55/section/topic-6">Freezing</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch55-exercise-02"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-3" class="exercise-item"><h3>ข้อ 3</h3><p>Unfreeze the last two blocks.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Freezing: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): unfreezeเฉพาะlast2blocksและเพิ่มparametersเข้าoptimizer…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: unfreezeเฉพาะlast2blocksและเพิ่มparametersเข้าoptimizer/paramgroups; ถ้าoptimizerสร้างก่อนfreeze/unf…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>unfreezeเฉพาะlast2blocksและเพิ่มparametersเข้าoptimizer/paramgroups; ถ้าoptimizerสร้างก่อนfreeze/unfreezeต้องตรวจรายชื่อไม่ให้trainableหลุด</p><p>อ้างอิง: <a href="#chapter-55/section/topic-6">Freezing</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch55-exercise-03"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-4" class="exercise-item"><h3>ข้อ 4</h3><p>Build discriminative LR groups.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Discriminative Learning Rates: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): optimizerparamgroupsbackbonelr1e−5,head…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: optimizerparamgroupsbackbonelr1e−5,headlr1e−3; groupIDsไม่ซ้ำ/ไม่ตกหล่น…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>optimizerparamgroupsbackbonelr1e−5,headlr1e−3; groupIDsไม่ซ้ำ/ไม่ตกหล่น,decaypolicyระบุbias/normแยก</p><p>อ้างอิง: <a href="#chapter-55/section/topic-9">Discriminative Learning Rates</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch55-exercise-04"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-5" class="exercise-item"><h3>ข้อ 5</h3><p>Compare from-scratch vs pretrained convergence.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Pretraining vs Fine-Tuning: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): pretrainedกับscratchเริ่มคนละweightsแต่architecture/data/budg…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: pretrainedกับscratchเริ่มคนละweightsแต่architecture/data/budget/splitsเหมือนกัน; reportlearningcurves/targetqu…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>pretrainedกับscratchเริ่มคนละweightsแต่architecture/data/budget/splitsเหมือนกัน; reportlearningcurves/targetqualityและcomputeไม่อ้างpretrainedดีทุกdomain</p><p>อ้างอิง: <a href="#chapter-55/section/topic-3">Pretraining vs Fine-Tuning</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch55-exercise-05"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-6" class="exercise-item"><h3>ข้อ 6</h3><p>Implement validation-based checkpoint selection.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Checkpoint Selection: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): checkpointเลือกvalmetricสูงสุดหรือvallossต่…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: checkpointเลือกvalmetricสูงสุดหรือvallossต่ำสุดตามที่ประกาศ; savebestthenload…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>checkpointเลือกvalmetricสูงสุดหรือvallossต่ำสุดตามที่ประกาศ; savebestthenloadก่อนtest ไม่ใช้lastโดยเรียกbest</p><p>อ้างอิง: <a href="#chapter-55/section/topic-14">Checkpoint Selection</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch55-exercise-06"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-7" class="exercise-item"><h3>ข้อ 7</h3><p>Add early stopping.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Early Stopping: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): earlystoppingpatience2: val[.5,.4,.41,.42]ห…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: earlystoppingpatience2: val[.5,.4,.41,.42]หยุดหลังสองnonimprovementsและrestore…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>earlystoppingpatience2: val[.5,.4,.41,.42]หยุดหลังสองnonimprovementsและrestoreepoch2; min_delta/tiesต้องกำหนด</p><p>อ้างอิง: <a href="#chapter-55/section/topic-13">Early Stopping</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch55-exercise-07"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-8" class="exercise-item"><h3>ข้อ 8</h3><p>Measure target-task gain and retained general capability.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Catastrophic Forgetting, Evaluation Before and After: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): targetgain=targetmetric_after−before,retention=generalmetr…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: targetgain=targetmetric_after−before,retention=generalmetric_after−before; reportทั้งคู่เพื่อเห็นcatastro…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>targetgain=targetmetric_after−before,retention=generalmetric_after−before; reportทั้งคู่เพื่อเห็นcatastrophicforgetting ไม่ใช่targetgainอย่างเดียว</p><p>อ้างอิง: <a href="#chapter-55/section/topic-10">Catastrophic Forgetting</a>, <a href="#chapter-55/section/topic-19">Evaluation Before and After</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch55-exercise-08"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-9" class="exercise-item"><h3>ข้อ 9</h3><p>Create a group-aware split for duplicated documents/users.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Dataset Protocol, Leakage: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): groupIDuser/documentfamilyหนึ่งอยู่splitเดียว…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: groupIDuser/documentfamilyหนึ่งอยู่splitเดียว; assertset(group_train)disjoint(grou…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>groupIDuser/documentfamilyหนึ่งอยู่splitเดียว; assertset(group_train)disjoint(group_test),near-duplicatesก่อนsplit</p><p>อ้างอิง: <a href="#chapter-55/section/topic-11">Dataset Protocol</a>, <a href="#chapter-55/section/topic-12">Leakage</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch55-exercise-09"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-10" class="exercise-item"><h3>ข้อ 10</h3><p>Compare full fine-tuning against a frozen-backbone baseline.</p>
+<p>Challenge:
+- run a controlled forgetting experiment
+- build gradual unfreezing with per-stage LR schedules</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Full Fine-Tuning, Freezing: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): fullFTกับfrozenbackboneใช้samepretrainedcheckpoint/split/seed; …</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: fullFTกับfrozenbackboneใช้samepretrainedcheckpoint/split/seed; reportquality/trainableparams/peakmemory/latencyแล…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>fullFTกับfrozenbackboneใช้samepretrainedcheckpoint/split/seed; reportquality/trainableparams/peakmemory/latencyและ3seeds ไม่ให้headbaselineงบน้อยกว่าโดยไม่บอก</p><p>อ้างอิง: <a href="#chapter-55/section/topic-5">Full Fine-Tuning</a>, <a href="#chapter-55/section/topic-6">Freezing</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch55-exercise-10"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-11" class="exercise-item"><h3>ข้อ 11</h3><p>Reproduce one central calculation from Fine-Tuning using a tiny hand-checkable input.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Trainable Parameter Ratio: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): 100trainableจาก10000=1%; ถ้าunfreezebl…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: 100trainableจาก10000=1%; ถ้าunfreezeblock200เพิ่มtrainableเป็น300=3%แ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>100trainableจาก10000=1%; ถ้าunfreezeblock200เพิ่มtrainableเป็น300=3%และoptimizerต้องมีทั้ง300จริง</p><p>อ้างอิง: <a href="#chapter-55/section/topic-7">Trainable Parameter Ratio</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch55-exercise-11"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-12" class="exercise-item"><h3>ข้อ 12</h3><p>Write a deterministic test that verifies the most important invariant in Fine-Tuning.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Freezing: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): frozenweightsunchanged,trainableparametersมีgradและc…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: frozenweightsunchanged,trainableparametersมีgradและcheckpointroundtripvalid; groupdisjointและ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>frozenweightsunchanged,trainableparametersมีgradและcheckpointroundtripvalid; groupdisjointและbestcheckpointselectedfromvalเท่านั้น</p><p>อ้างอิง: <a href="#chapter-55/section/topic-6">Freezing</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch55-exercise-12"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-13" class="exercise-item"><h3>ข้อ 13</h3><p>Compare two meaningful configurations while keeping data and seed fixed.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Fine-Tuning Learning Rate: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): head-onlyเทียบlast2blocksคงdata/budget/in…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: head-onlyเทียบlast2blocksคงdata/budget/init; reporttargetmacroF1/retention…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>head-onlyเทียบlast2blocksคงdata/budget/init; reporttargetmacroF1/retention/peakbytesพร้อมparametercount</p><p>อ้างอิง: <a href="#chapter-55/section/topic-8">Fine-Tuning Learning Rate</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch55-exercise-13"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-14" class="exercise-item"><h3>ข้อ 14</h3><p>Record intermediate shapes, ranges, and one quality metric for a tiny end-to-end run.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Task Heads: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): recordbackboneoutput(B,d),headlogits(B,C),trainableI…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: recordbackboneoutput(B,d),headlogits(B,C),trainableIDs,gradnormbygroupและtarget/generalmetrics…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>recordbackboneoutput(B,d),headlogits(B,C),trainableIDs,gradnormbygroupและtarget/generalmetrics; dropoutmodeของfrozenbackboneต้องชัด</p><p>อ้างอิง: <a href="#chapter-55/section/topic-15">Task Heads</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch55-exercise-14"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-15" class="exercise-item"><h3>ข้อ 15</h3><p>Explain one evaluation mistake that could make a Fine-Tuning result look better than it really is.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Leakage: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): evaluationซ้ำข้อมูลpretrainingหรือuserข้ามspli…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: evaluationซ้ำข้อมูลpretrainingหรือuserข้ามsplitทำtargetgainสูงเกิน; auditdedup/sour…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>evaluationซ้ำข้อมูลpretrainingหรือuserข้ามsplitทำtargetgainสูงเกิน; auditdedup/sourcegroupsและไม่tuneonretentiontest</p><p>อ้างอิง: <a href="#chapter-55/section/topic-12">Leakage</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch55-exercise-15"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-16" class="exercise-item"><h3>ข้อ 16</h3><p>State the dominant time and memory complexity for the main operation in Fine-Tuning.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Full Fine-Tuning: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): frozenbackboneยังมีforwardcost; no_gradลดactivationmemoryถ…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: frozenbackboneยังมีforwardcost; no_gradลดactivationmemoryถ้าไม่ต้องgradientthrough ส่วนfullFTเก็บbackward…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>frozenbackboneยังมีforwardcost; no_gradลดactivationmemoryถ้าไม่ต้องgradientthrough ส่วนfullFTเก็บbackwardactivationsและoptimizerstateO(trainableP)</p><p>อ้างอิง: <a href="#chapter-55/section/topic-5">Full Fine-Tuning</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch55-exercise-16"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-17" class="exercise-item"><h3>ข้อ 17</h3><p>Compare a from-scratch result with a trusted implementation using identical inputs and settings.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ From Scratch: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): comparemanualheadlinearforward/gradกับframeworkด้…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: comparemanualheadlinearforward/gradกับframeworkด้วยcopiedweights; frozenbackbonetestคือp…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>comparemanualheadlinearforward/gradกับframeworkด้วยcopiedweights; frozenbackbonetestคือparameterdiff0ไม่ใช้lossลดอย่างเดียว</p><p>อ้างอิง: <a href="#chapter-55/section/topic-20">From Scratch</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch55-exercise-17"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-18" class="exercise-item"><h3>ข้อ 18</h3><p>Run a one-factor ablation and report the measured change over repeated runs when randomness matters.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Discriminative Learning Rates: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): discriminativelrbackbone=head/100เทียบ…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: discriminativelrbackbone=head/100เทียบsameLRคงgroups/seed; reporttarg…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>discriminativelrbackbone=head/100เทียบsameLRคงgroups/seed; reporttargetgainและforgettingหลายruns</p><p>อ้างอิง: <a href="#chapter-55/section/topic-9">Discriminative Learning Rates</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch55-exercise-18"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-19" class="exercise-item"><h3>ข้อ 19</h3><p>Design a small reproducibility record containing seed, code version, data version, configuration, and metric.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Common Mistakes: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): manifest มีbasecheckpointrevision/datasetsplits/froz…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: manifest มีbasecheckpointrevision/datasetsplits/frozenlayerIDs/paramgroups/LRs/decay/earlysto…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>manifest มีbasecheckpointrevision/datasetsplits/frozenlayerIDs/paramgroups/LRs/decay/earlystop/seed/retentionbenchmark/modeldigest</p><p>อ้างอิง: <a href="#chapter-55/section/topic-21">Common Mistakes</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch55-exercise-19"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-20" class="exercise-item"><h3>ข้อ 20</h3><p>Propose one falsifiable research question for Fine-Tuning and specify the baseline, changed factor, and acceptance metric.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Domain Shift: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ทดลอง“last2blocksเพิ่มtargetF1≥.03โดยretentio…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ทดลอง“last2blocksเพิ่มtargetF1≥.03โดยretentionลด≤.01เทียบhead-only”; fixedbudget/…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ทดลอง“last2blocksเพิ่มtargetF1≥.03โดยretentionลด≤.01เทียบhead-only”; fixedbudget/pretrainedbaseและpairedholdoutCI</p><p>อ้างอิง: <a href="#chapter-55/section/topic-18">Domain Shift</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch55-exercise-20"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section></div><div id="local-lab-content"><section id="local-lab"><h2>Local lab: Python 3.12 บน CPU</h2><p>รันจาก repository root; ใช้ Python 3.12 แยก environment สำหรับ framework ตาม requirements ของชุดบท</p><pre><code>python3.12 -m venv .venv-course
+source .venv-course/bin/activate
+python -m pip install -r requirements-batch19.txt pytest
+(cd 55-fine-tuning &amp;&amp; python -m pytest tests -q -rs)</code></pre><p>ผลที่คาดหวัง: required tests ผ่านและไม่มี required test ถูก skip; GPU/integrations ที่ยังไม่รันต้องระบุแยก Python 3.15 ที่มากับเครื่องอาจใช้กับ framework wheels เหล่านี้ไม่ได้</p><h2>Mini Project — Transfer Learning Audit</h2>
+<p>Use a small pretrained backbone or pretrain a tiny network first.</p>
+<p>Compare:
+1. head-only tuning
+2. last-block + head tuning
+3. full fine-tuning</p>
+<p>Track:
+- trainable parameters
+- peak optimizer state estimate
+- train loss
+- validation metric
+- test metric
+- retained pretraining-task metric
+- time per step</p>
+<p>Explain adaptation-vs-forgetting trade-offs.</p><h2>Batch 19 Integration Project — Fine-Tuning, LoRA &amp; Instruction SFT</h2>
+<p>Batch 19 compares three adaptation paths under one repository.</p>
+<h3>Part A — Full Fine-Tuning</h3>
+<p>A frozen synthetic pretrained linear map is copied into a trainable model.</p>
+<p>The target task differs by a known low-rank weight update.</p>
+<pre><code class="language-text">base W
+↓ full parameter update
+target W'
+</code></pre>
+<p>Track:
+- trainable parameters
+- initial/final adaptation loss
+- retained base-task loss</p>
+<h3>Part B — LoRA</h3>
+<p>Use the same base/target problem.</p>
+<pre><code class="language-text">W frozen
++
+(alpha/r) B A
+↓
+adaptation
+</code></pre>
+<p>The lab verifies:
+- base W has requires_grad=False
+- B starts at zero
+- only A/B are optimized
+- trainable fraction is much smaller than full tuning</p>
+<h3>Part C — Instruction SFT</h3>
+<p>Synthetic chat-like token sequences contain:</p>
+<pre><code class="language-text">user prompt tokens
+↓ ignored labels
+
+assistant response tokens
+↓ supervised labels
+</code></pre>
+<p>A tiny causal GRU language model performs next-token SFT with ignore_index=-100.</p>
+<p>This part tests the <strong>data/loss mechanics</strong> of instruction tuning independently from model architecture.</p>
+<h3>Run</h3>
+<pre><code class="language-bash">python integration-project-batch19/src/fine_tune_lora_sft_lab.py --mode full --steps 20
+python integration-project-batch19/src/fine_tune_lora_sft_lab.py --mode lora --steps 20
+python integration-project-batch19/src/fine_tune_lora_sft_lab.py --mode sft --steps 10
+</code></pre>
+<h3>Optional PEFT Lab</h3>
+<pre><code class="language-bash">python -m pip install -r requirements-batch19-peft.txt
+</code></pre>
+<p>Then reproduce the LoRA experiment using Hugging Face PEFT and a tiny compatible causal-LM checkpoint.</p>
+<h3>Required Extensions</h3>
+<ol>
+<li>gradual unfreezing</li>
+<li>full FT vs LoRA validation curves</li>
+<li>q/v-only vs all-linear LoRA</li>
+<li>adapter merge/unmerge in PyTorch</li>
+<li>quantized-base memory estimate</li>
+<li>real chat-template preprocessing</li>
+<li>multi-turn assistant-only labels</li>
+<li>packed conversations</li>
+<li>held-out instruction evaluation</li>
+<li>capability-retention evaluation</li>
+</ol></section></div><label class="local-confirm"><input type="checkbox" id="local-lab-confirm"> ฉันรัน local lab และตรวจผลตาม rubric ด้วยตัวเองแล้ว</label><p class="local-note">สถานะนี้เป็นคำยืนยันของผู้เรียน เว็บไม่ได้รันหรือตรวจ Python บนเครื่องแทนคุณ</p></section>
+<section id="mastery-review" class="practice-section"><h2>หลักฐานตามเกณฑ์การเรียนรู้</h2><p>ทุก objective ต้องแสดงหลักฐานอธิบาย ทำนาย คำนวณ อ่าน shape/state debug และประยุกต์ พร้อมกรณีใหม่ ผลรัน source ผู้เรียนจริง และการประเมินซ้ำ เกณฑ์นี้ไม่รับประกันความเข้าใจทุกสถานการณ์ เปิด JavaScript เพื่อดูรายการที่ยังขาดและนำเข้ารายงานผู้ตรวจ</p></section><section class="coverage-section"><h2>แผนที่สิ่งที่เรียน → สิ่งที่ต้องแสดงให้ได้</h2><div id="coverage-table"></div></section><footer><span>ZERO TO ELITE AI ENGINEER · LEARNING STUDIO</span><span>อ่าน · derive · implement · debug · experiment · build</span></footer></div></main><noscript><style>.workbench,.sidebar,.reading-route,.lesson-toc,.mastery-status,#web-checks{display:none}main{margin-left:0}</style>อ่านเนื้อหา HTML ได้ตามปกติ เปิด JavaScript เพื่อใช้ห้องทดลองและตรวจคำตอบ</noscript></body></html>

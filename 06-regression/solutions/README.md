@@ -1,25 +1,24 @@
 # Chapter 06 Solutions
 
-1. `ŷ=Xw+b`
-2. difference ระหว่าง observed กับ predicted
-3. residual sum of squares / squared-error objective
-4. L2 / squared coefficient norm
-5. L1 / absolute coefficient norm
+ใช้ residual `e=prediction-target` และ objective `J=mean(e²)+λΣw²` สำหรับ Ridge ไม่ลงโทษ bias ตลอดบท ถ้าเทียบ sklearn Ridge ที่ใช้ sum of squares ต้องตั้ง `alpha=n*λ` เมื่อ feature matrix และการ scale เหมือนกัน
 
-6. `(2/n)Σ(wx+b-y)x`
-7. features nonlinear in x ได้ แต่ prediction ยังเป็น linear combination ของ parameters
-8. shrink solution ทำให้ sensitivity ต่อ correlated directions ลดลง
-9. penalty ทำงานบน coefficient magnitude จึงต้องทำ feature scales comparable
-10. inverse แพง/unstable กว่า numerical solvers ที่แก้ least-squares/system โดยตรง
-
-## RMSE
-
-```python
-rmse = np.sqrt(np.mean((y_true-y_pred)**2))
-```
-
-## R² method
-
-ใช้ training mean เฉพาะในความหมาย baseline ของชุดที่ metric กำลังวัดตามนิยาม R²; อย่าสับสนกับ preprocessing mean
-
-ข้อ challenge ให้ implement และ test เองเพื่อเห็น solver behavior
+1. หนึ่ง feature: `ŷ=wx+b`; หลาย feature: `ŷ=Xw+b`. ถ้า `X:(n,d)`, `w:(d,)`, `b:scalar` ผลต้องเป็น `(n,)`. ตัวอย่าง x=2,w=1,b=0 ให้ ŷ=2.
+2. ในบทนี้ residual `e=ŷ-y`. ที่ x=2,y=5,w=1,b=0 ได้ e=-3 จึงทำนายต่ำไป 3. บางตำราใช้ y-ŷ; squared loss เท่ากันแต่ต้อง derive gradient ตามนิยามเดียวกัน.
+3. OLS minimize `Σe²` ซึ่งมี minimizer เดียวกับ `mean(e²)` เมื่อ n คงที่. ข้อมูลเริ่มต้น e=[1,0,-1,-2,-3] ให้ SSE=15,MSE=3. ใช้ `np.linalg.lstsq` กับ design matrix `[X,ones]` เพื่อแก้โดยไม่ explicit inverse.
+4. Ridge เพิ่ม `λ||w||₂²`; ที่ w=1,λ=.2 เพิ่ม J=.2 และ gradient=.4. bias ไม่ถูกลงโทษตามนิยามนี้.
+5. Lasso เพิ่ม `λ||w||₁`. ที่ w≠0 subgradient คือ λ sign(w); ที่ 0 เป็นช่วง [-λ,λ]. อย่าอ้างว่า smooth derivative มีค่าเดียวที่ศูนย์. Proximal step ทำให้ coefficient เป็นศูนย์ได้ตรง ๆ.
+6. `J=(1/n)Σe_i²`, `∂e_i/∂w=x_i` จึง `∂J/∂w=(2/n)Σe_i x_i`; bias `(2/n)Σe_i`. เริ่มต้น 2ex=[-4,0,0,-4,-12] เฉลี่ย=-4; 2e เฉลี่ย=-2. η=.1 ให้ w'=1.4,b'=.2,MSE'=1.36. ตรวจ central differences `(J(w+h)-J(w-h))/(2h)` ที่ h=1e-5.
+7. `ŷ=w₁x+w₂x²+b` nonlinear ใน x แต่ linear ใน coefficients. ข้อมูล x สองค่ากลายเป็น matrix `(2,2)` ไม่ได้เพิ่ม neurons. ตรวจ x=2,w₁=1,w₂=.5,b=0 ได้ 4.
+8. เขียน SVD `X=UΣVᵀ`; OLS ใช้ factor `1/σ`, Ridge ใช้ `σ/(σ²+nλ)` ตาม mean-loss convention. ทิศ σ เล็กจึงไม่ขยาย noise เท่าเดิม. ทดลอง columns เกือบซ้ำและรายงาน condition number, variance ของ coefficients, validation MSE; Ridge ไม่รับประกันแก้ distribution shift.
+9. ถ้าเปลี่ยน feature x เป็น 100x coefficient ที่ทำนายเหมือนเดิมเล็กลง 100 เท่า penalty จึงไม่เท่าเดิม. fit scaler เฉพาะ train และ apply state เดิมกับ validation/test. เปรียบเทียบ coefficients ในหน่วยเดิมด้วย `coef_original=coef_scaled/scale` และปรับ intercept ตาม mean.
+10. `inv(XᵀX)@Xᵀy` เพิ่ม condition number เป็นกำลังสองและล้มเมื่อ rank deficient. ใช้ `lstsq`/QR/SVD หรือ `solve` กับ Ridge positive-definite system. ทดสอบ duplicated columns และตรวจ prediction/residual แทนคาดหวัง coefficients เฉพาะชุดเดียวใน OLS ที่คำตอบไม่ unique.
+11. `rmse=np.sqrt(np.mean((y_true-y_pred)**2))` หลังตรวจ shape เท่ากันและ input ไม่ว่าง. สำหรับ e=[1,0,-1,-2,-3] ต้องได้ sqrt(3)≈1.7320508076; exact prediction ได้ 0. ทดสอบ shape `(n,)` กับ `(n,1)` ต้อง reject หรือ normalize โดยตั้งใจเพื่อกัน broadcasting.
+12. `R²=1-Σ(y-ŷ)²/Σ(y-mean(y))²` ใช้ mean ของ y ในชุดที่กำลังประเมิน. exact predictions ได้ 1; ทำนาย mean ได้ 0 เมื่อ y ไม่ constant; แย่กว่า mean อาจติดลบ. ถ้า y constant denominator=0 ต้องประกาศ policy เช่น return 1 เมื่อ exact,0 เมื่อผิด ตาม finite convention หรือ reject โดยไม่หารศูนย์เงียบ ๆ.
+13. สอง features a,b และ degree2 แบบ include_bias=False ให้ `[a,b,a²,ab,b²]`; ตัวอย่าง a=2,b=3 ได้ `[2,3,4,6,9]`. ใช้ combinations_with_replacement ของ feature indices แต่ละ degree แล้ว product ตาม tuple. จำนวน columns คือ `C(d+p,p)-1`; เทียบ sklearn PolynomialFeatures ด้วยลำดับเดียวกัน รวม degree1 และ zero input tests.
+14. เก็บ loss ก่อน update และหลังแต่ละ simultaneous update โดยไม่แก้ list/state เก่า. plot x=จำนวน updates,y=J; legend ระบุ η และ regularization. exact example history เริ่ม [3,1.36,...]. เพิ่ม η=1 เพื่อเห็น divergence จริง; ถ้าใช้ log y ห้าม log(0), ทำ annotation เมื่อพบ nonfinite.
+15. split data ครั้งเดียว fit scaler/features/solver บน train สำหรับทุก degree1..10 แล้ววัด train/validation MSE. เลือก degree จาก validation และใช้ test ครั้งสุดท้าย. ตารางต้องมี degree,number of features,train,val; รูป U ไม่รับประกันในทุก dataset/seed. เพิ่ม noisy sample และวิเคราะห์ variance ของ degree สูง; tests ตรวจว่า pipeline ไม่ fit validation.
+16. เริ่มตรวจ finite inputs, scales, gradient formula/reduction และ learning rate. กรณี scalar exact data Hessian diag(4,2) จึงต้อง `0<η<.5` เพื่อให้ทุกทิศหด; η=.5 อยู่ boundary และ η=1 ทำให้บางทิศโต. ลด η,standardize features และทดสอบ finite gradients ก่อน update; อย่า clip แค่ภาพเพื่อซ่อน diverging weights.
+17. เปรียบเทียบ std ของ features และ coefficient units ก่อนตัดสินว่า solver ผิด. ทดลอง multiply column หนึ่งด้วย100 แล้ว fit Ridge ที่ λ เดิม เทียบกับ pipeline StandardScaler→Ridge; report coefficients กลับสู่หน่วยเดิม. ตรวจ λ vs alpha convention และ bias penalty ด้วย.
+18. ตรวจ leakage, sample size, degree เทียบจำนวน samples, conditioning และ train/validation curves. ลด degree หรือเพิ่ม regularization โดยเลือกจาก validation. เก็บ test ไว้ยืนยันครั้งสุดท้าย. หากเปลี่ยน split แล้วผลต่างมากให้รายงานความไม่แน่นอนแทนอ้างว่าทุก degree สูง overfit เสมอ.
+19. สำหรับ coordinate j ให้ `r_j=y-b-Xw+x_j w_j`; `rho=mean(x_j*r_j)` และ `z=mean(x_j²)`. เมื่อ J=mean(e²)+λΣ|w|, update `w_j=soft_threshold(rho,λ/2)/z`; ถ้า z=0 กำหนด w_j=0. update bias=mean(y-Xw) แยกจาก penalty. ทำซ้ำจน objective/coefficients เปลี่ยนน้อยและตรวจ KKT: nonzero `2mean(x_j e)+λsign(w_j)≈0`, zero `|2mean(x_j e)|≤λ`. sklearn Lasso ใช้ `(1/2n)SSE+alpha||w||₁` จึง alpha=λ/2. ทดสอบ λ=0,all-zero column, correlated columns และ objective ไม่เพิ่มใน coordinate minimization.
+20. กำหนด Elastic Net `J=mean(e²)+λ₁Σ|w|+λ₂Σw²`. Proximal gradient: `g=2Xᵀe/n+2λ₂w`; `z=w-ηg`; `w'=sign(z)*max(|z|-ηλ₁,0)`; `b'=b-η*2mean(e)` โดยใช้ weights เก่าในทั้งสอง gradients. เลือก η≤1/L ของ smooth Hessian (รวม intercept ถ้า update พร้อมกัน). sklearn ElasticNet objective ใช้ `SSE/(2n)+alpha*l1_ratio*L1+alpha*(1-l1_ratio)*L2/2`; จึง alpha=λ₁/2+λ₂ และ l1_ratio=(λ₁/2)/alpha. ทดสอบ λ₁=0 เทียบ Ridge, λ₂=0 เทียบ Lasso, zero solution,KKT และ validation MSE; รายงาน tolerance/iterations/preprocessing เดียวกันก่อนเปรียบเทียบ coefficients.

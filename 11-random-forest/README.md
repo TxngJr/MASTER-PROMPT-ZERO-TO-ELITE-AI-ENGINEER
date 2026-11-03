@@ -1,5 +1,11 @@
 # Chapter 11 — Random Forest
 
+## Interactive Animation Lab
+
+[เปิดภาพจำลองของบทนี้](animation.html) · [เลือกจากทั้ง 80 บท](../visual-lab/index.html)
+
+ดู flow ทีละขั้น → ทดลองเปลี่ยนค่า → อ่านสมการและโค้ด → ตอบคำถามเช็กความเข้าใจ แล้วกลับมาทำแบบฝึกหัดในบทนี้
+
 ## 1. Why This Matters
 
 Decision Tree เดี่ยวมี variance สูง: เปลี่ยน training samples เล็กน้อย tree อาจเปลี่ยนโครงสร้างมาก

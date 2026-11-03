@@ -1,0 +1,1226 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="บทเรียน AI Engineer ภาษาไทย พร้อมคณิตศาสตร์ทีละขั้นและห้องทดลองที่คำนวณจริง"><title>Mathematics: อ่าน vector, derivative และ probability เป็น · AI Engineer Studio</title><link rel="stylesheet" href="../visual-lab/assets/styles.css"><link rel="stylesheet" href="../visual-lab/assets/course.css"><script defer src="../visual-lab/assets/lessons.js"></script><script defer src="../visual-lab/assets/chapter-meta.js"></script><script defer src="../visual-lab/assets/course-math.js"></script><script defer src="../visual-lab/assets/course-models.js"></script><script defer src="../visual-lab/assets/course-models-v3.js"></script><script defer src="../visual-lab/assets/course-assessment.js"></script><script defer src="../visual-lab/assets/course-mastery.js"></script><script defer src="../visual-lab/assets/course-catalog.js"></script><script defer src="../visual-lab/assets/book-content.js"></script><script defer src="../visual-lab/assets/course-render.js"></script><script defer src="../visual-lab/assets/course-mastery-panel.js"></script><script defer src="../visual-lab/assets/quality-report.js"></script><script defer src="../visual-lab/assets/course-app.js"></script></head>
+<body data-chapter="2" data-root="../"><a class="skip-link" href="#main">ข้ามไปบทเรียน</a>
+<aside class="sidebar" id="sidebar" aria-label="เลือกบทเรียน"><a class="brand" href="../visual-lab/index.html"><span class="brand-mark">ai</span><span>AI ENGINEER<small>LEARN · DERIVE · BUILD</small></span></a><div class="sidebar-intro">อ่านให้เข้าใจ · คำนวณให้เห็น · เขียนให้เป็น</div><label class="search-box"><input id="search" type="search" placeholder="ค้นหาบท / attention" aria-label="ค้นหาบทเรียน"></label><label class="filter-label" for="phase-filter">เส้นทางการเรียน <span id="nav-count"></span></label><select id="phase-filter"><option value="">ทุก Phase</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option></select><nav id="chapter-list" class="chapter-list" aria-label="รายชื่อบท"></nav><div class="course-progress"><div><span>ผ่านโจทย์ในเว็บ</span><strong id="progress-count">0 / 80</strong></div><progress id="course-progress" max="80" value="0" aria-label="บทที่ผ่านโจทย์"></progress><a id="resume-link" href="#chapter-1">อ่านต่อจากเดิม →</a></div></aside>
+<button class="nav-backdrop" id="nav-backdrop" aria-label="ปิดเมนู" hidden></button>
+<main id="main" tabindex="-1"><header class="topbar"><div><button id="nav-toggle" class="icon-button mobile-menu" aria-label="เปิดเมนูบทเรียน" aria-expanded="false" aria-controls="sidebar">☰</button><span id="breadcrumb"></span></div><span class="local-badge"><i></i> คำนวณในเครื่อง · ไม่มี API</span></header><div class="content">
+<div class="chapter-navigation"><label for="chapter-select" class="sr-only">เลือกบทเรียน</label><select id="chapter-select"></select><div class="chapter-arrows"><button id="prev-chapter" class="icon-button" aria-label="บทก่อนหน้า">←</button><button id="next-chapter" class="icon-button" aria-label="บทถัดไป">→</button></div></div>
+<section class="chapter-hero"><div><p id="chapter-kicker" class="eyebrow"></p><h1 id="chapter-title">Mathematics: อ่าน vector, derivative และ probability เป็น</h1><p class="english-title" id="chapter-english"></p></div><span class="hero-symbol">f(x) ↗</span></section>
+<p id="quality-status" class="quality-status"></p><div id="mastery-status" class="mastery-status"></div><div class="reading-route"><a href="#chapter-2/section/overview">01 อ่านบทเรียน</a><a href="#workbench">02 ทดลองสมการ</a><a href="#practice">03 ฝึกและตรวจงาน</a><a href="#mastery-review">04 หลักฐานตามเกณฑ์</a></div>
+<nav id="lesson-toc" class="lesson-toc" aria-label="สารบัญบท"></nav>
+<section id="overview" class="course-overview"><span class="eyebrow">THE LEARNING CONTRACT</span><h2>เรียนบทนี้แล้วต้องทำอะไรได้</h2><p id="chapter-purpose"></p><div id="chapter-objectives"></div><div class="learning-hint">ทำนาย → เปลี่ยนทีละค่า → ตรวจตัวเลข → อธิบายเหตุผล → เขียนด้วย Python เอง</div></section>
+<section class="workbench lab-card" id="workbench" aria-label="ห้องทดลองคำนวณจริง"><div class="card-header"><div><span class="live-dot"></span><span class="eyebrow">COMPUTATION WORKBENCH</span></div><span class="simulation-label">ทุกภาพใช้ผลคำนวณชุดเดียวกัน</span></div><div class="lab-top"><label for="lab-select">เลือกกลไกที่ต้องการทดลอง</label><select id="lab-select"></select><p id="lab-question"></p></div><div class="workbench-grid"><div class="viz-column"><div class="compare-labels"><span>เส้นทึบ: ปัจจุบัน</span><span>เส้นประ: baseline ที่ตรึงไว้</span></div><div id="simulation" class="simulation"></div><div id="metrics" class="metrics"></div><div id="baseline-diff" class="baseline-diff"></div><div class="playback"><div class="playback-buttons"><button class="primary-button" id="update-once">อัปเดตหนึ่งก้าว</button><button class="secondary-button" id="train-many">▶ ฝึก 30 ก้าว</button><button class="icon-button" id="back-state" aria-label="ย้อนประวัติ">↶</button><button class="icon-button" id="forward-state" aria-label="ประวัติถัดไป">↷</button></div></div><div class="lab-secondary-actions"><button id="pin-baseline" class="text-button">ตรึง baseline ปัจจุบัน</button><button id="reset-lab" class="text-button">คืนค่าเริ่มต้น</button><button id="download-state" class="text-button">บันทึกผล JSON</button><span id="history-status"></span></div><p id="simulation-note" class="simulation-note"></p><p class="lab-error" id="lab-error" role="alert" hidden></p></div><div class="controls-column"><h3>เปลี่ยนทีละตัว แล้วสังเกตผล</h3><div id="lab-controls"></div><p class="control-note">แก้ weight ด้วยมือจะคำนวณ forward ใหม่; optimizer เปลี่ยน weights เมื่อกดอัปเดตเท่านั้น</p></div></div>
+<div class="trace-section"><div class="trace-toolbar"><h3>เดินสมการทีละ operation</h3><div><button id="trace-prev" class="icon-button" aria-label="operation ก่อนหน้า">←</button><button id="play-trace" class="secondary-button" aria-pressed="false">▶ เล่น flow</button><button id="trace-next" class="icon-button" aria-label="operation ถัดไป">→</button><span id="stage-counter"></span></div></div><label class="motion-control"><input id="reduce-motion" type="checkbox"> ลดภาพเคลื่อนไหว (หยุดการเล่นที่ค้างอยู่)</label><div id="operation-steps" class="operation-steps"></div><div id="flow-diagram" class="flow-diagram"></div><div id="active-operation" class="active-operation" aria-live="polite"></div><p class="control-note">ตัวเลขบนภาพปัดเศษเพื่อให้อ่านง่าย; บันทึก JSON เพื่อดูค่าที่ใช้คำนวณเต็ม precision</p><details open><summary>ตารางค่าระหว่างทาง — ตรวจด้วยมือได้</summary><div id="result-table"></div></details><div id="tensor-tables" class="tensor-tables"></div><details id="surface-details"><summary>ดู loss surface และเส้นทางของ w₁,b (ตรึง controls อื่น)</summary><div id="surface-chart"></div><p>surface คำนวณ objective ปัจจุบันโดยตรึง degree, penalty, ข้อมูล และ weights อื่น เส้นทางแสดงเฉพาะ snapshots ที่ค่าเหล่านี้ตรงกัน; นอกช่วง w=[−1,5], b=[−2,4] ให้ตรวจค่าจริงใน history</p></details><details><summary>ประวัติการเปลี่ยนค่า</summary><div id="history-table"></div></details></div></section>
+<article id="chapter-article" class="chapter-article"><section id="mechanism-1" class="teaching-section"><span class="section-kicker">CHAPTER 02 · ภาพ → สมการ → โค้ด</span><h2>1. มิติที่ตรงกันเป็นเงื่อนไขของการคำนวณ</h2><h3>โจทย์และเหตุผล</h3><p>dot product ของ [1,2] กับ [2,-1] คือ 1×2+2×(-1)=0 ไม่ได้แปลว่า vectors ไม่มีค่า แต่เป็นการตั้งฉากใน Euclidean geometry ส่วน matrix multiplication ต้องให้ inner dimensions เท่ากัน</p><h3>ตัวอย่างและคำอธิบาย</h3><p>dot product สูตรอะไร?</p><p>สำหรับ vectors ยาว d เท่ากัน <code>x·w=Σ_j x_j w_j</code>. [1,2]·[2,-1]=2-2=0 เป็น orthogonality เมื่อทั้งสอง vector ไม่เป็นศูนย์; ตรวจ inner dimension ก่อนคูณ.</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>x1: x₁,initial=1; x2: x₂,initial=2; w1: w₁,initial=2; w2: w₂,initial=-1; scale: scalar scale,initial=1</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = [[1, 2], [2, -1]]; ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</li><li>dot=Σxⱼwⱼ = 0; คูณรายพิกัดแล้วรวม; การคูณ scalar เพิ่ม magnitude แต่ไม่เปลี่ยน direction ถ้าค่าบวก</li><li>finite / normalized / bounded = 0; เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="linear-algebra-dot-product--ค-ณท-ละพ-ก-">เปิดการทดลองนี้</a><p class="failure-box">สร้าง C shape(m,n), loop i เป็น row ของ A,j เป็น column ของ B,k เป็น shared axis แล้ว `C[i,j]+=A[i,k]*B[k,j]`. ทดสอบ non-square (2,3)@(3,4)→(2,4) เพื่อจับโค้ดที่บังเอิญผ่านเฉพาะ square matrices.; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>สำหรับ vectors ยาว d เท่ากัน <code>x·w=Σ_j x_j w_j</code>. [1,2]·[2,-1]=2-2=0 เป็น orthogonality เมื่อทั้งสอง vector ไม่เป็นศูนย์; ตรวจ inner dimension ก่อนคูณ.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-1-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = [[1, 2], [2, -1]]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>dot=Σxⱼwⱼ</code> = 0<p>คูณรายพิกัดแล้วรวม; การคูณ scalar เพิ่ม magnitude แต่ไม่เปลี่ยน direction ถ้าค่าบวก</p></li><li><code>finite / normalized / bounded</code> = 0<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-1-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>shape / range</code> = [[1, 2], [2, -1]]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>dot=Σxⱼwⱼ</code> = 0<p>คูณรายพิกัดแล้วรวม; การคูณ scalar เพิ่ม magnitude แต่ไม่เปลี่ยน direction ถ้าค่าบวก</p></li><li><code>finite / normalized / bounded</code> = 0<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-1-code"><summary>โค้ด</summary><p>สำหรับ vectors ยาว d เท่ากัน <code>x·w=Σ_j x_j w_j</code>. [1,2]·[2,-1]=2-2=0 เป็น orthogonality เมื่อทั้งสอง vector ไม่เป็นศูนย์; ตรวจ inner dimension ก่อนคูณ.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-1-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = [[1, 2], [2, -1]]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>dot=Σxⱼwⱼ</code> = 0<p>คูณรายพิกัดแล้วรวม; การคูณ scalar เพิ่ม magnitude แต่ไม่เปลี่ยน direction ถ้าค่าบวก</p></li><li><code>finite / normalized / bounded</code> = 0<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-1"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-2" class="teaching-section"><span class="section-kicker">CHAPTER 02 · ภาพ → สมการ → โค้ด</span><h2>2. อนุพันธ์เป็นความไวเฉพาะจุด</h2><h3>โจทย์และเหตุผล</h3><p>สำหรับ f(x)=ax²+b อนุพันธ์ 2ax บอกว่าถ้าเพิ่ม x เล็กน้อย output จะเปลี่ยนไปทางไหน เส้น tangent เป็น local approximation; ห่างจากจุดมาก error ของ linear approximation จะโต</p><h3>ตัวอย่างและคำอธิบาย</h3><p>derivative วัดอะไร?</p><p>Derivative วัดอัตราเปลี่ยน output ต่อ input ณ จุดหนึ่ง ไม่ใช่ค่าเฉลี่ยตลอดกราฟ. f(x)=x² มี f′(2)=4 จึงประมาณ f(2+.01)≈4+.04=4.04; ค่าจริง4.0401 ต่าง .0001 จาก curvature.</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>x: x,initial=1; a: coefficient a,initial=1; b: offset b,initial=0; h: finite difference h,initial=0.001</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = 1; ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</li><li>f=ax²+b; f′=2ax = 2; อนุพันธ์วัด local sensitivity ไม่ใช่ค่าฟังก์ชัน</li><li>finite / normalized / bounded = 2; เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="algebra-derivative--tangent-ก-บ-">เปิดการทดลองนี้</a><p class="failure-box">สร้าง C shape(m,n), loop i เป็น row ของ A,j เป็น column ของ B,k เป็น shared axis แล้ว `C[i,j]+=A[i,k]*B[k,j]`. ทดสอบ non-square (2,3)@(3,4)→(2,4) เพื่อจับโค้ดที่บังเอิญผ่านเฉพาะ square matrices.; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Derivative วัดอัตราเปลี่ยน output ต่อ input ณ จุดหนึ่ง ไม่ใช่ค่าเฉลี่ยตลอดกราฟ. f(x)=x² มี f′(2)=4 จึงประมาณ f(2+.01)≈4+.04=4.04; ค่าจริง4.0401 ต่าง .0001 จาก curvature.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-2-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = 1<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>f=ax²+b; f′=2ax</code> = 2<p>อนุพันธ์วัด local sensitivity ไม่ใช่ค่าฟังก์ชัน</p></li><li><code>finite / normalized / bounded</code> = 2<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-2-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>shape / range</code> = 1<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>f=ax²+b; f′=2ax</code> = 2<p>อนุพันธ์วัด local sensitivity ไม่ใช่ค่าฟังก์ชัน</p></li><li><code>finite / normalized / bounded</code> = 2<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-2-code"><summary>โค้ด</summary><p>Derivative วัดอัตราเปลี่ยน output ต่อ input ณ จุดหนึ่ง ไม่ใช่ค่าเฉลี่ยตลอดกราฟ. f(x)=x² มี f′(2)=4 จึงประมาณ f(2+.01)≈4+.04=4.04; ค่าจริง4.0401 ต่าง .0001 จาก curvature.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-2-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = 1<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>f=ax²+b; f′=2ax</code> = 2<p>อนุพันธ์วัด local sensitivity ไม่ใช่ค่าฟังก์ชัน</p></li><li><code>finite / normalized / bounded</code> = 2<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-2"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-3" class="teaching-section"><span class="section-kicker">CHAPTER 02 · ภาพ → สมการ → โค้ด</span><h2>3. ความน่าจะเป็นต้องอ่านเงื่อนไขให้ถูกทิศ</h2><h3>โจทย์และเหตุผล</h3><p>P(evidence|class) ไม่ใช่ P(class|evidence) การคูณ prior แล้ว normalize ทำให้ base rate มีผลที่ตรวจได้ ก่อนใช้ Bayes ต้องเช็กว่าความน่าจะเป็นรวมสอดคล้องกันและ denominator ไม่เป็นศูนย์</p><h3>ตัวอย่างและคำอธิบาย</h3><p>conditional probability คืออะไร?</p><p><code>P(A|B)=P(A∩B)/P(B)</code> เมื่อ P(B)&gt;0. ถ้า P(A∩B)=.12,P(B)=.3 ได้ .4; ไม่เท่ากับ P(B|A) โดยอัตโนมัติเพราะ denominator ต่างกัน.</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>prior: P(class1),initial=0.4; like1: P(e|class1),initial=0.8; like0: P(e|class0),initial=0.2; alpha: add-α smoothing,initial=1</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>P(c) = 0.4; base rate ก่อนเห็นหลักฐาน</li><li>score₁=P(e|1)P(1) = [0.32000000000000006, 0.12]; ทิศเงื่อนไขของ likelihood ต่างจาก posterior</li><li>posterior=score₁/(score₀+score₁) = 0.7272727272727273; ผลสอง classes รวมเป็น 1</li><li>P(unseen)=(0+α)/(5+3α) = 0.125; ตัวอย่าง vocabulary 3 คำและ count รวม 5; ป้องกัน likelihood ศูนย์</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="bayes-probability--prior---lik">เปิดการทดลองนี้</a><p class="failure-box">สร้าง C shape(m,n), loop i เป็น row ของ A,j เป็น column ของ B,k เป็น shared axis แล้ว `C[i,j]+=A[i,k]*B[k,j]`. ทดสอบ non-square (2,3)@(3,4)→(2,4) เพื่อจับโค้ดที่บังเอิญผ่านเฉพาะ square matrices.; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p><code>P(A|B)=P(A∩B)/P(B)</code> เมื่อ P(B)&gt;0. ถ้า P(A∩B)=.12,P(B)=.3 ได้ .4; ไม่เท่ากับ P(B|A) โดยอัตโนมัติเพราะ denominator ต่างกัน.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-3-equation"><summary>สมการ</summary><ol><li><code>P(c)</code> = 0.4<p>base rate ก่อนเห็นหลักฐาน</p></li><li><code>score₁=P(e|1)P(1)</code> = [0.32000000000000006, 0.12]<p>ทิศเงื่อนไขของ likelihood ต่างจาก posterior</p></li><li><code>posterior=score₁/(score₀+score₁)</code> = 0.7272727272727273<p>ผลสอง classes รวมเป็น 1</p></li><li><code>P(unseen)=(0+α)/(5+3α)</code> = 0.125<p>ตัวอย่าง vocabulary 3 คำและ count รวม 5; ป้องกัน likelihood ศูนย์</p></li></ol></details><details id="help-mechanism-3-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>P(c)</code> = 0.4<p>base rate ก่อนเห็นหลักฐาน</p></li><li><code>score₁=P(e|1)P(1)</code> = [0.32000000000000006, 0.12]<p>ทิศเงื่อนไขของ likelihood ต่างจาก posterior</p></li><li><code>posterior=score₁/(score₀+score₁)</code> = 0.7272727272727273<p>ผลสอง classes รวมเป็น 1</p></li><li><code>P(unseen)=(0+α)/(5+3α)</code> = 0.125<p>ตัวอย่าง vocabulary 3 คำและ count รวม 5; ป้องกัน likelihood ศูนย์</p></li></ol></details><details id="help-mechanism-3-code"><summary>โค้ด</summary><p><code>P(A|B)=P(A∩B)/P(B)</code> เมื่อ P(B)&gt;0. ถ้า P(A∩B)=.12,P(B)=.3 ได้ .4; ไม่เท่ากับ P(B|A) โดยอัตโนมัติเพราะ denominator ต่างกัน.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-3-result"><summary>ผลการทดลอง</summary><ol><li><code>P(c)</code> = 0.4<p>base rate ก่อนเห็นหลักฐาน</p></li><li><code>score₁=P(e|1)P(1)</code> = [0.32000000000000006, 0.12]<p>ทิศเงื่อนไขของ likelihood ต่างจาก posterior</p></li><li><code>posterior=score₁/(score₀+score₁)</code> = 0.7272727272727273<p>ผลสอง classes รวมเป็น 1</p></li><li><code>P(unseen)=(0+α)/(5+3α)</code> = 0.125<p>ตัวอย่าง vocabulary 3 คำและ count รวม 5; ป้องกัน likelihood ศูนย์</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-3"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="reference" class="canonical-section"><h2>เนื้อหาครบทุกหัวข้อ พร้อมแผนที่ objective</h2><nav class="source-toc"><a href="#chapter-2/section/topic-1">1. Why This Matters</a> <a href="#chapter-2/section/topic-2">2. Prerequisites</a> <a href="#chapter-2/section/topic-3">3. Learning Objectives</a> <a href="#chapter-2/section/topic-4">4. Mental Model</a> <a href="#chapter-2/section/topic-5">5. Study Order</a> <a href="#chapter-2/section/topic-6">6. Scalars, Vectors, Matrices</a> <a href="#chapter-2/section/topic-7">7. Dot Product</a> <a href="#chapter-2/section/topic-8">8. Matrix Multiplication</a> <a href="#chapter-2/section/topic-9">9. Functions</a> <a href="#chapter-2/section/topic-10">10. Derivatives</a> <a href="#chapter-2/section/topic-11">11. Partial Derivatives &amp; Gradient</a> <a href="#chapter-2/section/topic-12">12. Chain Rule</a> <a href="#chapter-2/section/topic-13">13. Probability</a> <a href="#chapter-2/section/topic-14">14. Statistics</a> <a href="#chapter-2/section/topic-15">15. Covariance</a> <a href="#chapter-2/section/topic-16">16. Numerical Verification</a> <a href="#chapter-2/section/topic-17">17. Determinant / Inverse / Eigen</a> <a href="#chapter-2/section/topic-18">18. Jacobian</a> <a href="#chapter-2/section/topic-19">19. Hypothesis Testing Foundation</a> <a href="#chapter-2/section/topic-20">20. Common Mistakes</a> <a href="#chapter-2/section/topic-21">21. Interview Questions</a> <a href="#chapter-2/section/topic-22">22. Checklist</a> <a href="#chapter-2/section/topic-23">23. Mini Project</a> <a href="#chapter-2/section/topic-24">24. What&#x27;s Next</a> </nav><section id="topic-1" class="source-topic"><span id="source-02-mathematics-canonical-chapter-02-mathematics-foundations-for-ai" class="legacy-anchor"></span><span id="source-02-mathematics-canonical-1-why-this-matters" class="legacy-anchor"></span><h3>1. Why This Matters</h3>
+<p>AI model ส่วนใหญ่คือฟังก์ชันที่รับตัวเลขจำนวนมาก แล้วปรับ parameter เพื่อให้ objective ดีขึ้น ภาษาที่ใช้อธิบายสิ่งนี้คือ:</p>
+<pre><code class="language-text">algebra
+→ linear algebra
+→ calculus
+→ probability
+→ statistics
+</code></pre>
+<p>ถ้าเห็นสมการแล้วรีบข้าม คุณจะใช้ framework ได้แต่ debug model และอ่าน paper ยาก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>1. Why This Matters</h3>
+<p>AI model ส่วนใหญ่คือฟังก์ชันที่รับตัวเลขจำนวนมาก แล้วปรับ parameter เพื่อให้ objective ดีขึ้น ภาษาที่ใช้อธิบายสิ่งนี้คือ:</p>
+<pre><code class="language-text">algebra
+→ linear algebra
+→ calculus
+→ probability
+→ statistics
+</code></pre>
+<p>ถ้าเห็นสมการแล้วรีบข้าม คุณจะใช้ framework ได้แต่ debug model และอ่าน paper ยาก</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-1-equation"><summary>สมการ</summary><h3>1. Why This Matters</h3>
+<p>AI model ส่วนใหญ่คือฟังก์ชันที่รับตัวเลขจำนวนมาก แล้วปรับ parameter เพื่อให้ objective ดีขึ้น ภาษาที่ใช้อธิบายสิ่งนี้คือ:</p>
+<pre><code class="language-text">algebra
+→ linear algebra
+→ calculus
+→ probability
+→ statistics
+</code></pre>
+<p>ถ้าเห็นสมการแล้วรีบข้าม คุณจะใช้ framework ได้แต่ debug model และอ่าน paper ยาก</p></details><details id="help-topic-1-visual"><summary>ภาพและ shape</summary><h3>1. Why This Matters</h3>
+<p>AI model ส่วนใหญ่คือฟังก์ชันที่รับตัวเลขจำนวนมาก แล้วปรับ parameter เพื่อให้ objective ดีขึ้น ภาษาที่ใช้อธิบายสิ่งนี้คือ:</p>
+<pre><code class="language-text">algebra
+→ linear algebra
+→ calculus
+→ probability
+→ statistics
+</code></pre>
+<p>ถ้าเห็นสมการแล้วรีบข้าม คุณจะใช้ framework ได้แต่ debug model และอ่าน paper ยาก</p></details><details id="help-topic-1-code"><summary>โค้ด</summary><h3>1. Why This Matters</h3>
+<p>AI model ส่วนใหญ่คือฟังก์ชันที่รับตัวเลขจำนวนมาก แล้วปรับ parameter เพื่อให้ objective ดีขึ้น ภาษาที่ใช้อธิบายสิ่งนี้คือ:</p>
+<pre><code class="language-text">algebra
+→ linear algebra
+→ calculus
+→ probability
+→ statistics
+</code></pre>
+<p>ถ้าเห็นสมการแล้วรีบข้าม คุณจะใช้ framework ได้แต่ debug model และอ่าน paper ยาก</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-1-result"><summary>ผลการทดลอง</summary><h3>1. Why This Matters</h3>
+<p>AI model ส่วนใหญ่คือฟังก์ชันที่รับตัวเลขจำนวนมาก แล้วปรับ parameter เพื่อให้ objective ดีขึ้น ภาษาที่ใช้อธิบายสิ่งนี้คือ:</p>
+<pre><code class="language-text">algebra
+→ linear algebra
+→ calculus
+→ probability
+→ statistics
+</code></pre>
+<p>ถ้าเห็นสมการแล้วรีบข้าม คุณจะใช้ framework ได้แต่ debug model และอ่าน paper ยาก</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-1"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-2" class="source-topic"><span id="source-02-mathematics-canonical-2-prerequisites" class="legacy-anchor"></span><h3>2. Prerequisites</h3>
+<p>จาก Chapter 01:</p>
+<ul>
+<li>Python functions</li>
+<li>list/loop</li>
+<li>exceptions</li>
+<li>basic testing</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>2. Prerequisites</h3>
+<p>จาก Chapter 01:</p>
+<ul>
+<li>Python functions</li>
+<li>list/loop</li>
+<li>exceptions</li>
+<li>basic testing</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-2-equation"><summary>สมการ</summary><h3>2. Prerequisites</h3>
+<p>จาก Chapter 01:</p>
+<ul>
+<li>Python functions</li>
+<li>list/loop</li>
+<li>exceptions</li>
+<li>basic testing</li>
+</ul></details><details id="help-topic-2-visual"><summary>ภาพและ shape</summary><h3>2. Prerequisites</h3>
+<p>จาก Chapter 01:</p>
+<ul>
+<li>Python functions</li>
+<li>list/loop</li>
+<li>exceptions</li>
+<li>basic testing</li>
+</ul></details><details id="help-topic-2-code"><summary>โค้ด</summary><h3>2. Prerequisites</h3>
+<p>จาก Chapter 01:</p>
+<ul>
+<li>Python functions</li>
+<li>list/loop</li>
+<li>exceptions</li>
+<li>basic testing</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-2-result"><summary>ผลการทดลอง</summary><h3>2. Prerequisites</h3>
+<p>จาก Chapter 01:</p>
+<ul>
+<li>Python functions</li>
+<li>list/loop</li>
+<li>exceptions</li>
+<li>basic testing</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-2"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-3" class="source-topic"><span id="source-02-mathematics-canonical-3-learning-objectives" class="legacy-anchor"></span><h3>3. Learning Objectives</h3>
+<p>By the end of this chapter you can:</p>
+<ul>
+<li>อ่าน notation เช่น <code>x ∈ R^n</code></li>
+<li>คำนวณ vector operations</li>
+<li>ตรวจ dimension ของ matrix multiplication</li>
+<li>อธิบาย linear transformation</li>
+<li>เข้าใจ determinant/inverse/eigenvalue ในระดับ foundation</li>
+<li>derive derivative ของ polynomial</li>
+<li>ใช้ partial derivative, gradient และ chain rule</li>
+<li>เข้าใจ Jacobian ในฐานะ matrix ของ partial derivatives</li>
+<li>ใช้ probability, conditional probability และ Bayes</li>
+<li>คำนวณ expectation, variance, covariance</li>
+<li>แยก population กับ sample statistics</li>
+<li>อธิบาย hypothesis testing ในระดับพื้นฐาน</li>
+<li>ตรวจสูตรด้วย Python</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>3. Learning Objectives</h3>
+<p>By the end of this chapter you can:</p>
+<ul>
+<li>อ่าน notation เช่น <code>x ∈ R^n</code></li>
+<li>คำนวณ vector operations</li>
+<li>ตรวจ dimension ของ matrix multiplication</li>
+<li>อธิบาย linear transformation</li>
+<li>เข้าใจ determinant/inverse/eigenvalue ในระดับ foundation</li>
+<li>derive derivative ของ polynomial</li>
+<li>ใช้ partial derivative, gradient และ chain rule</li>
+<li>เข้าใจ Jacobian ในฐานะ matrix ของ partial derivatives</li>
+<li>ใช้ probability, conditional probability และ Bayes</li>
+<li>คำนวณ expectation, variance, covariance</li>
+<li>แยก population กับ sample statistics</li>
+<li>อธิบาย hypothesis testing ในระดับพื้นฐาน</li>
+<li>ตรวจสูตรด้วย Python</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-3-equation"><summary>สมการ</summary><h3>3. Learning Objectives</h3>
+<p>By the end of this chapter you can:</p>
+<ul>
+<li>อ่าน notation เช่น <code>x ∈ R^n</code></li>
+<li>คำนวณ vector operations</li>
+<li>ตรวจ dimension ของ matrix multiplication</li>
+<li>อธิบาย linear transformation</li>
+<li>เข้าใจ determinant/inverse/eigenvalue ในระดับ foundation</li>
+<li>derive derivative ของ polynomial</li>
+<li>ใช้ partial derivative, gradient และ chain rule</li>
+<li>เข้าใจ Jacobian ในฐานะ matrix ของ partial derivatives</li>
+<li>ใช้ probability, conditional probability และ Bayes</li>
+<li>คำนวณ expectation, variance, covariance</li>
+<li>แยก population กับ sample statistics</li>
+<li>อธิบาย hypothesis testing ในระดับพื้นฐาน</li>
+<li>ตรวจสูตรด้วย Python</li>
+</ul></details><details id="help-topic-3-visual"><summary>ภาพและ shape</summary><h3>3. Learning Objectives</h3>
+<p>By the end of this chapter you can:</p>
+<ul>
+<li>อ่าน notation เช่น <code>x ∈ R^n</code></li>
+<li>คำนวณ vector operations</li>
+<li>ตรวจ dimension ของ matrix multiplication</li>
+<li>อธิบาย linear transformation</li>
+<li>เข้าใจ determinant/inverse/eigenvalue ในระดับ foundation</li>
+<li>derive derivative ของ polynomial</li>
+<li>ใช้ partial derivative, gradient และ chain rule</li>
+<li>เข้าใจ Jacobian ในฐานะ matrix ของ partial derivatives</li>
+<li>ใช้ probability, conditional probability และ Bayes</li>
+<li>คำนวณ expectation, variance, covariance</li>
+<li>แยก population กับ sample statistics</li>
+<li>อธิบาย hypothesis testing ในระดับพื้นฐาน</li>
+<li>ตรวจสูตรด้วย Python</li>
+</ul></details><details id="help-topic-3-code"><summary>โค้ด</summary><h3>3. Learning Objectives</h3>
+<p>By the end of this chapter you can:</p>
+<ul>
+<li>อ่าน notation เช่น <code>x ∈ R^n</code></li>
+<li>คำนวณ vector operations</li>
+<li>ตรวจ dimension ของ matrix multiplication</li>
+<li>อธิบาย linear transformation</li>
+<li>เข้าใจ determinant/inverse/eigenvalue ในระดับ foundation</li>
+<li>derive derivative ของ polynomial</li>
+<li>ใช้ partial derivative, gradient และ chain rule</li>
+<li>เข้าใจ Jacobian ในฐานะ matrix ของ partial derivatives</li>
+<li>ใช้ probability, conditional probability และ Bayes</li>
+<li>คำนวณ expectation, variance, covariance</li>
+<li>แยก population กับ sample statistics</li>
+<li>อธิบาย hypothesis testing ในระดับพื้นฐาน</li>
+<li>ตรวจสูตรด้วย Python</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-3-result"><summary>ผลการทดลอง</summary><h3>3. Learning Objectives</h3>
+<p>By the end of this chapter you can:</p>
+<ul>
+<li>อ่าน notation เช่น <code>x ∈ R^n</code></li>
+<li>คำนวณ vector operations</li>
+<li>ตรวจ dimension ของ matrix multiplication</li>
+<li>อธิบาย linear transformation</li>
+<li>เข้าใจ determinant/inverse/eigenvalue ในระดับ foundation</li>
+<li>derive derivative ของ polynomial</li>
+<li>ใช้ partial derivative, gradient และ chain rule</li>
+<li>เข้าใจ Jacobian ในฐานะ matrix ของ partial derivatives</li>
+<li>ใช้ probability, conditional probability และ Bayes</li>
+<li>คำนวณ expectation, variance, covariance</li>
+<li>แยก population กับ sample statistics</li>
+<li>อธิบาย hypothesis testing ในระดับพื้นฐาน</li>
+<li>ตรวจสูตรด้วย Python</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-3"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-4" class="source-topic"><span id="source-02-mathematics-canonical-4-mental-model" class="legacy-anchor"></span><h3>4. Mental Model</h3>
+<pre><code class="language-text">data point      → vector
+dataset         → matrix
+model           → function
+model weights   → parameters
+error           → loss
+direction       → gradient
+uncertainty     → probability
+evidence        → statistics
+</code></pre><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-4-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>4. Mental Model</h3>
+<pre><code class="language-text">data point      → vector
+dataset         → matrix
+model           → function
+model weights   → parameters
+error           → loss
+direction       → gradient
+uncertainty     → probability
+evidence        → statistics
+</code></pre><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-4-equation"><summary>สมการ</summary><h3>4. Mental Model</h3>
+<pre><code class="language-text">data point      → vector
+dataset         → matrix
+model           → function
+model weights   → parameters
+error           → loss
+direction       → gradient
+uncertainty     → probability
+evidence        → statistics
+</code></pre></details><details id="help-topic-4-visual"><summary>ภาพและ shape</summary><h3>4. Mental Model</h3>
+<pre><code class="language-text">data point      → vector
+dataset         → matrix
+model           → function
+model weights   → parameters
+error           → loss
+direction       → gradient
+uncertainty     → probability
+evidence        → statistics
+</code></pre></details><details id="help-topic-4-code"><summary>โค้ด</summary><h3>4. Mental Model</h3>
+<pre><code class="language-text">data point      → vector
+dataset         → matrix
+model           → function
+model weights   → parameters
+error           → loss
+direction       → gradient
+uncertainty     → probability
+evidence        → statistics
+</code></pre><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-4-result"><summary>ผลการทดลอง</summary><h3>4. Mental Model</h3>
+<pre><code class="language-text">data point      → vector
+dataset         → matrix
+model           → function
+model weights   → parameters
+error           → loss
+direction       → gradient
+uncertainty     → probability
+evidence        → statistics
+</code></pre><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-4"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-5" class="source-topic"><span id="source-02-mathematics-canonical-5-study-order" class="legacy-anchor"></span><h3>5. Study Order</h3>
+<ol>
+<li><a href="../02-mathematics/theory/01-algebra-linear-algebra.md">Algebra &amp; Linear Algebra</a></li>
+<li><a href="../02-mathematics/theory/02-calculus.md">Calculus</a></li>
+<li><a href="../02-mathematics/theory/03-probability-statistics.md">Probability &amp; Statistics</a></li>
+<li><a href="../02-mathematics/src/math_toolkit.py">Math Toolkit</a></li>
+<li><a href="../02-mathematics/exercises/README.md">Exercises</a></li>
+<li><a href="../02-mathematics/mini-project/README.md">Mini Project</a></li>
+</ol><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-5-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>5. Study Order</h3>
+<ol>
+<li><a href="theory/01-algebra-linear-algebra.md">Algebra &amp; Linear Algebra</a></li>
+<li><a href="theory/02-calculus.md">Calculus</a></li>
+<li><a href="theory/03-probability-statistics.md">Probability &amp; Statistics</a></li>
+<li><a href="src/math_toolkit.py">Math Toolkit</a></li>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ol><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-5-equation"><summary>สมการ</summary><h3>5. Study Order</h3>
+<ol>
+<li><a href="theory/01-algebra-linear-algebra.md">Algebra &amp; Linear Algebra</a></li>
+<li><a href="theory/02-calculus.md">Calculus</a></li>
+<li><a href="theory/03-probability-statistics.md">Probability &amp; Statistics</a></li>
+<li><a href="src/math_toolkit.py">Math Toolkit</a></li>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ol></details><details id="help-topic-5-visual"><summary>ภาพและ shape</summary><h3>5. Study Order</h3>
+<ol>
+<li><a href="theory/01-algebra-linear-algebra.md">Algebra &amp; Linear Algebra</a></li>
+<li><a href="theory/02-calculus.md">Calculus</a></li>
+<li><a href="theory/03-probability-statistics.md">Probability &amp; Statistics</a></li>
+<li><a href="src/math_toolkit.py">Math Toolkit</a></li>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ol></details><details id="help-topic-5-code"><summary>โค้ด</summary><h3>5. Study Order</h3>
+<ol>
+<li><a href="theory/01-algebra-linear-algebra.md">Algebra &amp; Linear Algebra</a></li>
+<li><a href="theory/02-calculus.md">Calculus</a></li>
+<li><a href="theory/03-probability-statistics.md">Probability &amp; Statistics</a></li>
+<li><a href="src/math_toolkit.py">Math Toolkit</a></li>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ol><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-5-result"><summary>ผลการทดลอง</summary><h3>5. Study Order</h3>
+<ol>
+<li><a href="theory/01-algebra-linear-algebra.md">Algebra &amp; Linear Algebra</a></li>
+<li><a href="theory/02-calculus.md">Calculus</a></li>
+<li><a href="theory/03-probability-statistics.md">Probability &amp; Statistics</a></li>
+<li><a href="src/math_toolkit.py">Math Toolkit</a></li>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-5"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-6" class="source-topic"><span id="source-02-mathematics-canonical-6-scalars-vectors-matrices" class="legacy-anchor"></span><h3>6. Scalars, Vectors, Matrices</h3>
+<p>Scalar:</p>
+<pre><code class="language-text">x = 3.5
+</code></pre>
+<p>Vector:</p>
+<pre><code class="language-text">x = [x₁, x₂, ..., xₙ] ∈ Rⁿ
+</code></pre>
+<p>Matrix:</p>
+<pre><code class="language-text">A ∈ R^(m×n)
+</code></pre>
+<p>ตัวอย่าง dataset 100 ตัวอย่าง × 4 features:</p>
+<pre><code class="language-text">X ∈ R^(100×4)
+</code></pre>
+<p>row = sample, column = feature เป็น convention ที่พบบ่อย</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>Scalar มีหนึ่งค่า shape (), vector มีแกนเดียว เช่น (3,), matrix มีสองแกน เช่น (2,3). <code>[1,2,3]</code> กับ <code>[[1,2,3]]</code> มีสมาชิกสามตัวเหมือนกันแต่ shapes ต่างกัน; แกนที่เพิ่มมีผลต่อ broadcasting และ matrix multiplication.</p><p><code>np.asarray(x,dtype=float)*a</code> คูณ scalar เดียวทุกพิกัด. a=3,x=[1,-2,0]→[3,-6,0], shapeคง (3,); ทดสอบ scalar0,negative และไม่ mutate input.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-6-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Scalar มีหนึ่งค่า shape (), vector มีแกนเดียว เช่น (3,), matrix มีสองแกน เช่น (2,3). <code>[1,2,3]</code> กับ <code>[[1,2,3]]</code> มีสมาชิกสามตัวเหมือนกันแต่ shapes ต่างกัน; แกนที่เพิ่มมีผลต่อ broadcasting และ matrix multiplication.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-6-equation"><summary>สมการ</summary><p>Scalar มีหนึ่งค่า shape (), vector มีแกนเดียว เช่น (3,), matrix มีสองแกน เช่น (2,3). <code>[1,2,3]</code> กับ <code>[[1,2,3]]</code> มีสมาชิกสามตัวเหมือนกันแต่ shapes ต่างกัน; แกนที่เพิ่มมีผลต่อ broadcasting และ matrix multiplication.</p></details><details id="help-topic-6-visual"><summary>ภาพและ shape</summary><p>Scalar มีหนึ่งค่า shape (), vector มีแกนเดียว เช่น (3,), matrix มีสองแกน เช่น (2,3). <code>[1,2,3]</code> กับ <code>[[1,2,3]]</code> มีสมาชิกสามตัวเหมือนกันแต่ shapes ต่างกัน; แกนที่เพิ่มมีผลต่อ broadcasting และ matrix multiplication.</p></details><details id="help-topic-6-code"><summary>โค้ด</summary><p>Scalar มีหนึ่งค่า shape (), vector มีแกนเดียว เช่น (3,), matrix มีสองแกน เช่น (2,3). <code>[1,2,3]</code> กับ <code>[[1,2,3]]</code> มีสมาชิกสามตัวเหมือนกันแต่ shapes ต่างกัน; แกนที่เพิ่มมีผลต่อ broadcasting และ matrix multiplication.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-6-result"><summary>ผลการทดลอง</summary><p>Scalar มีหนึ่งค่า shape (), vector มีแกนเดียว เช่น (3,), matrix มีสองแกน เช่น (2,3). <code>[1,2,3]</code> กับ <code>[[1,2,3]]</code> มีสมาชิกสามตัวเหมือนกันแต่ shapes ต่างกัน; แกนที่เพิ่มมีผลต่อ broadcasting และ matrix multiplication.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-6"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-7" class="source-topic"><span id="source-02-mathematics-canonical-7-dot-product" class="legacy-anchor"></span><h3>7. Dot Product</h3>
+<pre><code class="language-text">a · b = Σᵢ aᵢbᵢ
+</code></pre>
+<p>ตัวอย่าง:</p>
+<pre><code class="language-text">[1,2,3] · [4,5,6]
+= 1×4 + 2×5 + 3×6
+= 32
+</code></pre>
+<p>ใน linear model:</p>
+<pre><code class="language-text">prediction = w · x + b
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>สำหรับ vectors ยาว d เท่ากัน <code>x·w=Σ_j x_j w_j</code>. [1,2]·[2,-1]=2-2=0 เป็น orthogonality เมื่อทั้งสอง vector ไม่เป็นศูนย์; ตรวจ inner dimension ก่อนคูณ.</p><p><code>cos(x,y)=dot(x,y)/(norm(x)*norm(y))</code>. [1,0] กับ [1,1] ได้1/√2≈.70710678; zero vector ไม่มี cosine ตามนิยามจึง reject. ตรวจ scaling positive ของ vector ไม่เปลี่ยน cosine และ shapes ต้องตรง.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-7-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>สำหรับ vectors ยาว d เท่ากัน <code>x·w=Σ_j x_j w_j</code>. [1,2]·[2,-1]=2-2=0 เป็น orthogonality เมื่อทั้งสอง vector ไม่เป็นศูนย์; ตรวจ inner dimension ก่อนคูณ.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-7-equation"><summary>สมการ</summary><p>สำหรับ vectors ยาว d เท่ากัน <code>x·w=Σ_j x_j w_j</code>. [1,2]·[2,-1]=2-2=0 เป็น orthogonality เมื่อทั้งสอง vector ไม่เป็นศูนย์; ตรวจ inner dimension ก่อนคูณ.</p></details><details id="help-topic-7-visual"><summary>ภาพและ shape</summary><p>สำหรับ vectors ยาว d เท่ากัน <code>x·w=Σ_j x_j w_j</code>. [1,2]·[2,-1]=2-2=0 เป็น orthogonality เมื่อทั้งสอง vector ไม่เป็นศูนย์; ตรวจ inner dimension ก่อนคูณ.</p></details><details id="help-topic-7-code"><summary>โค้ด</summary><p>สำหรับ vectors ยาว d เท่ากัน <code>x·w=Σ_j x_j w_j</code>. [1,2]·[2,-1]=2-2=0 เป็น orthogonality เมื่อทั้งสอง vector ไม่เป็นศูนย์; ตรวจ inner dimension ก่อนคูณ.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-7-result"><summary>ผลการทดลอง</summary><p>สำหรับ vectors ยาว d เท่ากัน <code>x·w=Σ_j x_j w_j</code>. [1,2]·[2,-1]=2-2=0 เป็น orthogonality เมื่อทั้งสอง vector ไม่เป็นศูนย์; ตรวจ inner dimension ก่อนคูณ.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-7"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-8" class="source-topic"><span id="source-02-mathematics-canonical-8-matrix-multiplication" class="legacy-anchor"></span><h3>8. Matrix Multiplication</h3>
+<p>ถ้า:</p>
+<pre><code class="language-text">A ∈ R^(m×n)
+B ∈ R^(n×p)
+</code></pre>
+<p>แล้ว:</p>
+<pre><code class="language-text">AB ∈ R^(m×p)
+</code></pre>
+<p>inner dimensions ต้องเท่ากัน</p>
+<p>นี่คือกฎที่ต้องตรวจทันทีเมื่อเจอ neural-network shape error</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>Matrix product (m,k)@(k,n) ต้องให้แกนที่ถูก sum มีความยาวเท่ากัน. (3,4) กับ (5,2) มี 4≠5 จึงไม่มี dot product ราย row-column; transpose สุ่ม ๆ ไม่ใช่การแก้จนกว่าจะรู้ความหมายของข้อมูล.</p><p>แต่ละ output <code>(Ax)_i</code> เป็น dot ของ row i ของ A กับ x. A=[[1,2],[3,4]],x=[2,-1] ให้ [0,2]; output ยาวเท่าจำนวน rows ของ A และ x ต้องยาวเท่าจำนวน columns.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-8-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Matrix product (m,k)@(k,n) ต้องให้แกนที่ถูก sum มีความยาวเท่ากัน. (3,4) กับ (5,2) มี 4≠5 จึงไม่มี dot product ราย row-column; transpose สุ่ม ๆ ไม่ใช่การแก้จนกว่าจะรู้ความหมายของข้อมูล.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-8-equation"><summary>สมการ</summary><p>Matrix product (m,k)@(k,n) ต้องให้แกนที่ถูก sum มีความยาวเท่ากัน. (3,4) กับ (5,2) มี 4≠5 จึงไม่มี dot product ราย row-column; transpose สุ่ม ๆ ไม่ใช่การแก้จนกว่าจะรู้ความหมายของข้อมูล.</p></details><details id="help-topic-8-visual"><summary>ภาพและ shape</summary><p>Matrix product (m,k)@(k,n) ต้องให้แกนที่ถูก sum มีความยาวเท่ากัน. (3,4) กับ (5,2) มี 4≠5 จึงไม่มี dot product ราย row-column; transpose สุ่ม ๆ ไม่ใช่การแก้จนกว่าจะรู้ความหมายของข้อมูล.</p></details><details id="help-topic-8-code"><summary>โค้ด</summary><p>Matrix product (m,k)@(k,n) ต้องให้แกนที่ถูก sum มีความยาวเท่ากัน. (3,4) กับ (5,2) มี 4≠5 จึงไม่มี dot product ราย row-column; transpose สุ่ม ๆ ไม่ใช่การแก้จนกว่าจะรู้ความหมายของข้อมูล.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-8-result"><summary>ผลการทดลอง</summary><p>Matrix product (m,k)@(k,n) ต้องให้แกนที่ถูก sum มีความยาวเท่ากัน. (3,4) กับ (5,2) มี 4≠5 จึงไม่มี dot product ราย row-column; transpose สุ่ม ๆ ไม่ใช่การแก้จนกว่าจะรู้ความหมายของข้อมูล.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-8"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-9" class="source-topic"><span id="source-02-mathematics-canonical-9-functions" class="legacy-anchor"></span><h3>9. Functions</h3>
+<pre><code class="language-text">f: X → Y
+</code></pre>
+<p>Linear regression ในอนาคต:</p>
+<pre><code class="language-text">f(x) = wx + b
+</code></pre>
+<p>Neural network คือ composition ของ functions จำนวนมาก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-9-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>9. Functions</h3>
+<pre><code class="language-text">f: X → Y
+</code></pre>
+<p>Linear regression ในอนาคต:</p>
+<pre><code class="language-text">f(x) = wx + b
+</code></pre>
+<p>Neural network คือ composition ของ functions จำนวนมาก</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-9-equation"><summary>สมการ</summary><h3>9. Functions</h3>
+<pre><code class="language-text">f: X → Y
+</code></pre>
+<p>Linear regression ในอนาคต:</p>
+<pre><code class="language-text">f(x) = wx + b
+</code></pre>
+<p>Neural network คือ composition ของ functions จำนวนมาก</p></details><details id="help-topic-9-visual"><summary>ภาพและ shape</summary><h3>9. Functions</h3>
+<pre><code class="language-text">f: X → Y
+</code></pre>
+<p>Linear regression ในอนาคต:</p>
+<pre><code class="language-text">f(x) = wx + b
+</code></pre>
+<p>Neural network คือ composition ของ functions จำนวนมาก</p></details><details id="help-topic-9-code"><summary>โค้ด</summary><h3>9. Functions</h3>
+<pre><code class="language-text">f: X → Y
+</code></pre>
+<p>Linear regression ในอนาคต:</p>
+<pre><code class="language-text">f(x) = wx + b
+</code></pre>
+<p>Neural network คือ composition ของ functions จำนวนมาก</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-9-result"><summary>ผลการทดลอง</summary><h3>9. Functions</h3>
+<pre><code class="language-text">f: X → Y
+</code></pre>
+<p>Linear regression ในอนาคต:</p>
+<pre><code class="language-text">f(x) = wx + b
+</code></pre>
+<p>Neural network คือ composition ของ functions จำนวนมาก</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-9"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-10" class="source-topic"><span id="source-02-mathematics-canonical-10-derivatives" class="legacy-anchor"></span><h3>10. Derivatives</h3>
+<p>Derivative วัด local rate of change:</p>
+<pre><code class="language-text">f'(x) = lim(h→0) [f(x+h)-f(x)]/h
+</code></pre>
+<p>ถ้า:</p>
+<pre><code class="language-text">f(x)=x²
+</code></pre>
+<p>จะได้:</p>
+<pre><code class="language-text">f'(x)=2x
+</code></pre>
+<p>ที่ x=3 slope = 6</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>Derivative วัดอัตราเปลี่ยน output ต่อ input ณ จุดหนึ่ง ไม่ใช่ค่าเฉลี่ยตลอดกราฟ. f(x)=x² มี f′(2)=4 จึงประมาณ f(2+.01)≈4+.04=4.04; ค่าจริง4.0401 ต่าง .0001 จาก curvature.</p><p>f′(x)=3x²+2. ที่ x=2 ได้14; central difference <code>(f(x+h)-f(x-h))/(2h)</code> h=1e-5 ควรใกล้14 ภายใน1e-7. ทดสอบหลาย x รวม0 และติดลบ ไม่ใช้ forward difference เป็นสูตรเดียวกันโดยไม่ระบุ error order.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-10-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Derivative วัดอัตราเปลี่ยน output ต่อ input ณ จุดหนึ่ง ไม่ใช่ค่าเฉลี่ยตลอดกราฟ. f(x)=x² มี f′(2)=4 จึงประมาณ f(2+.01)≈4+.04=4.04; ค่าจริง4.0401 ต่าง .0001 จาก curvature.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-10-equation"><summary>สมการ</summary><p>Derivative วัดอัตราเปลี่ยน output ต่อ input ณ จุดหนึ่ง ไม่ใช่ค่าเฉลี่ยตลอดกราฟ. f(x)=x² มี f′(2)=4 จึงประมาณ f(2+.01)≈4+.04=4.04; ค่าจริง4.0401 ต่าง .0001 จาก curvature.</p></details><details id="help-topic-10-visual"><summary>ภาพและ shape</summary><p>Derivative วัดอัตราเปลี่ยน output ต่อ input ณ จุดหนึ่ง ไม่ใช่ค่าเฉลี่ยตลอดกราฟ. f(x)=x² มี f′(2)=4 จึงประมาณ f(2+.01)≈4+.04=4.04; ค่าจริง4.0401 ต่าง .0001 จาก curvature.</p></details><details id="help-topic-10-code"><summary>โค้ด</summary><p>Derivative วัดอัตราเปลี่ยน output ต่อ input ณ จุดหนึ่ง ไม่ใช่ค่าเฉลี่ยตลอดกราฟ. f(x)=x² มี f′(2)=4 จึงประมาณ f(2+.01)≈4+.04=4.04; ค่าจริง4.0401 ต่าง .0001 จาก curvature.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-10-result"><summary>ผลการทดลอง</summary><p>Derivative วัดอัตราเปลี่ยน output ต่อ input ณ จุดหนึ่ง ไม่ใช่ค่าเฉลี่ยตลอดกราฟ. f(x)=x² มี f′(2)=4 จึงประมาณ f(2+.01)≈4+.04=4.04; ค่าจริง4.0401 ต่าง .0001 จาก curvature.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-10"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-11" class="source-topic"><span id="source-02-mathematics-canonical-11-partial-derivatives-gradient" class="legacy-anchor"></span><h3>11. Partial Derivatives &amp; Gradient</h3>
+<p>ถ้า:</p>
+<pre><code class="language-text">f(x,y)=x²+3y²
+</code></pre>
+<pre><code class="language-text">∂f/∂x = 2x
+∂f/∂y = 6y
+</code></pre>
+<p>Gradient:</p>
+<pre><code class="language-text">∇f = [2x, 6y]
+</code></pre>
+<p>Gradient บอกทิศที่ฟังก์ชันเพิ่มเร็วที่สุดใน local neighborhood; <code>-∇f</code> จึงเป็นแนวคิดพื้นฐานของ gradient descent</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>Gradient รวม partial derivatives ของ scalar-valued function เป็น vector. f(x,y)=x²+3y² มี ∇f=(2x,6y); ที่ (1,2) ได้ (2,12) shape (2,). ก้าว −η∇f ลดค่าท้องถิ่นเมื่อ η เหมาะสม ไม่รับประกัน global optimum ทุกฟังก์ชัน.</p><p>ทำ perturb หนึ่งพิกัดต่อครั้งโดยคงพิกัดอื่น ใช้ central difference. f=x²+3y² ที่(1,2)ต้องได้[2,12]; inputต้นฉบับต้องเหมือนเดิมหลังฟังก์ชัน, ทดสอบ(0,0),(-1,.5)และหลาย h เพื่อจับ index/aliasing bug.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-11-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Gradient รวม partial derivatives ของ scalar-valued function เป็น vector. f(x,y)=x²+3y² มี ∇f=(2x,6y); ที่ (1,2) ได้ (2,12) shape (2,). ก้าว −η∇f ลดค่าท้องถิ่นเมื่อ η เหมาะสม ไม่รับประกัน global optimum ทุกฟังก์ชัน.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-11-equation"><summary>สมการ</summary><p>Gradient รวม partial derivatives ของ scalar-valued function เป็น vector. f(x,y)=x²+3y² มี ∇f=(2x,6y); ที่ (1,2) ได้ (2,12) shape (2,). ก้าว −η∇f ลดค่าท้องถิ่นเมื่อ η เหมาะสม ไม่รับประกัน global optimum ทุกฟังก์ชัน.</p></details><details id="help-topic-11-visual"><summary>ภาพและ shape</summary><p>Gradient รวม partial derivatives ของ scalar-valued function เป็น vector. f(x,y)=x²+3y² มี ∇f=(2x,6y); ที่ (1,2) ได้ (2,12) shape (2,). ก้าว −η∇f ลดค่าท้องถิ่นเมื่อ η เหมาะสม ไม่รับประกัน global optimum ทุกฟังก์ชัน.</p></details><details id="help-topic-11-code"><summary>โค้ด</summary><p>Gradient รวม partial derivatives ของ scalar-valued function เป็น vector. f(x,y)=x²+3y² มี ∇f=(2x,6y); ที่ (1,2) ได้ (2,12) shape (2,). ก้าว −η∇f ลดค่าท้องถิ่นเมื่อ η เหมาะสม ไม่รับประกัน global optimum ทุกฟังก์ชัน.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-11-result"><summary>ผลการทดลอง</summary><p>Gradient รวม partial derivatives ของ scalar-valued function เป็น vector. f(x,y)=x²+3y² มี ∇f=(2x,6y); ที่ (1,2) ได้ (2,12) shape (2,). ก้าว −η∇f ลดค่าท้องถิ่นเมื่อ η เหมาะสม ไม่รับประกัน global optimum ทุกฟังก์ชัน.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-11"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-12" class="source-topic"><span id="source-02-mathematics-canonical-12-chain-rule" class="legacy-anchor"></span><h3>12. Chain Rule</h3>
+<p>ถ้า:</p>
+<pre><code class="language-text">u=g(x)
+y=f(u)
+</code></pre>
+<p>แล้ว:</p>
+<pre><code class="language-text">dy/dx = dy/du × du/dx
+</code></pre>
+<p>Backpropagation คือการใช้ chain rule ผ่าน computational graph อย่างเป็นระบบ</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>NN เป็น composition ของ operations. ถ้า z=wx,b=0,h=z²,L=h แล้ว dL/dw=(2z)x; x=2,w=3 ให้ z=6 และ gradient24. Backprop คูณ local derivatives ตามเส้นทางและบวกเมื่อมีหลายเส้นทาง.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-12-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>NN เป็น composition ของ operations. ถ้า z=wx,b=0,h=z²,L=h แล้ว dL/dw=(2z)x; x=2,w=3 ให้ z=6 และ gradient24. Backprop คูณ local derivatives ตามเส้นทางและบวกเมื่อมีหลายเส้นทาง.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-12-equation"><summary>สมการ</summary><p>NN เป็น composition ของ operations. ถ้า z=wx,b=0,h=z²,L=h แล้ว dL/dw=(2z)x; x=2,w=3 ให้ z=6 และ gradient24. Backprop คูณ local derivatives ตามเส้นทางและบวกเมื่อมีหลายเส้นทาง.</p></details><details id="help-topic-12-visual"><summary>ภาพและ shape</summary><p>NN เป็น composition ของ operations. ถ้า z=wx,b=0,h=z²,L=h แล้ว dL/dw=(2z)x; x=2,w=3 ให้ z=6 และ gradient24. Backprop คูณ local derivatives ตามเส้นทางและบวกเมื่อมีหลายเส้นทาง.</p></details><details id="help-topic-12-code"><summary>โค้ด</summary><p>NN เป็น composition ของ operations. ถ้า z=wx,b=0,h=z²,L=h แล้ว dL/dw=(2z)x; x=2,w=3 ให้ z=6 และ gradient24. Backprop คูณ local derivatives ตามเส้นทางและบวกเมื่อมีหลายเส้นทาง.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-12-result"><summary>ผลการทดลอง</summary><p>NN เป็น composition ของ operations. ถ้า z=wx,b=0,h=z²,L=h แล้ว dL/dw=(2z)x; x=2,w=3 ให้ z=6 และ gradient24. Backprop คูณ local derivatives ตามเส้นทางและบวกเมื่อมีหลายเส้นทาง.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-12"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-13" class="source-topic"><span id="source-02-mathematics-canonical-13-probability" class="legacy-anchor"></span><h3>13. Probability</h3>
+<p>Probability เป็นค่าระหว่าง 0 และ 1</p>
+<p>Conditional probability:</p>
+<pre><code class="language-text">P(A|B) = P(A∩B)/P(B)
+</code></pre>
+<p>Bayes:</p>
+<pre><code class="language-text">P(A|B) = P(B|A)P(A)/P(B)
+</code></pre>
+<p>Chapter Naive Bayes จะใช้ตรง ๆ</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p><code>P(A|B)=P(A∩B)/P(B)</code> เมื่อ P(B)&gt;0. ถ้า P(A∩B)=.12,P(B)=.3 ได้ .4; ไม่เท่ากับ P(B|A) โดยอัตโนมัติเพราะ denominator ต่างกัน.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-13-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p><code>P(A|B)=P(A∩B)/P(B)</code> เมื่อ P(B)&gt;0. ถ้า P(A∩B)=.12,P(B)=.3 ได้ .4; ไม่เท่ากับ P(B|A) โดยอัตโนมัติเพราะ denominator ต่างกัน.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-13-equation"><summary>สมการ</summary><p><code>P(A|B)=P(A∩B)/P(B)</code> เมื่อ P(B)&gt;0. ถ้า P(A∩B)=.12,P(B)=.3 ได้ .4; ไม่เท่ากับ P(B|A) โดยอัตโนมัติเพราะ denominator ต่างกัน.</p></details><details id="help-topic-13-visual"><summary>ภาพและ shape</summary><p><code>P(A|B)=P(A∩B)/P(B)</code> เมื่อ P(B)&gt;0. ถ้า P(A∩B)=.12,P(B)=.3 ได้ .4; ไม่เท่ากับ P(B|A) โดยอัตโนมัติเพราะ denominator ต่างกัน.</p></details><details id="help-topic-13-code"><summary>โค้ด</summary><p><code>P(A|B)=P(A∩B)/P(B)</code> เมื่อ P(B)&gt;0. ถ้า P(A∩B)=.12,P(B)=.3 ได้ .4; ไม่เท่ากับ P(B|A) โดยอัตโนมัติเพราะ denominator ต่างกัน.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-13-result"><summary>ผลการทดลอง</summary><p><code>P(A|B)=P(A∩B)/P(B)</code> เมื่อ P(B)&gt;0. ถ้า P(A∩B)=.12,P(B)=.3 ได้ .4; ไม่เท่ากับ P(B|A) โดยอัตโนมัติเพราะ denominator ต่างกัน.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-13"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-14" class="source-topic"><span id="source-02-mathematics-canonical-14-statistics" class="legacy-anchor"></span><h3>14. Statistics</h3>
+<p>Mean:</p>
+<pre><code class="language-text">x̄=(1/n)Σxᵢ
+</code></pre>
+<p>Population variance:</p>
+<pre><code class="language-text">σ²=(1/n)Σ(xᵢ-μ)²
+</code></pre>
+<p>Sample variance:</p>
+<pre><code class="language-text">s²=(1/(n-1))Σ(xᵢ-x̄)²
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>Population variance หาร n ของ population ที่รู้ครบ; unbiased sample variance หาร n−1 เมื่อประมาณ population variance จาก IID sample ที่ใช้ sample mean. [1,3] มี squared deviationsรวม2 จึง population variance1, sample variance2; sample n&lt;2 ต้อง reject.</p><p>ใช้ covariance/std ที่มี ddof เดียวกัน: corr=cov(x,y)/(std(x)std(y)). x=[1,2,3],y=[2,4,6] ได้1; feature constant ต้อง reject/คืนสถานะ undefined แทนหารศูนย์หรืออ้างว่า correlation0 มีความหมายเดียวกัน.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-14-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Population variance หาร n ของ population ที่รู้ครบ; unbiased sample variance หาร n−1 เมื่อประมาณ population variance จาก IID sample ที่ใช้ sample mean. [1,3] มี squared deviationsรวม2 จึง population variance1, sample variance2; sample n&lt;2 ต้อง reject.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-14-equation"><summary>สมการ</summary><p>Population variance หาร n ของ population ที่รู้ครบ; unbiased sample variance หาร n−1 เมื่อประมาณ population variance จาก IID sample ที่ใช้ sample mean. [1,3] มี squared deviationsรวม2 จึง population variance1, sample variance2; sample n&lt;2 ต้อง reject.</p></details><details id="help-topic-14-visual"><summary>ภาพและ shape</summary><p>Population variance หาร n ของ population ที่รู้ครบ; unbiased sample variance หาร n−1 เมื่อประมาณ population variance จาก IID sample ที่ใช้ sample mean. [1,3] มี squared deviationsรวม2 จึง population variance1, sample variance2; sample n&lt;2 ต้อง reject.</p></details><details id="help-topic-14-code"><summary>โค้ด</summary><p>Population variance หาร n ของ population ที่รู้ครบ; unbiased sample variance หาร n−1 เมื่อประมาณ population variance จาก IID sample ที่ใช้ sample mean. [1,3] มี squared deviationsรวม2 จึง population variance1, sample variance2; sample n&lt;2 ต้อง reject.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-14-result"><summary>ผลการทดลอง</summary><p>Population variance หาร n ของ population ที่รู้ครบ; unbiased sample variance หาร n−1 เมื่อประมาณ population variance จาก IID sample ที่ใช้ sample mean. [1,3] มี squared deviationsรวม2 จึง population variance1, sample variance2; sample n&lt;2 ต้อง reject.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-14"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-15" class="source-topic"><span id="source-02-mathematics-canonical-15-covariance" class="legacy-anchor"></span><h3>15. Covariance</h3>
+<pre><code class="language-text">Cov(X,Y)=E[(X-E[X])(Y-E[Y])]
+</code></pre>
+<p>ค่าบวก: มีแนวโน้มเพิ่มไปด้วยกัน<br />
+ค่าลบ: มีแนวโน้มสวนกัน<br />
+ใกล้ศูนย์: linear co-movement ต่ำ แต่ไม่ได้แปลว่า independent</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>Correlation บอก linear association ไม่ระบุ causal direction หรือ confounders. อุณหภูมิทำให้ยอดไอศกรีมและการจมน้ำเพิ่มพร้อมกันได้ โดยไอศกรีมไม่ใช่สาเหตุที่พิสูจน์แล้ว; ต้องมี causal assumptions/experimental design เพิ่ม.</p><p>ใช้ covariance/std ที่มี ddof เดียวกัน: corr=cov(x,y)/(std(x)std(y)). x=[1,2,3],y=[2,4,6] ได้1; feature constant ต้อง reject/คืนสถานะ undefined แทนหารศูนย์หรืออ้างว่า correlation0 มีความหมายเดียวกัน.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-15-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Correlation บอก linear association ไม่ระบุ causal direction หรือ confounders. อุณหภูมิทำให้ยอดไอศกรีมและการจมน้ำเพิ่มพร้อมกันได้ โดยไอศกรีมไม่ใช่สาเหตุที่พิสูจน์แล้ว; ต้องมี causal assumptions/experimental design เพิ่ม.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-15-equation"><summary>สมการ</summary><p>Correlation บอก linear association ไม่ระบุ causal direction หรือ confounders. อุณหภูมิทำให้ยอดไอศกรีมและการจมน้ำเพิ่มพร้อมกันได้ โดยไอศกรีมไม่ใช่สาเหตุที่พิสูจน์แล้ว; ต้องมี causal assumptions/experimental design เพิ่ม.</p></details><details id="help-topic-15-visual"><summary>ภาพและ shape</summary><p>Correlation บอก linear association ไม่ระบุ causal direction หรือ confounders. อุณหภูมิทำให้ยอดไอศกรีมและการจมน้ำเพิ่มพร้อมกันได้ โดยไอศกรีมไม่ใช่สาเหตุที่พิสูจน์แล้ว; ต้องมี causal assumptions/experimental design เพิ่ม.</p></details><details id="help-topic-15-code"><summary>โค้ด</summary><p>Correlation บอก linear association ไม่ระบุ causal direction หรือ confounders. อุณหภูมิทำให้ยอดไอศกรีมและการจมน้ำเพิ่มพร้อมกันได้ โดยไอศกรีมไม่ใช่สาเหตุที่พิสูจน์แล้ว; ต้องมี causal assumptions/experimental design เพิ่ม.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-15-result"><summary>ผลการทดลอง</summary><p>Correlation บอก linear association ไม่ระบุ causal direction หรือ confounders. อุณหภูมิทำให้ยอดไอศกรีมและการจมน้ำเพิ่มพร้อมกันได้ โดยไอศกรีมไม่ใช่สาเหตุที่พิสูจน์แล้ว; ต้องมี causal assumptions/experimental design เพิ่ม.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-15"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-16" class="source-topic"><span id="source-02-mathematics-canonical-16-numerical-verification" class="legacy-anchor"></span><h3>16. Numerical Verification</h3>
+<p>finite difference:</p>
+<pre><code class="language-python">def derivative(f, x: float, h: float = 1e-6) -&gt; float:
+    return (f(x + h) - f(x - h)) / (2 * h)
+</code></pre>
+<p>ใช้ตรวจ analytic derivative ได้ แต่มี numerical error และไม่ใช่ replacement ของ symbolic reasoning</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>f′(x)=3x²+2. ที่ x=2 ได้14; central difference <code>(f(x+h)-f(x-h))/(2h)</code> h=1e-5 ควรใกล้14 ภายใน1e-7. ทดสอบหลาย x รวม0 และติดลบ ไม่ใช้ forward difference เป็นสูตรเดียวกันโดยไม่ระบุ error order.</p><p>เมื่อ h เล็กมาก f(x+h) กับ f(x-h) แทบเท่ากัน การลบเสียเลขนัยสำคัญและ roundoff หารด้วย h ถูกขยาย. Sweep h เช่น1e-2..1e-12 แล้วเทียบ analytic derivative; error มักลดก่อนเพิ่ม ไม่รับประกัน h ยิ่งเล็กยิ่งแม่น.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-16-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>f′(x)=3x²+2. ที่ x=2 ได้14; central difference <code>(f(x+h)-f(x-h))/(2h)</code> h=1e-5 ควรใกล้14 ภายใน1e-7. ทดสอบหลาย x รวม0 และติดลบ ไม่ใช้ forward difference เป็นสูตรเดียวกันโดยไม่ระบุ error order.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-16-equation"><summary>สมการ</summary><p>f′(x)=3x²+2. ที่ x=2 ได้14; central difference <code>(f(x+h)-f(x-h))/(2h)</code> h=1e-5 ควรใกล้14 ภายใน1e-7. ทดสอบหลาย x รวม0 และติดลบ ไม่ใช้ forward difference เป็นสูตรเดียวกันโดยไม่ระบุ error order.</p></details><details id="help-topic-16-visual"><summary>ภาพและ shape</summary><p>f′(x)=3x²+2. ที่ x=2 ได้14; central difference <code>(f(x+h)-f(x-h))/(2h)</code> h=1e-5 ควรใกล้14 ภายใน1e-7. ทดสอบหลาย x รวม0 และติดลบ ไม่ใช้ forward difference เป็นสูตรเดียวกันโดยไม่ระบุ error order.</p></details><details id="help-topic-16-code"><summary>โค้ด</summary><p>f′(x)=3x²+2. ที่ x=2 ได้14; central difference <code>(f(x+h)-f(x-h))/(2h)</code> h=1e-5 ควรใกล้14 ภายใน1e-7. ทดสอบหลาย x รวม0 และติดลบ ไม่ใช้ forward difference เป็นสูตรเดียวกันโดยไม่ระบุ error order.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-16-result"><summary>ผลการทดลอง</summary><p>f′(x)=3x²+2. ที่ x=2 ได้14; central difference <code>(f(x+h)-f(x-h))/(2h)</code> h=1e-5 ควรใกล้14 ภายใน1e-7. ทดสอบหลาย x รวม0 และติดลบ ไม่ใช้ forward difference เป็นสูตรเดียวกันโดยไม่ระบุ error order.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-16"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-17" class="source-topic"><span id="source-02-mathematics-canonical-17-determinant-inverse-eigen" class="legacy-anchor"></span><h3>17. Determinant / Inverse / Eigen</h3>
+<p>Foundation intuition:</p>
+<ul>
+<li>determinant บอก scale/orientation effect ของ square linear transformation และช่วยบอก singularity</li>
+<li>inverse คือ transformation ที่ย้อนอีก transformation ได้ เมื่อ inverse มีอยู่</li>
+<li>eigenvector คือ direction ที่ transformation ไม่เปลี่ยนแนว มีเพียง scale</li>
+<li>eigenvalue คือ scale factor ของ eigenvector</li>
+</ul>
+<p>PCA ใน Chapter 15 จะกลับมาใช้ eigen/SVD ลึกขึ้น</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>2×2 ใช้ ad−bc; [[1,2],[3,4]] ได้−2. 3×3 ขยาย cofactor แถวแรกพร้อมสลับเครื่องหมาย +−+; identityได้1, duplicated rowsได้0, สลับสอง rows เปลี่ยนเครื่องหมาย. เทียบ np.linalg.det ด้วย tolerance ไม่ตรวจ float equality ทุกกรณี.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-17-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>2×2 ใช้ ad−bc; [[1,2],[3,4]] ได้−2. 3×3 ขยาย cofactor แถวแรกพร้อมสลับเครื่องหมาย +−+; identityได้1, duplicated rowsได้0, สลับสอง rows เปลี่ยนเครื่องหมาย. เทียบ np.linalg.det ด้วย tolerance ไม่ตรวจ float equality ทุกกรณี.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-17-equation"><summary>สมการ</summary><p>2×2 ใช้ ad−bc; [[1,2],[3,4]] ได้−2. 3×3 ขยาย cofactor แถวแรกพร้อมสลับเครื่องหมาย +−+; identityได้1, duplicated rowsได้0, สลับสอง rows เปลี่ยนเครื่องหมาย. เทียบ np.linalg.det ด้วย tolerance ไม่ตรวจ float equality ทุกกรณี.</p></details><details id="help-topic-17-visual"><summary>ภาพและ shape</summary><p>2×2 ใช้ ad−bc; [[1,2],[3,4]] ได้−2. 3×3 ขยาย cofactor แถวแรกพร้อมสลับเครื่องหมาย +−+; identityได้1, duplicated rowsได้0, สลับสอง rows เปลี่ยนเครื่องหมาย. เทียบ np.linalg.det ด้วย tolerance ไม่ตรวจ float equality ทุกกรณี.</p></details><details id="help-topic-17-code"><summary>โค้ด</summary><p>2×2 ใช้ ad−bc; [[1,2],[3,4]] ได้−2. 3×3 ขยาย cofactor แถวแรกพร้อมสลับเครื่องหมาย +−+; identityได้1, duplicated rowsได้0, สลับสอง rows เปลี่ยนเครื่องหมาย. เทียบ np.linalg.det ด้วย tolerance ไม่ตรวจ float equality ทุกกรณี.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-17-result"><summary>ผลการทดลอง</summary><p>2×2 ใช้ ad−bc; [[1,2],[3,4]] ได้−2. 3×3 ขยาย cofactor แถวแรกพร้อมสลับเครื่องหมาย +−+; identityได้1, duplicated rowsได้0, สลับสอง rows เปลี่ยนเครื่องหมาย. เทียบ np.linalg.det ด้วย tolerance ไม่ตรวจ float equality ทุกกรณี.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-17"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-18" class="source-topic"><span id="source-02-mathematics-canonical-18-jacobian" class="legacy-anchor"></span><h3>18. Jacobian</h3>
+<p>ถ้า function รับ vector และคืน vector Jacobian เก็บ partial derivatives:</p>
+<pre><code class="language-text">J_ij = ∂f_i / ∂x_j
+</code></pre>
+<p>เป็น generalization สำคัญของ derivative ไปสู่หลายมิติ</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-18-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>18. Jacobian</h3>
+<p>ถ้า function รับ vector และคืน vector Jacobian เก็บ partial derivatives:</p>
+<pre><code class="language-text">J_ij = ∂f_i / ∂x_j
+</code></pre>
+<p>เป็น generalization สำคัญของ derivative ไปสู่หลายมิติ</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-18-equation"><summary>สมการ</summary><h3>18. Jacobian</h3>
+<p>ถ้า function รับ vector และคืน vector Jacobian เก็บ partial derivatives:</p>
+<pre><code class="language-text">J_ij = ∂f_i / ∂x_j
+</code></pre>
+<p>เป็น generalization สำคัญของ derivative ไปสู่หลายมิติ</p></details><details id="help-topic-18-visual"><summary>ภาพและ shape</summary><h3>18. Jacobian</h3>
+<p>ถ้า function รับ vector และคืน vector Jacobian เก็บ partial derivatives:</p>
+<pre><code class="language-text">J_ij = ∂f_i / ∂x_j
+</code></pre>
+<p>เป็น generalization สำคัญของ derivative ไปสู่หลายมิติ</p></details><details id="help-topic-18-code"><summary>โค้ด</summary><h3>18. Jacobian</h3>
+<p>ถ้า function รับ vector และคืน vector Jacobian เก็บ partial derivatives:</p>
+<pre><code class="language-text">J_ij = ∂f_i / ∂x_j
+</code></pre>
+<p>เป็น generalization สำคัญของ derivative ไปสู่หลายมิติ</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-18-result"><summary>ผลการทดลอง</summary><h3>18. Jacobian</h3>
+<p>ถ้า function รับ vector และคืน vector Jacobian เก็บ partial derivatives:</p>
+<pre><code class="language-text">J_ij = ∂f_i / ∂x_j
+</code></pre>
+<p>เป็น generalization สำคัญของ derivative ไปสู่หลายมิติ</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-18"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-19" class="source-topic"><span id="source-02-mathematics-canonical-19-hypothesis-testing-foundation" class="legacy-anchor"></span><h3>19. Hypothesis Testing Foundation</h3>
+<p>องค์ประกอบ:</p>
+<ol>
+<li>null hypothesis H₀</li>
+<li>alternative H₁</li>
+<li>test statistic</li>
+<li>sampling distribution</li>
+<li>p-value / decision rule</li>
+<li>significance level α</li>
+</ol>
+<p><strong>p-value ไม่ใช่ probability ที่ H₀ เป็นจริง</strong></p>
+<p>จะกลับมาเรียนเมื่อทำ experiment/evaluation</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-19-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>19. Hypothesis Testing Foundation</h3>
+<p>องค์ประกอบ:</p>
+<ol>
+<li>null hypothesis H₀</li>
+<li>alternative H₁</li>
+<li>test statistic</li>
+<li>sampling distribution</li>
+<li>p-value / decision rule</li>
+<li>significance level α</li>
+</ol>
+<p><strong>p-value ไม่ใช่ probability ที่ H₀ เป็นจริง</strong></p>
+<p>จะกลับมาเรียนเมื่อทำ experiment/evaluation</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-19-equation"><summary>สมการ</summary><h3>19. Hypothesis Testing Foundation</h3>
+<p>องค์ประกอบ:</p>
+<ol>
+<li>null hypothesis H₀</li>
+<li>alternative H₁</li>
+<li>test statistic</li>
+<li>sampling distribution</li>
+<li>p-value / decision rule</li>
+<li>significance level α</li>
+</ol>
+<p><strong>p-value ไม่ใช่ probability ที่ H₀ เป็นจริง</strong></p>
+<p>จะกลับมาเรียนเมื่อทำ experiment/evaluation</p></details><details id="help-topic-19-visual"><summary>ภาพและ shape</summary><h3>19. Hypothesis Testing Foundation</h3>
+<p>องค์ประกอบ:</p>
+<ol>
+<li>null hypothesis H₀</li>
+<li>alternative H₁</li>
+<li>test statistic</li>
+<li>sampling distribution</li>
+<li>p-value / decision rule</li>
+<li>significance level α</li>
+</ol>
+<p><strong>p-value ไม่ใช่ probability ที่ H₀ เป็นจริง</strong></p>
+<p>จะกลับมาเรียนเมื่อทำ experiment/evaluation</p></details><details id="help-topic-19-code"><summary>โค้ด</summary><h3>19. Hypothesis Testing Foundation</h3>
+<p>องค์ประกอบ:</p>
+<ol>
+<li>null hypothesis H₀</li>
+<li>alternative H₁</li>
+<li>test statistic</li>
+<li>sampling distribution</li>
+<li>p-value / decision rule</li>
+<li>significance level α</li>
+</ol>
+<p><strong>p-value ไม่ใช่ probability ที่ H₀ เป็นจริง</strong></p>
+<p>จะกลับมาเรียนเมื่อทำ experiment/evaluation</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-19-result"><summary>ผลการทดลอง</summary><h3>19. Hypothesis Testing Foundation</h3>
+<p>องค์ประกอบ:</p>
+<ol>
+<li>null hypothesis H₀</li>
+<li>alternative H₁</li>
+<li>test statistic</li>
+<li>sampling distribution</li>
+<li>p-value / decision rule</li>
+<li>significance level α</li>
+</ol>
+<p><strong>p-value ไม่ใช่ probability ที่ H₀ เป็นจริง</strong></p>
+<p>จะกลับมาเรียนเมื่อทำ experiment/evaluation</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-19"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-20" class="source-topic"><span id="source-02-mathematics-canonical-20-common-mistakes" class="legacy-anchor"></span><h3>20. Common Mistakes</h3>
+<ol>
+<li>คูณ matrix โดยไม่ตรวจ shape</li>
+<li>คิดว่า element-wise multiply = matrix multiply</li>
+<li>สับสน variance กับ standard deviation</li>
+<li>ใช้ sample/population variance ผิด</li>
+<li>คิด correlation = causation</li>
+<li>คิด covariance 0 = independence เสมอ</li>
+<li>ลืม domain ของ log</li>
+<li>ใช้ inverse ทั้งที่ solve system ตรง ๆ เหมาะกว่า</li>
+<li>ใช้ finite difference ด้วย h เล็กเกินจน round-off error เด่น</li>
+<li>จำ derivative โดยไม่เข้าใจ chain rule</li>
+<li>อ่าน sigma notation ไม่ได้</li>
+<li>ตีความ p-value ผิด</li>
+</ol><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-20-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>20. Common Mistakes</h3>
+<ol>
+<li>คูณ matrix โดยไม่ตรวจ shape</li>
+<li>คิดว่า element-wise multiply = matrix multiply</li>
+<li>สับสน variance กับ standard deviation</li>
+<li>ใช้ sample/population variance ผิด</li>
+<li>คิด correlation = causation</li>
+<li>คิด covariance 0 = independence เสมอ</li>
+<li>ลืม domain ของ log</li>
+<li>ใช้ inverse ทั้งที่ solve system ตรง ๆ เหมาะกว่า</li>
+<li>ใช้ finite difference ด้วย h เล็กเกินจน round-off error เด่น</li>
+<li>จำ derivative โดยไม่เข้าใจ chain rule</li>
+<li>อ่าน sigma notation ไม่ได้</li>
+<li>ตีความ p-value ผิด</li>
+</ol><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-20-equation"><summary>สมการ</summary><h3>20. Common Mistakes</h3>
+<ol>
+<li>คูณ matrix โดยไม่ตรวจ shape</li>
+<li>คิดว่า element-wise multiply = matrix multiply</li>
+<li>สับสน variance กับ standard deviation</li>
+<li>ใช้ sample/population variance ผิด</li>
+<li>คิด correlation = causation</li>
+<li>คิด covariance 0 = independence เสมอ</li>
+<li>ลืม domain ของ log</li>
+<li>ใช้ inverse ทั้งที่ solve system ตรง ๆ เหมาะกว่า</li>
+<li>ใช้ finite difference ด้วย h เล็กเกินจน round-off error เด่น</li>
+<li>จำ derivative โดยไม่เข้าใจ chain rule</li>
+<li>อ่าน sigma notation ไม่ได้</li>
+<li>ตีความ p-value ผิด</li>
+</ol></details><details id="help-topic-20-visual"><summary>ภาพและ shape</summary><h3>20. Common Mistakes</h3>
+<ol>
+<li>คูณ matrix โดยไม่ตรวจ shape</li>
+<li>คิดว่า element-wise multiply = matrix multiply</li>
+<li>สับสน variance กับ standard deviation</li>
+<li>ใช้ sample/population variance ผิด</li>
+<li>คิด correlation = causation</li>
+<li>คิด covariance 0 = independence เสมอ</li>
+<li>ลืม domain ของ log</li>
+<li>ใช้ inverse ทั้งที่ solve system ตรง ๆ เหมาะกว่า</li>
+<li>ใช้ finite difference ด้วย h เล็กเกินจน round-off error เด่น</li>
+<li>จำ derivative โดยไม่เข้าใจ chain rule</li>
+<li>อ่าน sigma notation ไม่ได้</li>
+<li>ตีความ p-value ผิด</li>
+</ol></details><details id="help-topic-20-code"><summary>โค้ด</summary><h3>20. Common Mistakes</h3>
+<ol>
+<li>คูณ matrix โดยไม่ตรวจ shape</li>
+<li>คิดว่า element-wise multiply = matrix multiply</li>
+<li>สับสน variance กับ standard deviation</li>
+<li>ใช้ sample/population variance ผิด</li>
+<li>คิด correlation = causation</li>
+<li>คิด covariance 0 = independence เสมอ</li>
+<li>ลืม domain ของ log</li>
+<li>ใช้ inverse ทั้งที่ solve system ตรง ๆ เหมาะกว่า</li>
+<li>ใช้ finite difference ด้วย h เล็กเกินจน round-off error เด่น</li>
+<li>จำ derivative โดยไม่เข้าใจ chain rule</li>
+<li>อ่าน sigma notation ไม่ได้</li>
+<li>ตีความ p-value ผิด</li>
+</ol><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-20-result"><summary>ผลการทดลอง</summary><h3>20. Common Mistakes</h3>
+<ol>
+<li>คูณ matrix โดยไม่ตรวจ shape</li>
+<li>คิดว่า element-wise multiply = matrix multiply</li>
+<li>สับสน variance กับ standard deviation</li>
+<li>ใช้ sample/population variance ผิด</li>
+<li>คิด correlation = causation</li>
+<li>คิด covariance 0 = independence เสมอ</li>
+<li>ลืม domain ของ log</li>
+<li>ใช้ inverse ทั้งที่ solve system ตรง ๆ เหมาะกว่า</li>
+<li>ใช้ finite difference ด้วย h เล็กเกินจน round-off error เด่น</li>
+<li>จำ derivative โดยไม่เข้าใจ chain rule</li>
+<li>อ่าน sigma notation ไม่ได้</li>
+<li>ตีความ p-value ผิด</li>
+</ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-20"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-21" class="source-topic"><span id="source-02-mathematics-canonical-21-interview-questions" class="legacy-anchor"></span><h3>21. Interview Questions</h3>
+<ol>
+<li>dot product มีความหมายอย่างไร?</li>
+<li>ทำไม inner dimensions ต้อง match?</li>
+<li>gradient คืออะไร?</li>
+<li>chain rule เกี่ยวกับ backprop อย่างไร?</li>
+<li>variance ต่างจาก standard deviation อย่างไร?</li>
+<li>covariance กับ correlation ต่างกันอย่างไร?</li>
+<li>Bayes theorem ใช้ update belief อย่างไร?</li>
+<li>eigenvector/eigenvalue คืออะไร?</li>
+<li>Jacobian คืออะไร?</li>
+<li>p-value ไม่ได้บอกอะไร?</li>
+</ol><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-21-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>21. Interview Questions</h3>
+<ol>
+<li>dot product มีความหมายอย่างไร?</li>
+<li>ทำไม inner dimensions ต้อง match?</li>
+<li>gradient คืออะไร?</li>
+<li>chain rule เกี่ยวกับ backprop อย่างไร?</li>
+<li>variance ต่างจาก standard deviation อย่างไร?</li>
+<li>covariance กับ correlation ต่างกันอย่างไร?</li>
+<li>Bayes theorem ใช้ update belief อย่างไร?</li>
+<li>eigenvector/eigenvalue คืออะไร?</li>
+<li>Jacobian คืออะไร?</li>
+<li>p-value ไม่ได้บอกอะไร?</li>
+</ol><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-21-equation"><summary>สมการ</summary><h3>21. Interview Questions</h3>
+<ol>
+<li>dot product มีความหมายอย่างไร?</li>
+<li>ทำไม inner dimensions ต้อง match?</li>
+<li>gradient คืออะไร?</li>
+<li>chain rule เกี่ยวกับ backprop อย่างไร?</li>
+<li>variance ต่างจาก standard deviation อย่างไร?</li>
+<li>covariance กับ correlation ต่างกันอย่างไร?</li>
+<li>Bayes theorem ใช้ update belief อย่างไร?</li>
+<li>eigenvector/eigenvalue คืออะไร?</li>
+<li>Jacobian คืออะไร?</li>
+<li>p-value ไม่ได้บอกอะไร?</li>
+</ol></details><details id="help-topic-21-visual"><summary>ภาพและ shape</summary><h3>21. Interview Questions</h3>
+<ol>
+<li>dot product มีความหมายอย่างไร?</li>
+<li>ทำไม inner dimensions ต้อง match?</li>
+<li>gradient คืออะไร?</li>
+<li>chain rule เกี่ยวกับ backprop อย่างไร?</li>
+<li>variance ต่างจาก standard deviation อย่างไร?</li>
+<li>covariance กับ correlation ต่างกันอย่างไร?</li>
+<li>Bayes theorem ใช้ update belief อย่างไร?</li>
+<li>eigenvector/eigenvalue คืออะไร?</li>
+<li>Jacobian คืออะไร?</li>
+<li>p-value ไม่ได้บอกอะไร?</li>
+</ol></details><details id="help-topic-21-code"><summary>โค้ด</summary><h3>21. Interview Questions</h3>
+<ol>
+<li>dot product มีความหมายอย่างไร?</li>
+<li>ทำไม inner dimensions ต้อง match?</li>
+<li>gradient คืออะไร?</li>
+<li>chain rule เกี่ยวกับ backprop อย่างไร?</li>
+<li>variance ต่างจาก standard deviation อย่างไร?</li>
+<li>covariance กับ correlation ต่างกันอย่างไร?</li>
+<li>Bayes theorem ใช้ update belief อย่างไร?</li>
+<li>eigenvector/eigenvalue คืออะไร?</li>
+<li>Jacobian คืออะไร?</li>
+<li>p-value ไม่ได้บอกอะไร?</li>
+</ol><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-21-result"><summary>ผลการทดลอง</summary><h3>21. Interview Questions</h3>
+<ol>
+<li>dot product มีความหมายอย่างไร?</li>
+<li>ทำไม inner dimensions ต้อง match?</li>
+<li>gradient คืออะไร?</li>
+<li>chain rule เกี่ยวกับ backprop อย่างไร?</li>
+<li>variance ต่างจาก standard deviation อย่างไร?</li>
+<li>covariance กับ correlation ต่างกันอย่างไร?</li>
+<li>Bayes theorem ใช้ update belief อย่างไร?</li>
+<li>eigenvector/eigenvalue คืออะไร?</li>
+<li>Jacobian คืออะไร?</li>
+<li>p-value ไม่ได้บอกอะไร?</li>
+</ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-21"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-22" class="source-topic"><span id="source-02-mathematics-canonical-22-checklist" class="legacy-anchor"></span><h3>22. Checklist</h3>
+<ul>
+<li>[ ] อ่าน <code>R^(m×n)</code></li>
+<li>[ ] dot product ด้วยมือ</li>
+<li>[ ] matrix multiply ด้วยมือ</li>
+<li>[ ] derive quadratic derivative</li>
+<li>[ ] ใช้ chain rule</li>
+<li>[ ] หา gradient ของ function 2 variables</li>
+<li>[ ] คำนวณ Bayes example</li>
+<li>[ ] mean/variance/covariance</li>
+<li>[ ] อธิบาย eigen intuition</li>
+<li>[ ] test math toolkit ผ่าน</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-22-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>22. Checklist</h3>
+<ul>
+<li>[ ] อ่าน <code>R^(m×n)</code></li>
+<li>[ ] dot product ด้วยมือ</li>
+<li>[ ] matrix multiply ด้วยมือ</li>
+<li>[ ] derive quadratic derivative</li>
+<li>[ ] ใช้ chain rule</li>
+<li>[ ] หา gradient ของ function 2 variables</li>
+<li>[ ] คำนวณ Bayes example</li>
+<li>[ ] mean/variance/covariance</li>
+<li>[ ] อธิบาย eigen intuition</li>
+<li>[ ] test math toolkit ผ่าน</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-22-equation"><summary>สมการ</summary><h3>22. Checklist</h3>
+<ul>
+<li>[ ] อ่าน <code>R^(m×n)</code></li>
+<li>[ ] dot product ด้วยมือ</li>
+<li>[ ] matrix multiply ด้วยมือ</li>
+<li>[ ] derive quadratic derivative</li>
+<li>[ ] ใช้ chain rule</li>
+<li>[ ] หา gradient ของ function 2 variables</li>
+<li>[ ] คำนวณ Bayes example</li>
+<li>[ ] mean/variance/covariance</li>
+<li>[ ] อธิบาย eigen intuition</li>
+<li>[ ] test math toolkit ผ่าน</li>
+</ul></details><details id="help-topic-22-visual"><summary>ภาพและ shape</summary><h3>22. Checklist</h3>
+<ul>
+<li>[ ] อ่าน <code>R^(m×n)</code></li>
+<li>[ ] dot product ด้วยมือ</li>
+<li>[ ] matrix multiply ด้วยมือ</li>
+<li>[ ] derive quadratic derivative</li>
+<li>[ ] ใช้ chain rule</li>
+<li>[ ] หา gradient ของ function 2 variables</li>
+<li>[ ] คำนวณ Bayes example</li>
+<li>[ ] mean/variance/covariance</li>
+<li>[ ] อธิบาย eigen intuition</li>
+<li>[ ] test math toolkit ผ่าน</li>
+</ul></details><details id="help-topic-22-code"><summary>โค้ด</summary><h3>22. Checklist</h3>
+<ul>
+<li>[ ] อ่าน <code>R^(m×n)</code></li>
+<li>[ ] dot product ด้วยมือ</li>
+<li>[ ] matrix multiply ด้วยมือ</li>
+<li>[ ] derive quadratic derivative</li>
+<li>[ ] ใช้ chain rule</li>
+<li>[ ] หา gradient ของ function 2 variables</li>
+<li>[ ] คำนวณ Bayes example</li>
+<li>[ ] mean/variance/covariance</li>
+<li>[ ] อธิบาย eigen intuition</li>
+<li>[ ] test math toolkit ผ่าน</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-22-result"><summary>ผลการทดลอง</summary><h3>22. Checklist</h3>
+<ul>
+<li>[ ] อ่าน <code>R^(m×n)</code></li>
+<li>[ ] dot product ด้วยมือ</li>
+<li>[ ] matrix multiply ด้วยมือ</li>
+<li>[ ] derive quadratic derivative</li>
+<li>[ ] ใช้ chain rule</li>
+<li>[ ] หา gradient ของ function 2 variables</li>
+<li>[ ] คำนวณ Bayes example</li>
+<li>[ ] mean/variance/covariance</li>
+<li>[ ] อธิบาย eigen intuition</li>
+<li>[ ] test math toolkit ผ่าน</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-22"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-23" class="source-topic"><span id="source-02-mathematics-canonical-23-mini-project" class="legacy-anchor"></span><h3>23. Mini Project</h3>
+<p>สร้าง <strong>Math Toolkit for Machine Learning</strong> โดยต่อยอด <a href="../02-mathematics/src/math_toolkit.py">src/math_toolkit.py</a></p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-23-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>23. Mini Project</h3>
+<p>สร้าง <strong>Math Toolkit for Machine Learning</strong> โดยต่อยอด <a href="src/math_toolkit.py">src/math_toolkit.py</a></p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-23-equation"><summary>สมการ</summary><h3>23. Mini Project</h3>
+<p>สร้าง <strong>Math Toolkit for Machine Learning</strong> โดยต่อยอด <a href="src/math_toolkit.py">src/math_toolkit.py</a></p></details><details id="help-topic-23-visual"><summary>ภาพและ shape</summary><h3>23. Mini Project</h3>
+<p>สร้าง <strong>Math Toolkit for Machine Learning</strong> โดยต่อยอด <a href="src/math_toolkit.py">src/math_toolkit.py</a></p></details><details id="help-topic-23-code"><summary>โค้ด</summary><h3>23. Mini Project</h3>
+<p>สร้าง <strong>Math Toolkit for Machine Learning</strong> โดยต่อยอด <a href="src/math_toolkit.py">src/math_toolkit.py</a></p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-23-result"><summary>ผลการทดลอง</summary><h3>23. Mini Project</h3>
+<p>สร้าง <strong>Math Toolkit for Machine Learning</strong> โดยต่อยอด <a href="src/math_toolkit.py">src/math_toolkit.py</a></p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-23"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-24" class="source-topic"><span id="source-02-mathematics-canonical-24-whats-next" class="legacy-anchor"></span><h3>24. What's Next</h3>
+<p>Chapter 03 จะเปลี่ยน math operations เหล่านี้เป็น vectorized computation ด้วย NumPy และใช้ Pandas/Matplotlib จัดการข้อมูลจริง</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-24-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>24. What's Next</h3>
+<p>Chapter 03 จะเปลี่ยน math operations เหล่านี้เป็น vectorized computation ด้วย NumPy และใช้ Pandas/Matplotlib จัดการข้อมูลจริง</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-24-equation"><summary>สมการ</summary><h3>24. What's Next</h3>
+<p>Chapter 03 จะเปลี่ยน math operations เหล่านี้เป็น vectorized computation ด้วย NumPy และใช้ Pandas/Matplotlib จัดการข้อมูลจริง</p></details><details id="help-topic-24-visual"><summary>ภาพและ shape</summary><h3>24. What's Next</h3>
+<p>Chapter 03 จะเปลี่ยน math operations เหล่านี้เป็น vectorized computation ด้วย NumPy และใช้ Pandas/Matplotlib จัดการข้อมูลจริง</p></details><details id="help-topic-24-code"><summary>โค้ด</summary><h3>24. What's Next</h3>
+<p>Chapter 03 จะเปลี่ยน math operations เหล่านี้เป็น vectorized computation ด้วย NumPy และใช้ Pandas/Matplotlib จัดการข้อมูลจริง</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-24-result"><summary>ผลการทดลอง</summary><h3>24. What's Next</h3>
+<p>Chapter 03 จะเปลี่ยน math operations เหล่านี้เป็น vectorized computation ด้วย NumPy และใช้ Pandas/Matplotlib จัดการข้อมูลจริง</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-24"> อ่านหัวข้อนี้แล้ว</label></section></section><section id="objective-evidence" class="canonical-section"><h2>พิสูจน์ความสามารถทีละ objective</h2><p>ทำกรณีใหม่ก่อนเปิด reference แล้วบันทึกงานด้านล่าง ให้ผู้ตรวจใช้ rubric ตรวจคำอธิบาย ผลคำนวณ โค้ด และข้อจำกัด บันทึกเก็บในเบราว์เซอร์เครื่องนี้ กดส่งออกเพื่อสำรองหรือส่งให้ผู้ตรวจ เว็บไม่ได้รันโค้ดหรือตัดสินผลงานแทนผู้ตรวจ</p><button type="button" class="secondary-button" data-export-evidence>ส่งออกหลักฐานบทนี้เป็น JSON</button><p role="status" id="evidence-export-status"></p><details id="ch02-objective-01" class="objective-proof"><summary>อ่าน notation เช่น `x ∈ R^n`</summary><p>อ่าน notation เช่น `x ∈ R^n`: ใช้กรณีในหัวข้อ Scalars, Vectors, Matrices เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch02-evidence-01"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch02-evidence-01-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch02-evidence-01-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch02-evidence-01-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch02-evidence-01-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch02-evidence-01-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch02-evidence-01-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch02-evidence-01-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch02-evidence-01-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>Scalar มีหนึ่งค่า shape (), vector มีแกนเดียว เช่น (3,), matrix มีสองแกน เช่น (2,3). <code>[1,2,3]</code> กับ <code>[[1,2,3]]</code> มีสมาชิกสามตัวเหมือนกันแต่ shapes ต่างกัน; แกนที่เพิ่มมีผลต่อ broadcasting และ matrix multiplication.</p><h3>6. Scalars, Vectors, Matrices</h3>
+<p>Scalar:</p>
+<pre><code class="language-text">x = 3.5
+</code></pre>
+<p>Vector:</p>
+<pre><code class="language-text">x = [x₁, x₂, ..., xₙ] ∈ Rⁿ
+</code></pre>
+<p>Matrix:</p>
+<pre><code class="language-text">A ∈ R^(m×n)
+</code></pre>
+<p>ตัวอย่าง dataset 100 ตัวอย่าง × 4 features:</p>
+<pre><code class="language-text">X ∈ R^(100×4)
+</code></pre>
+<p>row = sample, column = feature เป็น convention ที่พบบ่อย</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch02-objective-02" class="objective-proof"><summary>คำนวณ vector operations</summary><p>คำนวณ vector operations: ใช้กรณีในหัวข้อ Dot Product เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch02-evidence-02"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch02-evidence-02-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch02-evidence-02-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch02-evidence-02-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch02-evidence-02-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch02-evidence-02-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch02-evidence-02-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch02-evidence-02-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch02-evidence-02-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>สำหรับ vectors ยาว d เท่ากัน <code>x·w=Σ_j x_j w_j</code>. [1,2]·[2,-1]=2-2=0 เป็น orthogonality เมื่อทั้งสอง vector ไม่เป็นศูนย์; ตรวจ inner dimension ก่อนคูณ.</p><h3>7. Dot Product</h3>
+<pre><code class="language-text">a · b = Σᵢ aᵢbᵢ
+</code></pre>
+<p>ตัวอย่าง:</p>
+<pre><code class="language-text">[1,2,3] · [4,5,6]
+= 1×4 + 2×5 + 3×6
+= 32
+</code></pre>
+<p>ใน linear model:</p>
+<pre><code class="language-text">prediction = w · x + b
+</code></pre></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch02-objective-03" class="objective-proof"><summary>ตรวจ dimension ของ matrix multiplication</summary><p>ตรวจ dimension ของ matrix multiplication: ใช้กรณีในหัวข้อ Matrix Multiplication เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch02-evidence-03"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch02-evidence-03-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch02-evidence-03-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch02-evidence-03-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch02-evidence-03-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch02-evidence-03-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch02-evidence-03-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch02-evidence-03-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch02-evidence-03-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>Matrix product (m,k)@(k,n) ต้องให้แกนที่ถูก sum มีความยาวเท่ากัน. (3,4) กับ (5,2) มี 4≠5 จึงไม่มี dot product ราย row-column; transpose สุ่ม ๆ ไม่ใช่การแก้จนกว่าจะรู้ความหมายของข้อมูล.</p><h3>8. Matrix Multiplication</h3>
+<p>ถ้า:</p>
+<pre><code class="language-text">A ∈ R^(m×n)
+B ∈ R^(n×p)
+</code></pre>
+<p>แล้ว:</p>
+<pre><code class="language-text">AB ∈ R^(m×p)
+</code></pre>
+<p>inner dimensions ต้องเท่ากัน</p>
+<p>นี่คือกฎที่ต้องตรวจทันทีเมื่อเจอ neural-network shape error</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch02-objective-04" class="objective-proof"><summary>อธิบาย linear transformation</summary><p>อธิบาย linear transformation: ใช้กรณีในหัวข้อ Matrix Multiplication เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch02-evidence-04"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch02-evidence-04-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch02-evidence-04-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch02-evidence-04-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch02-evidence-04-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch02-evidence-04-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch02-evidence-04-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch02-evidence-04-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch02-evidence-04-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>Matrix product (m,k)@(k,n) ต้องให้แกนที่ถูก sum มีความยาวเท่ากัน. (3,4) กับ (5,2) มี 4≠5 จึงไม่มี dot product ราย row-column; transpose สุ่ม ๆ ไม่ใช่การแก้จนกว่าจะรู้ความหมายของข้อมูล.</p><h3>8. Matrix Multiplication</h3>
+<p>ถ้า:</p>
+<pre><code class="language-text">A ∈ R^(m×n)
+B ∈ R^(n×p)
+</code></pre>
+<p>แล้ว:</p>
+<pre><code class="language-text">AB ∈ R^(m×p)
+</code></pre>
+<p>inner dimensions ต้องเท่ากัน</p>
+<p>นี่คือกฎที่ต้องตรวจทันทีเมื่อเจอ neural-network shape error</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch02-objective-05" class="objective-proof"><summary>เข้าใจ determinant/inverse/eigenvalue ในระดับ foundation</summary><p>เข้าใจ determinant/inverse/eigenvalue ในระดับ foundation: ใช้กรณีในหัวข้อ Determinant / Inverse / Eigen เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch02-evidence-05"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch02-evidence-05-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch02-evidence-05-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch02-evidence-05-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch02-evidence-05-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch02-evidence-05-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch02-evidence-05-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch02-evidence-05-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch02-evidence-05-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>2×2 ใช้ ad−bc; [[1,2],[3,4]] ได้−2. 3×3 ขยาย cofactor แถวแรกพร้อมสลับเครื่องหมาย +−+; identityได้1, duplicated rowsได้0, สลับสอง rows เปลี่ยนเครื่องหมาย. เทียบ np.linalg.det ด้วย tolerance ไม่ตรวจ float equality ทุกกรณี.</p><h3>17. Determinant / Inverse / Eigen</h3>
+<p>Foundation intuition:</p>
+<ul>
+<li>determinant บอก scale/orientation effect ของ square linear transformation และช่วยบอก singularity</li>
+<li>inverse คือ transformation ที่ย้อนอีก transformation ได้ เมื่อ inverse มีอยู่</li>
+<li>eigenvector คือ direction ที่ transformation ไม่เปลี่ยนแนว มีเพียง scale</li>
+<li>eigenvalue คือ scale factor ของ eigenvector</li>
+</ul>
+<p>PCA ใน Chapter 15 จะกลับมาใช้ eigen/SVD ลึกขึ้น</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch02-objective-06" class="objective-proof"><summary>derive derivative ของ polynomial</summary><p>derive derivative ของ polynomial: ใช้กรณีในหัวข้อ Derivatives เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch02-evidence-06"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch02-evidence-06-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch02-evidence-06-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch02-evidence-06-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch02-evidence-06-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch02-evidence-06-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch02-evidence-06-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch02-evidence-06-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch02-evidence-06-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>Derivative วัดอัตราเปลี่ยน output ต่อ input ณ จุดหนึ่ง ไม่ใช่ค่าเฉลี่ยตลอดกราฟ. f(x)=x² มี f′(2)=4 จึงประมาณ f(2+.01)≈4+.04=4.04; ค่าจริง4.0401 ต่าง .0001 จาก curvature.</p><h3>10. Derivatives</h3>
+<p>Derivative วัด local rate of change:</p>
+<pre><code class="language-text">f'(x) = lim(h→0) [f(x+h)-f(x)]/h
+</code></pre>
+<p>ถ้า:</p>
+<pre><code class="language-text">f(x)=x²
+</code></pre>
+<p>จะได้:</p>
+<pre><code class="language-text">f'(x)=2x
+</code></pre>
+<p>ที่ x=3 slope = 6</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch02-objective-07" class="objective-proof"><summary>ใช้ partial derivative, gradient และ chain rule</summary><p>ใช้ partial derivative, gradient และ chain rule: ใช้กรณีในหัวข้อ Partial Derivatives &amp; Gradient, Chain Rule เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch02-evidence-07"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch02-evidence-07-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch02-evidence-07-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch02-evidence-07-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch02-evidence-07-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch02-evidence-07-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch02-evidence-07-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch02-evidence-07-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch02-evidence-07-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>Gradient รวม partial derivatives ของ scalar-valued function เป็น vector. f(x,y)=x²+3y² มี ∇f=(2x,6y); ที่ (1,2) ได้ (2,12) shape (2,). ก้าว −η∇f ลดค่าท้องถิ่นเมื่อ η เหมาะสม ไม่รับประกัน global optimum ทุกฟังก์ชัน.</p><h3>11. Partial Derivatives &amp; Gradient</h3>
+<p>ถ้า:</p>
+<pre><code class="language-text">f(x,y)=x²+3y²
+</code></pre>
+<pre><code class="language-text">∂f/∂x = 2x
+∂f/∂y = 6y
+</code></pre>
+<p>Gradient:</p>
+<pre><code class="language-text">∇f = [2x, 6y]
+</code></pre>
+<p>Gradient บอกทิศที่ฟังก์ชันเพิ่มเร็วที่สุดใน local neighborhood; <code>-∇f</code> จึงเป็นแนวคิดพื้นฐานของ gradient descent</p>
+<h3>12. Chain Rule</h3>
+<p>ถ้า:</p>
+<pre><code class="language-text">u=g(x)
+y=f(u)
+</code></pre>
+<p>แล้ว:</p>
+<pre><code class="language-text">dy/dx = dy/du × du/dx
+</code></pre>
+<p>Backpropagation คือการใช้ chain rule ผ่าน computational graph อย่างเป็นระบบ</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch02-objective-08" class="objective-proof"><summary>เข้าใจ Jacobian ในฐานะ matrix ของ partial derivatives</summary><p>เข้าใจ Jacobian ในฐานะ matrix ของ partial derivatives: ใช้กรณีในหัวข้อ Jacobian เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch02-evidence-08"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch02-evidence-08-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch02-evidence-08-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch02-evidence-08-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch02-evidence-08-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch02-evidence-08-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch02-evidence-08-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch02-evidence-08-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch02-evidence-08-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>18. Jacobian</h3>
+<p>ถ้า function รับ vector และคืน vector Jacobian เก็บ partial derivatives:</p>
+<pre><code class="language-text">J_ij = ∂f_i / ∂x_j
+</code></pre>
+<p>เป็น generalization สำคัญของ derivative ไปสู่หลายมิติ</p><h3>18. Jacobian</h3>
+<p>ถ้า function รับ vector และคืน vector Jacobian เก็บ partial derivatives:</p>
+<pre><code class="language-text">J_ij = ∂f_i / ∂x_j
+</code></pre>
+<p>เป็น generalization สำคัญของ derivative ไปสู่หลายมิติ</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch02-objective-09" class="objective-proof"><summary>ใช้ probability, conditional probability และ Bayes</summary><p>ใช้ probability, conditional probability และ Bayes: ใช้กรณีในหัวข้อ Probability เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch02-evidence-09"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch02-evidence-09-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch02-evidence-09-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch02-evidence-09-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch02-evidence-09-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch02-evidence-09-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch02-evidence-09-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch02-evidence-09-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch02-evidence-09-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p><code>P(A|B)=P(A∩B)/P(B)</code> เมื่อ P(B)&gt;0. ถ้า P(A∩B)=.12,P(B)=.3 ได้ .4; ไม่เท่ากับ P(B|A) โดยอัตโนมัติเพราะ denominator ต่างกัน.</p><h3>13. Probability</h3>
+<p>Probability เป็นค่าระหว่าง 0 และ 1</p>
+<p>Conditional probability:</p>
+<pre><code class="language-text">P(A|B) = P(A∩B)/P(B)
+</code></pre>
+<p>Bayes:</p>
+<pre><code class="language-text">P(A|B) = P(B|A)P(A)/P(B)
+</code></pre>
+<p>Chapter Naive Bayes จะใช้ตรง ๆ</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch02-objective-10" class="objective-proof"><summary>คำนวณ expectation, variance, covariance</summary><p>คำนวณ expectation, variance, covariance: ใช้กรณีในหัวข้อ Statistics, Covariance เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch02-evidence-10"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch02-evidence-10-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch02-evidence-10-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch02-evidence-10-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch02-evidence-10-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch02-evidence-10-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch02-evidence-10-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch02-evidence-10-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch02-evidence-10-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>Population variance หาร n ของ population ที่รู้ครบ; unbiased sample variance หาร n−1 เมื่อประมาณ population variance จาก IID sample ที่ใช้ sample mean. [1,3] มี squared deviationsรวม2 จึง population variance1, sample variance2; sample n&lt;2 ต้อง reject.</p><h3>14. Statistics</h3>
+<p>Mean:</p>
+<pre><code class="language-text">x̄=(1/n)Σxᵢ
+</code></pre>
+<p>Population variance:</p>
+<pre><code class="language-text">σ²=(1/n)Σ(xᵢ-μ)²
+</code></pre>
+<p>Sample variance:</p>
+<pre><code class="language-text">s²=(1/(n-1))Σ(xᵢ-x̄)²
+</code></pre>
+<h3>15. Covariance</h3>
+<pre><code class="language-text">Cov(X,Y)=E[(X-E[X])(Y-E[Y])]
+</code></pre>
+<p>ค่าบวก: มีแนวโน้มเพิ่มไปด้วยกัน<br />
+ค่าลบ: มีแนวโน้มสวนกัน<br />
+ใกล้ศูนย์: linear co-movement ต่ำ แต่ไม่ได้แปลว่า independent</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch02-objective-11" class="objective-proof"><summary>แยก population กับ sample statistics</summary><p>แยก population กับ sample statistics: ใช้กรณีในหัวข้อ Statistics เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch02-evidence-11"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch02-evidence-11-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch02-evidence-11-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch02-evidence-11-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch02-evidence-11-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch02-evidence-11-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch02-evidence-11-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch02-evidence-11-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch02-evidence-11-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>Population variance หาร n ของ population ที่รู้ครบ; unbiased sample variance หาร n−1 เมื่อประมาณ population variance จาก IID sample ที่ใช้ sample mean. [1,3] มี squared deviationsรวม2 จึง population variance1, sample variance2; sample n&lt;2 ต้อง reject.</p><h3>14. Statistics</h3>
+<p>Mean:</p>
+<pre><code class="language-text">x̄=(1/n)Σxᵢ
+</code></pre>
+<p>Population variance:</p>
+<pre><code class="language-text">σ²=(1/n)Σ(xᵢ-μ)²
+</code></pre>
+<p>Sample variance:</p>
+<pre><code class="language-text">s²=(1/(n-1))Σ(xᵢ-x̄)²
+</code></pre></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch02-objective-12" class="objective-proof"><summary>อธิบาย hypothesis testing ในระดับพื้นฐาน</summary><p>อธิบาย hypothesis testing ในระดับพื้นฐาน: ใช้กรณีในหัวข้อ Hypothesis Testing Foundation เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch02-evidence-12"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch02-evidence-12-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch02-evidence-12-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch02-evidence-12-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch02-evidence-12-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch02-evidence-12-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch02-evidence-12-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch02-evidence-12-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch02-evidence-12-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>19. Hypothesis Testing Foundation</h3>
+<p>องค์ประกอบ:</p>
+<ol>
+<li>null hypothesis H₀</li>
+<li>alternative H₁</li>
+<li>test statistic</li>
+<li>sampling distribution</li>
+<li>p-value / decision rule</li>
+<li>significance level α</li>
+</ol>
+<p><strong>p-value ไม่ใช่ probability ที่ H₀ เป็นจริง</strong></p>
+<p>จะกลับมาเรียนเมื่อทำ experiment/evaluation</p><h3>19. Hypothesis Testing Foundation</h3>
+<p>องค์ประกอบ:</p>
+<ol>
+<li>null hypothesis H₀</li>
+<li>alternative H₁</li>
+<li>test statistic</li>
+<li>sampling distribution</li>
+<li>p-value / decision rule</li>
+<li>significance level α</li>
+</ol>
+<p><strong>p-value ไม่ใช่ probability ที่ H₀ เป็นจริง</strong></p>
+<p>จะกลับมาเรียนเมื่อทำ experiment/evaluation</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch02-objective-13" class="objective-proof"><summary>ตรวจสูตรด้วย Python</summary><p>ตรวจสูตรด้วย Python: ใช้กรณีในหัวข้อ Numerical Verification เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch02-evidence-13"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch02-evidence-13-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch02-evidence-13-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch02-evidence-13-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch02-evidence-13-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch02-evidence-13-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch02-evidence-13-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch02-evidence-13-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch02-evidence-13-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>f′(x)=3x²+2. ที่ x=2 ได้14; central difference <code>(f(x+h)-f(x-h))/(2h)</code> h=1e-5 ควรใกล้14 ภายใน1e-7. ทดสอบหลาย x รวม0 และติดลบ ไม่ใช้ forward difference เป็นสูตรเดียวกันโดยไม่ระบุ error order.</p><h3>16. Numerical Verification</h3>
+<p>finite difference:</p>
+<pre><code class="language-python">def derivative(f, x: float, h: float = 1e-6) -&gt; float:
+    return (f(x + h) - f(x - h)) / (2 * h)
+</code></pre>
+<p>ใช้ตรวจ analytic derivative ได้ แต่มี numerical error และไม่ใช่ replacement ของ symbolic reasoning</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details></section><section id="implementation" class="canonical-section"><h2>Implementation และ tests ที่รันบนเครื่องได้</h2><details><summary>02-mathematics/src/math_toolkit.py</summary><pre><code>&quot;&quot;&quot;Small from-scratch math helpers used before NumPy.&quot;&quot;&quot;
+
+from __future__ import annotations
+
+from collections.abc import Callable, Sequence
+from math import sqrt
+
+
+Vector = Sequence[float]
+Matrix = Sequence[Sequence[float]]
+
+
+def _check_same_length(a: Vector, b: Vector) -&gt; None:
+    if len(a) != len(b):
+        raise ValueError(f&quot;length mismatch: {len(a)} != {len(b)}&quot;)
+
+
+def vector_add(a: Vector, b: Vector) -&gt; list[float]:
+    _check_same_length(a, b)
+    return [x + y for x, y in zip(a, b)]
+
+
+def dot(a: Vector, b: Vector) -&gt; float:
+    _check_same_length(a, b)
+    return sum(x * y for x, y in zip(a, b))
+
+
+def l2_norm(v: Vector) -&gt; float:
+    return sqrt(dot(v, v))
+
+
+def transpose(matrix: Matrix) -&gt; list[list[float]]:
+    if not matrix:
+        return []
+    width = len(matrix[0])
+    if any(len(row) != width for row in matrix):
+        raise ValueError(&quot;matrix rows must have equal length&quot;)
+    return [list(column) for column in zip(*matrix)]
+
+
+def matvec(matrix: Matrix, vector: Vector) -&gt; list[float]:
+    if not matrix:
+        return []
+    width = len(matrix[0])
+    if any(len(row) != width for row in matrix):
+        raise ValueError(&quot;matrix rows must have equal length&quot;)
+    if width != len(vector):
+        raise ValueError(
+            f&quot;shape mismatch: matrix width {width}, vector length {len(vector)}&quot;
+        )
+    return [dot(row, vector) for row in matrix]
+
+
+def matmul(a: Matrix, b: Matrix) -&gt; list[list[float]]:
+    if not a or not b:
+        return []
+    a_width = len(a[0])
+    b_width = len(b[0])
+    if any(len(row) != a_width for row in a):
+        raise ValueError(&quot;matrix a is ragged&quot;)
+    if any(len(row) != b_width for row in b):
+        raise ValueError(&quot;matrix b is ragged&quot;)
+    if a_width != len(b):
+        raise ValueError(
+            f&quot;shape mismatch: ({len(a)}x{a_width}) cannot multiply &quot;
+            f&quot;({len(b)}x{b_width})&quot;
+        )
+    b_t = transpose(b)
+    return [[dot(row, column) for column in b_t] for row in a]
+
+
+def mean(values: Vector) -&gt; float:
+    if not values:
+        raise ValueError(&quot;values must not be empty&quot;)
+    return sum(values) / len(values)
+
+
+def population_variance(values: Vector) -&gt; float:
+    if not values:
+        raise ValueError(&quot;values must not be empty&quot;)
+    center = mean(values)
+    return sum((x - center) ** 2 for x in values) / len(values)
+
+
+def sample_variance(values: Vector) -&gt; float:
+    if len(values) &lt; 2:
+        raise ValueError(&quot;sample variance requires at least two values&quot;)
+    center = mean(values)
+    return sum((x - center) ** 2 for x in values) / (len(values) - 1)
+
+
+def covariance(x: Vector, y: Vector, *, sample: bool = True) -&gt; float:
+    _check_same_length(x, y)
+    if not x:
+        raise ValueError(&quot;values must not be empty&quot;)
+    if sample and len(x) &lt; 2:
+        raise ValueError(&quot;sample covariance requires at least two pairs&quot;)
+
+    x_mean = mean(x)
+    y_mean = mean(y)
+    denominator = len(x) - 1 if sample else len(x)
+    return sum(
+        (a - x_mean) * (b - y_mean) for a, b in zip(x, y)
+    ) / denominator
+
+
+def numerical_derivative(
+    function: Callable[[float], float],
+    x: float,
+    *,
+    h: float = 1e-6,
+) -&gt; float:
+    if h &lt;= 0:
+        raise ValueError(&quot;h must be positive&quot;)
+    return (function(x + h) - function(x - h)) / (2.0 * h)
+
+
+def bayes(
+    *,
+    prior: float,
+    likelihood: float,
+    evidence: float,
+) -&gt; float:
+    for name, value in {
+        &quot;prior&quot;: prior,
+        &quot;likelihood&quot;: likelihood,
+        &quot;evidence&quot;: evidence,
+    }.items():
+        if not 0.0 &lt;= value &lt;= 1.0:
+            raise ValueError(f&quot;{name} must be between 0 and 1&quot;)
+    if evidence == 0:
+        raise ValueError(&quot;evidence must be greater than zero&quot;)
+    posterior = likelihood * prior / evidence
+    if posterior &gt; 1.0 + 1e-12:
+        raise ValueError(&quot;inconsistent probabilities: posterior exceeds 1&quot;)
+    return min(posterior, 1.0)
+</code></pre></details><details><summary>02-mathematics/tests/test_math_toolkit.py</summary><pre><code>from pathlib import Path
+import importlib.util
+
+import pytest
+
+
+MODULE_PATH = Path(__file__).parents[1] / &quot;src&quot; / &quot;math_toolkit.py&quot;
+SPEC = importlib.util.spec_from_file_location(&quot;math_toolkit&quot;, MODULE_PATH)
+assert SPEC and SPEC.loader
+math = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(math)
+
+
+def test_dot_and_norm() -&gt; None:
+    assert math.dot([1, 2, 3], [4, 5, 6]) == 32
+    assert math.l2_norm([3, 4]) == 5
+
+
+def test_matmul() -&gt; None:
+    result = math.matmul(
+        [[1, 2], [3, 4]],
+        [[5, 6], [7, 8]],
+    )
+    assert result == [[19, 22], [43, 50]]
+
+
+def test_shape_error() -&gt; None:
+    with pytest.raises(ValueError):
+        math.matmul([[1, 2, 3]], [[1, 2], [3, 4]])
+
+
+def test_statistics() -&gt; None:
+    values = [1.0, 2.0, 3.0]
+    assert math.mean(values) == 2.0
+    assert math.population_variance(values) == pytest.approx(2 / 3)
+    assert math.sample_variance(values) == pytest.approx(1.0)
+
+
+def test_covariance() -&gt; None:
+    assert math.covariance([1, 2, 3], [2, 4, 6]) == pytest.approx(2.0)
+
+
+def test_numerical_derivative() -&gt; None:
+    derivative = math.numerical_derivative(lambda x: x * x, 3.0)
+    assert derivative == pytest.approx(6.0, rel=1e-5)
+
+
+def test_bayes() -&gt; None:
+    posterior = math.bayes(prior=0.01, likelihood=0.9, evidence=0.108)
+    assert posterior == pytest.approx(1 / 12)
+</code></pre></details></section><section id="glossary" class="canonical-section"><h2>อภิธานศัพท์ — คำไทย ความหมาย และข้อควรตรวจ</h2><dl><dt>tensor</dt><dd>เทนเซอร์: ชุดตัวเลขที่มีแกน เช่น scalar ไม่มีแกน, vector หนึ่งแกน, matrix สองแกน; shape บอกขนาดแต่ละแกน ไม่บอกความหมายของแกนจนกว่าจะระบุ</dd><dt>shape</dt><dd>รูปทรงข้อมูล: (B,T,d) หมายถึง batch × เวลา/ตำแหน่ง × features; ใช้ชื่อแกนกำกับเสมอ การ transpose เปลี่ยนแกนแต่ไม่ใช่แค่เปลี่ยนชื่อ</dd><dt>batch</dt><dd>กลุ่มตัวอย่างที่คำนวณร่วมกันหนึ่งครั้ง; B คือจำนวนตัวอย่าง ไม่ใช่จำนวน features หรือจำนวน optimizer updates</dd><dt>weight w / θ</dt><dd>น้ำหนักหรือพารามิเตอร์ที่โมเดลใช้คำนวณ; แก้ด้วยมือทำ forward ใหม่ ส่วน optimizer ต้องรับ gradient แล้วกด update จึงแก้ state</dd><dt>bias b</dt><dd>ค่าคงที่ที่บวกกับผลเชิงเส้น; regression scalar bias เพิ่ม Δ ทำให้ prediction ทุกจุดเพิ่ม Δ เท่ากัน</dd><dt>prediction ŷ</dt><dd>ค่าที่โมเดลทำนายจาก input และพารามิเตอร์ปัจจุบัน; เครื่องหมายหมวกแยกจาก target y ที่มาจากข้อมูล</dd><dt>residual e</dt><dd>ความคลาดเคลื่อน ในเว็บนี้นิยาม prediction − target; บางตำราใช้เครื่องหมายกลับกัน จึงต้องตรวจนิยามก่อนเทียบสูตร gradient</dd><dt>MSE</dt><dd>mean squared error = ผลรวม residual กำลังสองหารจำนวนรายการที่ระบุ; มีหน่วยเป็น target ยกกำลังสอง และการใช้ sum แทน mean เปลี่ยน scale gradient</dd><dt>loss L / objective J</dt><dd>จำนวนที่ optimizer ต้องการลด; objective อาจรวม data loss และ regularization จึงต้องดูองค์ประกอบและ reduction ให้ตรง implementation</dd><dt>gradient ∇ / ∂</dt><dd>เวกเตอร์ของ partial derivatives บอกอัตราเปลี่ยน loss ต่อพารามิเตอร์แต่ละตัว; ∂ ใช้เมื่อเปลี่ยนตัวหนึ่งโดยตรึงตัวอื่น</dd><dt>chain rule</dt><dd>กฎลูกโซ่: คูณอนุพันธ์ตามเส้นทาง และบวก contribution จากทุกเส้นทางที่มารวมกัน ใช้ย้อนจาก loss ถึง weights</dd><dt>learning rate η</dt><dd>ขนาดตัวคูณ gradient ใน update θnew=θ−ηg; η≥0, ศูนย์หมายถึงไม่มีการขยับพารามิเตอร์ ก้าวใหญ่เกินอาจ diverge</dd><dt>regularization λ</dt><dd>ตัวคูณค่าลงโทษ ต้อง λ≥0 ตามนิยามการลงโทษ; Ridge λΣw² เพิ่ม gradient 2λw โดยบท Regression นี้ไม่ลงโทษ bias</dd><dt>baseline</dt><dd>สถานะอ้างอิงที่ตรึงไว้สำหรับเทียบ; ต้องเก็บ snapshot ไม่อ้าง object ปัจจุบันที่แก้ตามไปด้วย</dd><dt>invariant</dt><dd>คุณสมบัติที่กลไกต้องรักษา เช่น probability รวม1, shape สอดคล้อง, queue ไม่เกิน capacity; ใช้ tests ตรวจได้มากกว่าดูภาพสวย</dd><dt>optimizer state</dt><dd>ความจำของอัลกอริทึม เช่น velocity, moments และ completed updates; คืนเฉพาะ weights ยังไม่เท่ากับเริ่มการฝึกใหม่ทั้งหมด</dd><dt>finite difference</dt><dd>ประมาณ derivative ด้วย [f(x+h)−f(x−h)]/(2h); h&gt;0, ใช้ smooth point และลองหลาย h เพื่อแยก truncation error จาก roundoff</dd><dt>softmax</dt><dd>แปลง logits เป็นความน่าจะเป็นตามแกนที่กำหนด; ลบ max ก่อน exp เพื่อความเสถียร และ fully masked row ต้องมีนโยบายชัดเจน</dd><dt>logit</dt><dd>คะแนนก่อน sigmoid/softmax ไม่ใช่ probability; อาจเป็นจำนวนจริงติดลบหรือเกิน1ได้ จึงห้ามส่งให้ loss ที่คาด probability โดยไม่แปลง</dd><dt>temperature τ / T</dt><dd>ตัวหาร logits ก่อน softmax; ต้องเป็นบวก ค่าเล็กทำ distribution แหลมขึ้น โดยไม่เท่ากับ retrain weights</dd><dt>mask</dt><dd>ตัวกำหนดตำแหน่งที่อ่านหรือคิด loss ได้; causal mask ปิดอนาคต, padding mask ปิดข้อมูลเติม, loss mask เลือก target แต่ละอย่างคนละหน้าที่</dd><dt>Q / K / V</dt><dd>query ใช้ค้นข้อมูล, key ใช้จับคู่ query, value เป็นข้อมูลที่ถูกถัวเฉลี่ย; เป็น learned projections ของ representation ไม่ใช่ป้ายความหมายตายตัว</dd><dt>head</dt><dd>ส่วนของ feature representation ที่ทำ attention แยกกัน แล้ว concat/project กลับ; ต้องตรวจ d_model หารจำนวน heads ลงตัว</dd><dt>ε-neighborhood</dt><dd>เพื่อนบ้านทั้งหมดที่มีระยะไม่เกิน ε รวมจุดตัวเองใน DBSCAN นี้; ε มีหน่วยเดียวกับพิกัด ไม่ใช่จำนวน k ที่ใช้โหวต</dd><dt>core / border / noise</dt><dd>DBSCAN core มีเพื่อนบ้านรวมตัวเองถึง min_samples; border อยู่ใกล้ core แต่เพื่อนบ้านไม่ถึง; noise ไม่ถูกเชื่อมกับ core cluster ใด</dd><dt>bootstrap</dt><dd>สุ่ม observations แบบ replacement ขนาดเท่าเดิมซ้ำหลายครั้งแล้วคำนวณ statistic ใหม่; seed ทำให้ตรวจซ้ำได้ แต่ไม่แก้สมมติฐาน IID ที่ผิด</dd><dt>confidence interval</dt><dd>ช่วงที่สร้างด้วย procedure ที่มี coverage ตามสมมติฐาน; ช่วงหนึ่งที่ได้แล้วไม่ใช่ posterior probability ของ parameter และ sample เล็กยังไม่แน่นอนมาก</dd><dt>validation / test</dt><dd>validation ใช้เลือกโมเดล/ค่าตั้ง ส่วน test ใช้ประเมินหลัง freeze การตัดสินใจ; fit preprocessing/tokenizer จาก test เป็น leakage</dd><dt>leakage</dt><dd>ข้อมูลที่ควรยังไม่รู้ไหลเข้า training/การเลือกโมเดล เช่น future feature หรือเอกสารซ้ำข้าม split ทำให้ metric ดูดีเกินการใช้งานจริง</dd><dt>queue / capacity</dt><dd>queue คือรายการรอ, capacity การให้บริการรวม = workers × service rate ตามแบบจำลอง; เพิ่ม timeout ไม่เพิ่มกำลังประมวลผล</dd><dt>state transition</dt><dd>การเปลี่ยนสถานะเมื่อเกิดเหตุการณ์ที่อนุญาต เช่น queued→active→done; ต้องระบุ guard, side effect และเหตุผลเมื่อ transition ถูกปฏิเสธ</dd><dt>latency / throughput</dt><dd>latency คือเวลาต่อคำขอ, throughput คือปริมาณงานต่อหน่วยเวลา; batching อาจเพิ่ม throughput แต่เพิ่มเวลารอ จึงต้องวัดทั้งคู่</dd><dt>idempotency</dt><dd>ทำคำขอ business operation เดิมซ้ำแล้ว side effect เกิดครั้งเดียวตาม key และ transaction protocol; ไม่ได้รับประกันจากการใช้ UUID ใหม่ทุก attempt</dd><dt>local lab</dt><dd>โปรแกรม Python และ tests ที่ผู้เรียนรันบนเครื่อง; เว็บเก็บเพียงคำยืนยันของผู้เรียน การผ่าน tests ของโค้ดต้นแบบไม่ใช่ผลตรวจโค้ดผู้เรียน</dd></dl></section></article>
+<section id="practice" class="practice-section"><span class="eyebrow">PRACTICE · DEBUG · BUILD</span><h2>พิสูจน์ด้วยการลงมือทำ</h2><div id="web-checks"></div><div class="retry-actions"><button class="secondary-button" id="retry-checks">เริ่มทำโจทย์ในเว็บใหม่</button><button class="text-button" id="undo-retry" hidden>คืนผลก่อนเริ่มใหม่</button></div><div id="exercise-content"><h2>แบบฝึก 20 ข้อ — เฉลยเฉพาะข้อ</h2><p>ทำคำตอบก่อนเปิด hints; โจทย์ปลายเปิดให้ใช้ตัวอย่างคำตอบและหลักฐานราย objective ตรวจงานจริง</p><section id="exercise-1" class="exercise-item"><h3>ข้อ 1</h3><p>scalar/vector/matrix ต่างกันอย่างไร?</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Scalars, Vectors, Matrices: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): Scalar มีหนึ่งค่า shape (), vector มีแกนเดียว เช่น (3,), matrix มีสองแกน เช่น (2,3).…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: Scalar มีหนึ่งค่า shape (), vector มีแกนเดียว เช่น (3,), matrix มีสองแกน เช่น (2,3). <code>[1,2,3]</code> กับ <code>[[1,2,3]]</code> มีสมาชิกสามตัวเหมือนกันแต่ shapes ต่างกัน…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>Scalar มีหนึ่งค่า shape (), vector มีแกนเดียว เช่น (3,), matrix มีสองแกน เช่น (2,3). <code>[1,2,3]</code> กับ <code>[[1,2,3]]</code> มีสมาชิกสามตัวเหมือนกันแต่ shapes ต่างกัน; แกนที่เพิ่มมีผลต่อ broadcasting และ matrix multiplication.</p><p>อ้างอิง: <a href="#chapter-2/section/topic-6">Scalars, Vectors, Matrices</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch02-exercise-01"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-2" class="exercise-item"><h3>ข้อ 2</h3><p>dot product สูตรอะไร?</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Dot Product: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): สำหรับ vectors ยาว d เท่ากัน <code>x·w=Σ_j x_j w_j</code>. [1,2]·[2,-1…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: สำหรับ vectors ยาว d เท่ากัน <code>x·w=Σ_j x_j w_j</code>. [1,2]·[2,-1]=2-2=0 เป็น orthogonality เมื่อทั้งสอง vector ไ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>สำหรับ vectors ยาว d เท่ากัน <code>x·w=Σ_j x_j w_j</code>. [1,2]·[2,-1]=2-2=0 เป็น orthogonality เมื่อทั้งสอง vector ไม่เป็นศูนย์; ตรวจ inner dimension ก่อนคูณ.</p><p>อ้างอิง: <a href="#chapter-2/section/topic-7">Dot Product</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch02-exercise-02"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-3" class="exercise-item"><h3>ข้อ 3</h3><p>derivative วัดอะไร?</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Derivatives: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): Derivative วัดอัตราเปลี่ยน output ต่อ input ณ จุดหนึ่ง ไม่ใช่ค่าเฉล…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: Derivative วัดอัตราเปลี่ยน output ต่อ input ณ จุดหนึ่ง ไม่ใช่ค่าเฉลี่ยตลอดกราฟ. f(x)=x² มี f′(2)=4 จึงประมาณ f(2+.01)≈4+.…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>Derivative วัดอัตราเปลี่ยน output ต่อ input ณ จุดหนึ่ง ไม่ใช่ค่าเฉลี่ยตลอดกราฟ. f(x)=x² มี f′(2)=4 จึงประมาณ f(2+.01)≈4+.04=4.04; ค่าจริง4.0401 ต่าง .0001 จาก curvature.</p><p>อ้างอิง: <a href="#chapter-2/section/topic-10">Derivatives</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch02-exercise-03"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-4" class="exercise-item"><h3>ข้อ 4</h3><p>gradient คืออะไร?</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Partial Derivatives &amp; Gradient: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): Gradient รวม partial derivatives ของ scalar-valued function เป็น vector. f(x,y)=x²+3y…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: Gradient รวม partial derivatives ของ scalar-valued function เป็น vector. f(x,y)=x²+3y² มี ∇f=(2x,6y); ที่ (1,2) ได้ (2,12) shape (2,). ก้าว −η∇f ลดค่าท้อง…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>Gradient รวม partial derivatives ของ scalar-valued function เป็น vector. f(x,y)=x²+3y² มี ∇f=(2x,6y); ที่ (1,2) ได้ (2,12) shape (2,). ก้าว −η∇f ลดค่าท้องถิ่นเมื่อ η เหมาะสม ไม่รับประกัน global optimum ทุกฟังก์ชัน.</p><p>อ้างอิง: <a href="#chapter-2/section/topic-11">Partial Derivatives &amp; Gradient</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch02-exercise-04"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-5" class="exercise-item"><h3>ข้อ 5</h3><p>conditional probability คืออะไร?</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Probability: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): <code>P(A|B)=P(A∩B)/P(B)</code> เมื่อ P(B)&gt;0. ถ้า P(A∩B)=.1…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: <code>P(A|B)=P(A∩B)/P(B)</code> เมื่อ P(B)&gt;0. ถ้า P(A∩B)=.12,P(B)=.3 ได้ .4; ไม่เท่ากับ P(B|A) โดย…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p><code>P(A|B)=P(A∩B)/P(B)</code> เมื่อ P(B)&gt;0. ถ้า P(A∩B)=.12,P(B)=.3 ได้ .4; ไม่เท่ากับ P(B|A) โดยอัตโนมัติเพราะ denominator ต่างกัน.</p><p>อ้างอิง: <a href="#chapter-2/section/topic-13">Probability</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch02-exercise-05"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-6" class="exercise-item"><h3>ข้อ 6</h3><p>ทำไม <code>(3×4)(5×2)</code> คูณกันไม่ได้?</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Matrix Multiplication: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): Matrix product (m,k)@(k,n) ต้องให้แกนที่ถูก sum มีความยาวเท่ากัน. (3,4) ก…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: Matrix product (m,k)@(k,n) ต้องให้แกนที่ถูก sum มีความยาวเท่ากัน. (3,4) กับ (5,2) มี 4≠5 จึงไม่มี dot product ราย row-column; transp…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>Matrix product (m,k)@(k,n) ต้องให้แกนที่ถูก sum มีความยาวเท่ากัน. (3,4) กับ (5,2) มี 4≠5 จึงไม่มี dot product ราย row-column; transpose สุ่ม ๆ ไม่ใช่การแก้จนกว่าจะรู้ความหมายของข้อมูล.</p><p>อ้างอิง: <a href="#chapter-2/section/topic-8">Matrix Multiplication</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch02-exercise-06"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-7" class="exercise-item"><h3>ข้อ 7</h3><p>อธิบาย <code>Ax</code> เป็น row-dot-vector</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Matrix Multiplication: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): แต่ละ output <code>(Ax)_i</code> เป็น dot ของ row i ของ A กับ x. A=[[1,…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: แต่ละ output <code>(Ax)_i</code> เป็น dot ของ row i ของ A กับ x. A=[[1,2],[3,4]],x=[2,-1] ให้ [0,2]; output ยาวเท่าจำนวน…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>แต่ละ output <code>(Ax)_i</code> เป็น dot ของ row i ของ A กับ x. A=[[1,2],[3,4]],x=[2,-1] ให้ [0,2]; output ยาวเท่าจำนวน rows ของ A และ x ต้องยาวเท่าจำนวน columns.</p><p>อ้างอิง: <a href="#chapter-2/section/topic-8">Matrix Multiplication</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch02-exercise-07"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-8" class="exercise-item"><h3>ข้อ 8</h3><p>ทำไม chain rule สำคัญต่อ neural network?</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Chain Rule: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): NN เป็น composition ของ operations. ถ้า z=wx,b=0,h=z²,L=h แล้ว dL/dw=…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: NN เป็น composition ของ operations. ถ้า z=wx,b=0,h=z²,L=h แล้ว dL/dw=(2z)x; x=2,w=3 ให้ z=6 และ gradient24. Backprop คูณ loca…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>NN เป็น composition ของ operations. ถ้า z=wx,b=0,h=z²,L=h แล้ว dL/dw=(2z)x; x=2,w=3 ให้ z=6 และ gradient24. Backprop คูณ local derivatives ตามเส้นทางและบวกเมื่อมีหลายเส้นทาง.</p><p>อ้างอิง: <a href="#chapter-2/section/topic-12">Chain Rule</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch02-exercise-08"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-9" class="exercise-item"><h3>ข้อ 9</h3><p>population variance กับ sample variance ต่างกันอย่างไร?</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Statistics: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): Population variance หาร n ของ population ที่รู้ครบ; unbiased sample variance หาร n−1 เมื่อประมาณ pop…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: Population variance หาร n ของ population ที่รู้ครบ; unbiased sample variance หาร n−1 เมื่อประมาณ population variance จาก IID sample ที่ใช้ sample mean. [1,3] มี squared deviationsร…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>Population variance หาร n ของ population ที่รู้ครบ; unbiased sample variance หาร n−1 เมื่อประมาณ population variance จาก IID sample ที่ใช้ sample mean. [1,3] มี squared deviationsรวม2 จึง population variance1, sample variance2; sample n&lt;2 ต้อง reject.</p><p>อ้างอิง: <a href="#chapter-2/section/topic-14">Statistics</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch02-exercise-09"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-10" class="exercise-item"><h3>ข้อ 10</h3><p>ทำไม correlation ไม่เท่ากับ causation?</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Covariance: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): Correlation บอก linear association ไม่ระบุ causal direction หรือ confounders. อุณหภูมิท…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: Correlation บอก linear association ไม่ระบุ causal direction หรือ confounders. อุณหภูมิทำให้ยอดไอศกรีมและการจมน้ำเพิ่มพร้อมกันได้ โดยไอศกรีมไม่ใช่สาเหตุที่พิส…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>Correlation บอก linear association ไม่ระบุ causal direction หรือ confounders. อุณหภูมิทำให้ยอดไอศกรีมและการจมน้ำเพิ่มพร้อมกันได้ โดยไอศกรีมไม่ใช่สาเหตุที่พิสูจน์แล้ว; ต้องมี causal assumptions/experimental design เพิ่ม.</p><p>อ้างอิง: <a href="#chapter-2/section/topic-15">Covariance</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch02-exercise-10"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-11" class="exercise-item"><h3>ข้อ 11</h3><p>implement scalar-vector multiplication</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Scalars, Vectors, Matrices: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): <code>np.asarray(x,dtype=float)*a</code> คูณ scalar เดียวทุกพิกัด.…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: <code>np.asarray(x,dtype=float)*a</code> คูณ scalar เดียวทุกพิกัด. a=3,x=[1,-2,0]→[3,-6,0], shapeคง (3,); ทดสอ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p><code>np.asarray(x,dtype=float)*a</code> คูณ scalar เดียวทุกพิกัด. a=3,x=[1,-2,0]→[3,-6,0], shapeคง (3,); ทดสอบ scalar0,negative และไม่ mutate input.</p><p>อ้างอิง: <a href="#chapter-2/section/topic-6">Scalars, Vectors, Matrices</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch02-exercise-11"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-12" class="exercise-item"><h3>ข้อ 12</h3><p>implement matrix addition พร้อม shape validation</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Matrix Multiplication: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ตรวจ <code>A.shape==B.shape</code> ก่อน <code>A+B</code> ถ้าสัญญาคือ matrix addition shape เดียว…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ตรวจ <code>A.shape==B.shape</code> ก่อน <code>A+B</code> ถ้าสัญญาคือ matrix addition shape เดียวกัน. [[1,2]]+[[3,4]]→[[4,6]]; (2,1) กับ (2,) ต้อง reject แม…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ตรวจ <code>A.shape==B.shape</code> ก่อน <code>A+B</code> ถ้าสัญญาคือ matrix addition shape เดียวกัน. [[1,2]]+[[3,4]]→[[4,6]]; (2,1) กับ (2,) ต้อง reject แม้ NumPy broadcast ได้ เพราะนั่นเป็น operation อีกแบบ.</p><p>อ้างอิง: <a href="#chapter-2/section/topic-8">Matrix Multiplication</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch02-exercise-12"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-13" class="exercise-item"><h3>ข้อ 13</h3><p>implement cosine similarity</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Dot Product: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): <code>cos(x,y)=dot(x,y)/(norm(x)*norm(y))</code>. [1,0] กับ [1,1] ได้1/√2≈.70710678; z…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: <code>cos(x,y)=dot(x,y)/(norm(x)*norm(y))</code>. [1,0] กับ [1,1] ได้1/√2≈.70710678; zero vector ไม่มี cosine ตามนิยามจึง reject. ตรวจ scaling posi…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p><code>cos(x,y)=dot(x,y)/(norm(x)*norm(y))</code>. [1,0] กับ [1,1] ได้1/√2≈.70710678; zero vector ไม่มี cosine ตามนิยามจึง reject. ตรวจ scaling positive ของ vector ไม่เปลี่ยน cosine และ shapes ต้องตรง.</p><p>อ้างอิง: <a href="#chapter-2/section/topic-7">Dot Product</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch02-exercise-13"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-14" class="exercise-item"><h3>ข้อ 14</h3><p>implement correlation จาก covariance/std</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Statistics, Covariance: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ใช้ covariance/std ที่มี ddof เดียวกัน: corr=cov(x,y)/(std(x)std(y)). x=[1,2,3]…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ใช้ covariance/std ที่มี ddof เดียวกัน: corr=cov(x,y)/(std(x)std(y)). x=[1,2,3],y=[2,4,6] ได้1; feature constant ต้อง reject/คืนสถานะ undefined…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ใช้ covariance/std ที่มี ddof เดียวกัน: corr=cov(x,y)/(std(x)std(y)). x=[1,2,3],y=[2,4,6] ได้1; feature constant ต้อง reject/คืนสถานะ undefined แทนหารศูนย์หรืออ้างว่า correlation0 มีความหมายเดียวกัน.</p><p>อ้างอิง: <a href="#chapter-2/section/topic-14">Statistics</a>, <a href="#chapter-2/section/topic-15">Covariance</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch02-exercise-14"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-15" class="exercise-item"><h3>ข้อ 15</h3><p>ใช้ numerical derivative ตรวจ derivative ของ <code>x³+2x</code></p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Derivatives, Numerical Verification: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): f′(x)=3x²+2. ที่ x=2 ได้14; central difference <code>(f(x+h)-f(x-h))/(2h)</code> h=1e-…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: f′(x)=3x²+2. ที่ x=2 ได้14; central difference <code>(f(x+h)-f(x-h))/(2h)</code> h=1e-5 ควรใกล้14 ภายใน1e-7. ทดสอบหลาย x รวม0 และติดลบ ไม่ใช้ forwa…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>f′(x)=3x²+2. ที่ x=2 ได้14; central difference <code>(f(x+h)-f(x-h))/(2h)</code> h=1e-5 ควรใกล้14 ภายใน1e-7. ทดสอบหลาย x รวม0 และติดลบ ไม่ใช้ forward difference เป็นสูตรเดียวกันโดยไม่ระบุ error order.</p><p>อ้างอิง: <a href="#chapter-2/section/topic-10">Derivatives</a>, <a href="#chapter-2/section/topic-16">Numerical Verification</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch02-exercise-15"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-16" class="exercise-item"><h3>ข้อ 16</h3><p>code matrix multiplication คืน shape ผิด ให้ trace index <code>i,j,k</code></p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Matrix Multiplication: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): สร้าง C shape(m,n), loop i เป็น row ของ A,j เป็น column ของ B,k เป็น shared a…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: สร้าง C shape(m,n), loop i เป็น row ของ A,j เป็น column ของ B,k เป็น shared axis แล้ว <code>C[i,j]+=A[i,k]*B[k,j]</code>. ทดสอบ non-square (2,3)@(3,4)…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>สร้าง C shape(m,n), loop i เป็น row ของ A,j เป็น column ของ B,k เป็น shared axis แล้ว <code>C[i,j]+=A[i,k]*B[k,j]</code>. ทดสอบ non-square (2,3)@(3,4)→(2,4) เพื่อจับโค้ดที่บังเอิญผ่านเฉพาะ square matrices.</p><p>อ้างอิง: <a href="#chapter-2/section/topic-8">Matrix Multiplication</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch02-exercise-16"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-17" class="exercise-item"><h3>ข้อ 17</h3><p>finite difference ให้ค่าผิดเมื่อ h เล็กมาก — อธิบาย floating-point issue</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Numerical Verification: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): เมื่อ h เล็กมาก f(x+h) กับ f(x-h) แทบเท่ากัน การลบเสียเลขนัยสำคัญและ roundoff หารด…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: เมื่อ h เล็กมาก f(x+h) กับ f(x-h) แทบเท่ากัน การลบเสียเลขนัยสำคัญและ roundoff หารด้วย h ถูกขยาย. Sweep h เช่น1e-2..1e-12 แล้วเทียบ analytic derivat…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>เมื่อ h เล็กมาก f(x+h) กับ f(x-h) แทบเท่ากัน การลบเสียเลขนัยสำคัญและ roundoff หารด้วย h ถูกขยาย. Sweep h เช่น1e-2..1e-12 แล้วเทียบ analytic derivative; error มักลดก่อนเพิ่ม ไม่รับประกัน h ยิ่งเล็กยิ่งแม่น.</p><p>อ้างอิง: <a href="#chapter-2/section/topic-16">Numerical Verification</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch02-exercise-17"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-18" class="exercise-item"><h3>ข้อ 18</h3><p>covariance function หารด้วย n ทั้งที่โจทย์ต้องการ sample covariance — แก้และ test</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Covariance: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): Sample covariance ใช้ denominator n−1 หลังหัก sample means. x=[1,3],y=[2,6] ให้…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: Sample covariance ใช้ denominator n−1 หลังหัก sample means. x=[1,3],y=[2,6] ให้ผลรวม cross deviations4 และ sample covariance4; population covar…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>Sample covariance ใช้ denominator n−1 หลังหัก sample means. x=[1,3],y=[2,6] ให้ผลรวม cross deviations4 และ sample covariance4; population covariance2. เพิ่ม n=1 rejection และเทียบ np.cov(...,ddof=1).</p><p>อ้างอิง: <a href="#chapter-2/section/topic-15">Covariance</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch02-exercise-18"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-19" class="exercise-item"><h3>ข้อ 19</h3><p>implement determinant สำหรับ 2×2 และ 3×3 พร้อม tests</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Determinant / Inverse / Eigen: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): 2×2 ใช้ ad−bc; [[1,2],[3,4]] ได้−2. 3×3 ขยาย cofactor แถวแรกพร้อมสลับเครื่องหมาย +−+; id…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: 2×2 ใช้ ad−bc; [[1,2],[3,4]] ได้−2. 3×3 ขยาย cofactor แถวแรกพร้อมสลับเครื่องหมาย +−+; identityได้1, duplicated rowsได้0, สลับสอง rows เปลี่ยนเครื่องหมาย. เทีย…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>2×2 ใช้ ad−bc; [[1,2],[3,4]] ได้−2. 3×3 ขยาย cofactor แถวแรกพร้อมสลับเครื่องหมาย +−+; identityได้1, duplicated rowsได้0, สลับสอง rows เปลี่ยนเครื่องหมาย. เทียบ np.linalg.det ด้วย tolerance ไม่ตรวจ float equality ทุกกรณี.</p><p>อ้างอิง: <a href="#chapter-2/section/topic-17">Determinant / Inverse / Eigen</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch02-exercise-19"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-20" class="exercise-item"><h3>ข้อ 20</h3><p>implement numerical gradient ของ function <code>f(x,y)</code> แล้วตรวจกับ analytic gradient ของ <code>x²+3y²</code></p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Partial Derivatives &amp; Gradient, Numerical Verification: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ทำ perturb หนึ่งพิกัดต่อครั้งโดยคงพิกัดอื่น ใช้ central difference. f=x²+3y² ท…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ทำ perturb หนึ่งพิกัดต่อครั้งโดยคงพิกัดอื่น ใช้ central difference. f=x²+3y² ที่(1,2)ต้องได้[2,12]; inputต้นฉบับต้องเหมือนเดิมหลังฟังก์ชัน, ท…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ทำ perturb หนึ่งพิกัดต่อครั้งโดยคงพิกัดอื่น ใช้ central difference. f=x²+3y² ที่(1,2)ต้องได้[2,12]; inputต้นฉบับต้องเหมือนเดิมหลังฟังก์ชัน, ทดสอบ(0,0),(-1,.5)และหลาย h เพื่อจับ index/aliasing bug.</p><p>อ้างอิง: <a href="#chapter-2/section/topic-11">Partial Derivatives &amp; Gradient</a>, <a href="#chapter-2/section/topic-16">Numerical Verification</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch02-exercise-20"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section></div><div id="local-lab-content"><section id="local-lab"><h2>Local lab: Python 3.12 บน CPU</h2><p>รันจาก repository root; ใช้ Python 3.12 แยก environment สำหรับ framework ตาม requirements ของชุดบท</p><pre><code>python3.12 -m venv .venv-course
+source .venv-course/bin/activate
+python -m pip install -r requirements-batch01.txt pytest
+(cd 02-mathematics &amp;&amp; python -m pytest tests -q -rs)</code></pre><p>ผลที่คาดหวัง: required tests ผ่านและไม่มี required test ถูก skip; GPU/integrations ที่ยังไม่รันต้องระบุแยก Python 3.15 ที่มากับเครื่องอาจใช้กับ framework wheels เหล่านี้ไม่ได้</p><h2>Mini Project — Math Toolkit for Machine Learning</h2>
+<p>Starter: <a href="../02-mathematics/mini-project/../src/math_toolkit.py">../src/math_toolkit.py</a></p>
+<h3>Required additions</h3>
+<p>เพิ่ม:</p>
+<ul>
+<li>scalar-vector multiplication</li>
+<li>matrix addition</li>
+<li>cosine similarity</li>
+<li>correlation</li>
+<li>2×2 determinant</li>
+<li>numerical gradient สำหรับ <code>f: R²→R</code></li>
+</ul>
+<h3>Verification</h3>
+<p>ทุก operation ต้องมี:</p>
+<ol>
+<li>example ที่คำนวณด้วยมือได้</li>
+<li>unit test</li>
+<li>invalid-shape/input test</li>
+<li>docstring ระบุ dimensions</li>
+</ol>
+<h3>Final experiment</h3>
+<p>ให้ function:</p>
+<pre><code class="language-text">f(x,y)=(x-3)²+2(y+1)²
+</code></pre>
+<ol>
+<li>derive analytic gradient</li>
+<li>implement numerical gradient</li>
+<li>เปรียบเทียบที่อย่างน้อย 5 จุด</li>
+<li>อธิบายว่าทำไม numerical กับ analytic ไม่เท่ากันเป๊ะ</li>
+</ol><h2>Batch 01 Integration Project — Mini Data Science Engine</h2>
+<p>โปรเจกต์นี้บังคับใช้ความรู้จากทั้ง 3 บทพร้อมกัน</p>
+<pre><code class="language-text">CLI / pathlib                 Chapter 01
+      ↓
+CSV input
+      ↓
+validation + cleaning         Chapters 01 + 03
+      ↓
+manual statistics            Chapter 02
+      ↓
+NumPy verification           Chapters 02 + 03
+      ↓
+Pandas analysis              Chapter 03
+      ↓
+Matplotlib plots             Chapter 03
+      ↓
+JSON + Markdown report
+</code></pre>
+<h3>Goal</h3>
+<p>สร้าง pipeline ที่รับ CSV แล้วสร้าง:</p>
+<ul>
+<li>schema/shape</li>
+<li>missing report</li>
+<li>duplicate count</li>
+<li>numeric statistics</li>
+<li>manual-vs-NumPy consistency checks</li>
+<li>correlation matrix</li>
+<li>histograms</li>
+<li>Markdown report</li>
+<li>JSON machine-readable report</li>
+</ul>
+<h3>Run</h3>
+<p>จาก repository root:</p>
+<pre><code class="language-bash">source .venv/bin/activate
+
+python integration-project/src/mini_data_science_engine.py \
+  03-scientific-python/data/sample_students.csv \
+  --output-dir reports/integration
+</code></pre>
+<p>ผลลัพธ์:</p>
+<pre><code class="language-text">reports/integration/
+├── report.json
+├── report.md
+└── plots/
+    ├── ...
+</code></pre>
+<h3>What you must understand</h3>
+<h4>Chapter 01</h4>
+<ul>
+<li><code>argparse</code></li>
+<li><code>pathlib</code></li>
+<li>functions</li>
+<li>exceptions</li>
+<li>JSON I/O</li>
+<li>testable architecture</li>
+</ul>
+<h4>Chapter 02</h4>
+<ul>
+<li>mean</li>
+<li>population variance</li>
+<li>covariance/correlation interpretation</li>
+<li>floating-point approximate equality</li>
+</ul>
+<h4>Chapter 03</h4>
+<ul>
+<li>ndarray</li>
+<li>vectorized statistics</li>
+<li>DataFrame</li>
+<li>missing values</li>
+<li>correlation</li>
+<li>plotting</li>
+</ul>
+<h3>Required extension before mastery</h3>
+<p>เพิ่มเอง:</p>
+<ol>
+<li>CLI <code>--drop-duplicates</code></li>
+<li>CLI <code>--columns a b c</code></li>
+<li>detect constant columns</li>
+<li>scatter plot สำหรับ numeric pairs ที่เลือก</li>
+<li>Markdown section อธิบาย data-quality warnings</li>
+<li>test dataset ที่มี column numeric ทั้งหมดเป็น missing</li>
+</ol>
+<h3>Rules</h3>
+<ul>
+<li>ห้ามแก้ raw input file</li>
+<li>cleaning rules ต้อง explicit</li>
+<li>report ต้องบอก input ที่ใช้</li>
+<li>observation ต้องแยกจาก causal claim</li>
+<li>ทุก bug fix ต้องเพิ่ม regression test ถ้าเหมาะสม</li>
+</ul>
+<h3>Mastery challenge</h3>
+<p>หา CSV ใหม่ที่ไม่ใช่ sample file แล้วตอบ:</p>
+<ol>
+<li>ข้อมูลมีปัญหาคุณภาพอะไร?</li>
+<li>numeric distributions เป็นอย่างไร?</li>
+<li>มี relationships อะไรที่น่าสำรวจต่อ?</li>
+<li>อะไร “ยังสรุปไม่ได้” จากข้อมูลนี้?</li>
+<li>ถ้าจะใช้สร้าง ML model ต้องเตรียมอะไรต่อ?</li>
+</ol>
+<p>เมื่อทำได้ คุณพร้อมเข้าสู่ Chapter 04 — Data Fundamentals</p></section></div><label class="local-confirm"><input type="checkbox" id="local-lab-confirm"> ฉันรัน local lab และตรวจผลตาม rubric ด้วยตัวเองแล้ว</label><p class="local-note">สถานะนี้เป็นคำยืนยันของผู้เรียน เว็บไม่ได้รันหรือตรวจ Python บนเครื่องแทนคุณ</p></section>
+<section id="mastery-review" class="practice-section"><h2>หลักฐานตามเกณฑ์การเรียนรู้</h2><p>ทุก objective ต้องแสดงหลักฐานอธิบาย ทำนาย คำนวณ อ่าน shape/state debug และประยุกต์ พร้อมกรณีใหม่ ผลรัน source ผู้เรียนจริง และการประเมินซ้ำ เกณฑ์นี้ไม่รับประกันความเข้าใจทุกสถานการณ์ เปิด JavaScript เพื่อดูรายการที่ยังขาดและนำเข้ารายงานผู้ตรวจ</p></section><section class="coverage-section"><h2>แผนที่สิ่งที่เรียน → สิ่งที่ต้องแสดงให้ได้</h2><div id="coverage-table"></div></section><footer><span>ZERO TO ELITE AI ENGINEER · LEARNING STUDIO</span><span>อ่าน · derive · implement · debug · experiment · build</span></footer></div></main><noscript><style>.workbench,.sidebar,.reading-route,.lesson-toc,.mastery-status,#web-checks{display:none}main{margin-left:0}</style>อ่านเนื้อหา HTML ได้ตามปกติ เปิด JavaScript เพื่อใช้ห้องทดลองและตรวจคำตอบ</noscript></body></html>

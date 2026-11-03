@@ -1,0 +1,1257 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="บทเรียน AI Engineer ภาษาไทย พร้อมคณิตศาสตร์ทีละขั้นและห้องทดลองที่คำนวณจริง"><title>Tokenizer From Scratch: เรียน merges แล้วใช้ artifact เดิม · AI Engineer Studio</title><link rel="stylesheet" href="../visual-lab/assets/styles.css"><link rel="stylesheet" href="../visual-lab/assets/course.css"><script defer src="../visual-lab/assets/lessons.js"></script><script defer src="../visual-lab/assets/chapter-meta.js"></script><script defer src="../visual-lab/assets/course-math.js"></script><script defer src="../visual-lab/assets/course-models.js"></script><script defer src="../visual-lab/assets/course-models-v3.js"></script><script defer src="../visual-lab/assets/course-assessment.js"></script><script defer src="../visual-lab/assets/course-mastery.js"></script><script defer src="../visual-lab/assets/course-catalog.js"></script><script defer src="../visual-lab/assets/book-content.js"></script><script defer src="../visual-lab/assets/course-render.js"></script><script defer src="../visual-lab/assets/course-mastery-panel.js"></script><script defer src="../visual-lab/assets/quality-report.js"></script><script defer src="../visual-lab/assets/course-app.js"></script></head>
+<body data-chapter="49" data-root="../"><a class="skip-link" href="#main">ข้ามไปบทเรียน</a>
+<aside class="sidebar" id="sidebar" aria-label="เลือกบทเรียน"><a class="brand" href="../visual-lab/index.html"><span class="brand-mark">ai</span><span>AI ENGINEER<small>LEARN · DERIVE · BUILD</small></span></a><div class="sidebar-intro">อ่านให้เข้าใจ · คำนวณให้เห็น · เขียนให้เป็น</div><label class="search-box"><input id="search" type="search" placeholder="ค้นหาบท / attention" aria-label="ค้นหาบทเรียน"></label><label class="filter-label" for="phase-filter">เส้นทางการเรียน <span id="nav-count"></span></label><select id="phase-filter"><option value="">ทุก Phase</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option></select><nav id="chapter-list" class="chapter-list" aria-label="รายชื่อบท"></nav><div class="course-progress"><div><span>ผ่านโจทย์ในเว็บ</span><strong id="progress-count">0 / 80</strong></div><progress id="course-progress" max="80" value="0" aria-label="บทที่ผ่านโจทย์"></progress><a id="resume-link" href="#chapter-1">อ่านต่อจากเดิม →</a></div></aside>
+<button class="nav-backdrop" id="nav-backdrop" aria-label="ปิดเมนู" hidden></button>
+<main id="main" tabindex="-1"><header class="topbar"><div><button id="nav-toggle" class="icon-button mobile-menu" aria-label="เปิดเมนูบทเรียน" aria-expanded="false" aria-controls="sidebar">☰</button><span id="breadcrumb"></span></div><span class="local-badge"><i></i> คำนวณในเครื่อง · ไม่มี API</span></header><div class="content">
+<div class="chapter-navigation"><label for="chapter-select" class="sr-only">เลือกบทเรียน</label><select id="chapter-select"></select><div class="chapter-arrows"><button id="prev-chapter" class="icon-button" aria-label="บทก่อนหน้า">←</button><button id="next-chapter" class="icon-button" aria-label="บทถัดไป">→</button></div></div>
+<section class="chapter-hero"><div><p id="chapter-kicker" class="eyebrow"></p><h1 id="chapter-title">Tokenizer From Scratch: เรียน merges แล้วใช้ artifact เดิม</h1><p class="english-title" id="chapter-english"></p></div><span class="hero-symbol">f(x) ↗</span></section>
+<p id="quality-status" class="quality-status"></p><div id="mastery-status" class="mastery-status"></div><div class="reading-route"><a href="#chapter-49/section/overview">01 อ่านบทเรียน</a><a href="#workbench">02 ทดลองสมการ</a><a href="#practice">03 ฝึกและตรวจงาน</a><a href="#mastery-review">04 หลักฐานตามเกณฑ์</a></div>
+<nav id="lesson-toc" class="lesson-toc" aria-label="สารบัญบท"></nav>
+<section id="overview" class="course-overview"><span class="eyebrow">THE LEARNING CONTRACT</span><h2>เรียนบทนี้แล้วต้องทำอะไรได้</h2><p id="chapter-purpose"></p><div id="chapter-objectives"></div><div class="learning-hint">ทำนาย → เปลี่ยนทีละค่า → ตรวจตัวเลข → อธิบายเหตุผล → เขียนด้วย Python เอง</div></section>
+<section class="workbench lab-card" id="workbench" aria-label="ห้องทดลองคำนวณจริง"><div class="card-header"><div><span class="live-dot"></span><span class="eyebrow">COMPUTATION WORKBENCH</span></div><span class="simulation-label">ทุกภาพใช้ผลคำนวณชุดเดียวกัน</span></div><div class="lab-top"><label for="lab-select">เลือกกลไกที่ต้องการทดลอง</label><select id="lab-select"></select><p id="lab-question"></p></div><div class="workbench-grid"><div class="viz-column"><div class="compare-labels"><span>เส้นทึบ: ปัจจุบัน</span><span>เส้นประ: baseline ที่ตรึงไว้</span></div><div id="simulation" class="simulation"></div><div id="metrics" class="metrics"></div><div id="baseline-diff" class="baseline-diff"></div><div class="playback"><div class="playback-buttons"><button class="primary-button" id="update-once">อัปเดตหนึ่งก้าว</button><button class="secondary-button" id="train-many">▶ ฝึก 30 ก้าว</button><button class="icon-button" id="back-state" aria-label="ย้อนประวัติ">↶</button><button class="icon-button" id="forward-state" aria-label="ประวัติถัดไป">↷</button></div></div><div class="lab-secondary-actions"><button id="pin-baseline" class="text-button">ตรึง baseline ปัจจุบัน</button><button id="reset-lab" class="text-button">คืนค่าเริ่มต้น</button><button id="download-state" class="text-button">บันทึกผล JSON</button><span id="history-status"></span></div><p id="simulation-note" class="simulation-note"></p><p class="lab-error" id="lab-error" role="alert" hidden></p></div><div class="controls-column"><h3>เปลี่ยนทีละตัว แล้วสังเกตผล</h3><div id="lab-controls"></div><p class="control-note">แก้ weight ด้วยมือจะคำนวณ forward ใหม่; optimizer เปลี่ยน weights เมื่อกดอัปเดตเท่านั้น</p></div></div>
+<div class="trace-section"><div class="trace-toolbar"><h3>เดินสมการทีละ operation</h3><div><button id="trace-prev" class="icon-button" aria-label="operation ก่อนหน้า">←</button><button id="play-trace" class="secondary-button" aria-pressed="false">▶ เล่น flow</button><button id="trace-next" class="icon-button" aria-label="operation ถัดไป">→</button><span id="stage-counter"></span></div></div><label class="motion-control"><input id="reduce-motion" type="checkbox"> ลดภาพเคลื่อนไหว (หยุดการเล่นที่ค้างอยู่)</label><div id="operation-steps" class="operation-steps"></div><div id="flow-diagram" class="flow-diagram"></div><div id="active-operation" class="active-operation" aria-live="polite"></div><p class="control-note">ตัวเลขบนภาพปัดเศษเพื่อให้อ่านง่าย; บันทึก JSON เพื่อดูค่าที่ใช้คำนวณเต็ม precision</p><details open><summary>ตารางค่าระหว่างทาง — ตรวจด้วยมือได้</summary><div id="result-table"></div></details><div id="tensor-tables" class="tensor-tables"></div><details id="surface-details"><summary>ดู loss surface และเส้นทางของ w₁,b (ตรึง controls อื่น)</summary><div id="surface-chart"></div><p>surface คำนวณ objective ปัจจุบันโดยตรึง degree, penalty, ข้อมูล และ weights อื่น เส้นทางแสดงเฉพาะ snapshots ที่ค่าเหล่านี้ตรงกัน; นอกช่วง w=[−1,5], b=[−2,4] ให้ตรวจค่าจริงใน history</p></details><details><summary>ประวัติการเปลี่ยนค่า</summary><div id="history-table"></div></details></div></section>
+<article id="chapter-article" class="chapter-article"><section id="mechanism-1" class="teaching-section"><span class="section-kicker">CHAPTER 49 · ภาพ → สมการ → โค้ด</span><h2>1. BPE เริ่มจาก symbols ที่เล็กกว่า words</h2><h3>โจทย์และเหตุผล</h3><p>นับคู่ติดกันใน corpus เลือกคู่ที่ถี่ที่สุดแล้ว merge แบบไม่ทับซ้อน จากนั้นต้องนับใหม่ เพราะการ merge เปลี่ยนเพื่อนบ้านของ symbols</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Implement deterministic pair merging.</p><p>mergepair(1,1)บน[1,1,1]แบบleft-to-rightnonoverlapได้[new,1]ไม่ใช่[new,new]; tiebreakfrequencyด้วยlexicographicpairให้deterministic</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>corpus: training corpus,initial=banana banana bandana; merges: merge count,initial=3</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = &quot;banana banana bandana&quot;; ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</li><li>count adjacent pairs → deterministic maximum → non-overlap merge = [&quot;ban|ana&quot;, &quot;ban|ana&quot;, &quot;ban|d|ana&quot;]; counts ถูกคำนวณใหม่ทุก merge; ties เรียง JSON pair แบบ lexical เพื่อทำซ้ำได้</li><li>finite / normalized / bounded = [&quot;ban|ana&quot;, &quot;ban|ana&quot;, &quot;ban|d|ana&quot;]; เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="bpe-count-pairs---choose-max">เปิดการทดลองนี้</a><p class="failure-box">fitmergesบนtesttextทำcompressionผลดูดีเกิน; splitdocumentsก่อนBPEและห้ามnormalizeแบบirreversibleถ้าสัญญาexactroundtriprawtext; character BPE ภายใน whitespace-delimited words เพื่ออ่านง่าย; byte-level BPE/whitespace preservation อยู่ใน implementation ของบท</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>mergepair(1,1)บน[1,1,1]แบบleft-to-rightnonoverlapได้[new,1]ไม่ใช่[new,new]; tiebreakfrequencyด้วยlexicographicpairให้deterministic</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-1-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = &quot;banana banana bandana&quot;<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>count adjacent pairs → deterministic maximum → non-overlap merge</code> = [&quot;ban|ana&quot;, &quot;ban|ana&quot;, &quot;ban|d|ana&quot;]<p>counts ถูกคำนวณใหม่ทุก merge; ties เรียง JSON pair แบบ lexical เพื่อทำซ้ำได้</p></li><li><code>finite / normalized / bounded</code> = [&quot;ban|ana&quot;, &quot;ban|ana&quot;, &quot;ban|d|ana&quot;]<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-1-visual"><summary>ภาพและ shape</summary><p>character BPE ภายใน whitespace-delimited words เพื่ออ่านง่าย; byte-level BPE/whitespace preservation อยู่ใน implementation ของบท</p><ol><li><code>shape / range</code> = &quot;banana banana bandana&quot;<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>count adjacent pairs → deterministic maximum → non-overlap merge</code> = [&quot;ban|ana&quot;, &quot;ban|ana&quot;, &quot;ban|d|ana&quot;]<p>counts ถูกคำนวณใหม่ทุก merge; ties เรียง JSON pair แบบ lexical เพื่อทำซ้ำได้</p></li><li><code>finite / normalized / bounded</code> = [&quot;ban|ana&quot;, &quot;ban|ana&quot;, &quot;ban|d|ana&quot;]<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-1-code"><summary>โค้ด</summary><p>mergepair(1,1)บน[1,1,1]แบบleft-to-rightnonoverlapได้[new,1]ไม่ใช่[new,new]; tiebreakfrequencyด้วยlexicographicpairให้deterministic</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-1-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = &quot;banana banana bandana&quot;<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>count adjacent pairs → deterministic maximum → non-overlap merge</code> = [&quot;ban|ana&quot;, &quot;ban|ana&quot;, &quot;ban|d|ana&quot;]<p>counts ถูกคำนวณใหม่ทุก merge; ties เรียง JSON pair แบบ lexical เพื่อทำซ้ำได้</p></li><li><code>finite / normalized / bounded</code> = [&quot;ban|ana&quot;, &quot;ban|ana&quot;, &quot;ban|d|ana&quot;]<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-1"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-2" class="teaching-section"><span class="section-kicker">CHAPTER 49 · ภาพ → สมการ → โค้ด</span><h2>2. training ranks กับ encoding เป็นคนละขั้น</h2><h3>โจทย์และเหตุผล</h3><p>ข้อความใหม่ไม่ควรฝึกความถี่ใหม่ ใช้ merge ranks ที่บันทึกไว้ตามลำดับ deterministic ties ทำให้ tokenizer artifact reproduce ได้</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Implement merge-rank encoding.</p><p>encodeเริ่มbytesแล้ววนเลือกadjacentpairที่มีrankต่ำสุดในmergetableจนไม่มี; ไม่เลือกpairfrequencyจากข้อความqueryใหม่</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>corpus: training corpus,initial=low lower lowest low; merges: merge count,initial=3</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = &quot;low lower lowest low&quot;; ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</li><li>count adjacent pairs → deterministic maximum → non-overlap merge = [&quot;low&quot;, &quot;lowe|r&quot;, &quot;lowe|s|t&quot;, &quot;low&quot;]; counts ถูกคำนวณใหม่ทุก merge; ties เรียง JSON pair แบบ lexical เพื่อทำซ้ำได้</li><li>finite / normalized / bounded = [&quot;low&quot;, &quot;lowe|r&quot;, &quot;lowe|s|t&quot;, &quot;low&quot;]; เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="bpe-corpus-เปล--ยนทำให--merg">เปิดการทดลองนี้</a><p class="failure-box">fitmergesบนtesttextทำcompressionผลดูดีเกิน; splitdocumentsก่อนBPEและห้ามnormalizeแบบirreversibleถ้าสัญญาexactroundtriprawtext; character BPE ภายใน whitespace-delimited words เพื่ออ่านง่าย; byte-level BPE/whitespace preservation อยู่ใน implementation ของบท</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>encodeเริ่มbytesแล้ววนเลือกadjacentpairที่มีrankต่ำสุดในmergetableจนไม่มี; ไม่เลือกpairfrequencyจากข้อความqueryใหม่</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-2-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = &quot;low lower lowest low&quot;<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>count adjacent pairs → deterministic maximum → non-overlap merge</code> = [&quot;low&quot;, &quot;lowe|r&quot;, &quot;lowe|s|t&quot;, &quot;low&quot;]<p>counts ถูกคำนวณใหม่ทุก merge; ties เรียง JSON pair แบบ lexical เพื่อทำซ้ำได้</p></li><li><code>finite / normalized / bounded</code> = [&quot;low&quot;, &quot;lowe|r&quot;, &quot;lowe|s|t&quot;, &quot;low&quot;]<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-2-visual"><summary>ภาพและ shape</summary><p>character BPE ภายใน whitespace-delimited words เพื่ออ่านง่าย; byte-level BPE/whitespace preservation อยู่ใน implementation ของบท</p><ol><li><code>shape / range</code> = &quot;low lower lowest low&quot;<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>count adjacent pairs → deterministic maximum → non-overlap merge</code> = [&quot;low&quot;, &quot;lowe|r&quot;, &quot;lowe|s|t&quot;, &quot;low&quot;]<p>counts ถูกคำนวณใหม่ทุก merge; ties เรียง JSON pair แบบ lexical เพื่อทำซ้ำได้</p></li><li><code>finite / normalized / bounded</code> = [&quot;low&quot;, &quot;lowe|r&quot;, &quot;lowe|s|t&quot;, &quot;low&quot;]<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-2-code"><summary>โค้ด</summary><p>encodeเริ่มbytesแล้ววนเลือกadjacentpairที่มีrankต่ำสุดในmergetableจนไม่มี; ไม่เลือกpairfrequencyจากข้อความqueryใหม่</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-2-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = &quot;low lower lowest low&quot;<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>count adjacent pairs → deterministic maximum → non-overlap merge</code> = [&quot;low&quot;, &quot;lowe|r&quot;, &quot;lowe|s|t&quot;, &quot;low&quot;]<p>counts ถูกคำนวณใหม่ทุก merge; ties เรียง JSON pair แบบ lexical เพื่อทำซ้ำได้</p></li><li><code>finite / normalized / bounded</code> = [&quot;low&quot;, &quot;lowe|r&quot;, &quot;lowe|s|t&quot;, &quot;low&quot;]<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-2"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-3" class="teaching-section"><span class="section-kicker">CHAPTER 49 · ภาพ → สมการ → โค้ด</span><h2>3. round trip ต้องกำหนดระดับให้ชัด</h2><h3>โจทย์และเหตุผล</h3><p>ภาพ character BPE ภายใน whitespace-delimited words จึงรักษาข้อความระดับ words ไม่รักษา whitespace ทุกตัว local byte-level implementation ต้อง decode UTF-8 กลับได้และจัด special tokens แยกจากข้อความธรรมดา</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Verify encode/decode roundtrip.</p><p><code>decode(encode(text))==text</code>สำหรับไทย/อังกฤษ/emoji/combining/empty; decodeต้องjoinbytesก่อนutf8decode ไม่decodeแต่ละbyteแยก</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>corpus: training text,initial=banana banana bandana; context: context,initial=a; alpha: add-k smoothing,initial=1; order: context length,initial=1</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = &quot;a&quot;; ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</li><li>P(next|context)=(count+α)/(context_count+αV) = [0.23076923076923078, 0.07692307692307693, 0.07692307692307693, 0.07692307692307693, 0.5384615384615384]; นับ Unicode codepoints ในตัวอย่าง; ไม่ใช่ Thai word tokenizer</li><li>finite / normalized / bounded = [0.23076923076923078, 0.07692307692307693, 0.07692307692307693, 0.07692307692307693, 0.5384615384615384]; เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="ngram-vocabulary-และ-counts-ก-">เปิดการทดลองนี้</a><p class="failure-box">fitmergesบนtesttextทำcompressionผลดูดีเกิน; splitdocumentsก่อนBPEและห้ามnormalizeแบบirreversibleถ้าสัญญาexactroundtriprawtext; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p><code>decode(encode(text))==text</code>สำหรับไทย/อังกฤษ/emoji/combining/empty; decodeต้องjoinbytesก่อนutf8decode ไม่decodeแต่ละbyteแยก</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-3-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = &quot;a&quot;<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>P(next|context)=(count+α)/(context_count+αV)</code> = [0.23076923076923078, 0.07692307692307693, 0.07692307692307693, 0.07692307692307693, 0.5384615384615384]<p>นับ Unicode codepoints ในตัวอย่าง; ไม่ใช่ Thai word tokenizer</p></li><li><code>finite / normalized / bounded</code> = [0.23076923076923078, 0.07692307692307693, 0.07692307692307693, 0.07692307692307693, 0.5384615384615384]<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-3-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>shape / range</code> = &quot;a&quot;<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>P(next|context)=(count+α)/(context_count+αV)</code> = [0.23076923076923078, 0.07692307692307693, 0.07692307692307693, 0.07692307692307693, 0.5384615384615384]<p>นับ Unicode codepoints ในตัวอย่าง; ไม่ใช่ Thai word tokenizer</p></li><li><code>finite / normalized / bounded</code> = [0.23076923076923078, 0.07692307692307693, 0.07692307692307693, 0.07692307692307693, 0.5384615384615384]<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-3-code"><summary>โค้ด</summary><p><code>decode(encode(text))==text</code>สำหรับไทย/อังกฤษ/emoji/combining/empty; decodeต้องjoinbytesก่อนutf8decode ไม่decodeแต่ละbyteแยก</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-3-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = &quot;a&quot;<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>P(next|context)=(count+α)/(context_count+αV)</code> = [0.23076923076923078, 0.07692307692307693, 0.07692307692307693, 0.07692307692307693, 0.5384615384615384]<p>นับ Unicode codepoints ในตัวอย่าง; ไม่ใช่ Thai word tokenizer</p></li><li><code>finite / normalized / bounded</code> = [0.23076923076923078, 0.07692307692307693, 0.07692307692307693, 0.07692307692307693, 0.5384615384615384]<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-3"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="reference" class="canonical-section"><h2>เนื้อหาครบทุกหัวข้อ พร้อมแผนที่ objective</h2><nav class="source-toc"><a href="#chapter-49/section/topic-1">1. Why Tokenization Exists</a> <a href="#chapter-49/section/topic-2">2. Learning Objectives</a> <a href="#chapter-49/section/topic-3">3. Unicode vs Bytes</a> <a href="#chapter-49/section/topic-4">4. Why Byte-Level?</a> <a href="#chapter-49/section/topic-5">5. Vocabulary</a> <a href="#chapter-49/section/topic-6">6. Byte Pair Encoding</a> <a href="#chapter-49/section/topic-7">7. Example</a> <a href="#chapter-49/section/topic-8">8. BPE Training Corpus</a> <a href="#chapter-49/section/topic-9">9. Pair Frequency</a> <a href="#chapter-49/section/topic-10">10. Deterministic Tie-Breaking</a> <a href="#chapter-49/section/topic-11">11. Merge Application</a> <a href="#chapter-49/section/topic-12">12. Merge Rank</a> <a href="#chapter-49/section/topic-13">13. Encoding</a> <a href="#chapter-49/section/topic-14">14. Decoding</a> <a href="#chapter-49/section/topic-15">15. Special Tokens</a> <a href="#chapter-49/section/topic-16">16. Special-Token Parsing</a> <a href="#chapter-49/section/topic-17">17. Vocabulary Size Trade-Off</a> <a href="#chapter-49/section/topic-18">18. Compression Metrics</a> <a href="#chapter-49/section/topic-19">19. Multilingual Fairness</a> <a href="#chapter-49/section/topic-20">20. Numbers and Code</a> <a href="#chapter-49/section/topic-21">21. Vocabulary Artifact</a> <a href="#chapter-49/section/topic-22">22. Byte-Level BPE From Scratch</a> <a href="#chapter-49/section/topic-23">23. Common Mistakes</a> <a href="#chapter-49/section/topic-24">24. Exercises / Mini Project</a> <a href="#chapter-49/section/topic-25">25. Checklist</a> <a href="#chapter-49/section/topic-26">26. What&#x27;s Next</a> </nav><section id="topic-1" class="source-topic"><span id="source-49-tokenizer-from-scratch-canonical-chapter-49-tokenizer-from-scratch" class="legacy-anchor"></span><span id="source-49-tokenizer-from-scratch-canonical-1-why-tokenization-exists" class="legacy-anchor"></span><h3>1. Why Tokenization Exists</h3>
+<p>A language model consumes integer token IDs, not raw strings.</p>
+<pre><code class="language-text">raw text
+↓
+normalization / byte conversion
+↓
+tokenization
+↓
+token IDs
+↓
+embedding lookup
+</code></pre>
+<p>The tokenizer defines the vocabulary and strongly affects sequence length, multilingual coverage and model efficiency.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>1. Why Tokenization Exists</h3>
+<p>A language model consumes integer token IDs, not raw strings.</p>
+<pre><code class="language-text">raw text
+↓
+normalization / byte conversion
+↓
+tokenization
+↓
+token IDs
+↓
+embedding lookup
+</code></pre>
+<p>The tokenizer defines the vocabulary and strongly affects sequence length, multilingual coverage and model efficiency.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-1-equation"><summary>สมการ</summary><h3>1. Why Tokenization Exists</h3>
+<p>A language model consumes integer token IDs, not raw strings.</p>
+<pre><code class="language-text">raw text
+↓
+normalization / byte conversion
+↓
+tokenization
+↓
+token IDs
+↓
+embedding lookup
+</code></pre>
+<p>The tokenizer defines the vocabulary and strongly affects sequence length, multilingual coverage and model efficiency.</p></details><details id="help-topic-1-visual"><summary>ภาพและ shape</summary><h3>1. Why Tokenization Exists</h3>
+<p>A language model consumes integer token IDs, not raw strings.</p>
+<pre><code class="language-text">raw text
+↓
+normalization / byte conversion
+↓
+tokenization
+↓
+token IDs
+↓
+embedding lookup
+</code></pre>
+<p>The tokenizer defines the vocabulary and strongly affects sequence length, multilingual coverage and model efficiency.</p></details><details id="help-topic-1-code"><summary>โค้ด</summary><h3>1. Why Tokenization Exists</h3>
+<p>A language model consumes integer token IDs, not raw strings.</p>
+<pre><code class="language-text">raw text
+↓
+normalization / byte conversion
+↓
+tokenization
+↓
+token IDs
+↓
+embedding lookup
+</code></pre>
+<p>The tokenizer defines the vocabulary and strongly affects sequence length, multilingual coverage and model efficiency.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-1-result"><summary>ผลการทดลอง</summary><h3>1. Why Tokenization Exists</h3>
+<p>A language model consumes integer token IDs, not raw strings.</p>
+<pre><code class="language-text">raw text
+↓
+normalization / byte conversion
+↓
+tokenization
+↓
+token IDs
+↓
+embedding lookup
+</code></pre>
+<p>The tokenizer defines the vocabulary and strongly affects sequence length, multilingual coverage and model efficiency.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-1"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-2" class="source-topic"><span id="source-49-tokenizer-from-scratch-canonical-2-learning-objectives" class="legacy-anchor"></span><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>explain Unicode code points and UTF-8 bytes</li>
+<li>distinguish character, word, byte and subword tokenization</li>
+<li>explain vocabulary / IDs / special tokens</li>
+<li>derive Byte Pair Encoding training</li>
+<li>implement BPE merge learning</li>
+<li>encode text with learned merges</li>
+<li>decode token IDs back to bytes/text</li>
+<li>explain byte-level tokenization</li>
+<li>handle invalid UTF-8 decoding policies</li>
+<li>reserve special tokens</li>
+<li>measure compression efficiency</li>
+<li>reason about multilingual tokenization</li>
+<li>detect train/eval leakage in tokenizer training</li>
+<li>serialize tokenizer artifacts reproducibly</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>explain Unicode code points and UTF-8 bytes</li>
+<li>distinguish character, word, byte and subword tokenization</li>
+<li>explain vocabulary / IDs / special tokens</li>
+<li>derive Byte Pair Encoding training</li>
+<li>implement BPE merge learning</li>
+<li>encode text with learned merges</li>
+<li>decode token IDs back to bytes/text</li>
+<li>explain byte-level tokenization</li>
+<li>handle invalid UTF-8 decoding policies</li>
+<li>reserve special tokens</li>
+<li>measure compression efficiency</li>
+<li>reason about multilingual tokenization</li>
+<li>detect train/eval leakage in tokenizer training</li>
+<li>serialize tokenizer artifacts reproducibly</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-2-equation"><summary>สมการ</summary><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>explain Unicode code points and UTF-8 bytes</li>
+<li>distinguish character, word, byte and subword tokenization</li>
+<li>explain vocabulary / IDs / special tokens</li>
+<li>derive Byte Pair Encoding training</li>
+<li>implement BPE merge learning</li>
+<li>encode text with learned merges</li>
+<li>decode token IDs back to bytes/text</li>
+<li>explain byte-level tokenization</li>
+<li>handle invalid UTF-8 decoding policies</li>
+<li>reserve special tokens</li>
+<li>measure compression efficiency</li>
+<li>reason about multilingual tokenization</li>
+<li>detect train/eval leakage in tokenizer training</li>
+<li>serialize tokenizer artifacts reproducibly</li>
+</ul></details><details id="help-topic-2-visual"><summary>ภาพและ shape</summary><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>explain Unicode code points and UTF-8 bytes</li>
+<li>distinguish character, word, byte and subword tokenization</li>
+<li>explain vocabulary / IDs / special tokens</li>
+<li>derive Byte Pair Encoding training</li>
+<li>implement BPE merge learning</li>
+<li>encode text with learned merges</li>
+<li>decode token IDs back to bytes/text</li>
+<li>explain byte-level tokenization</li>
+<li>handle invalid UTF-8 decoding policies</li>
+<li>reserve special tokens</li>
+<li>measure compression efficiency</li>
+<li>reason about multilingual tokenization</li>
+<li>detect train/eval leakage in tokenizer training</li>
+<li>serialize tokenizer artifacts reproducibly</li>
+</ul></details><details id="help-topic-2-code"><summary>โค้ด</summary><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>explain Unicode code points and UTF-8 bytes</li>
+<li>distinguish character, word, byte and subword tokenization</li>
+<li>explain vocabulary / IDs / special tokens</li>
+<li>derive Byte Pair Encoding training</li>
+<li>implement BPE merge learning</li>
+<li>encode text with learned merges</li>
+<li>decode token IDs back to bytes/text</li>
+<li>explain byte-level tokenization</li>
+<li>handle invalid UTF-8 decoding policies</li>
+<li>reserve special tokens</li>
+<li>measure compression efficiency</li>
+<li>reason about multilingual tokenization</li>
+<li>detect train/eval leakage in tokenizer training</li>
+<li>serialize tokenizer artifacts reproducibly</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-2-result"><summary>ผลการทดลอง</summary><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>explain Unicode code points and UTF-8 bytes</li>
+<li>distinguish character, word, byte and subword tokenization</li>
+<li>explain vocabulary / IDs / special tokens</li>
+<li>derive Byte Pair Encoding training</li>
+<li>implement BPE merge learning</li>
+<li>encode text with learned merges</li>
+<li>decode token IDs back to bytes/text</li>
+<li>explain byte-level tokenization</li>
+<li>handle invalid UTF-8 decoding policies</li>
+<li>reserve special tokens</li>
+<li>measure compression efficiency</li>
+<li>reason about multilingual tokenization</li>
+<li>detect train/eval leakage in tokenizer training</li>
+<li>serialize tokenizer artifacts reproducibly</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-2"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-3" class="source-topic"><span id="source-49-tokenizer-from-scratch-canonical-3-unicode-vs-bytes" class="legacy-anchor"></span><h3>3. Unicode vs Bytes</h3>
+<p>Python string:</p>
+<pre><code class="language-text">&quot;ภาษาไทย&quot;
+</code></pre>
+<p>contains Unicode characters.</p>
+<p>UTF-8 converts it to bytes:</p>
+<pre><code class="language-text">text.encode(&quot;utf-8&quot;)
+</code></pre>
+<p>A Unicode character may occupy multiple bytes.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p><code>text.encode('utf-8')</code> ให้ASCII“A”[65],ไทย“ก”[224,184,129],emoji“😀”[240,159,152,128]; codepointหนึ่งอาจหลายbytes</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p><code>text.encode('utf-8')</code> ให้ASCII“A”[65],ไทย“ก”[224,184,129],emoji“😀”[240,159,152,128]; codepointหนึ่งอาจหลายbytes</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-3-equation"><summary>สมการ</summary><p><code>text.encode('utf-8')</code> ให้ASCII“A”[65],ไทย“ก”[224,184,129],emoji“😀”[240,159,152,128]; codepointหนึ่งอาจหลายbytes</p></details><details id="help-topic-3-visual"><summary>ภาพและ shape</summary><p><code>text.encode('utf-8')</code> ให้ASCII“A”[65],ไทย“ก”[224,184,129],emoji“😀”[240,159,152,128]; codepointหนึ่งอาจหลายbytes</p></details><details id="help-topic-3-code"><summary>โค้ด</summary><p><code>text.encode('utf-8')</code> ให้ASCII“A”[65],ไทย“ก”[224,184,129],emoji“😀”[240,159,152,128]; codepointหนึ่งอาจหลายbytes</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-3-result"><summary>ผลการทดลอง</summary><p><code>text.encode('utf-8')</code> ให้ASCII“A”[65],ไทย“ก”[224,184,129],emoji“😀”[240,159,152,128]; codepointหนึ่งอาจหลายbytes</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-3"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-4" class="source-topic"><span id="source-49-tokenizer-from-scratch-canonical-4-why-byte-level" class="legacy-anchor"></span><h3>4. Why Byte-Level?</h3>
+<p>A byte vocabulary has exactly 256 possible base byte values.</p>
+<p>Benefits:
+- every UTF-8 string can be represented
+- no unknown character token required
+- robust multilingual coverage</p>
+<p>Cost:
+- raw byte sequences can be long</p>
+<p>BPE merges common byte sequences into larger tokens.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-4-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>4. Why Byte-Level?</h3>
+<p>A byte vocabulary has exactly 256 possible base byte values.</p>
+<p>Benefits:
+- every UTF-8 string can be represented
+- no unknown character token required
+- robust multilingual coverage</p>
+<p>Cost:
+- raw byte sequences can be long</p>
+<p>BPE merges common byte sequences into larger tokens.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-4-equation"><summary>สมการ</summary><h3>4. Why Byte-Level?</h3>
+<p>A byte vocabulary has exactly 256 possible base byte values.</p>
+<p>Benefits:
+- every UTF-8 string can be represented
+- no unknown character token required
+- robust multilingual coverage</p>
+<p>Cost:
+- raw byte sequences can be long</p>
+<p>BPE merges common byte sequences into larger tokens.</p></details><details id="help-topic-4-visual"><summary>ภาพและ shape</summary><h3>4. Why Byte-Level?</h3>
+<p>A byte vocabulary has exactly 256 possible base byte values.</p>
+<p>Benefits:
+- every UTF-8 string can be represented
+- no unknown character token required
+- robust multilingual coverage</p>
+<p>Cost:
+- raw byte sequences can be long</p>
+<p>BPE merges common byte sequences into larger tokens.</p></details><details id="help-topic-4-code"><summary>โค้ด</summary><h3>4. Why Byte-Level?</h3>
+<p>A byte vocabulary has exactly 256 possible base byte values.</p>
+<p>Benefits:
+- every UTF-8 string can be represented
+- no unknown character token required
+- robust multilingual coverage</p>
+<p>Cost:
+- raw byte sequences can be long</p>
+<p>BPE merges common byte sequences into larger tokens.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-4-result"><summary>ผลการทดลอง</summary><h3>4. Why Byte-Level?</h3>
+<p>A byte vocabulary has exactly 256 possible base byte values.</p>
+<p>Benefits:
+- every UTF-8 string can be represented
+- no unknown character token required
+- robust multilingual coverage</p>
+<p>Cost:
+- raw byte sequences can be long</p>
+<p>BPE merges common byte sequences into larger tokens.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-4"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-5" class="source-topic"><span id="source-49-tokenizer-from-scratch-canonical-5-vocabulary" class="legacy-anchor"></span><h3>5. Vocabulary</h3>
+<p>Tokenizer maps token objects to IDs:</p>
+<pre><code class="language-text">token → integer ID
+</code></pre>
+<p>Base byte tokens:</p>
+<pre><code class="language-text">0..255
+</code></pre>
+<p>Learned merge tokens can receive IDs:</p>
+<pre><code class="language-text">256, 257, 258, ...
+</code></pre>
+<p>Special tokens should use explicitly reserved IDs.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-5-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>5. Vocabulary</h3>
+<p>Tokenizer maps token objects to IDs:</p>
+<pre><code class="language-text">token → integer ID
+</code></pre>
+<p>Base byte tokens:</p>
+<pre><code class="language-text">0..255
+</code></pre>
+<p>Learned merge tokens can receive IDs:</p>
+<pre><code class="language-text">256, 257, 258, ...
+</code></pre>
+<p>Special tokens should use explicitly reserved IDs.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-5-equation"><summary>สมการ</summary><h3>5. Vocabulary</h3>
+<p>Tokenizer maps token objects to IDs:</p>
+<pre><code class="language-text">token → integer ID
+</code></pre>
+<p>Base byte tokens:</p>
+<pre><code class="language-text">0..255
+</code></pre>
+<p>Learned merge tokens can receive IDs:</p>
+<pre><code class="language-text">256, 257, 258, ...
+</code></pre>
+<p>Special tokens should use explicitly reserved IDs.</p></details><details id="help-topic-5-visual"><summary>ภาพและ shape</summary><h3>5. Vocabulary</h3>
+<p>Tokenizer maps token objects to IDs:</p>
+<pre><code class="language-text">token → integer ID
+</code></pre>
+<p>Base byte tokens:</p>
+<pre><code class="language-text">0..255
+</code></pre>
+<p>Learned merge tokens can receive IDs:</p>
+<pre><code class="language-text">256, 257, 258, ...
+</code></pre>
+<p>Special tokens should use explicitly reserved IDs.</p></details><details id="help-topic-5-code"><summary>โค้ด</summary><h3>5. Vocabulary</h3>
+<p>Tokenizer maps token objects to IDs:</p>
+<pre><code class="language-text">token → integer ID
+</code></pre>
+<p>Base byte tokens:</p>
+<pre><code class="language-text">0..255
+</code></pre>
+<p>Learned merge tokens can receive IDs:</p>
+<pre><code class="language-text">256, 257, 258, ...
+</code></pre>
+<p>Special tokens should use explicitly reserved IDs.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-5-result"><summary>ผลการทดลอง</summary><h3>5. Vocabulary</h3>
+<p>Tokenizer maps token objects to IDs:</p>
+<pre><code class="language-text">token → integer ID
+</code></pre>
+<p>Base byte tokens:</p>
+<pre><code class="language-text">0..255
+</code></pre>
+<p>Learned merge tokens can receive IDs:</p>
+<pre><code class="language-text">256, 257, 258, ...
+</code></pre>
+<p>Special tokens should use explicitly reserved IDs.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-5"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-6" class="source-topic"><span id="source-49-tokenizer-from-scratch-canonical-6-byte-pair-encoding" class="legacy-anchor"></span><h3>6. Byte Pair Encoding</h3>
+<p>Start with a sequence of base symbols.</p>
+<p>Repeatedly:</p>
+<ol>
+<li>count adjacent pairs</li>
+<li>choose the most frequent pair</li>
+<li>create a new token for that pair</li>
+<li>replace occurrences</li>
+<li>repeat until vocabulary target / merge budget</li>
+</ol><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>corpus“aa aa”bytebase,countsเลือก(a,a)ตามpolicyแต่ละwordแล้วได้aaunit; ทำ10mergesหรือstopหากไม่มีpair,บันทึกpair/newID/rankทุกก้าวไม่บังคับสร้างmergeปลอม</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-6-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>corpus“aa aa”bytebase,countsเลือก(a,a)ตามpolicyแต่ละwordแล้วได้aaunit; ทำ10mergesหรือstopหากไม่มีpair,บันทึกpair/newID/rankทุกก้าวไม่บังคับสร้างmergeปลอม</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-6-equation"><summary>สมการ</summary><p>corpus“aa aa”bytebase,countsเลือก(a,a)ตามpolicyแต่ละwordแล้วได้aaunit; ทำ10mergesหรือstopหากไม่มีpair,บันทึกpair/newID/rankทุกก้าวไม่บังคับสร้างmergeปลอม</p></details><details id="help-topic-6-visual"><summary>ภาพและ shape</summary><p>corpus“aa aa”bytebase,countsเลือก(a,a)ตามpolicyแต่ละwordแล้วได้aaunit; ทำ10mergesหรือstopหากไม่มีpair,บันทึกpair/newID/rankทุกก้าวไม่บังคับสร้างmergeปลอม</p></details><details id="help-topic-6-code"><summary>โค้ด</summary><p>corpus“aa aa”bytebase,countsเลือก(a,a)ตามpolicyแต่ละwordแล้วได้aaunit; ทำ10mergesหรือstopหากไม่มีpair,บันทึกpair/newID/rankทุกก้าวไม่บังคับสร้างmergeปลอม</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-6-result"><summary>ผลการทดลอง</summary><p>corpus“aa aa”bytebase,countsเลือก(a,a)ตามpolicyแต่ละwordแล้วได้aaunit; ทำ10mergesหรือstopหากไม่มีpair,บันทึกpair/newID/rankทุกก้าวไม่บังคับสร้างmergeปลอม</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-6"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-7" class="source-topic"><span id="source-49-tokenizer-from-scratch-canonical-7-example" class="legacy-anchor"></span><h3>7. Example</h3>
+<p>Initial:</p>
+<pre><code class="language-text">a b a b a b
+</code></pre>
+<p>Most frequent pair:</p>
+<pre><code class="language-text">(a,b)
+</code></pre>
+<p>Merge:</p>
+<pre><code class="language-text">ab ab ab
+</code></pre>
+<p>Then a later merge may create:</p>
+<pre><code class="language-text">abab
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>corpus“aa aa”bytebase,countsเลือก(a,a)ตามpolicyแต่ละwordแล้วได้aaunit; ทำ10mergesหรือstopหากไม่มีpair,บันทึกpair/newID/rankทุกก้าวไม่บังคับสร้างmergeปลอม</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-7-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>corpus“aa aa”bytebase,countsเลือก(a,a)ตามpolicyแต่ละwordแล้วได้aaunit; ทำ10mergesหรือstopหากไม่มีpair,บันทึกpair/newID/rankทุกก้าวไม่บังคับสร้างmergeปลอม</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-7-equation"><summary>สมการ</summary><p>corpus“aa aa”bytebase,countsเลือก(a,a)ตามpolicyแต่ละwordแล้วได้aaunit; ทำ10mergesหรือstopหากไม่มีpair,บันทึกpair/newID/rankทุกก้าวไม่บังคับสร้างmergeปลอม</p></details><details id="help-topic-7-visual"><summary>ภาพและ shape</summary><p>corpus“aa aa”bytebase,countsเลือก(a,a)ตามpolicyแต่ละwordแล้วได้aaunit; ทำ10mergesหรือstopหากไม่มีpair,บันทึกpair/newID/rankทุกก้าวไม่บังคับสร้างmergeปลอม</p></details><details id="help-topic-7-code"><summary>โค้ด</summary><p>corpus“aa aa”bytebase,countsเลือก(a,a)ตามpolicyแต่ละwordแล้วได้aaunit; ทำ10mergesหรือstopหากไม่มีpair,บันทึกpair/newID/rankทุกก้าวไม่บังคับสร้างmergeปลอม</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-7-result"><summary>ผลการทดลอง</summary><p>corpus“aa aa”bytebase,countsเลือก(a,a)ตามpolicyแต่ละwordแล้วได้aaunit; ทำ10mergesหรือstopหากไม่มีpair,บันทึกpair/newID/rankทุกก้าวไม่บังคับสร้างmergeปลอม</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-7"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-8" class="source-topic"><span id="source-49-tokenizer-from-scratch-canonical-8-bpe-training-corpus" class="legacy-anchor"></span><h3>8. BPE Training Corpus</h3>
+<p>Train tokenizer only on the tokenizer-training corpus.</p>
+<p>If tokenizer merge training sees evaluation-only data, it can leak distributional information.</p>
+<p>Keep:
+- tokenizer training data
+- model training data
+- validation/test data</p>
+<p>versioned and documented.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>fitmergesบนtesttextทำcompressionผลดูดีเกิน; splitdocumentsก่อนBPEและห้ามnormalizeแบบirreversibleถ้าสัญญาexactroundtriprawtext</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-8-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>fitmergesบนtesttextทำcompressionผลดูดีเกิน; splitdocumentsก่อนBPEและห้ามnormalizeแบบirreversibleถ้าสัญญาexactroundtriprawtext</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-8-equation"><summary>สมการ</summary><p>fitmergesบนtesttextทำcompressionผลดูดีเกิน; splitdocumentsก่อนBPEและห้ามnormalizeแบบirreversibleถ้าสัญญาexactroundtriprawtext</p></details><details id="help-topic-8-visual"><summary>ภาพและ shape</summary><p>fitmergesบนtesttextทำcompressionผลดูดีเกิน; splitdocumentsก่อนBPEและห้ามnormalizeแบบirreversibleถ้าสัญญาexactroundtriprawtext</p></details><details id="help-topic-8-code"><summary>โค้ด</summary><p>fitmergesบนtesttextทำcompressionผลดูดีเกิน; splitdocumentsก่อนBPEและห้ามnormalizeแบบirreversibleถ้าสัญญาexactroundtriprawtext</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-8-result"><summary>ผลการทดลอง</summary><p>fitmergesบนtesttextทำcompressionผลดูดีเกิน; splitdocumentsก่อนBPEและห้ามnormalizeแบบirreversibleถ้าสัญญาexactroundtriprawtext</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-8"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-9" class="source-topic"><span id="source-49-tokenizer-from-scratch-canonical-9-pair-frequency" class="legacy-anchor"></span><h3>9. Pair Frequency</h3>
+<p>For token sequence:</p>
+<pre><code class="language-text">[1, 2, 1, 2, 3]
+</code></pre>
+<p>pairs:</p>
+<pre><code class="language-text">(1,2)
+(2,1)
+(1,2)
+(2,3)
+</code></pre>
+<p>Counts:</p>
+<pre><code class="language-text">(1,2) → 2
+...
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>tokens[1,2,1,2]adjacentpair(1,2)count2,(2,1)count1; ไม่รวมpairจากenddocumentไปstartdocumentถัดไป</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-9-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>tokens[1,2,1,2]adjacentpair(1,2)count2,(2,1)count1; ไม่รวมpairจากenddocumentไปstartdocumentถัดไป</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-9-equation"><summary>สมการ</summary><p>tokens[1,2,1,2]adjacentpair(1,2)count2,(2,1)count1; ไม่รวมpairจากenddocumentไปstartdocumentถัดไป</p></details><details id="help-topic-9-visual"><summary>ภาพและ shape</summary><p>tokens[1,2,1,2]adjacentpair(1,2)count2,(2,1)count1; ไม่รวมpairจากenddocumentไปstartdocumentถัดไป</p></details><details id="help-topic-9-code"><summary>โค้ด</summary><p>tokens[1,2,1,2]adjacentpair(1,2)count2,(2,1)count1; ไม่รวมpairจากenddocumentไปstartdocumentถัดไป</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-9-result"><summary>ผลการทดลอง</summary><p>tokens[1,2,1,2]adjacentpair(1,2)count2,(2,1)count1; ไม่รวมpairจากenddocumentไปstartdocumentถัดไป</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-9"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-10" class="source-topic"><span id="source-49-tokenizer-from-scratch-canonical-10-deterministic-tie-breaking" class="legacy-anchor"></span><h3>10. Deterministic Tie-Breaking</h3>
+<p>Two pairs can have equal frequency.</p>
+<p>Tokenizer training should define deterministic tie-breaking so the same corpus/config yields the same vocabulary.</p>
+<p>Example:
+- higher count first
+- then lexicographic pair order</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>roundtripunicode/empty,serialize-roundtripIDs,tie-breakdeterminismและunknownIDsreject; corpusorderเปลี่ยนไม่ควรเปลี่ยนmergesเมื่อcounts/tiebreakเหมือนกัน</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-10-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>roundtripunicode/empty,serialize-roundtripIDs,tie-breakdeterminismและunknownIDsreject; corpusorderเปลี่ยนไม่ควรเปลี่ยนmergesเมื่อcounts/tiebreakเหมือนกัน</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-10-equation"><summary>สมการ</summary><p>roundtripunicode/empty,serialize-roundtripIDs,tie-breakdeterminismและunknownIDsreject; corpusorderเปลี่ยนไม่ควรเปลี่ยนmergesเมื่อcounts/tiebreakเหมือนกัน</p></details><details id="help-topic-10-visual"><summary>ภาพและ shape</summary><p>roundtripunicode/empty,serialize-roundtripIDs,tie-breakdeterminismและunknownIDsreject; corpusorderเปลี่ยนไม่ควรเปลี่ยนmergesเมื่อcounts/tiebreakเหมือนกัน</p></details><details id="help-topic-10-code"><summary>โค้ด</summary><p>roundtripunicode/empty,serialize-roundtripIDs,tie-breakdeterminismและunknownIDsreject; corpusorderเปลี่ยนไม่ควรเปลี่ยนmergesเมื่อcounts/tiebreakเหมือนกัน</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-10-result"><summary>ผลการทดลอง</summary><p>roundtripunicode/empty,serialize-roundtripIDs,tie-breakdeterminismและunknownIDsreject; corpusorderเปลี่ยนไม่ควรเปลี่ยนmergesเมื่อcounts/tiebreakเหมือนกัน</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-10"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-11" class="source-topic"><span id="source-49-tokenizer-from-scratch-canonical-11-merge-application" class="legacy-anchor"></span><h3>11. Merge Application</h3>
+<p>Given pair:</p>
+<pre><code class="language-text">(A,B) → C
+</code></pre>
+<p>scan left-to-right.</p>
+<p>For:</p>
+<pre><code class="language-text">A B A B
+</code></pre>
+<p>result:</p>
+<pre><code class="language-text">C C
+</code></pre>
+<p>Merges must not overlap inconsistently.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>mergepair(1,1)บน[1,1,1]แบบleft-to-rightnonoverlapได้[new,1]ไม่ใช่[new,new]; tiebreakfrequencyด้วยlexicographicpairให้deterministic</p><p>[a,a,a]mergeaa→[aa,a],decodebytesกลับaaa; overlappingcountตอนtrain2คู่ไม่ได้หมายใช้mergeได้2ตำแหน่งพร้อมกัน</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-11-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>mergepair(1,1)บน[1,1,1]แบบleft-to-rightnonoverlapได้[new,1]ไม่ใช่[new,new]; tiebreakfrequencyด้วยlexicographicpairให้deterministic</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-11-equation"><summary>สมการ</summary><p>mergepair(1,1)บน[1,1,1]แบบleft-to-rightnonoverlapได้[new,1]ไม่ใช่[new,new]; tiebreakfrequencyด้วยlexicographicpairให้deterministic</p></details><details id="help-topic-11-visual"><summary>ภาพและ shape</summary><p>mergepair(1,1)บน[1,1,1]แบบleft-to-rightnonoverlapได้[new,1]ไม่ใช่[new,new]; tiebreakfrequencyด้วยlexicographicpairให้deterministic</p></details><details id="help-topic-11-code"><summary>โค้ด</summary><p>mergepair(1,1)บน[1,1,1]แบบleft-to-rightnonoverlapได้[new,1]ไม่ใช่[new,new]; tiebreakfrequencyด้วยlexicographicpairให้deterministic</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-11-result"><summary>ผลการทดลอง</summary><p>mergepair(1,1)บน[1,1,1]แบบleft-to-rightnonoverlapได้[new,1]ไม่ใช่[new,new]; tiebreakfrequencyด้วยlexicographicpairให้deterministic</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-11"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-12" class="source-topic"><span id="source-49-tokenizer-from-scratch-canonical-12-merge-rank" class="legacy-anchor"></span><h3>12. Merge Rank</h3>
+<p>Encoding must apply learned merges in training order/rank.</p>
+<p>Earlier merges have higher priority.</p>
+<p>A convenient representation:</p>
+<pre><code class="language-text">merge_ranks[(left,right)] = rank
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>encodeเริ่มbytesแล้ววนเลือกadjacentpairที่มีrankต่ำสุดในmergetableจนไม่มี; ไม่เลือกpairfrequencyจากข้อความqueryใหม่</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-12-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>encodeเริ่มbytesแล้ววนเลือกadjacentpairที่มีrankต่ำสุดในmergetableจนไม่มี; ไม่เลือกpairfrequencyจากข้อความqueryใหม่</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-12-equation"><summary>สมการ</summary><p>encodeเริ่มbytesแล้ววนเลือกadjacentpairที่มีrankต่ำสุดในmergetableจนไม่มี; ไม่เลือกpairfrequencyจากข้อความqueryใหม่</p></details><details id="help-topic-12-visual"><summary>ภาพและ shape</summary><p>encodeเริ่มbytesแล้ววนเลือกadjacentpairที่มีrankต่ำสุดในmergetableจนไม่มี; ไม่เลือกpairfrequencyจากข้อความqueryใหม่</p></details><details id="help-topic-12-code"><summary>โค้ด</summary><p>encodeเริ่มbytesแล้ววนเลือกadjacentpairที่มีrankต่ำสุดในmergetableจนไม่มี; ไม่เลือกpairfrequencyจากข้อความqueryใหม่</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-12-result"><summary>ผลการทดลอง</summary><p>encodeเริ่มbytesแล้ววนเลือกadjacentpairที่มีrankต่ำสุดในmergetableจนไม่มี; ไม่เลือกpairfrequencyจากข้อความqueryใหม่</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-12"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-13" class="source-topic"><span id="source-49-tokenizer-from-scratch-canonical-13-encoding" class="legacy-anchor"></span><h3>13. Encoding</h3>
+<p>Byte-level BPE:</p>
+<pre><code class="language-text">text
+↓ UTF-8 bytes
+↓ base byte IDs
+↓ repeatedly apply learned merges
+↓ token IDs
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>recordbyteslength,initialIDs,rankedpairtrace,finalIDs,specialpositionsและroundtrip; tokenstringrepresentationไม่เท่ากับdecodedtextเสมอ</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-13-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>recordbyteslength,initialIDs,rankedpairtrace,finalIDs,specialpositionsและroundtrip; tokenstringrepresentationไม่เท่ากับdecodedtextเสมอ</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-13-equation"><summary>สมการ</summary><p>recordbyteslength,initialIDs,rankedpairtrace,finalIDs,specialpositionsและroundtrip; tokenstringrepresentationไม่เท่ากับdecodedtextเสมอ</p></details><details id="help-topic-13-visual"><summary>ภาพและ shape</summary><p>recordbyteslength,initialIDs,rankedpairtrace,finalIDs,specialpositionsและroundtrip; tokenstringrepresentationไม่เท่ากับdecodedtextเสมอ</p></details><details id="help-topic-13-code"><summary>โค้ด</summary><p>recordbyteslength,initialIDs,rankedpairtrace,finalIDs,specialpositionsและroundtrip; tokenstringrepresentationไม่เท่ากับdecodedtextเสมอ</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-13-result"><summary>ผลการทดลอง</summary><p>recordbyteslength,initialIDs,rankedpairtrace,finalIDs,specialpositionsและroundtrip; tokenstringrepresentationไม่เท่ากับdecodedtextเสมอ</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-13"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-14" class="source-topic"><span id="source-49-tokenizer-from-scratch-canonical-14-decoding" class="legacy-anchor"></span><h3>14. Decoding</h3>
+<p>Each token corresponds to a byte sequence.</p>
+<pre><code class="language-text">token IDs
+↓ token byte sequences
+↓ concatenate bytes
+↓ UTF-8 decode
+↓ text
+</code></pre>
+<p>A valid tokenizer should round-trip normal text:</p>
+<pre><code class="language-text">decode(encode(text)) == text
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p><code>decode(encode(text))==text</code>สำหรับไทย/อังกฤษ/emoji/combining/empty; decodeต้องjoinbytesก่อนutf8decode ไม่decodeแต่ละbyteแยก</p><p>roundtripunicode/empty,serialize-roundtripIDs,tie-breakdeterminismและunknownIDsreject; corpusorderเปลี่ยนไม่ควรเปลี่ยนmergesเมื่อcounts/tiebreakเหมือนกัน</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-14-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p><code>decode(encode(text))==text</code>สำหรับไทย/อังกฤษ/emoji/combining/empty; decodeต้องjoinbytesก่อนutf8decode ไม่decodeแต่ละbyteแยก</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-14-equation"><summary>สมการ</summary><p><code>decode(encode(text))==text</code>สำหรับไทย/อังกฤษ/emoji/combining/empty; decodeต้องjoinbytesก่อนutf8decode ไม่decodeแต่ละbyteแยก</p></details><details id="help-topic-14-visual"><summary>ภาพและ shape</summary><p><code>decode(encode(text))==text</code>สำหรับไทย/อังกฤษ/emoji/combining/empty; decodeต้องjoinbytesก่อนutf8decode ไม่decodeแต่ละbyteแยก</p></details><details id="help-topic-14-code"><summary>โค้ด</summary><p><code>decode(encode(text))==text</code>สำหรับไทย/อังกฤษ/emoji/combining/empty; decodeต้องjoinbytesก่อนutf8decode ไม่decodeแต่ละbyteแยก</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-14-result"><summary>ผลการทดลอง</summary><p><code>decode(encode(text))==text</code>สำหรับไทย/อังกฤษ/emoji/combining/empty; decodeต้องjoinbytesก่อนutf8decode ไม่decodeแต่ละbyteแยก</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-14"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-15" class="source-topic"><span id="source-49-tokenizer-from-scratch-canonical-15-special-tokens" class="legacy-anchor"></span><h3>15. Special Tokens</h3>
+<p>Examples:
+- BOS
+- EOS
+- PAD
+- UNK for non-byte tokenizers
+- chat role/control tokens</p>
+<p>Special tokens are protocol markers, not ordinary text.</p>
+<p>Reserve them deliberately to avoid collisions.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>bytesIDs0..255,reservedBOS256/EOS257,mergesเริ่ม258; assertทุกIDuniqueและspecialtokensไม่ถูกmergeเข้าข้อความโดยไม่ตั้งใจ</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-15-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>bytesIDs0..255,reservedBOS256/EOS257,mergesเริ่ม258; assertทุกIDuniqueและspecialtokensไม่ถูกmergeเข้าข้อความโดยไม่ตั้งใจ</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-15-equation"><summary>สมการ</summary><p>bytesIDs0..255,reservedBOS256/EOS257,mergesเริ่ม258; assertทุกIDuniqueและspecialtokensไม่ถูกmergeเข้าข้อความโดยไม่ตั้งใจ</p></details><details id="help-topic-15-visual"><summary>ภาพและ shape</summary><p>bytesIDs0..255,reservedBOS256/EOS257,mergesเริ่ม258; assertทุกIDuniqueและspecialtokensไม่ถูกmergeเข้าข้อความโดยไม่ตั้งใจ</p></details><details id="help-topic-15-code"><summary>โค้ด</summary><p>bytesIDs0..255,reservedBOS256/EOS257,mergesเริ่ม258; assertทุกIDuniqueและspecialtokensไม่ถูกmergeเข้าข้อความโดยไม่ตั้งใจ</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-15-result"><summary>ผลการทดลอง</summary><p>bytesIDs0..255,reservedBOS256/EOS257,mergesเริ่ม258; assertทุกIDuniqueและspecialtokensไม่ถูกmergeเข้าข้อความโดยไม่ตั้งใจ</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-15"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-16" class="source-topic"><span id="source-49-tokenizer-from-scratch-canonical-16-special-token-parsing" class="legacy-anchor"></span><h3>16. Special-Token Parsing</h3>
+<p>Do not blindly interpret arbitrary user text as a control token.</p>
+<p>Production tokenizers distinguish:
+- ordinary text
+- explicitly allowed special-token parsing</p>
+<p>This avoids accidental protocol injection at tokenizer boundaries.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>เปลี่ยนpretokenizerwhitespace→bytescontinuousคงmergecount/corpus; reportspacepreservation/Thai compressionและroundtripnotjustvocabsize</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-16-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>เปลี่ยนpretokenizerwhitespace→bytescontinuousคงmergecount/corpus; reportspacepreservation/Thai compressionและroundtripnotjustvocabsize</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-16-equation"><summary>สมการ</summary><p>เปลี่ยนpretokenizerwhitespace→bytescontinuousคงmergecount/corpus; reportspacepreservation/Thai compressionและroundtripnotjustvocabsize</p></details><details id="help-topic-16-visual"><summary>ภาพและ shape</summary><p>เปลี่ยนpretokenizerwhitespace→bytescontinuousคงmergecount/corpus; reportspacepreservation/Thai compressionและroundtripnotjustvocabsize</p></details><details id="help-topic-16-code"><summary>โค้ด</summary><p>เปลี่ยนpretokenizerwhitespace→bytescontinuousคงmergecount/corpus; reportspacepreservation/Thai compressionและroundtripnotjustvocabsize</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-16-result"><summary>ผลการทดลอง</summary><p>เปลี่ยนpretokenizerwhitespace→bytescontinuousคงmergecount/corpus; reportspacepreservation/Thai compressionและroundtripnotjustvocabsize</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-16"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-17" class="source-topic"><span id="source-49-tokenizer-from-scratch-canonical-17-vocabulary-size-trade-off" class="legacy-anchor"></span><h3>17. Vocabulary Size Trade-Off</h3>
+<p>Larger vocabulary:
+- shorter sequences
+- larger embedding/LM-head matrices
+- more rare tokens</p>
+<p>Smaller vocabulary:
+- longer sequences
+- smaller embedding table
+- more composition</p>
+<p>There is no universal best size.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>vocabเพิ่มmergesมักลดsequenceบนcorpusฝึกแต่embeddingparametersVdเพิ่ม; measureheldoutcompressionทั้งไทย/อังกฤษและtrain/infercost</p><p>vocab256/512/1024คงcorpus/split/normalization; reportheldouttokensperbyte/vocabsize/encodelatencyแยกภาษา ไม่chooseเฉพาะtraincompression</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-17-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>vocabเพิ่มmergesมักลดsequenceบนcorpusฝึกแต่embeddingparametersVdเพิ่ม; measureheldoutcompressionทั้งไทย/อังกฤษและtrain/infercost</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-17-equation"><summary>สมการ</summary><p>vocabเพิ่มmergesมักลดsequenceบนcorpusฝึกแต่embeddingparametersVdเพิ่ม; measureheldoutcompressionทั้งไทย/อังกฤษและtrain/infercost</p></details><details id="help-topic-17-visual"><summary>ภาพและ shape</summary><p>vocabเพิ่มmergesมักลดsequenceบนcorpusฝึกแต่embeddingparametersVdเพิ่ม; measureheldoutcompressionทั้งไทย/อังกฤษและtrain/infercost</p></details><details id="help-topic-17-code"><summary>โค้ด</summary><p>vocabเพิ่มmergesมักลดsequenceบนcorpusฝึกแต่embeddingparametersVdเพิ่ม; measureheldoutcompressionทั้งไทย/อังกฤษและtrain/infercost</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-17-result"><summary>ผลการทดลอง</summary><p>vocabเพิ่มmergesมักลดsequenceบนcorpusฝึกแต่embeddingparametersVdเพิ่ม; measureheldoutcompressionทั้งไทย/อังกฤษและtrain/infercost</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-17"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-18" class="source-topic"><span id="source-49-tokenizer-from-scratch-canonical-18-compression-metrics" class="legacy-anchor"></span><h3>18. Compression Metrics</h3>
+<p>Useful:</p>
+<pre><code class="language-text">tokens_per_character
+tokens_per_byte
+bytes_per_token
+</code></pre>
+<p>For byte-level tokenizer:</p>
+<pre><code class="language-text">bytes_per_token =
+UTF8 byte count / token count
+</code></pre>
+<p>Higher bytes/token generally means stronger compression, but semantic quality matters too.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>bytes_per_token=len(text.encode('utf-8'))/len(ids); ไทยcodepointsหลายbytesจึงต้องreportทั้งtokens/byteและtokens/characterพร้อมcorpusrepresentative</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-18-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>bytes_per_token=len(text.encode('utf-8'))/len(ids); ไทยcodepointsหลายbytesจึงต้องreportทั้งtokens/byteและtokens/characterพร้อมcorpusrepresentative</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-18-equation"><summary>สมการ</summary><p>bytes_per_token=len(text.encode('utf-8'))/len(ids); ไทยcodepointsหลายbytesจึงต้องreportทั้งtokens/byteและtokens/characterพร้อมcorpusrepresentative</p></details><details id="help-topic-18-visual"><summary>ภาพและ shape</summary><p>bytes_per_token=len(text.encode('utf-8'))/len(ids); ไทยcodepointsหลายbytesจึงต้องreportทั้งtokens/byteและtokens/characterพร้อมcorpusrepresentative</p></details><details id="help-topic-18-code"><summary>โค้ด</summary><p>bytes_per_token=len(text.encode('utf-8'))/len(ids); ไทยcodepointsหลายbytesจึงต้องreportทั้งtokens/byteและtokens/characterพร้อมcorpusrepresentative</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-18-result"><summary>ผลการทดลอง</summary><p>bytes_per_token=len(text.encode('utf-8'))/len(ids); ไทยcodepointsหลายbytesจึงต้องreportทั้งtokens/byteและtokens/characterพร้อมcorpusrepresentative</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-18"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-19" class="source-topic"><span id="source-49-tokenizer-from-scratch-canonical-19-multilingual-fairness" class="legacy-anchor"></span><h3>19. Multilingual Fairness</h3>
+<p>Tokenizer can encode some languages far less efficiently than others.</p>
+<p>Measure per-language:
+- tokens per sentence
+- bytes per token
+- sequence truncation rate</p>
+<p>Do not evaluate only English.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>bytes_per_token=len(text.encode('utf-8'))/len(ids); ไทยcodepointsหลายbytesจึงต้องreportทั้งtokens/byteและtokens/characterพร้อมcorpusrepresentative</p><p>ทดลอง“balancedThaiEnglishtrainingลดThai tokens/byte≥10%โดยEnglishเพิ่ม≤5%”; fixedvocabและheldoutdomainsพร้อมlatency</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-19-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>bytes_per_token=len(text.encode('utf-8'))/len(ids); ไทยcodepointsหลายbytesจึงต้องreportทั้งtokens/byteและtokens/characterพร้อมcorpusrepresentative</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-19-equation"><summary>สมการ</summary><p>bytes_per_token=len(text.encode('utf-8'))/len(ids); ไทยcodepointsหลายbytesจึงต้องreportทั้งtokens/byteและtokens/characterพร้อมcorpusrepresentative</p></details><details id="help-topic-19-visual"><summary>ภาพและ shape</summary><p>bytes_per_token=len(text.encode('utf-8'))/len(ids); ไทยcodepointsหลายbytesจึงต้องreportทั้งtokens/byteและtokens/characterพร้อมcorpusrepresentative</p></details><details id="help-topic-19-code"><summary>โค้ด</summary><p>bytes_per_token=len(text.encode('utf-8'))/len(ids); ไทยcodepointsหลายbytesจึงต้องreportทั้งtokens/byteและtokens/characterพร้อมcorpusrepresentative</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-19-result"><summary>ผลการทดลอง</summary><p>bytes_per_token=len(text.encode('utf-8'))/len(ids); ไทยcodepointsหลายbytesจึงต้องreportทั้งtokens/byteและtokens/characterพร้อมcorpusrepresentative</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-19"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-20" class="source-topic"><span id="source-49-tokenizer-from-scratch-canonical-20-numbers-and-code" class="legacy-anchor"></span><h3>20. Numbers and Code</h3>
+<p>Tokenization influences:
+- arithmetic strings
+- identifiers
+- whitespace
+- indentation
+- punctuation</p>
+<p>Inspect representative code/data formats before freezing the tokenizer.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-20-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>20. Numbers and Code</h3>
+<p>Tokenization influences:
+- arithmetic strings
+- identifiers
+- whitespace
+- indentation
+- punctuation</p>
+<p>Inspect representative code/data formats before freezing the tokenizer.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-20-equation"><summary>สมการ</summary><h3>20. Numbers and Code</h3>
+<p>Tokenization influences:
+- arithmetic strings
+- identifiers
+- whitespace
+- indentation
+- punctuation</p>
+<p>Inspect representative code/data formats before freezing the tokenizer.</p></details><details id="help-topic-20-visual"><summary>ภาพและ shape</summary><h3>20. Numbers and Code</h3>
+<p>Tokenization influences:
+- arithmetic strings
+- identifiers
+- whitespace
+- indentation
+- punctuation</p>
+<p>Inspect representative code/data formats before freezing the tokenizer.</p></details><details id="help-topic-20-code"><summary>โค้ด</summary><h3>20. Numbers and Code</h3>
+<p>Tokenization influences:
+- arithmetic strings
+- identifiers
+- whitespace
+- indentation
+- punctuation</p>
+<p>Inspect representative code/data formats before freezing the tokenizer.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-20-result"><summary>ผลการทดลอง</summary><h3>20. Numbers and Code</h3>
+<p>Tokenization influences:
+- arithmetic strings
+- identifiers
+- whitespace
+- indentation
+- punctuation</p>
+<p>Inspect representative code/data formats before freezing the tokenizer.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-20"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-21" class="source-topic"><span id="source-49-tokenizer-from-scratch-canonical-21-vocabulary-artifact" class="legacy-anchor"></span><h3>21. Vocabulary Artifact</h3>
+<p>Store:
+- version
+- base encoding
+- special-token mapping
+- merge list
+- token byte sequences
+- normalization policy
+- training-corpus hash/config</p>
+<p>Tokenizer and model checkpoint must agree.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>JSONเก็บformatversion,byteIDs,specialIDs,orderedmerges; reloadแล้วencodeทุกfixtureเหมือนเดิม ไม่serializePythondictด้วยkeysที่ชนหลังstringify</p><p>manifestเก็บrawcorpushash/split/normalization/bytealphabet/specialIDs/tiebreak/mergesordered/version/seed/fixturehash</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-21-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>JSONเก็บformatversion,byteIDs,specialIDs,orderedmerges; reloadแล้วencodeทุกfixtureเหมือนเดิม ไม่serializePythondictด้วยkeysที่ชนหลังstringify</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-21-equation"><summary>สมการ</summary><p>JSONเก็บformatversion,byteIDs,specialIDs,orderedmerges; reloadแล้วencodeทุกfixtureเหมือนเดิม ไม่serializePythondictด้วยkeysที่ชนหลังstringify</p></details><details id="help-topic-21-visual"><summary>ภาพและ shape</summary><p>JSONเก็บformatversion,byteIDs,specialIDs,orderedmerges; reloadแล้วencodeทุกfixtureเหมือนเดิม ไม่serializePythondictด้วยkeysที่ชนหลังstringify</p></details><details id="help-topic-21-code"><summary>โค้ด</summary><p>JSONเก็บformatversion,byteIDs,specialIDs,orderedmerges; reloadแล้วencodeทุกfixtureเหมือนเดิม ไม่serializePythondictด้วยkeysที่ชนหลังstringify</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-21-result"><summary>ผลการทดลอง</summary><p>JSONเก็บformatversion,byteIDs,specialIDs,orderedmerges; reloadแล้วencodeทุกfixtureเหมือนเดิม ไม่serializePythondictด้วยkeysที่ชนหลังstringify</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-21"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-22" class="source-topic"><span id="source-49-tokenizer-from-scratch-canonical-22-byte-level-bpe-from-scratch" class="legacy-anchor"></span><h3>22. Byte-Level BPE From Scratch</h3>
+<p>src/byte_bpe.py includes:</p>
+<ul>
+<li>bytes_to_base_tokens</li>
+<li>pair_counts</li>
+<li>merge_pair</li>
+<li>train_bpe</li>
+<li>ByteBPETokenizer</li>
+<li>encode</li>
+<li>decode</li>
+<li>bytes_per_token</li>
+</ul>
+<p>The implementation is intentionally small and deterministic.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>naiveBPEแต่ละmergeสแกนcorpusO(MN),encodeworstcaserepeatedscanO(T²); optimizedheapช่วยแต่ต้องpreservesamemergeranks/ties</p><p>เทียบscratchกับtrustedBPEเมื่อbytealphabet/pretokenization/mergeranks/specialIDsเหมือนกัน; tokenizerคนละfamilyไม่คาดIDsตรง</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-22-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>naiveBPEแต่ละmergeสแกนcorpusO(MN),encodeworstcaserepeatedscanO(T²); optimizedheapช่วยแต่ต้องpreservesamemergeranks/ties</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-22-equation"><summary>สมการ</summary><p>naiveBPEแต่ละmergeสแกนcorpusO(MN),encodeworstcaserepeatedscanO(T²); optimizedheapช่วยแต่ต้องpreservesamemergeranks/ties</p></details><details id="help-topic-22-visual"><summary>ภาพและ shape</summary><p>naiveBPEแต่ละmergeสแกนcorpusO(MN),encodeworstcaserepeatedscanO(T²); optimizedheapช่วยแต่ต้องpreservesamemergeranks/ties</p></details><details id="help-topic-22-code"><summary>โค้ด</summary><p>naiveBPEแต่ละmergeสแกนcorpusO(MN),encodeworstcaserepeatedscanO(T²); optimizedheapช่วยแต่ต้องpreservesamemergeranks/ties</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-22-result"><summary>ผลการทดลอง</summary><p>naiveBPEแต่ละmergeสแกนcorpusO(MN),encodeworstcaserepeatedscanO(T²); optimizedheapช่วยแต่ต้องpreservesamemergeranks/ties</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-22"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-23" class="source-topic"><span id="source-49-tokenizer-from-scratch-canonical-23-common-mistakes" class="legacy-anchor"></span><h3>23. Common Mistakes</h3>
+<ol>
+<li>confusing Unicode characters with bytes</li>
+<li>tokenizer trained on test corpus</li>
+<li>non-deterministic merge ties</li>
+<li>encode merge order differs from training order</li>
+<li>decode token table incomplete</li>
+<li>special-token ID collision</li>
+<li>using replacement decoding silently during roundtrip tests</li>
+<li>comparing token counts across incompatible normalization</li>
+<li>changing tokenizer after model training</li>
+<li>evaluating efficiency only on English</li>
+</ol><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-23-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>23. Common Mistakes</h3>
+<ol>
+<li>confusing Unicode characters with bytes</li>
+<li>tokenizer trained on test corpus</li>
+<li>non-deterministic merge ties</li>
+<li>encode merge order differs from training order</li>
+<li>decode token table incomplete</li>
+<li>special-token ID collision</li>
+<li>using replacement decoding silently during roundtrip tests</li>
+<li>comparing token counts across incompatible normalization</li>
+<li>changing tokenizer after model training</li>
+<li>evaluating efficiency only on English</li>
+</ol><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-23-equation"><summary>สมการ</summary><h3>23. Common Mistakes</h3>
+<ol>
+<li>confusing Unicode characters with bytes</li>
+<li>tokenizer trained on test corpus</li>
+<li>non-deterministic merge ties</li>
+<li>encode merge order differs from training order</li>
+<li>decode token table incomplete</li>
+<li>special-token ID collision</li>
+<li>using replacement decoding silently during roundtrip tests</li>
+<li>comparing token counts across incompatible normalization</li>
+<li>changing tokenizer after model training</li>
+<li>evaluating efficiency only on English</li>
+</ol></details><details id="help-topic-23-visual"><summary>ภาพและ shape</summary><h3>23. Common Mistakes</h3>
+<ol>
+<li>confusing Unicode characters with bytes</li>
+<li>tokenizer trained on test corpus</li>
+<li>non-deterministic merge ties</li>
+<li>encode merge order differs from training order</li>
+<li>decode token table incomplete</li>
+<li>special-token ID collision</li>
+<li>using replacement decoding silently during roundtrip tests</li>
+<li>comparing token counts across incompatible normalization</li>
+<li>changing tokenizer after model training</li>
+<li>evaluating efficiency only on English</li>
+</ol></details><details id="help-topic-23-code"><summary>โค้ด</summary><h3>23. Common Mistakes</h3>
+<ol>
+<li>confusing Unicode characters with bytes</li>
+<li>tokenizer trained on test corpus</li>
+<li>non-deterministic merge ties</li>
+<li>encode merge order differs from training order</li>
+<li>decode token table incomplete</li>
+<li>special-token ID collision</li>
+<li>using replacement decoding silently during roundtrip tests</li>
+<li>comparing token counts across incompatible normalization</li>
+<li>changing tokenizer after model training</li>
+<li>evaluating efficiency only on English</li>
+</ol><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-23-result"><summary>ผลการทดลอง</summary><h3>23. Common Mistakes</h3>
+<ol>
+<li>confusing Unicode characters with bytes</li>
+<li>tokenizer trained on test corpus</li>
+<li>non-deterministic merge ties</li>
+<li>encode merge order differs from training order</li>
+<li>decode token table incomplete</li>
+<li>special-token ID collision</li>
+<li>using replacement decoding silently during roundtrip tests</li>
+<li>comparing token counts across incompatible normalization</li>
+<li>changing tokenizer after model training</li>
+<li>evaluating efficiency only on English</li>
+</ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-23"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-24" class="source-topic"><span id="source-49-tokenizer-from-scratch-canonical-24-exercises-mini-project" class="legacy-anchor"></span><h3>24. Exercises / Mini Project</h3>
+<ul>
+<li><a href="../49-tokenizer-from-scratch/exercises/README.md">Exercises</a></li>
+<li><a href="../49-tokenizer-from-scratch/solutions/README.md">Solutions</a></li>
+<li><a href="../49-tokenizer-from-scratch/mini-project/README.md">Mini Project</a></li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-24-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>24. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-24-equation"><summary>สมการ</summary><h3>24. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-24-visual"><summary>ภาพและ shape</summary><h3>24. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-24-code"><summary>โค้ด</summary><h3>24. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-24-result"><summary>ผลการทดลอง</summary><h3>24. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-24"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-25" class="source-topic"><span id="source-49-tokenizer-from-scratch-canonical-25-checklist" class="legacy-anchor"></span><h3>25. Checklist</h3>
+<ul>
+<li>[ ] Unicode / UTF-8</li>
+<li>[ ] bytes</li>
+<li>[ ] vocabulary</li>
+<li>[ ] BPE pair counting</li>
+<li>[ ] deterministic merging</li>
+<li>[ ] merge ranks</li>
+<li>[ ] encode</li>
+<li>[ ] decode</li>
+<li>[ ] special tokens</li>
+<li>[ ] serialization</li>
+<li>[ ] compression evaluation</li>
+<li>[ ] multilingual evaluation</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-25-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>25. Checklist</h3>
+<ul>
+<li>[ ] Unicode / UTF-8</li>
+<li>[ ] bytes</li>
+<li>[ ] vocabulary</li>
+<li>[ ] BPE pair counting</li>
+<li>[ ] deterministic merging</li>
+<li>[ ] merge ranks</li>
+<li>[ ] encode</li>
+<li>[ ] decode</li>
+<li>[ ] special tokens</li>
+<li>[ ] serialization</li>
+<li>[ ] compression evaluation</li>
+<li>[ ] multilingual evaluation</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-25-equation"><summary>สมการ</summary><h3>25. Checklist</h3>
+<ul>
+<li>[ ] Unicode / UTF-8</li>
+<li>[ ] bytes</li>
+<li>[ ] vocabulary</li>
+<li>[ ] BPE pair counting</li>
+<li>[ ] deterministic merging</li>
+<li>[ ] merge ranks</li>
+<li>[ ] encode</li>
+<li>[ ] decode</li>
+<li>[ ] special tokens</li>
+<li>[ ] serialization</li>
+<li>[ ] compression evaluation</li>
+<li>[ ] multilingual evaluation</li>
+</ul></details><details id="help-topic-25-visual"><summary>ภาพและ shape</summary><h3>25. Checklist</h3>
+<ul>
+<li>[ ] Unicode / UTF-8</li>
+<li>[ ] bytes</li>
+<li>[ ] vocabulary</li>
+<li>[ ] BPE pair counting</li>
+<li>[ ] deterministic merging</li>
+<li>[ ] merge ranks</li>
+<li>[ ] encode</li>
+<li>[ ] decode</li>
+<li>[ ] special tokens</li>
+<li>[ ] serialization</li>
+<li>[ ] compression evaluation</li>
+<li>[ ] multilingual evaluation</li>
+</ul></details><details id="help-topic-25-code"><summary>โค้ด</summary><h3>25. Checklist</h3>
+<ul>
+<li>[ ] Unicode / UTF-8</li>
+<li>[ ] bytes</li>
+<li>[ ] vocabulary</li>
+<li>[ ] BPE pair counting</li>
+<li>[ ] deterministic merging</li>
+<li>[ ] merge ranks</li>
+<li>[ ] encode</li>
+<li>[ ] decode</li>
+<li>[ ] special tokens</li>
+<li>[ ] serialization</li>
+<li>[ ] compression evaluation</li>
+<li>[ ] multilingual evaluation</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-25-result"><summary>ผลการทดลอง</summary><h3>25. Checklist</h3>
+<ul>
+<li>[ ] Unicode / UTF-8</li>
+<li>[ ] bytes</li>
+<li>[ ] vocabulary</li>
+<li>[ ] BPE pair counting</li>
+<li>[ ] deterministic merging</li>
+<li>[ ] merge ranks</li>
+<li>[ ] encode</li>
+<li>[ ] decode</li>
+<li>[ ] special tokens</li>
+<li>[ ] serialization</li>
+<li>[ ] compression evaluation</li>
+<li>[ ] multilingual evaluation</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-25"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-26" class="source-topic"><span id="source-49-tokenizer-from-scratch-canonical-26-whats-next" class="legacy-anchor"></span><span id="source-49-tokenizer-from-scratch-canonical-49-tokenizer-from-scratch-tokenizer-from-scratch" class="legacy-anchor"></span><h3>26. What's Next</h3>
+<p>Chapter 50 uses token sequences to pretrain a decoder-only language model from scratch.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-26-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>26. What's Next</h3>
+<p>Chapter 50 uses token sequences to pretrain a decoder-only language model from scratch.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-26-equation"><summary>สมการ</summary><h3>26. What's Next</h3>
+<p>Chapter 50 uses token sequences to pretrain a decoder-only language model from scratch.</p></details><details id="help-topic-26-visual"><summary>ภาพและ shape</summary><h3>26. What's Next</h3>
+<p>Chapter 50 uses token sequences to pretrain a decoder-only language model from scratch.</p></details><details id="help-topic-26-code"><summary>โค้ด</summary><h3>26. What's Next</h3>
+<p>Chapter 50 uses token sequences to pretrain a decoder-only language model from scratch.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-26-result"><summary>ผลการทดลอง</summary><h3>26. What's Next</h3>
+<p>Chapter 50 uses token sequences to pretrain a decoder-only language model from scratch.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-26"> อ่านหัวข้อนี้แล้ว</label></section><details><summary>รายละเอียดเพิ่มเติมและข้อกำหนดของ local lab</summary><h3>49-tokenizer-from-scratch — Tokenizer From Scratch</h3>
+<p><strong>Prerequisites:</strong> Complete 48-llm-architecture; be able to trace array/tensor shapes, separate train/validation/test data, and explain the core objective of the current chapter.</p>
+<p><strong>Mental model:</strong> Treat Tokenizer From Scratch as a pipeline: input representation → central mechanism → objective/state update → observable output. At every boundary, state shape/state, allowed information flow, and the invariant that should remain true.</p>
+<p><strong>Code walkthrough:</strong> Read public API first, then input checks, state/shape transformations, numerical core, returned values and tests. Connect each important code block to the equation or algorithm in the chapter README.</p>
+<p><strong>Visualization / inspection:</strong> Use a tiny case. Inspect intermediate values, distributions, norms, scores, states or trajectories appropriate to Tokenizer From Scratch; do not rely only on the final metric.</p>
+<p><strong>Experiment:</strong> Run a baseline, one controlled parameter change, one edge case and one repeated seeded comparison. Record seed, environment, data version, configuration and metric.</p>
+<p><strong>Limitations:</strong> List at least one assumption, one data-related limitation, one numerical/optimization limitation and one scaling limitation for Tokenizer From Scratch.</p>
+<p><strong>Analysis workflow:</strong> Check inputs → preprocessing → shapes/state → finite numerical values → objective/update → evaluation protocol. The earliest unexpected state is more informative than a downstream metric.</p>
+<p><strong>Performance:</strong> Identify the dominant time and memory terms and measure them on the local learning run before attempting optimization.</p>
+<p><strong>Production perspective:</strong> Define input validation, artifact/configuration versioning, quality and resource measurements, staged release criteria and a way to return to the previous known-good artifact.</p>
+<p><strong>Research perspective:</strong> State a falsifiable hypothesis, baseline, one-factor change, metric, repeated-run plan when stochastic, and how negative results will be recorded.</p>
+<p><strong>Interview questions:</strong>
+1. Explain Tokenizer From Scratch from first principles without naming a library API.
+2. Trace one input through the central mechanism and give the important intermediate shapes/state.
+3. Name the strongest assumption and a case where it fails.
+4. State the dominant compute/memory cost.
+5. Describe how you would validate a new implementation against a trusted baseline.</p>
+<p><strong>Summary / exit condition:</strong> You may move on when you can explain, derive or trace, implement, test, analyze, measure and evaluate Tokenizer From Scratch, and when the chapter mini-project plus twenty total exercises are complete.</p></details></section><section id="objective-evidence" class="canonical-section"><h2>พิสูจน์ความสามารถทีละ objective</h2><p>ทำกรณีใหม่ก่อนเปิด reference แล้วบันทึกงานด้านล่าง ให้ผู้ตรวจใช้ rubric ตรวจคำอธิบาย ผลคำนวณ โค้ด และข้อจำกัด บันทึกเก็บในเบราว์เซอร์เครื่องนี้ กดส่งออกเพื่อสำรองหรือส่งให้ผู้ตรวจ เว็บไม่ได้รันโค้ดหรือตัดสินผลงานแทนผู้ตรวจ</p><button type="button" class="secondary-button" data-export-evidence>ส่งออกหลักฐานบทนี้เป็น JSON</button><p role="status" id="evidence-export-status"></p><details id="ch49-objective-01" class="objective-proof"><summary>explain Unicode code points and UTF-8 bytes</summary><p>explain Unicode code points and UTF-8 bytes: ใช้กรณีในหัวข้อ Unicode vs Bytes เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch49-evidence-01"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch49-evidence-01-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch49-evidence-01-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch49-evidence-01-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch49-evidence-01-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch49-evidence-01-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch49-evidence-01-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch49-evidence-01-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch49-evidence-01-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p><code>text.encode('utf-8')</code> ให้ASCII“A”[65],ไทย“ก”[224,184,129],emoji“😀”[240,159,152,128]; codepointหนึ่งอาจหลายbytes</p><h3>3. Unicode vs Bytes</h3>
+<p>Python string:</p>
+<pre><code class="language-text">&quot;ภาษาไทย&quot;
+</code></pre>
+<p>contains Unicode characters.</p>
+<p>UTF-8 converts it to bytes:</p>
+<pre><code class="language-text">text.encode(&quot;utf-8&quot;)
+</code></pre>
+<p>A Unicode character may occupy multiple bytes.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch49-objective-02" class="objective-proof"><summary>distinguish character, word, byte and subword tokenization</summary><p>distinguish character, word, byte and subword tokenization: ใช้กรณีในหัวข้อ Why Byte-Level? เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch49-evidence-02"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch49-evidence-02-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch49-evidence-02-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch49-evidence-02-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch49-evidence-02-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch49-evidence-02-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch49-evidence-02-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch49-evidence-02-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch49-evidence-02-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>4. Why Byte-Level?</h3>
+<p>A byte vocabulary has exactly 256 possible base byte values.</p>
+<p>Benefits:
+- every UTF-8 string can be represented
+- no unknown character token required
+- robust multilingual coverage</p>
+<p>Cost:
+- raw byte sequences can be long</p>
+<p>BPE merges common byte sequences into larger tokens.</p><h3>4. Why Byte-Level?</h3>
+<p>A byte vocabulary has exactly 256 possible base byte values.</p>
+<p>Benefits:
+- every UTF-8 string can be represented
+- no unknown character token required
+- robust multilingual coverage</p>
+<p>Cost:
+- raw byte sequences can be long</p>
+<p>BPE merges common byte sequences into larger tokens.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch49-objective-03" class="objective-proof"><summary>explain vocabulary / IDs / special tokens</summary><p>explain vocabulary / IDs / special tokens: ใช้กรณีในหัวข้อ Vocabulary เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch49-evidence-03"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch49-evidence-03-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch49-evidence-03-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch49-evidence-03-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch49-evidence-03-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch49-evidence-03-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch49-evidence-03-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch49-evidence-03-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch49-evidence-03-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>5. Vocabulary</h3>
+<p>Tokenizer maps token objects to IDs:</p>
+<pre><code class="language-text">token → integer ID
+</code></pre>
+<p>Base byte tokens:</p>
+<pre><code class="language-text">0..255
+</code></pre>
+<p>Learned merge tokens can receive IDs:</p>
+<pre><code class="language-text">256, 257, 258, ...
+</code></pre>
+<p>Special tokens should use explicitly reserved IDs.</p><h3>5. Vocabulary</h3>
+<p>Tokenizer maps token objects to IDs:</p>
+<pre><code class="language-text">token → integer ID
+</code></pre>
+<p>Base byte tokens:</p>
+<pre><code class="language-text">0..255
+</code></pre>
+<p>Learned merge tokens can receive IDs:</p>
+<pre><code class="language-text">256, 257, 258, ...
+</code></pre>
+<p>Special tokens should use explicitly reserved IDs.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch49-objective-04" class="objective-proof"><summary>derive Byte Pair Encoding training</summary><p>derive Byte Pair Encoding training: ใช้กรณีในหัวข้อ Byte Pair Encoding, Example เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch49-evidence-04"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch49-evidence-04-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch49-evidence-04-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch49-evidence-04-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch49-evidence-04-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch49-evidence-04-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch49-evidence-04-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch49-evidence-04-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch49-evidence-04-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>corpus“aa aa”bytebase,countsเลือก(a,a)ตามpolicyแต่ละwordแล้วได้aaunit; ทำ10mergesหรือstopหากไม่มีpair,บันทึกpair/newID/rankทุกก้าวไม่บังคับสร้างmergeปลอม</p><h3>6. Byte Pair Encoding</h3>
+<p>Start with a sequence of base symbols.</p>
+<p>Repeatedly:</p>
+<ol>
+<li>count adjacent pairs</li>
+<li>choose the most frequent pair</li>
+<li>create a new token for that pair</li>
+<li>replace occurrences</li>
+<li>repeat until vocabulary target / merge budget</li>
+</ol>
+<h3>7. Example</h3>
+<p>Initial:</p>
+<pre><code class="language-text">a b a b a b
+</code></pre>
+<p>Most frequent pair:</p>
+<pre><code class="language-text">(a,b)
+</code></pre>
+<p>Merge:</p>
+<pre><code class="language-text">ab ab ab
+</code></pre>
+<p>Then a later merge may create:</p>
+<pre><code class="language-text">abab
+</code></pre></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch49-objective-05" class="objective-proof"><summary>implement BPE merge learning</summary><p>implement BPE merge learning: ใช้กรณีในหัวข้อ BPE Training Corpus, Pair Frequency, Deterministic Tie-Breaking, Merge Application เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch49-evidence-05"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch49-evidence-05-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch49-evidence-05-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch49-evidence-05-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch49-evidence-05-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch49-evidence-05-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch49-evidence-05-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch49-evidence-05-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch49-evidence-05-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>tokens[1,2,1,2]adjacentpair(1,2)count2,(2,1)count1; ไม่รวมpairจากenddocumentไปstartdocumentถัดไป</p><h3>8. BPE Training Corpus</h3>
+<p>Train tokenizer only on the tokenizer-training corpus.</p>
+<p>If tokenizer merge training sees evaluation-only data, it can leak distributional information.</p>
+<p>Keep:
+- tokenizer training data
+- model training data
+- validation/test data</p>
+<p>versioned and documented.</p>
+<h3>9. Pair Frequency</h3>
+<p>For token sequence:</p>
+<pre><code class="language-text">[1, 2, 1, 2, 3]
+</code></pre>
+<p>pairs:</p>
+<pre><code class="language-text">(1,2)
+(2,1)
+(1,2)
+(2,3)
+</code></pre>
+<p>Counts:</p>
+<pre><code class="language-text">(1,2) → 2
+...
+</code></pre>
+<h3>10. Deterministic Tie-Breaking</h3>
+<p>Two pairs can have equal frequency.</p>
+<p>Tokenizer training should define deterministic tie-breaking so the same corpus/config yields the same vocabulary.</p>
+<p>Example:
+- higher count first
+- then lexicographic pair order</p>
+<h3>11. Merge Application</h3>
+<p>Given pair:</p>
+<pre><code class="language-text">(A,B) → C
+</code></pre>
+<p>scan left-to-right.</p>
+<p>For:</p>
+<pre><code class="language-text">A B A B
+</code></pre>
+<p>result:</p>
+<pre><code class="language-text">C C
+</code></pre>
+<p>Merges must not overlap inconsistently.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch49-objective-06" class="objective-proof"><summary>encode text with learned merges</summary><p>encode text with learned merges: ใช้กรณีในหัวข้อ Merge Rank, Encoding เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch49-evidence-06"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch49-evidence-06-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch49-evidence-06-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch49-evidence-06-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch49-evidence-06-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch49-evidence-06-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch49-evidence-06-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch49-evidence-06-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch49-evidence-06-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>encodeเริ่มbytesแล้ววนเลือกadjacentpairที่มีrankต่ำสุดในmergetableจนไม่มี; ไม่เลือกpairfrequencyจากข้อความqueryใหม่</p><h3>12. Merge Rank</h3>
+<p>Encoding must apply learned merges in training order/rank.</p>
+<p>Earlier merges have higher priority.</p>
+<p>A convenient representation:</p>
+<pre><code class="language-text">merge_ranks[(left,right)] = rank
+</code></pre>
+<h3>13. Encoding</h3>
+<p>Byte-level BPE:</p>
+<pre><code class="language-text">text
+↓ UTF-8 bytes
+↓ base byte IDs
+↓ repeatedly apply learned merges
+↓ token IDs
+</code></pre></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch49-objective-07" class="objective-proof"><summary>decode token IDs back to bytes/text</summary><p>decode token IDs back to bytes/text: ใช้กรณีในหัวข้อ Decoding เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch49-evidence-07"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch49-evidence-07-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch49-evidence-07-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch49-evidence-07-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch49-evidence-07-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch49-evidence-07-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch49-evidence-07-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch49-evidence-07-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch49-evidence-07-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p><code>decode(encode(text))==text</code>สำหรับไทย/อังกฤษ/emoji/combining/empty; decodeต้องjoinbytesก่อนutf8decode ไม่decodeแต่ละbyteแยก</p><h3>14. Decoding</h3>
+<p>Each token corresponds to a byte sequence.</p>
+<pre><code class="language-text">token IDs
+↓ token byte sequences
+↓ concatenate bytes
+↓ UTF-8 decode
+↓ text
+</code></pre>
+<p>A valid tokenizer should round-trip normal text:</p>
+<pre><code class="language-text">decode(encode(text)) == text
+</code></pre></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch49-objective-08" class="objective-proof"><summary>explain byte-level tokenization</summary><p>explain byte-level tokenization: ใช้กรณีในหัวข้อ Why Byte-Level? เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch49-evidence-08"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch49-evidence-08-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch49-evidence-08-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch49-evidence-08-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch49-evidence-08-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch49-evidence-08-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch49-evidence-08-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch49-evidence-08-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch49-evidence-08-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>4. Why Byte-Level?</h3>
+<p>A byte vocabulary has exactly 256 possible base byte values.</p>
+<p>Benefits:
+- every UTF-8 string can be represented
+- no unknown character token required
+- robust multilingual coverage</p>
+<p>Cost:
+- raw byte sequences can be long</p>
+<p>BPE merges common byte sequences into larger tokens.</p><h3>4. Why Byte-Level?</h3>
+<p>A byte vocabulary has exactly 256 possible base byte values.</p>
+<p>Benefits:
+- every UTF-8 string can be represented
+- no unknown character token required
+- robust multilingual coverage</p>
+<p>Cost:
+- raw byte sequences can be long</p>
+<p>BPE merges common byte sequences into larger tokens.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch49-objective-09" class="objective-proof"><summary>handle invalid UTF-8 decoding policies</summary><p>handle invalid UTF-8 decoding policies: ใช้กรณีในหัวข้อ Decoding เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch49-evidence-09"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch49-evidence-09-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch49-evidence-09-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch49-evidence-09-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch49-evidence-09-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch49-evidence-09-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch49-evidence-09-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch49-evidence-09-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch49-evidence-09-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p><code>decode(encode(text))==text</code>สำหรับไทย/อังกฤษ/emoji/combining/empty; decodeต้องjoinbytesก่อนutf8decode ไม่decodeแต่ละbyteแยก</p><h3>14. Decoding</h3>
+<p>Each token corresponds to a byte sequence.</p>
+<pre><code class="language-text">token IDs
+↓ token byte sequences
+↓ concatenate bytes
+↓ UTF-8 decode
+↓ text
+</code></pre>
+<p>A valid tokenizer should round-trip normal text:</p>
+<pre><code class="language-text">decode(encode(text)) == text
+</code></pre></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch49-objective-10" class="objective-proof"><summary>reserve special tokens</summary><p>reserve special tokens: ใช้กรณีในหัวข้อ Special Tokens, Special-Token Parsing เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch49-evidence-10"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch49-evidence-10-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch49-evidence-10-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch49-evidence-10-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch49-evidence-10-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch49-evidence-10-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch49-evidence-10-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch49-evidence-10-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch49-evidence-10-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>bytesIDs0..255,reservedBOS256/EOS257,mergesเริ่ม258; assertทุกIDuniqueและspecialtokensไม่ถูกmergeเข้าข้อความโดยไม่ตั้งใจ</p><h3>15. Special Tokens</h3>
+<p>Examples:
+- BOS
+- EOS
+- PAD
+- UNK for non-byte tokenizers
+- chat role/control tokens</p>
+<p>Special tokens are protocol markers, not ordinary text.</p>
+<p>Reserve them deliberately to avoid collisions.</p>
+<h3>16. Special-Token Parsing</h3>
+<p>Do not blindly interpret arbitrary user text as a control token.</p>
+<p>Production tokenizers distinguish:
+- ordinary text
+- explicitly allowed special-token parsing</p>
+<p>This avoids accidental protocol injection at tokenizer boundaries.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch49-objective-11" class="objective-proof"><summary>measure compression efficiency</summary><p>measure compression efficiency: ใช้กรณีในหัวข้อ Vocabulary Size Trade-Off, Compression Metrics เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch49-evidence-11"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch49-evidence-11-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch49-evidence-11-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch49-evidence-11-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch49-evidence-11-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch49-evidence-11-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch49-evidence-11-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch49-evidence-11-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch49-evidence-11-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>bytes_per_token=len(text.encode('utf-8'))/len(ids); ไทยcodepointsหลายbytesจึงต้องreportทั้งtokens/byteและtokens/characterพร้อมcorpusrepresentative</p><h3>17. Vocabulary Size Trade-Off</h3>
+<p>Larger vocabulary:
+- shorter sequences
+- larger embedding/LM-head matrices
+- more rare tokens</p>
+<p>Smaller vocabulary:
+- longer sequences
+- smaller embedding table
+- more composition</p>
+<p>There is no universal best size.</p>
+<h3>18. Compression Metrics</h3>
+<p>Useful:</p>
+<pre><code class="language-text">tokens_per_character
+tokens_per_byte
+bytes_per_token
+</code></pre>
+<p>For byte-level tokenizer:</p>
+<pre><code class="language-text">bytes_per_token =
+UTF8 byte count / token count
+</code></pre>
+<p>Higher bytes/token generally means stronger compression, but semantic quality matters too.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch49-objective-12" class="objective-proof"><summary>reason about multilingual tokenization</summary><p>reason about multilingual tokenization: ใช้กรณีในหัวข้อ Multilingual Fairness, Numbers and Code เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch49-evidence-12"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch49-evidence-12-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch49-evidence-12-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch49-evidence-12-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch49-evidence-12-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch49-evidence-12-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch49-evidence-12-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch49-evidence-12-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch49-evidence-12-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>bytes_per_token=len(text.encode('utf-8'))/len(ids); ไทยcodepointsหลายbytesจึงต้องreportทั้งtokens/byteและtokens/characterพร้อมcorpusrepresentative</p><h3>19. Multilingual Fairness</h3>
+<p>Tokenizer can encode some languages far less efficiently than others.</p>
+<p>Measure per-language:
+- tokens per sentence
+- bytes per token
+- sequence truncation rate</p>
+<p>Do not evaluate only English.</p>
+<h3>20. Numbers and Code</h3>
+<p>Tokenization influences:
+- arithmetic strings
+- identifiers
+- whitespace
+- indentation
+- punctuation</p>
+<p>Inspect representative code/data formats before freezing the tokenizer.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch49-objective-13" class="objective-proof"><summary>detect train/eval leakage in tokenizer training</summary><p>detect train/eval leakage in tokenizer training: ใช้กรณีในหัวข้อ BPE Training Corpus เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch49-evidence-13"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch49-evidence-13-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch49-evidence-13-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch49-evidence-13-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch49-evidence-13-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch49-evidence-13-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch49-evidence-13-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch49-evidence-13-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch49-evidence-13-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>fitmergesบนtesttextทำcompressionผลดูดีเกิน; splitdocumentsก่อนBPEและห้ามnormalizeแบบirreversibleถ้าสัญญาexactroundtriprawtext</p><h3>8. BPE Training Corpus</h3>
+<p>Train tokenizer only on the tokenizer-training corpus.</p>
+<p>If tokenizer merge training sees evaluation-only data, it can leak distributional information.</p>
+<p>Keep:
+- tokenizer training data
+- model training data
+- validation/test data</p>
+<p>versioned and documented.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch49-objective-14" class="objective-proof"><summary>serialize tokenizer artifacts reproducibly</summary><p>serialize tokenizer artifacts reproducibly: ใช้กรณีในหัวข้อ Vocabulary Artifact, Byte-Level BPE From Scratch เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch49-evidence-14"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch49-evidence-14-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch49-evidence-14-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch49-evidence-14-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch49-evidence-14-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch49-evidence-14-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch49-evidence-14-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch49-evidence-14-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch49-evidence-14-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>JSONเก็บformatversion,byteIDs,specialIDs,orderedmerges; reloadแล้วencodeทุกfixtureเหมือนเดิม ไม่serializePythondictด้วยkeysที่ชนหลังstringify</p><h3>21. Vocabulary Artifact</h3>
+<p>Store:
+- version
+- base encoding
+- special-token mapping
+- merge list
+- token byte sequences
+- normalization policy
+- training-corpus hash/config</p>
+<p>Tokenizer and model checkpoint must agree.</p>
+<h3>22. Byte-Level BPE From Scratch</h3>
+<p>src/byte_bpe.py includes:</p>
+<ul>
+<li>bytes_to_base_tokens</li>
+<li>pair_counts</li>
+<li>merge_pair</li>
+<li>train_bpe</li>
+<li>ByteBPETokenizer</li>
+<li>encode</li>
+<li>decode</li>
+<li>bytes_per_token</li>
+</ul>
+<p>The implementation is intentionally small and deterministic.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details></section><section id="implementation" class="canonical-section"><h2>Implementation และ tests ที่รันบนเครื่องได้</h2><details><summary>49-tokenizer-from-scratch/src/byte_bpe.py</summary><pre><code>&quot;&quot;&quot;Deterministic educational byte-level BPE tokenizer.&quot;&quot;&quot;
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from collections import Counter
+from typing import Iterable
+
+
+def bytes_to_base_tokens(data: bytes) -&gt; list[int]:
+    return list(data)
+
+
+def pair_counts(tokens: list[int]) -&gt; Counter[tuple[int, int]]:
+    return Counter(zip(tokens, tokens[1:]))
+
+
+def merge_pair(
+    tokens: list[int],
+    pair: tuple[int, int],
+    new_token_id: int,
+) -&gt; list[int]:
+    output: list[int] = []
+    index = 0
+
+    while index &lt; len(tokens):
+        if (
+            index + 1 &lt; len(tokens)
+            and tokens[index] == pair[0]
+            and tokens[index + 1] == pair[1]
+        ):
+            output.append(new_token_id)
+            index += 2
+        else:
+            output.append(tokens[index])
+            index += 1
+
+    return output
+
+
+def _token_bytes_from_merges(
+    merges: list[tuple[int, int]],
+) -&gt; dict[int, bytes]:
+    token_bytes = {
+        token_id: bytes([token_id])
+        for token_id in range(256)
+    }
+
+    for rank, (left, right) in enumerate(merges):
+        token_id = 256 + rank
+        if left not in token_bytes or right not in token_bytes:
+            raise ValueError(&quot;merge refers to unknown token&quot;)
+        token_bytes[token_id] = (
+            token_bytes[left] + token_bytes[right]
+        )
+
+    return token_bytes
+
+
+def train_bpe(
+    texts: Iterable[str],
+    *,
+    num_merges: int,
+) -&gt; list[tuple[int, int]]:
+    if num_merges &lt; 0:
+        raise ValueError(&quot;num_merges must be non-negative&quot;)
+
+    sequences = [
+        bytes_to_base_tokens(text.encode(&quot;utf-8&quot;))
+        for text in texts
+    ]
+
+    if not sequences:
+        raise ValueError(&quot;training corpus must be non-empty&quot;)
+
+    merges: list[tuple[int, int]] = []
+
+    for merge_index in range(num_merges):
+        counts: Counter[tuple[int, int]] = Counter()
+
+        for sequence in sequences:
+            counts.update(pair_counts(sequence))
+
+        if not counts:
+            break
+
+        # Deterministic: highest count, then lexicographically smallest pair.
+        best_pair = min(
+            counts,
+            key=lambda pair: (-counts[pair], pair),
+        )
+        new_token_id = 256 + merge_index
+
+        sequences = [
+            merge_pair(sequence, best_pair, new_token_id)
+            for sequence in sequences
+        ]
+        merges.append(best_pair)
+
+    return merges
+
+
+@dataclass
+class ByteBPETokenizer:
+    merges: list[tuple[int, int]]
+
+    def __post_init__(self) -&gt; None:
+        self.token_bytes = _token_bytes_from_merges(self.merges)
+        self.merge_ranks = {
+            pair: rank
+            for rank, pair in enumerate(self.merges)
+        }
+
+    @property
+    def vocab_size(self) -&gt; int:
+        return 256 + len(self.merges)
+
+    def encode_bytes(self, data: bytes) -&gt; list[int]:
+        tokens = bytes_to_base_tokens(data)
+
+        while len(tokens) &gt;= 2:
+            candidates = [
+                (
+                    self.merge_ranks[(tokens[index], tokens[index + 1])],
+                    index,
+                    (tokens[index], tokens[index + 1]),
+                )
+                for index in range(len(tokens) - 1)
+                if (tokens[index], tokens[index + 1])
+                in self.merge_ranks
+            ]
+
+            if not candidates:
+                break
+
+            best_rank = min(candidate[0] for candidate in candidates)
+            pair = self.merges[best_rank]
+            token_id = 256 + best_rank
+            tokens = merge_pair(tokens, pair, token_id)
+
+        return tokens
+
+    def encode(self, text: str) -&gt; list[int]:
+        return self.encode_bytes(text.encode(&quot;utf-8&quot;))
+
+    def decode_bytes(self, token_ids: Iterable[int]) -&gt; bytes:
+        parts = []
+
+        for token_id in token_ids:
+            token = int(token_id)
+            if token not in self.token_bytes:
+                raise ValueError(f&quot;unknown token id: {token}&quot;)
+            parts.append(self.token_bytes[token])
+
+        return b&quot;&quot;.join(parts)
+
+    def decode(
+        self,
+        token_ids: Iterable[int],
+        *,
+        errors: str = &quot;strict&quot;,
+    ) -&gt; str:
+        return self.decode_bytes(token_ids).decode(
+            &quot;utf-8&quot;,
+            errors=errors,
+        )
+
+    def bytes_per_token(self, text: str) -&gt; float:
+        encoded = self.encode(text)
+        if not encoded:
+            return 0.0
+        return len(text.encode(&quot;utf-8&quot;)) / len(encoded)
+</code></pre></details><details><summary>49-tokenizer-from-scratch/tests/test_byte_bpe.py</summary><pre><code>from pathlib import Path
+import importlib.util
+import sys
+
+
+MODULE_PATH = Path(__file__).parents[1] / &quot;src&quot; / &quot;byte_bpe.py&quot;
+SPEC = importlib.util.spec_from_file_location(&quot;byte_bpe_course&quot;, MODULE_PATH)
+assert SPEC and SPEC.loader
+mod = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = mod
+SPEC.loader.exec_module(mod)
+
+
+def test_merge_pair_non_overlapping() -&gt; None:
+    assert mod.merge_pair(
+        [1, 2, 1, 2, 3],
+        (1, 2),
+        256,
+    ) == [256, 256, 3]
+
+
+def test_training_is_deterministic() -&gt; None:
+    corpus = [&quot;abababab&quot;, &quot;abab&quot;, &quot;abba&quot;]
+    first = mod.train_bpe(corpus, num_merges=6)
+    second = mod.train_bpe(corpus, num_merges=6)
+    assert first == second
+
+
+def test_roundtrip_ascii_and_thai() -&gt; None:
+    corpus = [
+        &quot;hello hello world&quot;,
+        &quot;ภาษาไทย ภาษาไทย&quot;,
+    ]
+    merges = mod.train_bpe(corpus, num_merges=20)
+    tokenizer = mod.ByteBPETokenizer(merges)
+
+    for text in corpus + [&quot;hello ภาษาไทย&quot;]:
+        assert tokenizer.decode(tokenizer.encode(text)) == text
+
+
+def test_learned_merges_reduce_repetitive_sequence() -&gt; None:
+    text = &quot;banana banana banana&quot;
+    tokenizer = mod.ByteBPETokenizer(
+        mod.train_bpe([text], num_merges=10)
+    )
+    encoded = tokenizer.encode(text)
+
+    assert len(encoded) &lt; len(text.encode(&quot;utf-8&quot;))
+    assert tokenizer.bytes_per_token(text) &gt; 1.0
+
+
+def test_unknown_token_id_rejected() -&gt; None:
+    tokenizer = mod.ByteBPETokenizer([])
+    try:
+        tokenizer.decode([999])
+    except ValueError as exc:
+        assert &quot;unknown token id&quot; in str(exc)
+    else:
+        raise AssertionError(&quot;expected ValueError&quot;)
+</code></pre></details></section><section id="glossary" class="canonical-section"><h2>อภิธานศัพท์ — คำไทย ความหมาย และข้อควรตรวจ</h2><dl><dt>tensor</dt><dd>เทนเซอร์: ชุดตัวเลขที่มีแกน เช่น scalar ไม่มีแกน, vector หนึ่งแกน, matrix สองแกน; shape บอกขนาดแต่ละแกน ไม่บอกความหมายของแกนจนกว่าจะระบุ</dd><dt>shape</dt><dd>รูปทรงข้อมูล: (B,T,d) หมายถึง batch × เวลา/ตำแหน่ง × features; ใช้ชื่อแกนกำกับเสมอ การ transpose เปลี่ยนแกนแต่ไม่ใช่แค่เปลี่ยนชื่อ</dd><dt>batch</dt><dd>กลุ่มตัวอย่างที่คำนวณร่วมกันหนึ่งครั้ง; B คือจำนวนตัวอย่าง ไม่ใช่จำนวน features หรือจำนวน optimizer updates</dd><dt>weight w / θ</dt><dd>น้ำหนักหรือพารามิเตอร์ที่โมเดลใช้คำนวณ; แก้ด้วยมือทำ forward ใหม่ ส่วน optimizer ต้องรับ gradient แล้วกด update จึงแก้ state</dd><dt>bias b</dt><dd>ค่าคงที่ที่บวกกับผลเชิงเส้น; regression scalar bias เพิ่ม Δ ทำให้ prediction ทุกจุดเพิ่ม Δ เท่ากัน</dd><dt>prediction ŷ</dt><dd>ค่าที่โมเดลทำนายจาก input และพารามิเตอร์ปัจจุบัน; เครื่องหมายหมวกแยกจาก target y ที่มาจากข้อมูล</dd><dt>residual e</dt><dd>ความคลาดเคลื่อน ในเว็บนี้นิยาม prediction − target; บางตำราใช้เครื่องหมายกลับกัน จึงต้องตรวจนิยามก่อนเทียบสูตร gradient</dd><dt>MSE</dt><dd>mean squared error = ผลรวม residual กำลังสองหารจำนวนรายการที่ระบุ; มีหน่วยเป็น target ยกกำลังสอง และการใช้ sum แทน mean เปลี่ยน scale gradient</dd><dt>loss L / objective J</dt><dd>จำนวนที่ optimizer ต้องการลด; objective อาจรวม data loss และ regularization จึงต้องดูองค์ประกอบและ reduction ให้ตรง implementation</dd><dt>gradient ∇ / ∂</dt><dd>เวกเตอร์ของ partial derivatives บอกอัตราเปลี่ยน loss ต่อพารามิเตอร์แต่ละตัว; ∂ ใช้เมื่อเปลี่ยนตัวหนึ่งโดยตรึงตัวอื่น</dd><dt>chain rule</dt><dd>กฎลูกโซ่: คูณอนุพันธ์ตามเส้นทาง และบวก contribution จากทุกเส้นทางที่มารวมกัน ใช้ย้อนจาก loss ถึง weights</dd><dt>learning rate η</dt><dd>ขนาดตัวคูณ gradient ใน update θnew=θ−ηg; η≥0, ศูนย์หมายถึงไม่มีการขยับพารามิเตอร์ ก้าวใหญ่เกินอาจ diverge</dd><dt>regularization λ</dt><dd>ตัวคูณค่าลงโทษ ต้อง λ≥0 ตามนิยามการลงโทษ; Ridge λΣw² เพิ่ม gradient 2λw โดยบท Regression นี้ไม่ลงโทษ bias</dd><dt>baseline</dt><dd>สถานะอ้างอิงที่ตรึงไว้สำหรับเทียบ; ต้องเก็บ snapshot ไม่อ้าง object ปัจจุบันที่แก้ตามไปด้วย</dd><dt>invariant</dt><dd>คุณสมบัติที่กลไกต้องรักษา เช่น probability รวม1, shape สอดคล้อง, queue ไม่เกิน capacity; ใช้ tests ตรวจได้มากกว่าดูภาพสวย</dd><dt>optimizer state</dt><dd>ความจำของอัลกอริทึม เช่น velocity, moments และ completed updates; คืนเฉพาะ weights ยังไม่เท่ากับเริ่มการฝึกใหม่ทั้งหมด</dd><dt>finite difference</dt><dd>ประมาณ derivative ด้วย [f(x+h)−f(x−h)]/(2h); h&gt;0, ใช้ smooth point และลองหลาย h เพื่อแยก truncation error จาก roundoff</dd><dt>softmax</dt><dd>แปลง logits เป็นความน่าจะเป็นตามแกนที่กำหนด; ลบ max ก่อน exp เพื่อความเสถียร และ fully masked row ต้องมีนโยบายชัดเจน</dd><dt>logit</dt><dd>คะแนนก่อน sigmoid/softmax ไม่ใช่ probability; อาจเป็นจำนวนจริงติดลบหรือเกิน1ได้ จึงห้ามส่งให้ loss ที่คาด probability โดยไม่แปลง</dd><dt>temperature τ / T</dt><dd>ตัวหาร logits ก่อน softmax; ต้องเป็นบวก ค่าเล็กทำ distribution แหลมขึ้น โดยไม่เท่ากับ retrain weights</dd><dt>mask</dt><dd>ตัวกำหนดตำแหน่งที่อ่านหรือคิด loss ได้; causal mask ปิดอนาคต, padding mask ปิดข้อมูลเติม, loss mask เลือก target แต่ละอย่างคนละหน้าที่</dd><dt>Q / K / V</dt><dd>query ใช้ค้นข้อมูล, key ใช้จับคู่ query, value เป็นข้อมูลที่ถูกถัวเฉลี่ย; เป็น learned projections ของ representation ไม่ใช่ป้ายความหมายตายตัว</dd><dt>head</dt><dd>ส่วนของ feature representation ที่ทำ attention แยกกัน แล้ว concat/project กลับ; ต้องตรวจ d_model หารจำนวน heads ลงตัว</dd><dt>ε-neighborhood</dt><dd>เพื่อนบ้านทั้งหมดที่มีระยะไม่เกิน ε รวมจุดตัวเองใน DBSCAN นี้; ε มีหน่วยเดียวกับพิกัด ไม่ใช่จำนวน k ที่ใช้โหวต</dd><dt>core / border / noise</dt><dd>DBSCAN core มีเพื่อนบ้านรวมตัวเองถึง min_samples; border อยู่ใกล้ core แต่เพื่อนบ้านไม่ถึง; noise ไม่ถูกเชื่อมกับ core cluster ใด</dd><dt>bootstrap</dt><dd>สุ่ม observations แบบ replacement ขนาดเท่าเดิมซ้ำหลายครั้งแล้วคำนวณ statistic ใหม่; seed ทำให้ตรวจซ้ำได้ แต่ไม่แก้สมมติฐาน IID ที่ผิด</dd><dt>confidence interval</dt><dd>ช่วงที่สร้างด้วย procedure ที่มี coverage ตามสมมติฐาน; ช่วงหนึ่งที่ได้แล้วไม่ใช่ posterior probability ของ parameter และ sample เล็กยังไม่แน่นอนมาก</dd><dt>validation / test</dt><dd>validation ใช้เลือกโมเดล/ค่าตั้ง ส่วน test ใช้ประเมินหลัง freeze การตัดสินใจ; fit preprocessing/tokenizer จาก test เป็น leakage</dd><dt>leakage</dt><dd>ข้อมูลที่ควรยังไม่รู้ไหลเข้า training/การเลือกโมเดล เช่น future feature หรือเอกสารซ้ำข้าม split ทำให้ metric ดูดีเกินการใช้งานจริง</dd><dt>queue / capacity</dt><dd>queue คือรายการรอ, capacity การให้บริการรวม = workers × service rate ตามแบบจำลอง; เพิ่ม timeout ไม่เพิ่มกำลังประมวลผล</dd><dt>state transition</dt><dd>การเปลี่ยนสถานะเมื่อเกิดเหตุการณ์ที่อนุญาต เช่น queued→active→done; ต้องระบุ guard, side effect และเหตุผลเมื่อ transition ถูกปฏิเสธ</dd><dt>latency / throughput</dt><dd>latency คือเวลาต่อคำขอ, throughput คือปริมาณงานต่อหน่วยเวลา; batching อาจเพิ่ม throughput แต่เพิ่มเวลารอ จึงต้องวัดทั้งคู่</dd><dt>idempotency</dt><dd>ทำคำขอ business operation เดิมซ้ำแล้ว side effect เกิดครั้งเดียวตาม key และ transaction protocol; ไม่ได้รับประกันจากการใช้ UUID ใหม่ทุก attempt</dd><dt>local lab</dt><dd>โปรแกรม Python และ tests ที่ผู้เรียนรันบนเครื่อง; เว็บเก็บเพียงคำยืนยันของผู้เรียน การผ่าน tests ของโค้ดต้นแบบไม่ใช่ผลตรวจโค้ดผู้เรียน</dd></dl></section></article>
+<section id="practice" class="practice-section"><span class="eyebrow">PRACTICE · DEBUG · BUILD</span><h2>พิสูจน์ด้วยการลงมือทำ</h2><div id="web-checks"></div><div class="retry-actions"><button class="secondary-button" id="retry-checks">เริ่มทำโจทย์ในเว็บใหม่</button><button class="text-button" id="undo-retry" hidden>คืนผลก่อนเริ่มใหม่</button></div><div id="exercise-content"><h2>แบบฝึก 20 ข้อ — เฉลยเฉพาะข้อ</h2><p>ทำคำตอบก่อนเปิด hints; โจทย์ปลายเปิดให้ใช้ตัวอย่างคำตอบและหลักฐานราย objective ตรวจงานจริง</p><section id="exercise-1" class="exercise-item"><h3>ข้อ 1</h3><p>Inspect UTF-8 bytes for Thai/English/emoji text.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Unicode vs Bytes: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): <code>text.encode('utf-8')</code> ให้ASCII“A”[65],ไทย“ก…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: <code>text.encode('utf-8')</code> ให้ASCII“A”[65],ไทย“ก”[224,184,129],emoji“😀”[240,159,152,…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p><code>text.encode('utf-8')</code> ให้ASCII“A”[65],ไทย“ก”[224,184,129],emoji“😀”[240,159,152,128]; codepointหนึ่งอาจหลายbytes</p><p>อ้างอิง: <a href="#chapter-49/section/topic-3">Unicode vs Bytes</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch49-exercise-01"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-2" class="exercise-item"><h3>ข้อ 2</h3><p>Count adjacent byte-token pairs.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Pair Frequency: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): tokens[1,2,1,2]adjacentpair(1,2)count2…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: tokens[1,2,1,2]adjacentpair(1,2)count2,(2,1)count1; ไม่รวมpairจากendd…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>tokens[1,2,1,2]adjacentpair(1,2)count2,(2,1)count1; ไม่รวมpairจากenddocumentไปstartdocumentถัดไป</p><p>อ้างอิง: <a href="#chapter-49/section/topic-9">Pair Frequency</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch49-exercise-02"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-3" class="exercise-item"><h3>ข้อ 3</h3><p>Implement deterministic pair merging.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Merge Application: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): mergepair(1,1)บน[1,1,1]แบบleft-to-rightnonoverlapได้…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: mergepair(1,1)บน[1,1,1]แบบleft-to-rightnonoverlapได้[new,1]ไม่ใช่[new,new]; tiebreakfrequency…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>mergepair(1,1)บน[1,1,1]แบบleft-to-rightnonoverlapได้[new,1]ไม่ใช่[new,new]; tiebreakfrequencyด้วยlexicographicpairให้deterministic</p><p>อ้างอิง: <a href="#chapter-49/section/topic-11">Merge Application</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch49-exercise-03"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-4" class="exercise-item"><h3>ข้อ 4</h3><p>Train 10 BPE merges by hand on a tiny corpus.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Byte Pair Encoding, Example: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): corpus“aa aa”bytebase,countsเลือก(a,a)ตามpolicyแต่ละwordแล้วไ…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: corpus“aa aa”bytebase,countsเลือก(a,a)ตามpolicyแต่ละwordแล้วได้aaunit; ทำ10mergesหรือstopหากไม่มีpair,บันทึกpa…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>corpus“aa aa”bytebase,countsเลือก(a,a)ตามpolicyแต่ละwordแล้วได้aaunit; ทำ10mergesหรือstopหากไม่มีpair,บันทึกpair/newID/rankทุกก้าวไม่บังคับสร้างmergeปลอม</p><p>อ้างอิง: <a href="#chapter-49/section/topic-6">Byte Pair Encoding</a>, <a href="#chapter-49/section/topic-7">Example</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch49-exercise-04"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-5" class="exercise-item"><h3>ข้อ 5</h3><p>Implement merge-rank encoding.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Merge Rank: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): encodeเริ่มbytesแล้ววนเลือกadjacentpairที่มีra…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: encodeเริ่มbytesแล้ววนเลือกadjacentpairที่มีrankต่ำสุดในmergetableจนไม่มี; ไม่เลือ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>encodeเริ่มbytesแล้ววนเลือกadjacentpairที่มีrankต่ำสุดในmergetableจนไม่มี; ไม่เลือกpairfrequencyจากข้อความqueryใหม่</p><p>อ้างอิง: <a href="#chapter-49/section/topic-12">Merge Rank</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch49-exercise-05"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-6" class="exercise-item"><h3>ข้อ 6</h3><p>Verify encode/decode roundtrip.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Decoding: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): <code>decode(encode(text))==text</code>สำหรับไทย/อังกฤษ/emoj…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: <code>decode(encode(text))==text</code>สำหรับไทย/อังกฤษ/emoji/combining/empty; decodeต้องjoinbytesก…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p><code>decode(encode(text))==text</code>สำหรับไทย/อังกฤษ/emoji/combining/empty; decodeต้องjoinbytesก่อนutf8decode ไม่decodeแต่ละbyteแยก</p><p>อ้างอิง: <a href="#chapter-49/section/topic-14">Decoding</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch49-exercise-06"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-7" class="exercise-item"><h3>ข้อ 7</h3><p>Add reserved BOS/EOS IDs without collisions.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Special Tokens: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): bytesIDs0..255,reservedBOS256/EOS257,mergesเริ่ม…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: bytesIDs0..255,reservedBOS256/EOS257,mergesเริ่ม258; assertทุกIDuniqueและspecialtokens…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>bytesIDs0..255,reservedBOS256/EOS257,mergesเริ่ม258; assertทุกIDuniqueและspecialtokensไม่ถูกmergeเข้าข้อความโดยไม่ตั้งใจ</p><p>อ้างอิง: <a href="#chapter-49/section/topic-15">Special Tokens</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch49-exercise-07"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-8" class="exercise-item"><h3>ข้อ 8</h3><p>Serialize merges to JSON and reload them.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Vocabulary Artifact: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): JSONเก็บformatversion,byteIDs,specialIDs,orderedmerges; …</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: JSONเก็บformatversion,byteIDs,specialIDs,orderedmerges; reloadแล้วencodeทุกfixtureเหมือนเดิม ไม่seria…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>JSONเก็บformatversion,byteIDs,specialIDs,orderedmerges; reloadแล้วencodeทุกfixtureเหมือนเดิม ไม่serializePythondictด้วยkeysที่ชนหลังstringify</p><p>อ้างอิง: <a href="#chapter-49/section/topic-21">Vocabulary Artifact</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch49-exercise-08"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-9" class="exercise-item"><h3>ข้อ 9</h3><p>Compare bytes/token for Thai vs English.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Compression Metrics, Multilingual Fairness: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): bytes_per_token=len(text.encode('utf-8'))/len(ids); ไทยcod…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: bytes_per_token=len(text.encode('utf-8'))/len(ids); ไทยcodepointsหลายbytesจึงต้องreportทั้งtokens/byteและ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>bytes_per_token=len(text.encode('utf-8'))/len(ids); ไทยcodepointsหลายbytesจึงต้องreportทั้งtokens/byteและtokens/characterพร้อมcorpusrepresentative</p><p>อ้างอิง: <a href="#chapter-49/section/topic-18">Compression Metrics</a>, <a href="#chapter-49/section/topic-19">Multilingual Fairness</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch49-exercise-09"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-10" class="exercise-item"><h3>ข้อ 10</h3><p>Measure vocabulary-size vs sequence-length trade-off.</p>
+<p>Challenge:
+- implement special-token parsing with explicit allow-list
+- build a byte-level BPE artifact with corpus/config hash</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Vocabulary Size Trade-Off: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): vocabเพิ่มmergesมักลดsequenceบนcorpusฝึกแต่embeddin…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: vocabเพิ่มmergesมักลดsequenceบนcorpusฝึกแต่embeddingparametersVdเพิ่ม; measureheldoutcompres…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>vocabเพิ่มmergesมักลดsequenceบนcorpusฝึกแต่embeddingparametersVdเพิ่ม; measureheldoutcompressionทั้งไทย/อังกฤษและtrain/infercost</p><p>อ้างอิง: <a href="#chapter-49/section/topic-17">Vocabulary Size Trade-Off</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch49-exercise-10"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-11" class="exercise-item"><h3>ข้อ 11</h3><p>Reproduce one central calculation from Tokenizer From Scratch using a tiny hand-checkable input.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Merge Application: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): [a,a,a]mergeaa→[aa,a],decodebytesกลับaaa; …</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: [a,a,a]mergeaa→[aa,a],decodebytesกลับaaa; overlappingcountตอนtrain2คู่ไม่ได้ห…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>[a,a,a]mergeaa→[aa,a],decodebytesกลับaaa; overlappingcountตอนtrain2คู่ไม่ได้หมายใช้mergeได้2ตำแหน่งพร้อมกัน</p><p>อ้างอิง: <a href="#chapter-49/section/topic-11">Merge Application</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch49-exercise-11"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-12" class="exercise-item"><h3>ข้อ 12</h3><p>Write a deterministic test that verifies the most important invariant in Tokenizer From Scratch.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Deterministic Tie-Breaking, Decoding: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): roundtripunicode/empty,serialize-roundtripIDs,tie-breakdeterm…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: roundtripunicode/empty,serialize-roundtripIDs,tie-breakdeterminismและunknownIDsreject; corpusorderเปลี่ยนไม่คว…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>roundtripunicode/empty,serialize-roundtripIDs,tie-breakdeterminismและunknownIDsreject; corpusorderเปลี่ยนไม่ควรเปลี่ยนmergesเมื่อcounts/tiebreakเหมือนกัน</p><p>อ้างอิง: <a href="#chapter-49/section/topic-10">Deterministic Tie-Breaking</a>, <a href="#chapter-49/section/topic-14">Decoding</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch49-exercise-12"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-13" class="exercise-item"><h3>ข้อ 13</h3><p>Compare two meaningful configurations while keeping data and seed fixed.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Vocabulary Size Trade-Off: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): vocab256/512/1024คงcorpus/split/normalization; reporth…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: vocab256/512/1024คงcorpus/split/normalization; reportheldouttokensperbyte/vocabsize/encodelatency…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>vocab256/512/1024คงcorpus/split/normalization; reportheldouttokensperbyte/vocabsize/encodelatencyแยกภาษา ไม่chooseเฉพาะtraincompression</p><p>อ้างอิง: <a href="#chapter-49/section/topic-17">Vocabulary Size Trade-Off</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch49-exercise-13"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-14" class="exercise-item"><h3>ข้อ 14</h3><p>Record intermediate shapes, ranges, and one quality metric for a tiny end-to-end run.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Encoding: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): recordbyteslength,initialIDs,rankedpairtrace,finalIDs…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: recordbyteslength,initialIDs,rankedpairtrace,finalIDs,specialpositionsและroundtrip; tokenstringr…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>recordbyteslength,initialIDs,rankedpairtrace,finalIDs,specialpositionsและroundtrip; tokenstringrepresentationไม่เท่ากับdecodedtextเสมอ</p><p>อ้างอิง: <a href="#chapter-49/section/topic-13">Encoding</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch49-exercise-14"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-15" class="exercise-item"><h3>ข้อ 15</h3><p>Explain one evaluation mistake that could make a Tokenizer From Scratch result look better than it really is.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ BPE Training Corpus: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): fitmergesบนtesttextทำcompressionผลดูดีเกิน; splitd…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: fitmergesบนtesttextทำcompressionผลดูดีเกิน; splitdocumentsก่อนBPEและห้ามnormalizeแบบirreve…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>fitmergesบนtesttextทำcompressionผลดูดีเกิน; splitdocumentsก่อนBPEและห้ามnormalizeแบบirreversibleถ้าสัญญาexactroundtriprawtext</p><p>อ้างอิง: <a href="#chapter-49/section/topic-8">BPE Training Corpus</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch49-exercise-15"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-16" class="exercise-item"><h3>ข้อ 16</h3><p>State the dominant time and memory complexity for the main operation in Tokenizer From Scratch.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Byte-Level BPE From Scratch: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): naiveBPEแต่ละmergeสแกนcorpusO(MN),encodeworstca…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: naiveBPEแต่ละmergeสแกนcorpusO(MN),encodeworstcaserepeatedscanO(T²); optimizedheapช่วย…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>naiveBPEแต่ละmergeสแกนcorpusO(MN),encodeworstcaserepeatedscanO(T²); optimizedheapช่วยแต่ต้องpreservesamemergeranks/ties</p><p>อ้างอิง: <a href="#chapter-49/section/topic-22">Byte-Level BPE From Scratch</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch49-exercise-16"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-17" class="exercise-item"><h3>ข้อ 17</h3><p>Compare a from-scratch result with a trusted implementation using identical inputs and settings.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Byte-Level BPE From Scratch: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): เทียบscratchกับtrustedBPEเมื่อbytealphabet/preto…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: เทียบscratchกับtrustedBPEเมื่อbytealphabet/pretokenization/mergeranks/specialIDsเหมือนก…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>เทียบscratchกับtrustedBPEเมื่อbytealphabet/pretokenization/mergeranks/specialIDsเหมือนกัน; tokenizerคนละfamilyไม่คาดIDsตรง</p><p>อ้างอิง: <a href="#chapter-49/section/topic-22">Byte-Level BPE From Scratch</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch49-exercise-17"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-18" class="exercise-item"><h3>ข้อ 18</h3><p>Run a one-factor ablation and report the measured change over repeated runs when randomness matters.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Special-Token Parsing: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): เปลี่ยนpretokenizerwhitespace→bytescontinuousคงmergec…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: เปลี่ยนpretokenizerwhitespace→bytescontinuousคงmergecount/corpus; reportspacepreservation/Thai c…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>เปลี่ยนpretokenizerwhitespace→bytescontinuousคงmergecount/corpus; reportspacepreservation/Thai compressionและroundtripnotjustvocabsize</p><p>อ้างอิง: <a href="#chapter-49/section/topic-16">Special-Token Parsing</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch49-exercise-18"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-19" class="exercise-item"><h3>ข้อ 19</h3><p>Design a small reproducibility record containing seed, code version, data version, configuration, and metric.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Vocabulary Artifact: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): manifestเก็บrawcorpushash/split/normalization/…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: manifestเก็บrawcorpushash/split/normalization/bytealphabet/specialIDs/tiebreak/merge…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>manifestเก็บrawcorpushash/split/normalization/bytealphabet/specialIDs/tiebreak/mergesordered/version/seed/fixturehash</p><p>อ้างอิง: <a href="#chapter-49/section/topic-21">Vocabulary Artifact</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch49-exercise-19"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-20" class="exercise-item"><h3>ข้อ 20</h3><p>Propose one falsifiable research question for Tokenizer From Scratch and specify the baseline, changed factor, and acceptance metric.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Multilingual Fairness: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ทดลอง“balancedThaiEnglishtrainingลดThai tokens…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ทดลอง“balancedThaiEnglishtrainingลดThai tokens/byte≥10%โดยEnglishเพิ่ม≤5%”; fixedv…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ทดลอง“balancedThaiEnglishtrainingลดThai tokens/byte≥10%โดยEnglishเพิ่ม≤5%”; fixedvocabและheldoutdomainsพร้อมlatency</p><p>อ้างอิง: <a href="#chapter-49/section/topic-19">Multilingual Fairness</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch49-exercise-20"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section></div><div id="local-lab-content"><section id="local-lab"><h2>Local lab: Python 3.12 บน CPU</h2><p>รันจาก repository root; ใช้ Python 3.12 แยก environment สำหรับ framework ตาม requirements ของชุดบท</p><pre><code>python3.12 -m venv .venv-course
+source .venv-course/bin/activate
+python -m pip install -r requirements-batch17.txt pytest
+(cd 49-tokenizer-from-scratch &amp;&amp; python -m pytest tests -q -rs)</code></pre><p>ผลที่คาดหวัง: required tests ผ่านและไม่มี required test ถูก skip; GPU/integrations ที่ยังไม่รันต้องระบุแยก Python 3.15 ที่มากับเครื่องอาจใช้กับ framework wheels เหล่านี้ไม่ได้</p><h2>Mini Project — Versioned Byte-Level BPE</h2>
+<p>Train a tokenizer on a multilingual local corpus.</p>
+<p>Produce:
+- merges.json
+- tokenizer_config.json
+- corpus hash
+- vocabulary size
+- reserved special-token IDs
+- encode/decode CLI
+- compression report</p>
+<p>Report:
+- bytes/token per language
+- token lengths for code/numbers
+- roundtrip failures
+- sequence-length histogram</p><h2>Batch 17 Integration Project — Raw Text to Tiny LLM</h2>
+<p>This batch connects the full pretraining path:</p>
+<pre><code class="language-text">raw documents
+↓
+normalize
+↓
+exact deduplicate
+↓
+document-level train/validation/test split
+↓
+train byte-level BPE on TRAIN only
+↓
+freeze tokenizer
+↓
+tokenize each split
+↓
+pack token sequences
+↓
+causal input/target shift
+↓
+Tiny Modern LLM
+↓
+AdamW + warmup/cosine + clipping
+↓
+checkpoint state_dict
+</code></pre>
+<h3>Part A — Pipeline Audit</h3>
+<p>The synthetic corpus deliberately contains:
+- train documents
+- validation documents
+- test documents
+- one normalized exact duplicate</p>
+<p>Checks:
+- duplicate removed before tokenization
+- split is deterministic
+- train/validation hashes have zero overlap
+- train/test hashes have zero overlap
+- tokenizer round-trips Thai + English text
+- tokenizer merges are trained only from train text</p>
+<h3>Part B — Tiny Pretraining</h3>
+<p>Architecture:</p>
+<pre><code class="language-text">byte-BPE token IDs
+↓
+embedding
+↓
+RMSNorm
+↓
+RoPE + GQA + causal SDPA
+↓
+SwiGLU
+↓
+final RMSNorm
+↓
+weight-tied LM head
+</code></pre>
+<p>Training:
+- next-token cross entropy
+- AdamW
+- explicit warmup/cosine LR
+- global norm clipping
+- token counter
+- state_dict checkpoint serialization smoke</p>
+<h3>Run</h3>
+<pre><code class="language-bash">python integration-project-batch17/src/tokenizer_dataset_pretraining_lab.py --mode pipeline
+
+python integration-project-batch17/src/tokenizer_dataset_pretraining_lab.py \
+  --mode pretraining \
+  --steps 10
+</code></pre>
+<h3>Required Extensions</h3>
+<ol>
+<li>reserved BOS/EOS IDs outside base/merge IDs</li>
+<li>tokenizer JSON serialization</li>
+<li>near-duplicate MinHash lab</li>
+<li>shard checksums/manifest files</li>
+<li>resumable streaming iterator</li>
+<li>gradient accumulation</li>
+<li>optimizer-state checkpoint/resume</li>
+<li>validation loss loop</li>
+<li>greedy generation</li>
+<li>cached KV decode from Batch 16</li>
+</ol></section></div><label class="local-confirm"><input type="checkbox" id="local-lab-confirm"> ฉันรัน local lab และตรวจผลตาม rubric ด้วยตัวเองแล้ว</label><p class="local-note">สถานะนี้เป็นคำยืนยันของผู้เรียน เว็บไม่ได้รันหรือตรวจ Python บนเครื่องแทนคุณ</p></section>
+<section id="mastery-review" class="practice-section"><h2>หลักฐานตามเกณฑ์การเรียนรู้</h2><p>ทุก objective ต้องแสดงหลักฐานอธิบาย ทำนาย คำนวณ อ่าน shape/state debug และประยุกต์ พร้อมกรณีใหม่ ผลรัน source ผู้เรียนจริง และการประเมินซ้ำ เกณฑ์นี้ไม่รับประกันความเข้าใจทุกสถานการณ์ เปิด JavaScript เพื่อดูรายการที่ยังขาดและนำเข้ารายงานผู้ตรวจ</p></section><section class="coverage-section"><h2>แผนที่สิ่งที่เรียน → สิ่งที่ต้องแสดงให้ได้</h2><div id="coverage-table"></div></section><footer><span>ZERO TO ELITE AI ENGINEER · LEARNING STUDIO</span><span>อ่าน · derive · implement · debug · experiment · build</span></footer></div></main><noscript><style>.workbench,.sidebar,.reading-route,.lesson-toc,.mastery-status,#web-checks{display:none}main{margin-left:0}</style>อ่านเนื้อหา HTML ได้ตามปกติ เปิด JavaScript เพื่อใช้ห้องทดลองและตรวจคำตอบ</noscript></body></html>

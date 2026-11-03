@@ -1,5 +1,11 @@
 # Chapter 54 — Mixed Precision: FP32, FP16 & BF16
 
+## Interactive Animation Lab
+
+[เปิดภาพจำลองของบทนี้](animation.html) · [เลือกจากทั้ง 80 บท](../visual-lab/index.html)
+
+ดู flow ทีละขั้น → ทดลองเปลี่ยนค่า → อ่านสมการและโค้ด → ตอบคำถามเช็กความเข้าใจ แล้วกลับมาทำแบบฝึกหัดในบทนี้
+
 ## 1. Why Mixed Precision?
 
 Training in full FP32 is robust but uses more memory/bandwidth than lower-precision arithmetic.

@@ -1,0 +1,1169 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="บทเรียน AI Engineer ภาษาไทย พร้อมคณิตศาสตร์ทีละขั้นและห้องทดลองที่คำนวณจริง"><title>CNN: เลื่อน kernel แล้วคำนวณทุกช่องให้เห็น · AI Engineer Studio</title><link rel="stylesheet" href="../visual-lab/assets/styles.css"><link rel="stylesheet" href="../visual-lab/assets/course.css"><script defer src="../visual-lab/assets/lessons.js"></script><script defer src="../visual-lab/assets/chapter-meta.js"></script><script defer src="../visual-lab/assets/course-math.js"></script><script defer src="../visual-lab/assets/course-models.js"></script><script defer src="../visual-lab/assets/course-models-v3.js"></script><script defer src="../visual-lab/assets/course-assessment.js"></script><script defer src="../visual-lab/assets/course-mastery.js"></script><script defer src="../visual-lab/assets/course-catalog.js"></script><script defer src="../visual-lab/assets/book-content.js"></script><script defer src="../visual-lab/assets/course-render.js"></script><script defer src="../visual-lab/assets/course-mastery-panel.js"></script><script defer src="../visual-lab/assets/quality-report.js"></script><script defer src="../visual-lab/assets/course-app.js"></script></head>
+<body data-chapter="24" data-root="../"><a class="skip-link" href="#main">ข้ามไปบทเรียน</a>
+<aside class="sidebar" id="sidebar" aria-label="เลือกบทเรียน"><a class="brand" href="../visual-lab/index.html"><span class="brand-mark">ai</span><span>AI ENGINEER<small>LEARN · DERIVE · BUILD</small></span></a><div class="sidebar-intro">อ่านให้เข้าใจ · คำนวณให้เห็น · เขียนให้เป็น</div><label class="search-box"><input id="search" type="search" placeholder="ค้นหาบท / attention" aria-label="ค้นหาบทเรียน"></label><label class="filter-label" for="phase-filter">เส้นทางการเรียน <span id="nav-count"></span></label><select id="phase-filter"><option value="">ทุก Phase</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option></select><nav id="chapter-list" class="chapter-list" aria-label="รายชื่อบท"></nav><div class="course-progress"><div><span>ผ่านโจทย์ในเว็บ</span><strong id="progress-count">0 / 80</strong></div><progress id="course-progress" max="80" value="0" aria-label="บทที่ผ่านโจทย์"></progress><a id="resume-link" href="#chapter-1">อ่านต่อจากเดิม →</a></div></aside>
+<button class="nav-backdrop" id="nav-backdrop" aria-label="ปิดเมนู" hidden></button>
+<main id="main" tabindex="-1"><header class="topbar"><div><button id="nav-toggle" class="icon-button mobile-menu" aria-label="เปิดเมนูบทเรียน" aria-expanded="false" aria-controls="sidebar">☰</button><span id="breadcrumb"></span></div><span class="local-badge"><i></i> คำนวณในเครื่อง · ไม่มี API</span></header><div class="content">
+<div class="chapter-navigation"><label for="chapter-select" class="sr-only">เลือกบทเรียน</label><select id="chapter-select"></select><div class="chapter-arrows"><button id="prev-chapter" class="icon-button" aria-label="บทก่อนหน้า">←</button><button id="next-chapter" class="icon-button" aria-label="บทถัดไป">→</button></div></div>
+<section class="chapter-hero"><div><p id="chapter-kicker" class="eyebrow"></p><h1 id="chapter-title">CNN: เลื่อน kernel แล้วคำนวณทุกช่องให้เห็น</h1><p class="english-title" id="chapter-english"></p></div><span class="hero-symbol">f(x) ↗</span></section>
+<p id="quality-status" class="quality-status"></p><div id="mastery-status" class="mastery-status"></div><div class="reading-route"><a href="#chapter-24/section/overview">01 อ่านบทเรียน</a><a href="#workbench">02 ทดลองสมการ</a><a href="#practice">03 ฝึกและตรวจงาน</a><a href="#mastery-review">04 หลักฐานตามเกณฑ์</a></div>
+<nav id="lesson-toc" class="lesson-toc" aria-label="สารบัญบท"></nav>
+<section id="overview" class="course-overview"><span class="eyebrow">THE LEARNING CONTRACT</span><h2>เรียนบทนี้แล้วต้องทำอะไรได้</h2><p id="chapter-purpose"></p><div id="chapter-objectives"></div><div class="learning-hint">ทำนาย → เปลี่ยนทีละค่า → ตรวจตัวเลข → อธิบายเหตุผล → เขียนด้วย Python เอง</div></section>
+<section class="workbench lab-card" id="workbench" aria-label="ห้องทดลองคำนวณจริง"><div class="card-header"><div><span class="live-dot"></span><span class="eyebrow">COMPUTATION WORKBENCH</span></div><span class="simulation-label">ทุกภาพใช้ผลคำนวณชุดเดียวกัน</span></div><div class="lab-top"><label for="lab-select">เลือกกลไกที่ต้องการทดลอง</label><select id="lab-select"></select><p id="lab-question"></p></div><div class="workbench-grid"><div class="viz-column"><div class="compare-labels"><span>เส้นทึบ: ปัจจุบัน</span><span>เส้นประ: baseline ที่ตรึงไว้</span></div><div id="simulation" class="simulation"></div><div id="metrics" class="metrics"></div><div id="baseline-diff" class="baseline-diff"></div><div class="playback"><div class="playback-buttons"><button class="primary-button" id="update-once">อัปเดตหนึ่งก้าว</button><button class="secondary-button" id="train-many">▶ ฝึก 30 ก้าว</button><button class="icon-button" id="back-state" aria-label="ย้อนประวัติ">↶</button><button class="icon-button" id="forward-state" aria-label="ประวัติถัดไป">↷</button></div></div><div class="lab-secondary-actions"><button id="pin-baseline" class="text-button">ตรึง baseline ปัจจุบัน</button><button id="reset-lab" class="text-button">คืนค่าเริ่มต้น</button><button id="download-state" class="text-button">บันทึกผล JSON</button><span id="history-status"></span></div><p id="simulation-note" class="simulation-note"></p><p class="lab-error" id="lab-error" role="alert" hidden></p></div><div class="controls-column"><h3>เปลี่ยนทีละตัว แล้วสังเกตผล</h3><div id="lab-controls"></div><p class="control-note">แก้ weight ด้วยมือจะคำนวณ forward ใหม่; optimizer เปลี่ยน weights เมื่อกดอัปเดตเท่านั้น</p></div></div>
+<div class="trace-section"><div class="trace-toolbar"><h3>เดินสมการทีละ operation</h3><div><button id="trace-prev" class="icon-button" aria-label="operation ก่อนหน้า">←</button><button id="play-trace" class="secondary-button" aria-pressed="false">▶ เล่น flow</button><button id="trace-next" class="icon-button" aria-label="operation ถัดไป">→</button><span id="stage-counter"></span></div></div><label class="motion-control"><input id="reduce-motion" type="checkbox"> ลดภาพเคลื่อนไหว (หยุดการเล่นที่ค้างอยู่)</label><div id="operation-steps" class="operation-steps"></div><div id="flow-diagram" class="flow-diagram"></div><div id="active-operation" class="active-operation" aria-live="polite"></div><p class="control-note">ตัวเลขบนภาพปัดเศษเพื่อให้อ่านง่าย; บันทึก JSON เพื่อดูค่าที่ใช้คำนวณเต็ม precision</p><details open><summary>ตารางค่าระหว่างทาง — ตรวจด้วยมือได้</summary><div id="result-table"></div></details><div id="tensor-tables" class="tensor-tables"></div><details id="surface-details"><summary>ดู loss surface และเส้นทางของ w₁,b (ตรึง controls อื่น)</summary><div id="surface-chart"></div><p>surface คำนวณ objective ปัจจุบันโดยตรึง degree, penalty, ข้อมูล และ weights อื่น เส้นทางแสดงเฉพาะ snapshots ที่ค่าเหล่านี้ตรงกัน; นอกช่วง w=[−1,5], b=[−2,4] ให้ตรวจค่าจริงใน history</p></details><details><summary>ประวัติการเปลี่ยนค่า</summary><div id="history-table"></div></details></div></section>
+<article id="chapter-article" class="chapter-article"><section id="mechanism-1" class="teaching-section"><span class="section-kicker">CHAPTER 24 · ภาพ → สมการ → โค้ด</span><h2>1. หนึ่งช่อง output มาจาก patch หนึ่งบริเวณ</h2><h3>โจทย์และเหตุผล</h3><p>คูณ pixel กับ kernel ตำแหน่งเดียวกันแล้วรวมบวก bias ภาพแสดงทุก product ในตาราง การเปลี่ยน kernel weight เดียวมีผลกับทุกตำแหน่งที่ใช้ weight นั้น เป็นที่มาของ weight sharing</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Implement a small example of convolution.</p><p>X=np.arange(1,10).reshape(3,3),K=[[1,0],[0,−1]]; loop4patchesแล้วsum(patch*K)ได้[[-4,-4],[-4,-4]]</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>position: output position index,initial=0; kernelWeight: kernel top-right weight,initial=1; pixel: input center pixel,initial=1; bias: convolution bias,initial=0; stride: stride,initial=1; padding: zero padding,initial=0</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>Hout=floor((5+2p−3)/stride)+1; index∈[0,8] = [3, 3, 0, 0, 0]; ไม่วน index กลับ; row=floor(index/Hout),col=index mod Hout หลังตรวจขอบเขต</li><li>patch[a,b]=Xpad[0+a,0+b] = [[0, 0, 1], [0, 0, 1], [0, 0, 1]]; คูณ stride ก่อนเลือกจุดเริ่ม แล้วอ่าน 3×3; padding เป็นศูนย์ที่ขอบ</li><li>products[a,b]=patch[a,b]·K[a,b] = [[0, 0, 1], [0, 0, 1], [0, 0, 1]]; kernel ไม่ถูกพลิกสำหรับ cross-correlation; weight เดียวใช้ซ้ำทุกตำแหน่ง</li><li>Y[0,0]=Σproducts+0 = 3; รวม product ทั้ง9ช่องก่อนบวก bias หนึ่งครั้ง ไม่ใช่บวกทุกช่อง</li><li>Y[row,col] ← selected output = [[3, 3, 0], [3, 3, 0], [3, 3, 0]]; เดินทุก valid output position ด้วยกฎเดียวกัน; tensor output ใช้ค่าคำนวณชุดเดียวกับกราฟ</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="convolution-patch---kernel---bias-ท-">เปิดการทดลองนี้</a><p class="failure-box">productสะสมในfloat16อาจoverflow/roundoff; ใช้float64tinyoracleแล้วfloat32tolerance; inputNaNต้องรายงานตำแหน่งไม่วาดกราฟต่อเป็น0; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>X=np.arange(1,10).reshape(3,3),K=[[1,0],[0,−1]]; loop4patchesแล้วsum(patch*K)ได้[[-4,-4],[-4,-4]]</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-1-equation"><summary>สมการ</summary><ol><li><code>Hout=floor((5+2p−3)/stride)+1; index∈[0,8]</code> = [3, 3, 0, 0, 0]<p>ไม่วน index กลับ; row=floor(index/Hout),col=index mod Hout หลังตรวจขอบเขต</p></li><li><code>patch[a,b]=Xpad[0+a,0+b]</code> = [[0, 0, 1], [0, 0, 1], [0, 0, 1]]<p>คูณ stride ก่อนเลือกจุดเริ่ม แล้วอ่าน 3×3; padding เป็นศูนย์ที่ขอบ</p></li><li><code>products[a,b]=patch[a,b]·K[a,b]</code> = [[0, 0, 1], [0, 0, 1], [0, 0, 1]]<p>kernel ไม่ถูกพลิกสำหรับ cross-correlation; weight เดียวใช้ซ้ำทุกตำแหน่ง</p></li><li><code>Y[0,0]=Σproducts+0</code> = 3<p>รวม product ทั้ง9ช่องก่อนบวก bias หนึ่งครั้ง ไม่ใช่บวกทุกช่อง</p></li><li><code>Y[row,col] ← selected output</code> = [[3, 3, 0], [3, 3, 0], [3, 3, 0]]<p>เดินทุก valid output position ด้วยกฎเดียวกัน; tensor output ใช้ค่าคำนวณชุดเดียวกับกราฟ</p></li></ol></details><details id="help-mechanism-1-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>Hout=floor((5+2p−3)/stride)+1; index∈[0,8]</code> = [3, 3, 0, 0, 0]<p>ไม่วน index กลับ; row=floor(index/Hout),col=index mod Hout หลังตรวจขอบเขต</p></li><li><code>patch[a,b]=Xpad[0+a,0+b]</code> = [[0, 0, 1], [0, 0, 1], [0, 0, 1]]<p>คูณ stride ก่อนเลือกจุดเริ่ม แล้วอ่าน 3×3; padding เป็นศูนย์ที่ขอบ</p></li><li><code>products[a,b]=patch[a,b]·K[a,b]</code> = [[0, 0, 1], [0, 0, 1], [0, 0, 1]]<p>kernel ไม่ถูกพลิกสำหรับ cross-correlation; weight เดียวใช้ซ้ำทุกตำแหน่ง</p></li><li><code>Y[0,0]=Σproducts+0</code> = 3<p>รวม product ทั้ง9ช่องก่อนบวก bias หนึ่งครั้ง ไม่ใช่บวกทุกช่อง</p></li><li><code>Y[row,col] ← selected output</code> = [[3, 3, 0], [3, 3, 0], [3, 3, 0]]<p>เดินทุก valid output position ด้วยกฎเดียวกัน; tensor output ใช้ค่าคำนวณชุดเดียวกับกราฟ</p></li></ol></details><details id="help-mechanism-1-code"><summary>โค้ด</summary><p>X=np.arange(1,10).reshape(3,3),K=[[1,0],[0,−1]]; loop4patchesแล้วsum(patch*K)ได้[[-4,-4],[-4,-4]]</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-1-result"><summary>ผลการทดลอง</summary><ol><li><code>Hout=floor((5+2p−3)/stride)+1; index∈[0,8]</code> = [3, 3, 0, 0, 0]<p>ไม่วน index กลับ; row=floor(index/Hout),col=index mod Hout หลังตรวจขอบเขต</p></li><li><code>patch[a,b]=Xpad[0+a,0+b]</code> = [[0, 0, 1], [0, 0, 1], [0, 0, 1]]<p>คูณ stride ก่อนเลือกจุดเริ่ม แล้วอ่าน 3×3; padding เป็นศูนย์ที่ขอบ</p></li><li><code>products[a,b]=patch[a,b]·K[a,b]</code> = [[0, 0, 1], [0, 0, 1], [0, 0, 1]]<p>kernel ไม่ถูกพลิกสำหรับ cross-correlation; weight เดียวใช้ซ้ำทุกตำแหน่ง</p></li><li><code>Y[0,0]=Σproducts+0</code> = 3<p>รวม product ทั้ง9ช่องก่อนบวก bias หนึ่งครั้ง ไม่ใช่บวกทุกช่อง</p></li><li><code>Y[row,col] ← selected output</code> = [[3, 3, 0], [3, 3, 0], [3, 3, 0]]<p>เดินทุก valid output position ด้วยกฎเดียวกัน; tensor output ใช้ค่าคำนวณชุดเดียวกับกราฟ</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-1"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-2" class="teaching-section"><span class="section-kicker">CHAPTER 24 · ภาพ → สมการ → โค้ด</span><h2>2. stride กับ padding เปลี่ยนสิ่งที่อ่านและขนาดผล</h2><h3>โจทย์และเหตุผล</h3><p>Hout=floor((H+2P-K)/S)+1 ในกรณี dilation=1 padding เติมศูนย์ที่ขอบ ส่วน stride ข้ามตำแหน่ง จึงต้องดูทั้ง patch coordinates และ output shape</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Explain stride.</p><p>strideคือระยะเลื่อนpatch; H4,K2,p0,s2ให้Hout=floor((4−2)/2)+1=2 จึงมี4ตำแหน่งในoutput2×2</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>position: output position index,initial=0; kernelWeight: kernel top-right weight,initial=2; pixel: input center pixel,initial=1; bias: convolution bias,initial=0; stride: stride,initial=1; padding: zero padding,initial=0</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>Hout=floor((5+2p−3)/stride)+1; index∈[0,8] = [3, 3, 0, 0, 0]; ไม่วน index กลับ; row=floor(index/Hout),col=index mod Hout หลังตรวจขอบเขต</li><li>patch[a,b]=Xpad[0+a,0+b] = [[0, 0, 1], [0, 0, 1], [0, 0, 1]]; คูณ stride ก่อนเลือกจุดเริ่ม แล้วอ่าน 3×3; padding เป็นศูนย์ที่ขอบ</li><li>products[a,b]=patch[a,b]·K[a,b] = [[0, 0, 2], [0, 0, 1], [0, 0, 1]]; kernel ไม่ถูกพลิกสำหรับ cross-correlation; weight เดียวใช้ซ้ำทุกตำแหน่ง</li><li>Y[0,0]=Σproducts+0 = 4; รวม product ทั้ง9ช่องก่อนบวก bias หนึ่งครั้ง ไม่ใช่บวกทุกช่อง</li><li>Y[row,col] ← selected output = [[4, 4, 1], [4, 4, 1], [4, 4, 1]]; เดินทุก valid output position ด้วยกฎเดียวกัน; tensor output ใช้ค่าคำนวณชุดเดียวกับกราฟ</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="convolution-เปล--ยน-kernel-weight-แล">เปิดการทดลองนี้</a><p class="failure-box">productสะสมในfloat16อาจoverflow/roundoff; ใช้float64tinyoracleแล้วfloat32tolerance; inputNaNต้องรายงานตำแหน่งไม่วาดกราฟต่อเป็น0; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>strideคือระยะเลื่อนpatch; H4,K2,p0,s2ให้Hout=floor((4−2)/2)+1=2 จึงมี4ตำแหน่งในoutput2×2</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-2-equation"><summary>สมการ</summary><ol><li><code>Hout=floor((5+2p−3)/stride)+1; index∈[0,8]</code> = [3, 3, 0, 0, 0]<p>ไม่วน index กลับ; row=floor(index/Hout),col=index mod Hout หลังตรวจขอบเขต</p></li><li><code>patch[a,b]=Xpad[0+a,0+b]</code> = [[0, 0, 1], [0, 0, 1], [0, 0, 1]]<p>คูณ stride ก่อนเลือกจุดเริ่ม แล้วอ่าน 3×3; padding เป็นศูนย์ที่ขอบ</p></li><li><code>products[a,b]=patch[a,b]·K[a,b]</code> = [[0, 0, 2], [0, 0, 1], [0, 0, 1]]<p>kernel ไม่ถูกพลิกสำหรับ cross-correlation; weight เดียวใช้ซ้ำทุกตำแหน่ง</p></li><li><code>Y[0,0]=Σproducts+0</code> = 4<p>รวม product ทั้ง9ช่องก่อนบวก bias หนึ่งครั้ง ไม่ใช่บวกทุกช่อง</p></li><li><code>Y[row,col] ← selected output</code> = [[4, 4, 1], [4, 4, 1], [4, 4, 1]]<p>เดินทุก valid output position ด้วยกฎเดียวกัน; tensor output ใช้ค่าคำนวณชุดเดียวกับกราฟ</p></li></ol></details><details id="help-mechanism-2-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>Hout=floor((5+2p−3)/stride)+1; index∈[0,8]</code> = [3, 3, 0, 0, 0]<p>ไม่วน index กลับ; row=floor(index/Hout),col=index mod Hout หลังตรวจขอบเขต</p></li><li><code>patch[a,b]=Xpad[0+a,0+b]</code> = [[0, 0, 1], [0, 0, 1], [0, 0, 1]]<p>คูณ stride ก่อนเลือกจุดเริ่ม แล้วอ่าน 3×3; padding เป็นศูนย์ที่ขอบ</p></li><li><code>products[a,b]=patch[a,b]·K[a,b]</code> = [[0, 0, 2], [0, 0, 1], [0, 0, 1]]<p>kernel ไม่ถูกพลิกสำหรับ cross-correlation; weight เดียวใช้ซ้ำทุกตำแหน่ง</p></li><li><code>Y[0,0]=Σproducts+0</code> = 4<p>รวม product ทั้ง9ช่องก่อนบวก bias หนึ่งครั้ง ไม่ใช่บวกทุกช่อง</p></li><li><code>Y[row,col] ← selected output</code> = [[4, 4, 1], [4, 4, 1], [4, 4, 1]]<p>เดินทุก valid output position ด้วยกฎเดียวกัน; tensor output ใช้ค่าคำนวณชุดเดียวกับกราฟ</p></li></ol></details><details id="help-mechanism-2-code"><summary>โค้ด</summary><p>strideคือระยะเลื่อนpatch; H4,K2,p0,s2ให้Hout=floor((4−2)/2)+1=2 จึงมี4ตำแหน่งในoutput2×2</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-2-result"><summary>ผลการทดลอง</summary><ol><li><code>Hout=floor((5+2p−3)/stride)+1; index∈[0,8]</code> = [3, 3, 0, 0, 0]<p>ไม่วน index กลับ; row=floor(index/Hout),col=index mod Hout หลังตรวจขอบเขต</p></li><li><code>patch[a,b]=Xpad[0+a,0+b]</code> = [[0, 0, 1], [0, 0, 1], [0, 0, 1]]<p>คูณ stride ก่อนเลือกจุดเริ่ม แล้วอ่าน 3×3; padding เป็นศูนย์ที่ขอบ</p></li><li><code>products[a,b]=patch[a,b]·K[a,b]</code> = [[0, 0, 2], [0, 0, 1], [0, 0, 1]]<p>kernel ไม่ถูกพลิกสำหรับ cross-correlation; weight เดียวใช้ซ้ำทุกตำแหน่ง</p></li><li><code>Y[0,0]=Σproducts+0</code> = 4<p>รวม product ทั้ง9ช่องก่อนบวก bias หนึ่งครั้ง ไม่ใช่บวกทุกช่อง</p></li><li><code>Y[row,col] ← selected output</code> = [[4, 4, 1], [4, 4, 1], [4, 4, 1]]<p>เดินทุก valid output position ด้วยกฎเดียวกัน; tensor output ใช้ค่าคำนวณชุดเดียวกับกราฟ</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-2"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-3" class="teaching-section"><span class="section-kicker">CHAPTER 24 · ภาพ → สมการ → โค้ด</span><h2>3. channels รวมก่อน activation</h2><h3>โจทย์และเหตุผล</h3><p>kernel จริงมี shape Cout×Cin×Kh×Kw และรวมทุก input channel ก่อนบวก bias ต่อ output channel อย่าสับสน convolution ของ signal กับ cross-correlation ที่ frameworks มักใช้โดยไม่พลิก kernel</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Explain padding.</p><p>paddingเติมขอบก่อนเลือกpatch; zero-padding1เปลี่ยนH4,K2,s1จากHout3เป็น5 และค่าขอบผสมศูนย์ไม่เท่ากับจุดในภาพ</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>position: output position index,initial=0; kernelWeight: kernel top-right weight,initial=1; pixel: input center pixel,initial=1; bias: convolution bias,initial=0; stride: stride,initial=2; padding: zero padding,initial=1</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>Hout=floor((5+2p−3)/stride)+1; index∈[0,8] = [3, 3, 0, 0, 0]; ไม่วน index กลับ; row=floor(index/Hout),col=index mod Hout หลังตรวจขอบเขต</li><li>patch[a,b]=Xpad[0+a,0+b] = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]; คูณ stride ก่อนเลือกจุดเริ่ม แล้วอ่าน 3×3; padding เป็นศูนย์ที่ขอบ</li><li>products[a,b]=patch[a,b]·K[a,b] = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]; kernel ไม่ถูกพลิกสำหรับ cross-correlation; weight เดียวใช้ซ้ำทุกตำแหน่ง</li><li>Y[0,0]=Σproducts+0 = 0; รวม product ทั้ง9ช่องก่อนบวก bias หนึ่งครั้ง ไม่ใช่บวกทุกช่อง</li><li>Y[row,col] ← selected output = [[0, 2, -2], [0, 3, -3], [0, 2, -2]]; เดินทุก valid output position ด้วยกฎเดียวกัน; tensor output ใช้ค่าคำนวณชุดเดียวกับกราฟ</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="convolution-stride-padding-เปล--ยน-o">เปิดการทดลองนี้</a><p class="failure-box">productสะสมในfloat16อาจoverflow/roundoff; ใช้float64tinyoracleแล้วfloat32tolerance; inputNaNต้องรายงานตำแหน่งไม่วาดกราฟต่อเป็น0; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>paddingเติมขอบก่อนเลือกpatch; zero-padding1เปลี่ยนH4,K2,s1จากHout3เป็น5 และค่าขอบผสมศูนย์ไม่เท่ากับจุดในภาพ</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-3-equation"><summary>สมการ</summary><ol><li><code>Hout=floor((5+2p−3)/stride)+1; index∈[0,8]</code> = [3, 3, 0, 0, 0]<p>ไม่วน index กลับ; row=floor(index/Hout),col=index mod Hout หลังตรวจขอบเขต</p></li><li><code>patch[a,b]=Xpad[0+a,0+b]</code> = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]<p>คูณ stride ก่อนเลือกจุดเริ่ม แล้วอ่าน 3×3; padding เป็นศูนย์ที่ขอบ</p></li><li><code>products[a,b]=patch[a,b]·K[a,b]</code> = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]<p>kernel ไม่ถูกพลิกสำหรับ cross-correlation; weight เดียวใช้ซ้ำทุกตำแหน่ง</p></li><li><code>Y[0,0]=Σproducts+0</code> = 0<p>รวม product ทั้ง9ช่องก่อนบวก bias หนึ่งครั้ง ไม่ใช่บวกทุกช่อง</p></li><li><code>Y[row,col] ← selected output</code> = [[0, 2, -2], [0, 3, -3], [0, 2, -2]]<p>เดินทุก valid output position ด้วยกฎเดียวกัน; tensor output ใช้ค่าคำนวณชุดเดียวกับกราฟ</p></li></ol></details><details id="help-mechanism-3-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>Hout=floor((5+2p−3)/stride)+1; index∈[0,8]</code> = [3, 3, 0, 0, 0]<p>ไม่วน index กลับ; row=floor(index/Hout),col=index mod Hout หลังตรวจขอบเขต</p></li><li><code>patch[a,b]=Xpad[0+a,0+b]</code> = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]<p>คูณ stride ก่อนเลือกจุดเริ่ม แล้วอ่าน 3×3; padding เป็นศูนย์ที่ขอบ</p></li><li><code>products[a,b]=patch[a,b]·K[a,b]</code> = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]<p>kernel ไม่ถูกพลิกสำหรับ cross-correlation; weight เดียวใช้ซ้ำทุกตำแหน่ง</p></li><li><code>Y[0,0]=Σproducts+0</code> = 0<p>รวม product ทั้ง9ช่องก่อนบวก bias หนึ่งครั้ง ไม่ใช่บวกทุกช่อง</p></li><li><code>Y[row,col] ← selected output</code> = [[0, 2, -2], [0, 3, -3], [0, 2, -2]]<p>เดินทุก valid output position ด้วยกฎเดียวกัน; tensor output ใช้ค่าคำนวณชุดเดียวกับกราฟ</p></li></ol></details><details id="help-mechanism-3-code"><summary>โค้ด</summary><p>paddingเติมขอบก่อนเลือกpatch; zero-padding1เปลี่ยนH4,K2,s1จากHout3เป็น5 และค่าขอบผสมศูนย์ไม่เท่ากับจุดในภาพ</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-3-result"><summary>ผลการทดลอง</summary><ol><li><code>Hout=floor((5+2p−3)/stride)+1; index∈[0,8]</code> = [3, 3, 0, 0, 0]<p>ไม่วน index กลับ; row=floor(index/Hout),col=index mod Hout หลังตรวจขอบเขต</p></li><li><code>patch[a,b]=Xpad[0+a,0+b]</code> = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]<p>คูณ stride ก่อนเลือกจุดเริ่ม แล้วอ่าน 3×3; padding เป็นศูนย์ที่ขอบ</p></li><li><code>products[a,b]=patch[a,b]·K[a,b]</code> = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]<p>kernel ไม่ถูกพลิกสำหรับ cross-correlation; weight เดียวใช้ซ้ำทุกตำแหน่ง</p></li><li><code>Y[0,0]=Σproducts+0</code> = 0<p>รวม product ทั้ง9ช่องก่อนบวก bias หนึ่งครั้ง ไม่ใช่บวกทุกช่อง</p></li><li><code>Y[row,col] ← selected output</code> = [[0, 2, -2], [0, 3, -3], [0, 2, -2]]<p>เดินทุก valid output position ด้วยกฎเดียวกัน; tensor output ใช้ค่าคำนวณชุดเดียวกับกราฟ</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-3"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="reference" class="canonical-section"><h2>เนื้อหาครบทุกหัวข้อ พร้อมแผนที่ objective</h2><nav class="source-toc"><a href="#chapter-24/section/topic-1">1. Why CNNs?</a> <a href="#chapter-24/section/topic-2">2. Learning Objectives</a> <a href="#chapter-24/section/topic-3">3. Convolution vs Cross-Correlation</a> <a href="#chapter-24/section/topic-4">4. Single-Channel Example</a> <a href="#chapter-24/section/topic-5">5. General Output Shape</a> <a href="#chapter-24/section/topic-6">6. Channels</a> <a href="#chapter-24/section/topic-7">7. Conv Parameter Count</a> <a href="#chapter-24/section/topic-8">8. NCHW vs NHWC</a> <a href="#chapter-24/section/topic-9">9. Padding</a> <a href="#chapter-24/section/topic-10">10. Stride</a> <a href="#chapter-24/section/topic-11">11. Dilation</a> <a href="#chapter-24/section/topic-12">12. Receptive Field</a> <a href="#chapter-24/section/topic-13">13. Why Weight Sharing Matters</a> <a href="#chapter-24/section/topic-14">14. Activation</a> <a href="#chapter-24/section/topic-15">15. Max Pooling</a> <a href="#chapter-24/section/topic-16">16. Average Pooling</a> <a href="#chapter-24/section/topic-17">17. Feature Hierarchy</a> <a href="#chapter-24/section/topic-18">18. Normalization Preview</a> <a href="#chapter-24/section/topic-19">19. Dropout</a> <a href="#chapter-24/section/topic-20">20. PyTorch CNN</a> <a href="#chapter-24/section/topic-21">21. Keras CNN</a> <a href="#chapter-24/section/topic-22">22. From Scratch</a> <a href="#chapter-24/section/topic-23">23. Common Bugs</a> <a href="#chapter-24/section/topic-24">24. Performance</a> <a href="#chapter-24/section/topic-25">25. Your RTX 3050 Ti</a> <a href="#chapter-24/section/topic-26">26. Exercises / Mini Project</a> <a href="#chapter-24/section/topic-27">27. Checklist</a> <a href="#chapter-24/section/topic-28">28. What&#x27;s Next</a> </nav><section id="topic-1" class="source-topic"><span id="source-24-cnn-canonical-chapter-24-convolutional-neural-networks" class="legacy-anchor"></span><span id="source-24-cnn-canonical-1-why-cnns" class="legacy-anchor"></span><h3>1. Why CNNs?</h3>
+<p>A fully connected layer treats every input position as unrelated.</p>
+<p>Images have spatial structure:
+- nearby pixels interact
+- edges repeat across locations
+- local patterns combine into larger patterns</p>
+<p>CNNs exploit this with:
+- local connectivity
+- weight sharing
+- hierarchical receptive fields</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>1. Why CNNs?</h3>
+<p>A fully connected layer treats every input position as unrelated.</p>
+<p>Images have spatial structure:
+- nearby pixels interact
+- edges repeat across locations
+- local patterns combine into larger patterns</p>
+<p>CNNs exploit this with:
+- local connectivity
+- weight sharing
+- hierarchical receptive fields</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-1-equation"><summary>สมการ</summary><h3>1. Why CNNs?</h3>
+<p>A fully connected layer treats every input position as unrelated.</p>
+<p>Images have spatial structure:
+- nearby pixels interact
+- edges repeat across locations
+- local patterns combine into larger patterns</p>
+<p>CNNs exploit this with:
+- local connectivity
+- weight sharing
+- hierarchical receptive fields</p></details><details id="help-topic-1-visual"><summary>ภาพและ shape</summary><h3>1. Why CNNs?</h3>
+<p>A fully connected layer treats every input position as unrelated.</p>
+<p>Images have spatial structure:
+- nearby pixels interact
+- edges repeat across locations
+- local patterns combine into larger patterns</p>
+<p>CNNs exploit this with:
+- local connectivity
+- weight sharing
+- hierarchical receptive fields</p></details><details id="help-topic-1-code"><summary>โค้ด</summary><h3>1. Why CNNs?</h3>
+<p>A fully connected layer treats every input position as unrelated.</p>
+<p>Images have spatial structure:
+- nearby pixels interact
+- edges repeat across locations
+- local patterns combine into larger patterns</p>
+<p>CNNs exploit this with:
+- local connectivity
+- weight sharing
+- hierarchical receptive fields</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-1-result"><summary>ผลการทดลอง</summary><h3>1. Why CNNs?</h3>
+<p>A fully connected layer treats every input position as unrelated.</p>
+<p>Images have spatial structure:
+- nearby pixels interact
+- edges repeat across locations
+- local patterns combine into larger patterns</p>
+<p>CNNs exploit this with:
+- local connectivity
+- weight sharing
+- hierarchical receptive fields</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-1"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-2" class="source-topic"><span id="source-24-cnn-canonical-2-learning-objectives" class="legacy-anchor"></span><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>calculate convolution output shapes</li>
+<li>explain channels and filters</li>
+<li>implement 2D cross-correlation from scratch</li>
+<li>explain stride and padding</li>
+<li>explain receptive fields</li>
+<li>implement max pooling</li>
+<li>count Conv2D parameters</li>
+<li>distinguish NCHW and NHWC</li>
+<li>build CNNs in PyTorch and Keras</li>
+<li>understand pooling vs strided convolution</li>
+<li>explain translation-related inductive bias</li>
+<li>debug CNN shape errors</li>
+<li>train a small image classifier</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>calculate convolution output shapes</li>
+<li>explain channels and filters</li>
+<li>implement 2D cross-correlation from scratch</li>
+<li>explain stride and padding</li>
+<li>explain receptive fields</li>
+<li>implement max pooling</li>
+<li>count Conv2D parameters</li>
+<li>distinguish NCHW and NHWC</li>
+<li>build CNNs in PyTorch and Keras</li>
+<li>understand pooling vs strided convolution</li>
+<li>explain translation-related inductive bias</li>
+<li>debug CNN shape errors</li>
+<li>train a small image classifier</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-2-equation"><summary>สมการ</summary><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>calculate convolution output shapes</li>
+<li>explain channels and filters</li>
+<li>implement 2D cross-correlation from scratch</li>
+<li>explain stride and padding</li>
+<li>explain receptive fields</li>
+<li>implement max pooling</li>
+<li>count Conv2D parameters</li>
+<li>distinguish NCHW and NHWC</li>
+<li>build CNNs in PyTorch and Keras</li>
+<li>understand pooling vs strided convolution</li>
+<li>explain translation-related inductive bias</li>
+<li>debug CNN shape errors</li>
+<li>train a small image classifier</li>
+</ul></details><details id="help-topic-2-visual"><summary>ภาพและ shape</summary><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>calculate convolution output shapes</li>
+<li>explain channels and filters</li>
+<li>implement 2D cross-correlation from scratch</li>
+<li>explain stride and padding</li>
+<li>explain receptive fields</li>
+<li>implement max pooling</li>
+<li>count Conv2D parameters</li>
+<li>distinguish NCHW and NHWC</li>
+<li>build CNNs in PyTorch and Keras</li>
+<li>understand pooling vs strided convolution</li>
+<li>explain translation-related inductive bias</li>
+<li>debug CNN shape errors</li>
+<li>train a small image classifier</li>
+</ul></details><details id="help-topic-2-code"><summary>โค้ด</summary><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>calculate convolution output shapes</li>
+<li>explain channels and filters</li>
+<li>implement 2D cross-correlation from scratch</li>
+<li>explain stride and padding</li>
+<li>explain receptive fields</li>
+<li>implement max pooling</li>
+<li>count Conv2D parameters</li>
+<li>distinguish NCHW and NHWC</li>
+<li>build CNNs in PyTorch and Keras</li>
+<li>understand pooling vs strided convolution</li>
+<li>explain translation-related inductive bias</li>
+<li>debug CNN shape errors</li>
+<li>train a small image classifier</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-2-result"><summary>ผลการทดลอง</summary><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>calculate convolution output shapes</li>
+<li>explain channels and filters</li>
+<li>implement 2D cross-correlation from scratch</li>
+<li>explain stride and padding</li>
+<li>explain receptive fields</li>
+<li>implement max pooling</li>
+<li>count Conv2D parameters</li>
+<li>distinguish NCHW and NHWC</li>
+<li>build CNNs in PyTorch and Keras</li>
+<li>understand pooling vs strided convolution</li>
+<li>explain translation-related inductive bias</li>
+<li>debug CNN shape errors</li>
+<li>train a small image classifier</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-2"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-3" class="source-topic"><span id="source-24-cnn-canonical-3-convolution-vs-cross-correlation" class="legacy-anchor"></span><h3>3. Convolution vs Cross-Correlation</h3>
+<p>Deep-learning libraries usually implement cross-correlation:</p>
+<pre><code class="language-text">output[i,j]
+=
+sum over kernel window:
+input[i+u,j+v] * kernel[u,v]
+</code></pre>
+<p>Classical mathematical convolution flips the kernel first.</p>
+<p>In deep learning, learned kernels make this naming distinction less important operationally, but you should know it.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>convolutionในDLมักเป็นcross-correlation: Yᵢⱼ=ΣₐᵦXᵢₛ₊ₐ₋ₚ,ⱼₛ₊ᵦ₋ₚKₐᵦ+b; filterเลื่อนใช้weightsเดียวกันทุกตำแหน่ง ไม่ใช่matrixmultiplyทั้งภาพครั้งเดียว</p><p>image→pad→patch→elementwiseproduct→sumCin/Kh/Kw→bias→outputcell→activation; selectedcellเน้นpatchเดียวกันในtensorและตาราง</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>convolutionในDLมักเป็นcross-correlation: Yᵢⱼ=ΣₐᵦXᵢₛ₊ₐ₋ₚ,ⱼₛ₊ᵦ₋ₚKₐᵦ+b; filterเลื่อนใช้weightsเดียวกันทุกตำแหน่ง ไม่ใช่matrixmultiplyทั้งภาพครั้งเดียว</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-3-equation"><summary>สมการ</summary><p>convolutionในDLมักเป็นcross-correlation: Yᵢⱼ=ΣₐᵦXᵢₛ₊ₐ₋ₚ,ⱼₛ₊ᵦ₋ₚKₐᵦ+b; filterเลื่อนใช้weightsเดียวกันทุกตำแหน่ง ไม่ใช่matrixmultiplyทั้งภาพครั้งเดียว</p></details><details id="help-topic-3-visual"><summary>ภาพและ shape</summary><p>convolutionในDLมักเป็นcross-correlation: Yᵢⱼ=ΣₐᵦXᵢₛ₊ₐ₋ₚ,ⱼₛ₊ᵦ₋ₚKₐᵦ+b; filterเลื่อนใช้weightsเดียวกันทุกตำแหน่ง ไม่ใช่matrixmultiplyทั้งภาพครั้งเดียว</p></details><details id="help-topic-3-code"><summary>โค้ด</summary><p>convolutionในDLมักเป็นcross-correlation: Yᵢⱼ=ΣₐᵦXᵢₛ₊ₐ₋ₚ,ⱼₛ₊ᵦ₋ₚKₐᵦ+b; filterเลื่อนใช้weightsเดียวกันทุกตำแหน่ง ไม่ใช่matrixmultiplyทั้งภาพครั้งเดียว</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-3-result"><summary>ผลการทดลอง</summary><p>convolutionในDLมักเป็นcross-correlation: Yᵢⱼ=ΣₐᵦXᵢₛ₊ₐ₋ₚ,ⱼₛ₊ᵦ₋ₚKₐᵦ+b; filterเลื่อนใช้weightsเดียวกันทุกตำแหน่ง ไม่ใช่matrixmultiplyทั้งภาพครั้งเดียว</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-3"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-4" class="source-topic"><span id="source-24-cnn-canonical-4-single-channel-example" class="legacy-anchor"></span><h3>4. Single-Channel Example</h3>
+<p>Input:</p>
+<pre><code class="language-text">H × W
+</code></pre>
+<p>Kernel:</p>
+<pre><code class="language-text">KH × KW
+</code></pre>
+<p>valid output:</p>
+<pre><code class="language-text">(H-KH+1) × (W-KW+1)
+</code></pre>
+<p>for stride 1 and no padding.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>convolutionในDLมักเป็นcross-correlation: Yᵢⱼ=ΣₐᵦXᵢₛ₊ₐ₋ₚ,ⱼₛ₊ᵦ₋ₚKₐᵦ+b; filterเลื่อนใช้weightsเดียวกันทุกตำแหน่ง ไม่ใช่matrixmultiplyทั้งภาพครั้งเดียว</p><p>image→pad→patch→elementwiseproduct→sumCin/Kh/Kw→bias→outputcell→activation; selectedcellเน้นpatchเดียวกันในtensorและตาราง</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-4-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>convolutionในDLมักเป็นcross-correlation: Yᵢⱼ=ΣₐᵦXᵢₛ₊ₐ₋ₚ,ⱼₛ₊ᵦ₋ₚKₐᵦ+b; filterเลื่อนใช้weightsเดียวกันทุกตำแหน่ง ไม่ใช่matrixmultiplyทั้งภาพครั้งเดียว</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-4-equation"><summary>สมการ</summary><p>convolutionในDLมักเป็นcross-correlation: Yᵢⱼ=ΣₐᵦXᵢₛ₊ₐ₋ₚ,ⱼₛ₊ᵦ₋ₚKₐᵦ+b; filterเลื่อนใช้weightsเดียวกันทุกตำแหน่ง ไม่ใช่matrixmultiplyทั้งภาพครั้งเดียว</p></details><details id="help-topic-4-visual"><summary>ภาพและ shape</summary><p>convolutionในDLมักเป็นcross-correlation: Yᵢⱼ=ΣₐᵦXᵢₛ₊ₐ₋ₚ,ⱼₛ₊ᵦ₋ₚKₐᵦ+b; filterเลื่อนใช้weightsเดียวกันทุกตำแหน่ง ไม่ใช่matrixmultiplyทั้งภาพครั้งเดียว</p></details><details id="help-topic-4-code"><summary>โค้ด</summary><p>convolutionในDLมักเป็นcross-correlation: Yᵢⱼ=ΣₐᵦXᵢₛ₊ₐ₋ₚ,ⱼₛ₊ᵦ₋ₚKₐᵦ+b; filterเลื่อนใช้weightsเดียวกันทุกตำแหน่ง ไม่ใช่matrixmultiplyทั้งภาพครั้งเดียว</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-4-result"><summary>ผลการทดลอง</summary><p>convolutionในDLมักเป็นcross-correlation: Yᵢⱼ=ΣₐᵦXᵢₛ₊ₐ₋ₚ,ⱼₛ₊ᵦ₋ₚKₐᵦ+b; filterเลื่อนใช้weightsเดียวกันทุกตำแหน่ง ไม่ใช่matrixmultiplyทั้งภาพครั้งเดียว</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-4"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-5" class="source-topic"><span id="source-24-cnn-canonical-5-general-output-shape" class="legacy-anchor"></span><h3>5. General Output Shape</h3>
+<p>For one spatial dimension:</p>
+<pre><code class="language-text">out =
+floor(
+  (input + 2*padding - dilation*(kernel-1) - 1)
+  / stride
+) + 1
+</code></pre>
+<p>With dilation=1:</p>
+<pre><code class="language-text">out =
+floor((input + 2P - K)/S) + 1
+</code></pre>
+<p>Always calculate before coding.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>looprowcolใช้start=i*stride-paddingก่อนดึงpatch; outputindex3ของ2×2คือ(row1,col1) ไม่ใช้index%4เพื่อรับ8อย่างเงียบๆ</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-5-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>looprowcolใช้start=i*stride-paddingก่อนดึงpatch; outputindex3ของ2×2คือ(row1,col1) ไม่ใช้index%4เพื่อรับ8อย่างเงียบๆ</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-5-equation"><summary>สมการ</summary><p>looprowcolใช้start=i*stride-paddingก่อนดึงpatch; outputindex3ของ2×2คือ(row1,col1) ไม่ใช้index%4เพื่อรับ8อย่างเงียบๆ</p></details><details id="help-topic-5-visual"><summary>ภาพและ shape</summary><p>looprowcolใช้start=i*stride-paddingก่อนดึงpatch; outputindex3ของ2×2คือ(row1,col1) ไม่ใช้index%4เพื่อรับ8อย่างเงียบๆ</p></details><details id="help-topic-5-code"><summary>โค้ด</summary><p>looprowcolใช้start=i*stride-paddingก่อนดึงpatch; outputindex3ของ2×2คือ(row1,col1) ไม่ใช้index%4เพื่อรับ8อย่างเงียบๆ</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-5-result"><summary>ผลการทดลอง</summary><p>looprowcolใช้start=i*stride-paddingก่อนดึงpatch; outputindex3ของ2×2คือ(row1,col1) ไม่ใช้index%4เพื่อรับ8อย่างเงียบๆ</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-5"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-6" class="source-topic"><span id="source-24-cnn-canonical-6-channels" class="legacy-anchor"></span><h3>6. Channels</h3>
+<p>RGB image:</p>
+<pre><code class="language-text">C_in = 3
+</code></pre>
+<p>A filter spans all input channels:</p>
+<pre><code class="language-text">weight shape:
+C_out × C_in × KH × KW
+</code></pre>
+<p>Each output filter produces one output channel.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>kernelคือweights(Kh,Kw,Cin,Cout); kernel2×2[[1,0],[0,−1]]กับpatch[[1,2],[3,4]]ให้1−4=−3ก่อนbias</p><p>seed7image4×4kernel2×2; เปรียบpadding0/1และstride1/2,recordactualoutput,receptivefield; จำนวนpatchต้องตรงสูตรทุกconfiguration</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-6-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>kernelคือweights(Kh,Kw,Cin,Cout); kernel2×2[[1,0],[0,−1]]กับpatch[[1,2],[3,4]]ให้1−4=−3ก่อนbias</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-6-equation"><summary>สมการ</summary><p>kernelคือweights(Kh,Kw,Cin,Cout); kernel2×2[[1,0],[0,−1]]กับpatch[[1,2],[3,4]]ให้1−4=−3ก่อนbias</p></details><details id="help-topic-6-visual"><summary>ภาพและ shape</summary><p>kernelคือweights(Kh,Kw,Cin,Cout); kernel2×2[[1,0],[0,−1]]กับpatch[[1,2],[3,4]]ให้1−4=−3ก่อนbias</p></details><details id="help-topic-6-code"><summary>โค้ด</summary><p>kernelคือweights(Kh,Kw,Cin,Cout); kernel2×2[[1,0],[0,−1]]กับpatch[[1,2],[3,4]]ให้1−4=−3ก่อนbias</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-6-result"><summary>ผลการทดลอง</summary><p>kernelคือweights(Kh,Kw,Cin,Cout); kernel2×2[[1,0],[0,−1]]กับpatch[[1,2],[3,4]]ให้1−4=−3ก่อนbias</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-6"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-7" class="source-topic"><span id="source-24-cnn-canonical-7-conv-parameter-count" class="legacy-anchor"></span><h3>7. Conv Parameter Count</h3>
+<pre><code class="language-text">C_out * C_in * KH * KW
++
+C_out biases
+</code></pre>
+<p>Example:</p>
+<pre><code class="language-text">3 input channels
+16 output channels
+3×3 kernel
+
+16*3*3*3 + 16
+= 448 parameters
+</code></pre>
+<p>Weight sharing keeps parameter count much smaller than a dense layer over all pixels.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-7-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>7. Conv Parameter Count</h3>
+<pre><code class="language-text">C_out * C_in * KH * KW
++
+C_out biases
+</code></pre>
+<p>Example:</p>
+<pre><code class="language-text">3 input channels
+16 output channels
+3×3 kernel
+
+16*3*3*3 + 16
+= 448 parameters
+</code></pre>
+<p>Weight sharing keeps parameter count much smaller than a dense layer over all pixels.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-7-equation"><summary>สมการ</summary><h3>7. Conv Parameter Count</h3>
+<pre><code class="language-text">C_out * C_in * KH * KW
++
+C_out biases
+</code></pre>
+<p>Example:</p>
+<pre><code class="language-text">3 input channels
+16 output channels
+3×3 kernel
+
+16*3*3*3 + 16
+= 448 parameters
+</code></pre>
+<p>Weight sharing keeps parameter count much smaller than a dense layer over all pixels.</p></details><details id="help-topic-7-visual"><summary>ภาพและ shape</summary><h3>7. Conv Parameter Count</h3>
+<pre><code class="language-text">C_out * C_in * KH * KW
++
+C_out biases
+</code></pre>
+<p>Example:</p>
+<pre><code class="language-text">3 input channels
+16 output channels
+3×3 kernel
+
+16*3*3*3 + 16
+= 448 parameters
+</code></pre>
+<p>Weight sharing keeps parameter count much smaller than a dense layer over all pixels.</p></details><details id="help-topic-7-code"><summary>โค้ด</summary><h3>7. Conv Parameter Count</h3>
+<pre><code class="language-text">C_out * C_in * KH * KW
++
+C_out biases
+</code></pre>
+<p>Example:</p>
+<pre><code class="language-text">3 input channels
+16 output channels
+3×3 kernel
+
+16*3*3*3 + 16
+= 448 parameters
+</code></pre>
+<p>Weight sharing keeps parameter count much smaller than a dense layer over all pixels.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-7-result"><summary>ผลการทดลอง</summary><h3>7. Conv Parameter Count</h3>
+<pre><code class="language-text">C_out * C_in * KH * KW
++
+C_out biases
+</code></pre>
+<p>Example:</p>
+<pre><code class="language-text">3 input channels
+16 output channels
+3×3 kernel
+
+16*3*3*3 + 16
+= 448 parameters
+</code></pre>
+<p>Weight sharing keeps parameter count much smaller than a dense layer over all pixels.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-7"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-8" class="source-topic"><span id="source-24-cnn-canonical-8-nchw-vs-nhwc" class="legacy-anchor"></span><h3>8. NCHW vs NHWC</h3>
+<p>PyTorch commonly:</p>
+<pre><code class="language-text">N × C × H × W
+</code></pre>
+<p>TensorFlow/Keras default:</p>
+<pre><code class="language-text">N × H × W × C
+</code></pre>
+<p>Never silently reshape one into the other.</p>
+<p>Use explicit transpose/permutation.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>PyTorchimage(B,C,H,W),TensorFlowdefault(B,H,W,C); Cinของkernelต้องตรงinput ไม่ใช่นับคอลัมน์ตารางว่าเป็นtensorchannels</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-8-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>PyTorchimage(B,C,H,W),TensorFlowdefault(B,H,W,C); Cinของkernelต้องตรงinput ไม่ใช่นับคอลัมน์ตารางว่าเป็นtensorchannels</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-8-equation"><summary>สมการ</summary><p>PyTorchimage(B,C,H,W),TensorFlowdefault(B,H,W,C); Cinของkernelต้องตรงinput ไม่ใช่นับคอลัมน์ตารางว่าเป็นtensorchannels</p></details><details id="help-topic-8-visual"><summary>ภาพและ shape</summary><p>PyTorchimage(B,C,H,W),TensorFlowdefault(B,H,W,C); Cinของkernelต้องตรงinput ไม่ใช่นับคอลัมน์ตารางว่าเป็นtensorchannels</p></details><details id="help-topic-8-code"><summary>โค้ด</summary><p>PyTorchimage(B,C,H,W),TensorFlowdefault(B,H,W,C); Cinของkernelต้องตรงinput ไม่ใช่นับคอลัมน์ตารางว่าเป็นtensorchannels</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-8-result"><summary>ผลการทดลอง</summary><p>PyTorchimage(B,C,H,W),TensorFlowdefault(B,H,W,C); Cinของkernelต้องตรงinput ไม่ใช่นับคอลัมน์ตารางว่าเป็นtensorchannels</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-8"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-9" class="source-topic"><span id="source-24-cnn-canonical-9-padding" class="legacy-anchor"></span><h3>9. Padding</h3>
+<p>No padding shrinks spatial resolution.</p>
+<p>For odd kernel K and stride 1, common same-like padding is:</p>
+<pre><code class="language-text">P = (K-1)/2
+</code></pre>
+<p>for dilation 1.</p>
+<p>Example:
+- K=3 → P=1
+- K=5 → P=2</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>paddingเติมขอบก่อนเลือกpatch; zero-padding1เปลี่ยนH4,K2,s1จากHout3เป็น5 และค่าขอบผสมศูนย์ไม่เท่ากับจุดในภาพ</p><p>paddingเพิ่มโอกาสให้ขอบมีส่วนร่วมและขนาดoutput แต่เติมข้อมูลสมมติ ไม่ควรอ้างว่าเพิ่มinformationจริง; inspectpatchที่cornerกับcenter</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-9-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>paddingเติมขอบก่อนเลือกpatch; zero-padding1เปลี่ยนH4,K2,s1จากHout3เป็น5 และค่าขอบผสมศูนย์ไม่เท่ากับจุดในภาพ</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-9-equation"><summary>สมการ</summary><p>paddingเติมขอบก่อนเลือกpatch; zero-padding1เปลี่ยนH4,K2,s1จากHout3เป็น5 และค่าขอบผสมศูนย์ไม่เท่ากับจุดในภาพ</p></details><details id="help-topic-9-visual"><summary>ภาพและ shape</summary><p>paddingเติมขอบก่อนเลือกpatch; zero-padding1เปลี่ยนH4,K2,s1จากHout3เป็น5 และค่าขอบผสมศูนย์ไม่เท่ากับจุดในภาพ</p></details><details id="help-topic-9-code"><summary>โค้ด</summary><p>paddingเติมขอบก่อนเลือกpatch; zero-padding1เปลี่ยนH4,K2,s1จากHout3เป็น5 และค่าขอบผสมศูนย์ไม่เท่ากับจุดในภาพ</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-9-result"><summary>ผลการทดลอง</summary><p>paddingเติมขอบก่อนเลือกpatch; zero-padding1เปลี่ยนH4,K2,s1จากHout3เป็น5 และค่าขอบผสมศูนย์ไม่เท่ากับจุดในภาพ</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-9"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-10" class="source-topic"><span id="source-24-cnn-canonical-10-stride" class="legacy-anchor"></span><h3>10. Stride</h3>
+<p>Stride controls window movement.</p>
+<p>Stride 2 roughly downsamples spatial dimensions by about 2.</p>
+<p>Larger stride:
+- lower compute
+- lower spatial resolution
+- may discard details</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>strideคือระยะเลื่อนpatch; H4,K2,p0,s2ให้Hout=floor((4−2)/2)+1=2 จึงมี4ตำแหน่งในoutput2×2</p><p>looprowcolใช้start=i*stride-paddingก่อนดึงpatch; outputindex3ของ2×2คือ(row1,col1) ไม่ใช้index%4เพื่อรับ8อย่างเงียบๆ</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-10-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>strideคือระยะเลื่อนpatch; H4,K2,p0,s2ให้Hout=floor((4−2)/2)+1=2 จึงมี4ตำแหน่งในoutput2×2</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-10-equation"><summary>สมการ</summary><p>strideคือระยะเลื่อนpatch; H4,K2,p0,s2ให้Hout=floor((4−2)/2)+1=2 จึงมี4ตำแหน่งในoutput2×2</p></details><details id="help-topic-10-visual"><summary>ภาพและ shape</summary><p>strideคือระยะเลื่อนpatch; H4,K2,p0,s2ให้Hout=floor((4−2)/2)+1=2 จึงมี4ตำแหน่งในoutput2×2</p></details><details id="help-topic-10-code"><summary>โค้ด</summary><p>strideคือระยะเลื่อนpatch; H4,K2,p0,s2ให้Hout=floor((4−2)/2)+1=2 จึงมี4ตำแหน่งในoutput2×2</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-10-result"><summary>ผลการทดลอง</summary><p>strideคือระยะเลื่อนpatch; H4,K2,p0,s2ให้Hout=floor((4−2)/2)+1=2 จึงมี4ตำแหน่งในoutput2×2</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-10"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-11" class="source-topic"><span id="source-24-cnn-canonical-11-dilation" class="legacy-anchor"></span><h3>11. Dilation</h3>
+<p>Dilation inserts gaps between kernel elements.</p>
+<p>Effective kernel size:</p>
+<pre><code class="language-text">K_eff = dilation*(K-1)+1
+</code></pre>
+<p>It expands receptive field without increasing kernel parameter count.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-11-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>11. Dilation</h3>
+<p>Dilation inserts gaps between kernel elements.</p>
+<p>Effective kernel size:</p>
+<pre><code class="language-text">K_eff = dilation*(K-1)+1
+</code></pre>
+<p>It expands receptive field without increasing kernel parameter count.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-11-equation"><summary>สมการ</summary><h3>11. Dilation</h3>
+<p>Dilation inserts gaps between kernel elements.</p>
+<p>Effective kernel size:</p>
+<pre><code class="language-text">K_eff = dilation*(K-1)+1
+</code></pre>
+<p>It expands receptive field without increasing kernel parameter count.</p></details><details id="help-topic-11-visual"><summary>ภาพและ shape</summary><h3>11. Dilation</h3>
+<p>Dilation inserts gaps between kernel elements.</p>
+<p>Effective kernel size:</p>
+<pre><code class="language-text">K_eff = dilation*(K-1)+1
+</code></pre>
+<p>It expands receptive field without increasing kernel parameter count.</p></details><details id="help-topic-11-code"><summary>โค้ด</summary><h3>11. Dilation</h3>
+<p>Dilation inserts gaps between kernel elements.</p>
+<p>Effective kernel size:</p>
+<pre><code class="language-text">K_eff = dilation*(K-1)+1
+</code></pre>
+<p>It expands receptive field without increasing kernel parameter count.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-11-result"><summary>ผลการทดลอง</summary><h3>11. Dilation</h3>
+<p>Dilation inserts gaps between kernel elements.</p>
+<p>Effective kernel size:</p>
+<pre><code class="language-text">K_eff = dilation*(K-1)+1
+</code></pre>
+<p>It expands receptive field without increasing kernel parameter count.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-11"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-12" class="source-topic"><span id="source-24-cnn-canonical-12-receptive-field" class="legacy-anchor"></span><h3>12. Receptive Field</h3>
+<p>A neuron in later layers depends on a region of the original image.</p>
+<p>Stacking 3×3 convolutions grows receptive field while preserving nonlinear depth.</p>
+<p>Receptive field depends on:
+- kernel
+- stride
+- dilation
+- previous layer jumps</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>receptivefieldใหญ่เห็นบริบทมากขึ้นแต่ละเอียดเชิงพื้นที่ลดเมื่อstrideสูง; คำนวณrnew=rold+(k−1)jump,jumpnew=jump·s</p><p>seed7image4×4kernel2×2; เปรียบpadding0/1และstride1/2,recordactualoutput,receptivefield; จำนวนpatchต้องตรงสูตรทุกconfiguration</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-12-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>receptivefieldใหญ่เห็นบริบทมากขึ้นแต่ละเอียดเชิงพื้นที่ลดเมื่อstrideสูง; คำนวณrnew=rold+(k−1)jump,jumpnew=jump·s</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-12-equation"><summary>สมการ</summary><p>receptivefieldใหญ่เห็นบริบทมากขึ้นแต่ละเอียดเชิงพื้นที่ลดเมื่อstrideสูง; คำนวณrnew=rold+(k−1)jump,jumpnew=jump·s</p></details><details id="help-topic-12-visual"><summary>ภาพและ shape</summary><p>receptivefieldใหญ่เห็นบริบทมากขึ้นแต่ละเอียดเชิงพื้นที่ลดเมื่อstrideสูง; คำนวณrnew=rold+(k−1)jump,jumpnew=jump·s</p></details><details id="help-topic-12-code"><summary>โค้ด</summary><p>receptivefieldใหญ่เห็นบริบทมากขึ้นแต่ละเอียดเชิงพื้นที่ลดเมื่อstrideสูง; คำนวณrnew=rold+(k−1)jump,jumpnew=jump·s</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-12-result"><summary>ผลการทดลอง</summary><p>receptivefieldใหญ่เห็นบริบทมากขึ้นแต่ละเอียดเชิงพื้นที่ลดเมื่อstrideสูง; คำนวณrnew=rold+(k−1)jump,jumpnew=jump·s</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-12"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-13" class="source-topic"><span id="source-24-cnn-canonical-13-why-weight-sharing-matters" class="legacy-anchor"></span><h3>13. Why Weight Sharing Matters</h3>
+<p>The same filter scans across image positions.</p>
+<p>This encodes an inductive bias:</p>
+<blockquote>
+<p>a useful local pattern may matter regardless of its exact location</p>
+</blockquote>
+<p>CNNs are not perfectly translation invariant by default, but convolution provides translation-equivariant structure before pooling/boundary effects and other operations.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>convolutionเป็นoperationส่วนkernelเป็นparameter; แก้kernelweightหนึ่งตัวเปลี่ยนทุกoutputpatchที่เห็นตำแหน่งสัมพัทธ์นั้น</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-13-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>convolutionเป็นoperationส่วนkernelเป็นparameter; แก้kernelweightหนึ่งตัวเปลี่ยนทุกoutputpatchที่เห็นตำแหน่งสัมพัทธ์นั้น</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-13-equation"><summary>สมการ</summary><p>convolutionเป็นoperationส่วนkernelเป็นparameter; แก้kernelweightหนึ่งตัวเปลี่ยนทุกoutputpatchที่เห็นตำแหน่งสัมพัทธ์นั้น</p></details><details id="help-topic-13-visual"><summary>ภาพและ shape</summary><p>convolutionเป็นoperationส่วนkernelเป็นparameter; แก้kernelweightหนึ่งตัวเปลี่ยนทุกoutputpatchที่เห็นตำแหน่งสัมพัทธ์นั้น</p></details><details id="help-topic-13-code"><summary>โค้ด</summary><p>convolutionเป็นoperationส่วนkernelเป็นparameter; แก้kernelweightหนึ่งตัวเปลี่ยนทุกoutputpatchที่เห็นตำแหน่งสัมพัทธ์นั้น</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-13-result"><summary>ผลการทดลอง</summary><p>convolutionเป็นoperationส่วนkernelเป็นparameter; แก้kernelweightหนึ่งตัวเปลี่ยนทุกoutputpatchที่เห็นตำแหน่งสัมพัทธ์นั้น</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-13"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-14" class="source-topic"><span id="source-24-cnn-canonical-14-activation" class="legacy-anchor"></span><h3>14. Activation</h3>
+<p>Typical block:</p>
+<pre><code class="language-text">Conv
+→ ReLU
+→ Conv
+→ ReLU
+→ Pool/Stride
+</code></pre>
+<p>Without nonlinearities, stacked linear convolution layers still collapse into a linear mapping.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-14-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>14. Activation</h3>
+<p>Typical block:</p>
+<pre><code class="language-text">Conv
+→ ReLU
+→ Conv
+→ ReLU
+→ Pool/Stride
+</code></pre>
+<p>Without nonlinearities, stacked linear convolution layers still collapse into a linear mapping.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-14-equation"><summary>สมการ</summary><h3>14. Activation</h3>
+<p>Typical block:</p>
+<pre><code class="language-text">Conv
+→ ReLU
+→ Conv
+→ ReLU
+→ Pool/Stride
+</code></pre>
+<p>Without nonlinearities, stacked linear convolution layers still collapse into a linear mapping.</p></details><details id="help-topic-14-visual"><summary>ภาพและ shape</summary><h3>14. Activation</h3>
+<p>Typical block:</p>
+<pre><code class="language-text">Conv
+→ ReLU
+→ Conv
+→ ReLU
+→ Pool/Stride
+</code></pre>
+<p>Without nonlinearities, stacked linear convolution layers still collapse into a linear mapping.</p></details><details id="help-topic-14-code"><summary>โค้ด</summary><h3>14. Activation</h3>
+<p>Typical block:</p>
+<pre><code class="language-text">Conv
+→ ReLU
+→ Conv
+→ ReLU
+→ Pool/Stride
+</code></pre>
+<p>Without nonlinearities, stacked linear convolution layers still collapse into a linear mapping.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-14-result"><summary>ผลการทดลอง</summary><h3>14. Activation</h3>
+<p>Typical block:</p>
+<pre><code class="language-text">Conv
+→ ReLU
+→ Conv
+→ ReLU
+→ Pool/Stride
+</code></pre>
+<p>Without nonlinearities, stacked linear convolution layers still collapse into a linear mapping.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-14"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-15" class="source-topic"><span id="source-24-cnn-canonical-15-max-pooling" class="legacy-anchor"></span><h3>15. Max Pooling</h3>
+<p>For each local window:</p>
+<pre><code class="language-text">output = max(window)
+</code></pre>
+<p>Effects:
+- downsampling
+- local feature selection
+- reduced compute downstream</p>
+<p>But pooling discards information.</p>
+<p>Modern architectures sometimes prefer strided convolution or global average pooling.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>maxpoolingทิ้งตำแหน่งย่อยและdetail; patternเล็กอาจหาย ยก[1,0;0,0]กับ[0,1;0,0]ให้pooled1เหมือนกัน</p><p>คงCNN/split/trainingbudget เปลี่ยนmaxpool→avgpool; reportaccuracyและlatencyจริงพร้อมfeaturemapของtinyinput ไม่สรุปaccuracyดีขึ้นเสมอ</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-15-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>maxpoolingทิ้งตำแหน่งย่อยและdetail; patternเล็กอาจหาย ยก[1,0;0,0]กับ[0,1;0,0]ให้pooled1เหมือนกัน</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-15-equation"><summary>สมการ</summary><p>maxpoolingทิ้งตำแหน่งย่อยและdetail; patternเล็กอาจหาย ยก[1,0;0,0]กับ[0,1;0,0]ให้pooled1เหมือนกัน</p></details><details id="help-topic-15-visual"><summary>ภาพและ shape</summary><p>maxpoolingทิ้งตำแหน่งย่อยและdetail; patternเล็กอาจหาย ยก[1,0;0,0]กับ[0,1;0,0]ให้pooled1เหมือนกัน</p></details><details id="help-topic-15-code"><summary>โค้ด</summary><p>maxpoolingทิ้งตำแหน่งย่อยและdetail; patternเล็กอาจหาย ยก[1,0;0,0]กับ[0,1;0,0]ให้pooled1เหมือนกัน</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-15-result"><summary>ผลการทดลอง</summary><p>maxpoolingทิ้งตำแหน่งย่อยและdetail; patternเล็กอาจหาย ยก[1,0;0,0]กับ[0,1;0,0]ให้pooled1เหมือนกัน</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-15"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-16" class="source-topic"><span id="source-24-cnn-canonical-16-average-pooling" class="legacy-anchor"></span><h3>16. Average Pooling</h3>
+<pre><code class="language-text">output = mean(window)
+</code></pre>
+<p>Global Average Pooling:</p>
+<pre><code class="language-text">N × C × H × W
+→
+N × C
+</code></pre>
+<p>reduces each feature map to one value.</p>
+<p>It can replace large fully connected heads.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>คงCNN/split/trainingbudget เปลี่ยนmaxpool→avgpool; reportaccuracyและlatencyจริงพร้อมfeaturemapของtinyinput ไม่สรุปaccuracyดีขึ้นเสมอ</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-16-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>คงCNN/split/trainingbudget เปลี่ยนmaxpool→avgpool; reportaccuracyและlatencyจริงพร้อมfeaturemapของtinyinput ไม่สรุปaccuracyดีขึ้นเสมอ</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-16-equation"><summary>สมการ</summary><p>คงCNN/split/trainingbudget เปลี่ยนmaxpool→avgpool; reportaccuracyและlatencyจริงพร้อมfeaturemapของtinyinput ไม่สรุปaccuracyดีขึ้นเสมอ</p></details><details id="help-topic-16-visual"><summary>ภาพและ shape</summary><p>คงCNN/split/trainingbudget เปลี่ยนmaxpool→avgpool; reportaccuracyและlatencyจริงพร้อมfeaturemapของtinyinput ไม่สรุปaccuracyดีขึ้นเสมอ</p></details><details id="help-topic-16-code"><summary>โค้ด</summary><p>คงCNN/split/trainingbudget เปลี่ยนmaxpool→avgpool; reportaccuracyและlatencyจริงพร้อมfeaturemapของtinyinput ไม่สรุปaccuracyดีขึ้นเสมอ</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-16-result"><summary>ผลการทดลอง</summary><p>คงCNN/split/trainingbudget เปลี่ยนmaxpool→avgpool; reportaccuracyและlatencyจริงพร้อมfeaturemapของtinyinput ไม่สรุปaccuracyดีขึ้นเสมอ</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-16"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-17" class="source-topic"><span id="source-24-cnn-canonical-17-feature-hierarchy" class="legacy-anchor"></span><h3>17. Feature Hierarchy</h3>
+<p>Early layers often respond to simple local patterns.</p>
+<p>Deeper layers combine earlier representations into more complex structures.</p>
+<p>Do not over-literalize filters as human concepts; representation is distributed.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-17-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>17. Feature Hierarchy</h3>
+<p>Early layers often respond to simple local patterns.</p>
+<p>Deeper layers combine earlier representations into more complex structures.</p>
+<p>Do not over-literalize filters as human concepts; representation is distributed.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-17-equation"><summary>สมการ</summary><h3>17. Feature Hierarchy</h3>
+<p>Early layers often respond to simple local patterns.</p>
+<p>Deeper layers combine earlier representations into more complex structures.</p>
+<p>Do not over-literalize filters as human concepts; representation is distributed.</p></details><details id="help-topic-17-visual"><summary>ภาพและ shape</summary><h3>17. Feature Hierarchy</h3>
+<p>Early layers often respond to simple local patterns.</p>
+<p>Deeper layers combine earlier representations into more complex structures.</p>
+<p>Do not over-literalize filters as human concepts; representation is distributed.</p></details><details id="help-topic-17-code"><summary>โค้ด</summary><h3>17. Feature Hierarchy</h3>
+<p>Early layers often respond to simple local patterns.</p>
+<p>Deeper layers combine earlier representations into more complex structures.</p>
+<p>Do not over-literalize filters as human concepts; representation is distributed.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-17-result"><summary>ผลการทดลอง</summary><h3>17. Feature Hierarchy</h3>
+<p>Early layers often respond to simple local patterns.</p>
+<p>Deeper layers combine earlier representations into more complex structures.</p>
+<p>Do not over-literalize filters as human concepts; representation is distributed.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-17"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-18" class="source-topic"><span id="source-24-cnn-canonical-18-normalization-preview" class="legacy-anchor"></span><h3>18. Normalization Preview</h3>
+<p>CNN stacks often use:
+- BatchNorm
+- LayerNorm
+- GroupNorm</p>
+<p>These are covered more deeply later.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-18-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>18. Normalization Preview</h3>
+<p>CNN stacks often use:
+- BatchNorm
+- LayerNorm
+- GroupNorm</p>
+<p>These are covered more deeply later.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-18-equation"><summary>สมการ</summary><h3>18. Normalization Preview</h3>
+<p>CNN stacks often use:
+- BatchNorm
+- LayerNorm
+- GroupNorm</p>
+<p>These are covered more deeply later.</p></details><details id="help-topic-18-visual"><summary>ภาพและ shape</summary><h3>18. Normalization Preview</h3>
+<p>CNN stacks often use:
+- BatchNorm
+- LayerNorm
+- GroupNorm</p>
+<p>These are covered more deeply later.</p></details><details id="help-topic-18-code"><summary>โค้ด</summary><h3>18. Normalization Preview</h3>
+<p>CNN stacks often use:
+- BatchNorm
+- LayerNorm
+- GroupNorm</p>
+<p>These are covered more deeply later.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-18-result"><summary>ผลการทดลอง</summary><h3>18. Normalization Preview</h3>
+<p>CNN stacks often use:
+- BatchNorm
+- LayerNorm
+- GroupNorm</p>
+<p>These are covered more deeply later.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-18"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-19" class="source-topic"><span id="source-24-cnn-canonical-19-dropout" class="legacy-anchor"></span><h3>19. Dropout</h3>
+<p>Dropout may regularize dense/CNN heads, but placement and value matter.</p>
+<p>Do not add dropout automatically before diagnosing overfitting.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-19-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>19. Dropout</h3>
+<p>Dropout may regularize dense/CNN heads, but placement and value matter.</p>
+<p>Do not add dropout automatically before diagnosing overfitting.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-19-equation"><summary>สมการ</summary><h3>19. Dropout</h3>
+<p>Dropout may regularize dense/CNN heads, but placement and value matter.</p>
+<p>Do not add dropout automatically before diagnosing overfitting.</p></details><details id="help-topic-19-visual"><summary>ภาพและ shape</summary><h3>19. Dropout</h3>
+<p>Dropout may regularize dense/CNN heads, but placement and value matter.</p>
+<p>Do not add dropout automatically before diagnosing overfitting.</p></details><details id="help-topic-19-code"><summary>โค้ด</summary><h3>19. Dropout</h3>
+<p>Dropout may regularize dense/CNN heads, but placement and value matter.</p>
+<p>Do not add dropout automatically before diagnosing overfitting.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-19-result"><summary>ผลการทดลอง</summary><h3>19. Dropout</h3>
+<p>Dropout may regularize dense/CNN heads, but placement and value matter.</p>
+<p>Do not add dropout automatically before diagnosing overfitting.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-19"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-20" class="source-topic"><span id="source-24-cnn-canonical-20-pytorch-cnn" class="legacy-anchor"></span><h3>20. PyTorch CNN</h3>
+<pre><code class="language-python">class CNN(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.features = nn.Sequential(
+            nn.Conv2d(1, 8, 3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+            nn.Conv2d(8, 16, 3, padding=1),
+            nn.ReLU(),
+        )
+        self.pool = nn.AdaptiveAvgPool2d((1, 1))
+        self.classifier = nn.Linear(16, 10)
+
+    def forward(self, x):
+        x = self.features(x)
+        x = self.pool(x)
+        x = torch.flatten(x, 1)
+        return self.classifier(x)
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>splitตามpatient/sourceก่อนaugmentation; fitnormalizationtrain; validation/testไม่มีrandomcropที่เปลี่ยนlabelsemanticโดยไม่ประกาศ</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-20-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>splitตามpatient/sourceก่อนaugmentation; fitnormalizationtrain; validation/testไม่มีrandomcropที่เปลี่ยนlabelsemanticโดยไม่ประกาศ</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-20-equation"><summary>สมการ</summary><p>splitตามpatient/sourceก่อนaugmentation; fitnormalizationtrain; validation/testไม่มีrandomcropที่เปลี่ยนlabelsemanticโดยไม่ประกาศ</p></details><details id="help-topic-20-visual"><summary>ภาพและ shape</summary><p>splitตามpatient/sourceก่อนaugmentation; fitnormalizationtrain; validation/testไม่มีrandomcropที่เปลี่ยนlabelsemanticโดยไม่ประกาศ</p></details><details id="help-topic-20-code"><summary>โค้ด</summary><p>splitตามpatient/sourceก่อนaugmentation; fitnormalizationtrain; validation/testไม่มีrandomcropที่เปลี่ยนlabelsemanticโดยไม่ประกาศ</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-20-result"><summary>ผลการทดลอง</summary><p>splitตามpatient/sourceก่อนaugmentation; fitnormalizationtrain; validation/testไม่มีrandomcropที่เปลี่ยนlabelsemanticโดยไม่ประกาศ</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-20"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-21" class="source-topic"><span id="source-24-cnn-canonical-21-keras-cnn" class="legacy-anchor"></span><h3>21. Keras CNN</h3>
+<pre><code class="language-python">model = keras.Sequential([
+    keras.layers.Input(shape=(8, 8, 1)),
+    keras.layers.Conv2D(8, 3, padding=&quot;same&quot;, activation=&quot;relu&quot;),
+    keras.layers.MaxPooling2D(2),
+    keras.layers.Conv2D(16, 3, padding=&quot;same&quot;, activation=&quot;relu&quot;),
+    keras.layers.GlobalAveragePooling2D(),
+    keras.layers.Dense(10),
+])
+</code></pre>
+<p>Same concept, different default image layout.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>splitตามpatient/sourceก่อนaugmentation; fitnormalizationtrain; validation/testไม่มีrandomcropที่เปลี่ยนlabelsemanticโดยไม่ประกาศ</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-21-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>splitตามpatient/sourceก่อนaugmentation; fitnormalizationtrain; validation/testไม่มีrandomcropที่เปลี่ยนlabelsemanticโดยไม่ประกาศ</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-21-equation"><summary>สมการ</summary><p>splitตามpatient/sourceก่อนaugmentation; fitnormalizationtrain; validation/testไม่มีrandomcropที่เปลี่ยนlabelsemanticโดยไม่ประกาศ</p></details><details id="help-topic-21-visual"><summary>ภาพและ shape</summary><p>splitตามpatient/sourceก่อนaugmentation; fitnormalizationtrain; validation/testไม่มีrandomcropที่เปลี่ยนlabelsemanticโดยไม่ประกาศ</p></details><details id="help-topic-21-code"><summary>โค้ด</summary><p>splitตามpatient/sourceก่อนaugmentation; fitnormalizationtrain; validation/testไม่มีrandomcropที่เปลี่ยนlabelsemanticโดยไม่ประกาศ</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-21-result"><summary>ผลการทดลอง</summary><p>splitตามpatient/sourceก่อนaugmentation; fitnormalizationtrain; validation/testไม่มีrandomcropที่เปลี่ยนlabelsemanticโดยไม่ประกาศ</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-21"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-22" class="source-topic"><span id="source-24-cnn-canonical-22-from-scratch" class="legacy-anchor"></span><h3>22. From Scratch</h3>
+<p>src/cnn_numpy.py includes:
+- conv2d_nchw
+- max_pool2d_nchw
+- output-size helper</p>
+<p>The implementation uses loops deliberately for transparency.</p>
+<p>Production frameworks use optimized kernels and accelerator libraries.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>X=np.arange(1,10).reshape(3,3),K=[[1,0],[0,−1]]; loop4patchesแล้วsum(patch*K)ได้[[-4,-4],[-4,-4]]</p><p>torch.conv2dใช้crosscorrelationไม่flipkernel; copyKเป็น(1,1,2,2),Xเป็น(1,1,3,3)แล้วallcloseกับข้อ9</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-22-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>X=np.arange(1,10).reshape(3,3),K=[[1,0],[0,−1]]; loop4patchesแล้วsum(patch*K)ได้[[-4,-4],[-4,-4]]</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-22-equation"><summary>สมการ</summary><p>X=np.arange(1,10).reshape(3,3),K=[[1,0],[0,−1]]; loop4patchesแล้วsum(patch*K)ได้[[-4,-4],[-4,-4]]</p></details><details id="help-topic-22-visual"><summary>ภาพและ shape</summary><p>X=np.arange(1,10).reshape(3,3),K=[[1,0],[0,−1]]; loop4patchesแล้วsum(patch*K)ได้[[-4,-4],[-4,-4]]</p></details><details id="help-topic-22-code"><summary>โค้ด</summary><p>X=np.arange(1,10).reshape(3,3),K=[[1,0],[0,−1]]; loop4patchesแล้วsum(patch*K)ได้[[-4,-4],[-4,-4]]</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-22-result"><summary>ผลการทดลอง</summary><p>X=np.arange(1,10).reshape(3,3),K=[[1,0],[0,−1]]; loop4patchesแล้วsum(patch*K)ได้[[-4,-4],[-4,-4]]</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-22"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-23" class="source-topic"><span id="source-24-cnn-canonical-23-common-bugs" class="legacy-anchor"></span><h3>23. Common Bugs</h3>
+<ol>
+<li>NCHW/NHWC mismatch</li>
+<li>wrong output shape formula</li>
+<li>wrong channel count</li>
+<li>bias broadcast on wrong axis</li>
+<li>accidental integer image dtype</li>
+<li>forgetting normalization</li>
+<li>softmax before cross-entropy logits loss</li>
+<li>flattening too early</li>
+<li>oversized dense head</li>
+<li>comparing models with different splits</li>
+</ol><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>assertoutput[[-4,-4],[-4,-4]],shape(2,2),bias.5เพิ่มทุกช่อง.5; invalidindex8สำหรับoutput2×2ต้องraiseและsnapshotเดิมไม่เปลี่ยน</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-23-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>assertoutput[[-4,-4],[-4,-4]],shape(2,2),bias.5เพิ่มทุกช่อง.5; invalidindex8สำหรับoutput2×2ต้องraiseและsnapshotเดิมไม่เปลี่ยน</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-23-equation"><summary>สมการ</summary><p>assertoutput[[-4,-4],[-4,-4]],shape(2,2),bias.5เพิ่มทุกช่อง.5; invalidindex8สำหรับoutput2×2ต้องraiseและsnapshotเดิมไม่เปลี่ยน</p></details><details id="help-topic-23-visual"><summary>ภาพและ shape</summary><p>assertoutput[[-4,-4],[-4,-4]],shape(2,2),bias.5เพิ่มทุกช่อง.5; invalidindex8สำหรับoutput2×2ต้องraiseและsnapshotเดิมไม่เปลี่ยน</p></details><details id="help-topic-23-code"><summary>โค้ด</summary><p>assertoutput[[-4,-4],[-4,-4]],shape(2,2),bias.5เพิ่มทุกช่อง.5; invalidindex8สำหรับoutput2×2ต้องraiseและsnapshotเดิมไม่เปลี่ยน</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-23-result"><summary>ผลการทดลอง</summary><p>assertoutput[[-4,-4],[-4,-4]],shape(2,2),bias.5เพิ่มทุกช่อง.5; invalidindex8สำหรับoutput2×2ต้องraiseและsnapshotเดิมไม่เปลี่ยน</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-23"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-24" class="source-topic"><span id="source-24-cnn-canonical-24-performance" class="legacy-anchor"></span><h3>24. Performance</h3>
+<p>Convolution cost roughly grows with:</p>
+<pre><code class="language-text">N * Cout * Hout * Wout * Cin * KH * KW
+</code></pre>
+<p>Actual performance depends on:
+- memory layout
+- kernel implementation
+- accelerator
+- dtype
+- batch size</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>productสะสมในfloat16อาจoverflow/roundoff; ใช้float64tinyoracleแล้วfloat32tolerance; inputNaNต้องรายงานตำแหน่งไม่วาดกราฟต่อเป็น0</p><p>directconv O(BHoutWoutCoutCinKhKw),im2colเพิ่มmemory; วัดkernel/stride/dtypeพร้อมactivationและparameterbytesไม่เฉพาะweights</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-24-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>productสะสมในfloat16อาจoverflow/roundoff; ใช้float64tinyoracleแล้วfloat32tolerance; inputNaNต้องรายงานตำแหน่งไม่วาดกราฟต่อเป็น0</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-24-equation"><summary>สมการ</summary><p>productสะสมในfloat16อาจoverflow/roundoff; ใช้float64tinyoracleแล้วfloat32tolerance; inputNaNต้องรายงานตำแหน่งไม่วาดกราฟต่อเป็น0</p></details><details id="help-topic-24-visual"><summary>ภาพและ shape</summary><p>productสะสมในfloat16อาจoverflow/roundoff; ใช้float64tinyoracleแล้วfloat32tolerance; inputNaNต้องรายงานตำแหน่งไม่วาดกราฟต่อเป็น0</p></details><details id="help-topic-24-code"><summary>โค้ด</summary><p>productสะสมในfloat16อาจoverflow/roundoff; ใช้float64tinyoracleแล้วfloat32tolerance; inputNaNต้องรายงานตำแหน่งไม่วาดกราฟต่อเป็น0</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-24-result"><summary>ผลการทดลอง</summary><p>productสะสมในfloat16อาจoverflow/roundoff; ใช้float64tinyoracleแล้วfloat32tolerance; inputNaNต้องรายงานตำแหน่งไม่วาดกราฟต่อเป็น0</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-24"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-25" class="source-topic"><span id="source-24-cnn-canonical-25-your-rtx-3050-ti" class="legacy-anchor"></span><h3>25. Your RTX 3050 Ti</h3>
+<p>For 8×8/28×28 educational CNNs the GPU may not always beat CPU because launch/transfer overhead matters.</p>
+<p>Use GPU when:
+- batch/model/image size grows
+- profiling shows benefit</p>
+<p>Do not judge accelerator quality from a tiny toy kernel alone.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-25-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>25. Your RTX 3050 Ti</h3>
+<p>For 8×8/28×28 educational CNNs the GPU may not always beat CPU because launch/transfer overhead matters.</p>
+<p>Use GPU when:
+- batch/model/image size grows
+- profiling shows benefit</p>
+<p>Do not judge accelerator quality from a tiny toy kernel alone.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-25-equation"><summary>สมการ</summary><h3>25. Your RTX 3050 Ti</h3>
+<p>For 8×8/28×28 educational CNNs the GPU may not always beat CPU because launch/transfer overhead matters.</p>
+<p>Use GPU when:
+- batch/model/image size grows
+- profiling shows benefit</p>
+<p>Do not judge accelerator quality from a tiny toy kernel alone.</p></details><details id="help-topic-25-visual"><summary>ภาพและ shape</summary><h3>25. Your RTX 3050 Ti</h3>
+<p>For 8×8/28×28 educational CNNs the GPU may not always beat CPU because launch/transfer overhead matters.</p>
+<p>Use GPU when:
+- batch/model/image size grows
+- profiling shows benefit</p>
+<p>Do not judge accelerator quality from a tiny toy kernel alone.</p></details><details id="help-topic-25-code"><summary>โค้ด</summary><h3>25. Your RTX 3050 Ti</h3>
+<p>For 8×8/28×28 educational CNNs the GPU may not always beat CPU because launch/transfer overhead matters.</p>
+<p>Use GPU when:
+- batch/model/image size grows
+- profiling shows benefit</p>
+<p>Do not judge accelerator quality from a tiny toy kernel alone.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-25-result"><summary>ผลการทดลอง</summary><h3>25. Your RTX 3050 Ti</h3>
+<p>For 8×8/28×28 educational CNNs the GPU may not always beat CPU because launch/transfer overhead matters.</p>
+<p>Use GPU when:
+- batch/model/image size grows
+- profiling shows benefit</p>
+<p>Do not judge accelerator quality from a tiny toy kernel alone.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-25"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-26" class="source-topic"><span id="source-24-cnn-canonical-26-exercises-mini-project" class="legacy-anchor"></span><h3>26. Exercises / Mini Project</h3>
+<ul>
+<li><a href="../24-cnn/exercises/README.md">Exercises</a></li>
+<li><a href="../24-cnn/solutions/README.md">Solutions</a></li>
+<li><a href="../24-cnn/mini-project/README.md">Mini Project</a></li>
+</ul><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>บันทึกinputlayout/kernel/stride/padding/dilation/seed; ทดลองลดstrideในsmallobjecttaskเพิ่มrecallภายใต้memorybudget พร้อมbaselineและ3seeds</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-26-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>บันทึกinputlayout/kernel/stride/padding/dilation/seed; ทดลองลดstrideในsmallobjecttaskเพิ่มrecallภายใต้memorybudget พร้อมbaselineและ3seeds</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-26-equation"><summary>สมการ</summary><p>บันทึกinputlayout/kernel/stride/padding/dilation/seed; ทดลองลดstrideในsmallobjecttaskเพิ่มrecallภายใต้memorybudget พร้อมbaselineและ3seeds</p></details><details id="help-topic-26-visual"><summary>ภาพและ shape</summary><p>บันทึกinputlayout/kernel/stride/padding/dilation/seed; ทดลองลดstrideในsmallobjecttaskเพิ่มrecallภายใต้memorybudget พร้อมbaselineและ3seeds</p></details><details id="help-topic-26-code"><summary>โค้ด</summary><p>บันทึกinputlayout/kernel/stride/padding/dilation/seed; ทดลองลดstrideในsmallobjecttaskเพิ่มrecallภายใต้memorybudget พร้อมbaselineและ3seeds</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-26-result"><summary>ผลการทดลอง</summary><p>บันทึกinputlayout/kernel/stride/padding/dilation/seed; ทดลองลดstrideในsmallobjecttaskเพิ่มrecallภายใต้memorybudget พร้อมbaselineและ3seeds</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-26"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-27" class="source-topic"><span id="source-24-cnn-canonical-27-checklist" class="legacy-anchor"></span><h3>27. Checklist</h3>
+<ul>
+<li>[ ] output shape</li>
+<li>[ ] channels</li>
+<li>[ ] parameter count</li>
+<li>[ ] padding/stride/dilation</li>
+<li>[ ] receptive field</li>
+<li>[ ] pooling</li>
+<li>[ ] NCHW/NHWC</li>
+<li>[ ] PyTorch CNN</li>
+<li>[ ] Keras CNN</li>
+<li>[ ] debug shapes</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-27-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>27. Checklist</h3>
+<ul>
+<li>[ ] output shape</li>
+<li>[ ] channels</li>
+<li>[ ] parameter count</li>
+<li>[ ] padding/stride/dilation</li>
+<li>[ ] receptive field</li>
+<li>[ ] pooling</li>
+<li>[ ] NCHW/NHWC</li>
+<li>[ ] PyTorch CNN</li>
+<li>[ ] Keras CNN</li>
+<li>[ ] debug shapes</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-27-equation"><summary>สมการ</summary><h3>27. Checklist</h3>
+<ul>
+<li>[ ] output shape</li>
+<li>[ ] channels</li>
+<li>[ ] parameter count</li>
+<li>[ ] padding/stride/dilation</li>
+<li>[ ] receptive field</li>
+<li>[ ] pooling</li>
+<li>[ ] NCHW/NHWC</li>
+<li>[ ] PyTorch CNN</li>
+<li>[ ] Keras CNN</li>
+<li>[ ] debug shapes</li>
+</ul></details><details id="help-topic-27-visual"><summary>ภาพและ shape</summary><h3>27. Checklist</h3>
+<ul>
+<li>[ ] output shape</li>
+<li>[ ] channels</li>
+<li>[ ] parameter count</li>
+<li>[ ] padding/stride/dilation</li>
+<li>[ ] receptive field</li>
+<li>[ ] pooling</li>
+<li>[ ] NCHW/NHWC</li>
+<li>[ ] PyTorch CNN</li>
+<li>[ ] Keras CNN</li>
+<li>[ ] debug shapes</li>
+</ul></details><details id="help-topic-27-code"><summary>โค้ด</summary><h3>27. Checklist</h3>
+<ul>
+<li>[ ] output shape</li>
+<li>[ ] channels</li>
+<li>[ ] parameter count</li>
+<li>[ ] padding/stride/dilation</li>
+<li>[ ] receptive field</li>
+<li>[ ] pooling</li>
+<li>[ ] NCHW/NHWC</li>
+<li>[ ] PyTorch CNN</li>
+<li>[ ] Keras CNN</li>
+<li>[ ] debug shapes</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-27-result"><summary>ผลการทดลอง</summary><h3>27. Checklist</h3>
+<ul>
+<li>[ ] output shape</li>
+<li>[ ] channels</li>
+<li>[ ] parameter count</li>
+<li>[ ] padding/stride/dilation</li>
+<li>[ ] receptive field</li>
+<li>[ ] pooling</li>
+<li>[ ] NCHW/NHWC</li>
+<li>[ ] PyTorch CNN</li>
+<li>[ ] Keras CNN</li>
+<li>[ ] debug shapes</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-27"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-28" class="source-topic"><span id="source-24-cnn-canonical-28-whats-next" class="legacy-anchor"></span><span id="source-24-cnn-canonical-24-cnn-convolutional-neural-networks" class="legacy-anchor"></span><h3>28. What's Next</h3>
+<p>Batch 09 continues into sequence models: RNN, LSTM/GRU, and Autoencoders/VAEs.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-28-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>28. What's Next</h3>
+<p>Batch 09 continues into sequence models: RNN, LSTM/GRU, and Autoencoders/VAEs.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-28-equation"><summary>สมการ</summary><h3>28. What's Next</h3>
+<p>Batch 09 continues into sequence models: RNN, LSTM/GRU, and Autoencoders/VAEs.</p></details><details id="help-topic-28-visual"><summary>ภาพและ shape</summary><h3>28. What's Next</h3>
+<p>Batch 09 continues into sequence models: RNN, LSTM/GRU, and Autoencoders/VAEs.</p></details><details id="help-topic-28-code"><summary>โค้ด</summary><h3>28. What's Next</h3>
+<p>Batch 09 continues into sequence models: RNN, LSTM/GRU, and Autoencoders/VAEs.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-28-result"><summary>ผลการทดลอง</summary><h3>28. What's Next</h3>
+<p>Batch 09 continues into sequence models: RNN, LSTM/GRU, and Autoencoders/VAEs.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-28"> อ่านหัวข้อนี้แล้ว</label></section><details><summary>รายละเอียดเพิ่มเติมและข้อกำหนดของ local lab</summary><h3>24-cnn — Convolutional Neural Networks</h3>
+<p><strong>Prerequisites:</strong> Complete 23-tensorflow-keras; be able to trace array/tensor shapes, separate train/validation/test data, and explain the core objective of the current chapter.</p>
+<p><strong>Mental model:</strong> Treat Convolutional Neural Networks as a pipeline: input representation → central mechanism → objective/state update → observable output. At every boundary, state shape/state, allowed information flow, and the invariant that should remain true.</p>
+<p><strong>Code walkthrough:</strong> Read public API first, then input checks, state/shape transformations, numerical core, returned values and tests. Connect each important code block to the equation or algorithm in the chapter README.</p>
+<p><strong>Visualization / inspection:</strong> Use a tiny case. Inspect intermediate values, distributions, norms, scores, states or trajectories appropriate to Convolutional Neural Networks; do not rely only on the final metric.</p>
+<p><strong>Experiment:</strong> Run a baseline, one controlled parameter change, one edge case and one repeated seeded comparison. Record seed, environment, data version, configuration and metric.</p>
+<p><strong>Limitations:</strong> List at least one assumption, one data-related limitation, one numerical/optimization limitation and one scaling limitation for Convolutional Neural Networks.</p>
+<p><strong>Analysis workflow:</strong> Check inputs → preprocessing → shapes/state → finite numerical values → objective/update → evaluation protocol. The earliest unexpected state is more informative than a downstream metric.</p>
+<p><strong>Performance:</strong> Identify the dominant time and memory terms and measure them on the local learning run before attempting optimization.</p>
+<p><strong>Production perspective:</strong> Define input validation, artifact/configuration versioning, quality and resource measurements, staged release criteria and a way to return to the previous known-good artifact.</p>
+<p><strong>Research perspective:</strong> State a falsifiable hypothesis, baseline, one-factor change, metric, repeated-run plan when stochastic, and how negative results will be recorded.</p>
+<p><strong>Interview questions:</strong>
+1. Explain Convolutional Neural Networks from first principles without naming a library API.
+2. Trace one input through the central mechanism and give the important intermediate shapes/state.
+3. Name the strongest assumption and a case where it fails.
+4. State the dominant compute/memory cost.
+5. Describe how you would validate a new implementation against a trusted baseline.</p>
+<p><strong>Summary / exit condition:</strong> You may move on when you can explain, derive or trace, implement, test, analyze, measure and evaluate Convolutional Neural Networks, and when the chapter mini-project plus twenty total exercises are complete.</p></details></section><section id="objective-evidence" class="canonical-section"><h2>พิสูจน์ความสามารถทีละ objective</h2><p>ทำกรณีใหม่ก่อนเปิด reference แล้วบันทึกงานด้านล่าง ให้ผู้ตรวจใช้ rubric ตรวจคำอธิบาย ผลคำนวณ โค้ด และข้อจำกัด บันทึกเก็บในเบราว์เซอร์เครื่องนี้ กดส่งออกเพื่อสำรองหรือส่งให้ผู้ตรวจ เว็บไม่ได้รันโค้ดหรือตัดสินผลงานแทนผู้ตรวจ</p><button type="button" class="secondary-button" data-export-evidence>ส่งออกหลักฐานบทนี้เป็น JSON</button><p role="status" id="evidence-export-status"></p><details id="ch24-objective-01" class="objective-proof"><summary>calculate convolution output shapes</summary><p>calculate convolution output shapes: ใช้กรณีในหัวข้อ General Output Shape เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch24-evidence-01"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch24-evidence-01-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch24-evidence-01-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch24-evidence-01-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch24-evidence-01-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch24-evidence-01-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch24-evidence-01-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch24-evidence-01-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch24-evidence-01-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>looprowcolใช้start=i*stride-paddingก่อนดึงpatch; outputindex3ของ2×2คือ(row1,col1) ไม่ใช้index%4เพื่อรับ8อย่างเงียบๆ</p><h3>5. General Output Shape</h3>
+<p>For one spatial dimension:</p>
+<pre><code class="language-text">out =
+floor(
+  (input + 2*padding - dilation*(kernel-1) - 1)
+  / stride
+) + 1
+</code></pre>
+<p>With dilation=1:</p>
+<pre><code class="language-text">out =
+floor((input + 2P - K)/S) + 1
+</code></pre>
+<p>Always calculate before coding.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch24-objective-02" class="objective-proof"><summary>explain channels and filters</summary><p>explain channels and filters: ใช้กรณีในหัวข้อ Channels เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch24-evidence-02"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch24-evidence-02-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch24-evidence-02-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch24-evidence-02-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch24-evidence-02-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch24-evidence-02-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch24-evidence-02-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch24-evidence-02-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch24-evidence-02-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>kernelคือweights(Kh,Kw,Cin,Cout); kernel2×2[[1,0],[0,−1]]กับpatch[[1,2],[3,4]]ให้1−4=−3ก่อนbias</p><h3>6. Channels</h3>
+<p>RGB image:</p>
+<pre><code class="language-text">C_in = 3
+</code></pre>
+<p>A filter spans all input channels:</p>
+<pre><code class="language-text">weight shape:
+C_out × C_in × KH × KW
+</code></pre>
+<p>Each output filter produces one output channel.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch24-objective-03" class="objective-proof"><summary>implement 2D cross-correlation from scratch</summary><p>implement 2D cross-correlation from scratch: ใช้กรณีในหัวข้อ Convolution vs Cross-Correlation, Single-Channel Example, From Scratch เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch24-evidence-03"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch24-evidence-03-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch24-evidence-03-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch24-evidence-03-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch24-evidence-03-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch24-evidence-03-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch24-evidence-03-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch24-evidence-03-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch24-evidence-03-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>convolutionในDLมักเป็นcross-correlation: Yᵢⱼ=ΣₐᵦXᵢₛ₊ₐ₋ₚ,ⱼₛ₊ᵦ₋ₚKₐᵦ+b; filterเลื่อนใช้weightsเดียวกันทุกตำแหน่ง ไม่ใช่matrixmultiplyทั้งภาพครั้งเดียว</p><h3>3. Convolution vs Cross-Correlation</h3>
+<p>Deep-learning libraries usually implement cross-correlation:</p>
+<pre><code class="language-text">output[i,j]
+=
+sum over kernel window:
+input[i+u,j+v] * kernel[u,v]
+</code></pre>
+<p>Classical mathematical convolution flips the kernel first.</p>
+<p>In deep learning, learned kernels make this naming distinction less important operationally, but you should know it.</p>
+<h3>4. Single-Channel Example</h3>
+<p>Input:</p>
+<pre><code class="language-text">H × W
+</code></pre>
+<p>Kernel:</p>
+<pre><code class="language-text">KH × KW
+</code></pre>
+<p>valid output:</p>
+<pre><code class="language-text">(H-KH+1) × (W-KW+1)
+</code></pre>
+<p>for stride 1 and no padding.</p>
+<h3>22. From Scratch</h3>
+<p>src/cnn_numpy.py includes:
+- conv2d_nchw
+- max_pool2d_nchw
+- output-size helper</p>
+<p>The implementation uses loops deliberately for transparency.</p>
+<p>Production frameworks use optimized kernels and accelerator libraries.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch24-objective-04" class="objective-proof"><summary>explain stride and padding</summary><p>explain stride and padding: ใช้กรณีในหัวข้อ Padding, Stride เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch24-evidence-04"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch24-evidence-04-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch24-evidence-04-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch24-evidence-04-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch24-evidence-04-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch24-evidence-04-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch24-evidence-04-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch24-evidence-04-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch24-evidence-04-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>strideคือระยะเลื่อนpatch; H4,K2,p0,s2ให้Hout=floor((4−2)/2)+1=2 จึงมี4ตำแหน่งในoutput2×2</p><h3>9. Padding</h3>
+<p>No padding shrinks spatial resolution.</p>
+<p>For odd kernel K and stride 1, common same-like padding is:</p>
+<pre><code class="language-text">P = (K-1)/2
+</code></pre>
+<p>for dilation 1.</p>
+<p>Example:
+- K=3 → P=1
+- K=5 → P=2</p>
+<h3>10. Stride</h3>
+<p>Stride controls window movement.</p>
+<p>Stride 2 roughly downsamples spatial dimensions by about 2.</p>
+<p>Larger stride:
+- lower compute
+- lower spatial resolution
+- may discard details</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch24-objective-05" class="objective-proof"><summary>explain receptive fields</summary><p>explain receptive fields: ใช้กรณีในหัวข้อ Receptive Field เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch24-evidence-05"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch24-evidence-05-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch24-evidence-05-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch24-evidence-05-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch24-evidence-05-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch24-evidence-05-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch24-evidence-05-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch24-evidence-05-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch24-evidence-05-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>receptivefieldใหญ่เห็นบริบทมากขึ้นแต่ละเอียดเชิงพื้นที่ลดเมื่อstrideสูง; คำนวณrnew=rold+(k−1)jump,jumpnew=jump·s</p><h3>12. Receptive Field</h3>
+<p>A neuron in later layers depends on a region of the original image.</p>
+<p>Stacking 3×3 convolutions grows receptive field while preserving nonlinear depth.</p>
+<p>Receptive field depends on:
+- kernel
+- stride
+- dilation
+- previous layer jumps</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch24-objective-06" class="objective-proof"><summary>implement max pooling</summary><p>implement max pooling: ใช้กรณีในหัวข้อ Max Pooling เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch24-evidence-06"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch24-evidence-06-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch24-evidence-06-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch24-evidence-06-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch24-evidence-06-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch24-evidence-06-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch24-evidence-06-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch24-evidence-06-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch24-evidence-06-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>maxpoolingทิ้งตำแหน่งย่อยและdetail; patternเล็กอาจหาย ยก[1,0;0,0]กับ[0,1;0,0]ให้pooled1เหมือนกัน</p><h3>15. Max Pooling</h3>
+<p>For each local window:</p>
+<pre><code class="language-text">output = max(window)
+</code></pre>
+<p>Effects:
+- downsampling
+- local feature selection
+- reduced compute downstream</p>
+<p>But pooling discards information.</p>
+<p>Modern architectures sometimes prefer strided convolution or global average pooling.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch24-objective-07" class="objective-proof"><summary>count Conv2D parameters</summary><p>count Conv2D parameters: ใช้กรณีในหัวข้อ Conv Parameter Count เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch24-evidence-07"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch24-evidence-07-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch24-evidence-07-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch24-evidence-07-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch24-evidence-07-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch24-evidence-07-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch24-evidence-07-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch24-evidence-07-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch24-evidence-07-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>7. Conv Parameter Count</h3>
+<pre><code class="language-text">C_out * C_in * KH * KW
++
+C_out biases
+</code></pre>
+<p>Example:</p>
+<pre><code class="language-text">3 input channels
+16 output channels
+3×3 kernel
+
+16*3*3*3 + 16
+= 448 parameters
+</code></pre>
+<p>Weight sharing keeps parameter count much smaller than a dense layer over all pixels.</p><h3>7. Conv Parameter Count</h3>
+<pre><code class="language-text">C_out * C_in * KH * KW
++
+C_out biases
+</code></pre>
+<p>Example:</p>
+<pre><code class="language-text">3 input channels
+16 output channels
+3×3 kernel
+
+16*3*3*3 + 16
+= 448 parameters
+</code></pre>
+<p>Weight sharing keeps parameter count much smaller than a dense layer over all pixels.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch24-objective-08" class="objective-proof"><summary>distinguish NCHW and NHWC</summary><p>distinguish NCHW and NHWC: ใช้กรณีในหัวข้อ NCHW vs NHWC เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch24-evidence-08"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch24-evidence-08-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch24-evidence-08-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch24-evidence-08-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch24-evidence-08-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch24-evidence-08-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch24-evidence-08-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch24-evidence-08-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch24-evidence-08-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>PyTorchimage(B,C,H,W),TensorFlowdefault(B,H,W,C); Cinของkernelต้องตรงinput ไม่ใช่นับคอลัมน์ตารางว่าเป็นtensorchannels</p><h3>8. NCHW vs NHWC</h3>
+<p>PyTorch commonly:</p>
+<pre><code class="language-text">N × C × H × W
+</code></pre>
+<p>TensorFlow/Keras default:</p>
+<pre><code class="language-text">N × H × W × C
+</code></pre>
+<p>Never silently reshape one into the other.</p>
+<p>Use explicit transpose/permutation.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch24-objective-09" class="objective-proof"><summary>build CNNs in PyTorch and Keras</summary><p>build CNNs in PyTorch and Keras: ใช้กรณีในหัวข้อ PyTorch CNN, Keras CNN เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch24-evidence-09"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch24-evidence-09-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch24-evidence-09-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch24-evidence-09-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch24-evidence-09-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch24-evidence-09-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch24-evidence-09-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch24-evidence-09-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch24-evidence-09-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>splitตามpatient/sourceก่อนaugmentation; fitnormalizationtrain; validation/testไม่มีrandomcropที่เปลี่ยนlabelsemanticโดยไม่ประกาศ</p><h3>20. PyTorch CNN</h3>
+<pre><code class="language-python">class CNN(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.features = nn.Sequential(
+            nn.Conv2d(1, 8, 3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+            nn.Conv2d(8, 16, 3, padding=1),
+            nn.ReLU(),
+        )
+        self.pool = nn.AdaptiveAvgPool2d((1, 1))
+        self.classifier = nn.Linear(16, 10)
+
+    def forward(self, x):
+        x = self.features(x)
+        x = self.pool(x)
+        x = torch.flatten(x, 1)
+        return self.classifier(x)
+</code></pre>
+<h3>21. Keras CNN</h3>
+<pre><code class="language-python">model = keras.Sequential([
+    keras.layers.Input(shape=(8, 8, 1)),
+    keras.layers.Conv2D(8, 3, padding=&quot;same&quot;, activation=&quot;relu&quot;),
+    keras.layers.MaxPooling2D(2),
+    keras.layers.Conv2D(16, 3, padding=&quot;same&quot;, activation=&quot;relu&quot;),
+    keras.layers.GlobalAveragePooling2D(),
+    keras.layers.Dense(10),
+])
+</code></pre>
+<p>Same concept, different default image layout.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch24-objective-10" class="objective-proof"><summary>understand pooling vs strided convolution</summary><p>understand pooling vs strided convolution: ใช้กรณีในหัวข้อ Max Pooling, Average Pooling เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch24-evidence-10"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch24-evidence-10-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch24-evidence-10-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch24-evidence-10-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch24-evidence-10-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch24-evidence-10-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch24-evidence-10-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch24-evidence-10-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch24-evidence-10-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>maxpoolingทิ้งตำแหน่งย่อยและdetail; patternเล็กอาจหาย ยก[1,0;0,0]กับ[0,1;0,0]ให้pooled1เหมือนกัน</p><h3>15. Max Pooling</h3>
+<p>For each local window:</p>
+<pre><code class="language-text">output = max(window)
+</code></pre>
+<p>Effects:
+- downsampling
+- local feature selection
+- reduced compute downstream</p>
+<p>But pooling discards information.</p>
+<p>Modern architectures sometimes prefer strided convolution or global average pooling.</p>
+<h3>16. Average Pooling</h3>
+<pre><code class="language-text">output = mean(window)
+</code></pre>
+<p>Global Average Pooling:</p>
+<pre><code class="language-text">N × C × H × W
+→
+N × C
+</code></pre>
+<p>reduces each feature map to one value.</p>
+<p>It can replace large fully connected heads.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch24-objective-11" class="objective-proof"><summary>explain translation-related inductive bias</summary><p>explain translation-related inductive bias: ใช้กรณีในหัวข้อ Why Weight Sharing Matters เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch24-evidence-11"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch24-evidence-11-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch24-evidence-11-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch24-evidence-11-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch24-evidence-11-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch24-evidence-11-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch24-evidence-11-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch24-evidence-11-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch24-evidence-11-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>convolutionเป็นoperationส่วนkernelเป็นparameter; แก้kernelweightหนึ่งตัวเปลี่ยนทุกoutputpatchที่เห็นตำแหน่งสัมพัทธ์นั้น</p><h3>13. Why Weight Sharing Matters</h3>
+<p>The same filter scans across image positions.</p>
+<p>This encodes an inductive bias:</p>
+<blockquote>
+<p>a useful local pattern may matter regardless of its exact location</p>
+</blockquote>
+<p>CNNs are not perfectly translation invariant by default, but convolution provides translation-equivariant structure before pooling/boundary effects and other operations.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch24-objective-12" class="objective-proof"><summary>debug CNN shape errors</summary><p>debug CNN shape errors: ใช้กรณีในหัวข้อ Common Bugs เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch24-evidence-12"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch24-evidence-12-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch24-evidence-12-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch24-evidence-12-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch24-evidence-12-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch24-evidence-12-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch24-evidence-12-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch24-evidence-12-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch24-evidence-12-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>assertoutput[[-4,-4],[-4,-4]],shape(2,2),bias.5เพิ่มทุกช่อง.5; invalidindex8สำหรับoutput2×2ต้องraiseและsnapshotเดิมไม่เปลี่ยน</p><h3>23. Common Bugs</h3>
+<ol>
+<li>NCHW/NHWC mismatch</li>
+<li>wrong output shape formula</li>
+<li>wrong channel count</li>
+<li>bias broadcast on wrong axis</li>
+<li>accidental integer image dtype</li>
+<li>forgetting normalization</li>
+<li>softmax before cross-entropy logits loss</li>
+<li>flattening too early</li>
+<li>oversized dense head</li>
+<li>comparing models with different splits</li>
+</ol></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch24-objective-13" class="objective-proof"><summary>train a small image classifier</summary><p>train a small image classifier: ใช้กรณีในหัวข้อ Activation, Feature Hierarchy, Normalization Preview, Dropout เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch24-evidence-13"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch24-evidence-13-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch24-evidence-13-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch24-evidence-13-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch24-evidence-13-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch24-evidence-13-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch24-evidence-13-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch24-evidence-13-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch24-evidence-13-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>14. Activation</h3>
+<p>Typical block:</p>
+<pre><code class="language-text">Conv
+→ ReLU
+→ Conv
+→ ReLU
+→ Pool/Stride
+</code></pre>
+<p>Without nonlinearities, stacked linear convolution layers still collapse into a linear mapping.</p>
+<h3>17. Feature Hierarchy</h3>
+<p>Early layers often respond to simple local patterns.</p>
+<p>Deeper layers combine earlier representations into more complex structures.</p>
+<p>Do not over-literalize filters as human concepts; representation is distributed.</p>
+<h3>18. Normalization Preview</h3>
+<p>CNN stacks often use:
+- BatchNorm
+- LayerNorm
+- GroupNorm</p>
+<p>These are covered more deeply later.</p>
+<h3>19. Dropout</h3>
+<p>Dropout may regularize dense/CNN heads, but placement and value matter.</p>
+<p>Do not add dropout automatically before diagnosing overfitting.</p><h3>14. Activation</h3>
+<p>Typical block:</p>
+<pre><code class="language-text">Conv
+→ ReLU
+→ Conv
+→ ReLU
+→ Pool/Stride
+</code></pre>
+<p>Without nonlinearities, stacked linear convolution layers still collapse into a linear mapping.</p>
+<h3>17. Feature Hierarchy</h3>
+<p>Early layers often respond to simple local patterns.</p>
+<p>Deeper layers combine earlier representations into more complex structures.</p>
+<p>Do not over-literalize filters as human concepts; representation is distributed.</p>
+<h3>18. Normalization Preview</h3>
+<p>CNN stacks often use:
+- BatchNorm
+- LayerNorm
+- GroupNorm</p>
+<p>These are covered more deeply later.</p>
+<h3>19. Dropout</h3>
+<p>Dropout may regularize dense/CNN heads, but placement and value matter.</p>
+<p>Do not add dropout automatically before diagnosing overfitting.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch24-objective-14" class="objective-proof"><summary>Performance</summary><p>Performance: ใช้กรณีในหัวข้อ Performance เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch24-evidence-14"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch24-evidence-14-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch24-evidence-14-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch24-evidence-14-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch24-evidence-14-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch24-evidence-14-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch24-evidence-14-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch24-evidence-14-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch24-evidence-14-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>productสะสมในfloat16อาจoverflow/roundoff; ใช้float64tinyoracleแล้วfloat32tolerance; inputNaNต้องรายงานตำแหน่งไม่วาดกราฟต่อเป็น0</p><h3>24. Performance</h3>
+<p>Convolution cost roughly grows with:</p>
+<pre><code class="language-text">N * Cout * Hout * Wout * Cin * KH * KW
+</code></pre>
+<p>Actual performance depends on:
+- memory layout
+- kernel implementation
+- accelerator
+- dtype
+- batch size</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch24-objective-15" class="objective-proof"><summary>Exercises / Mini Project</summary><p>Exercises / Mini Project: ใช้กรณีในหัวข้อ Exercises / Mini Project เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch24-evidence-15"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch24-evidence-15-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch24-evidence-15-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch24-evidence-15-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch24-evidence-15-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch24-evidence-15-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch24-evidence-15-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch24-evidence-15-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch24-evidence-15-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>บันทึกinputlayout/kernel/stride/padding/dilation/seed; ทดลองลดstrideในsmallobjecttaskเพิ่มrecallภายใต้memorybudget พร้อมbaselineและ3seeds</p><h3>26. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details></section><section id="implementation" class="canonical-section"><h2>Implementation และ tests ที่รันบนเครื่องได้</h2><details><summary>24-cnn/src/cnn_numpy.py</summary><pre><code>&quot;&quot;&quot;Educational NCHW convolution and pooling implemented with NumPy loops.&quot;&quot;&quot;
+
+from __future__ import annotations
+
+import numpy as np
+
+
+def conv_output_size(
+    input_size: int,
+    kernel_size: int,
+    *,
+    stride: int = 1,
+    padding: int = 0,
+    dilation: int = 1,
+) -&gt; int:
+    if min(input_size, kernel_size, stride, dilation) &lt;= 0 or padding &lt; 0:
+        raise ValueError(&quot;invalid convolution dimensions&quot;)
+    effective = dilation * (kernel_size - 1) + 1
+    output = (input_size + 2 * padding - effective) // stride + 1
+    if output &lt;= 0:
+        raise ValueError(&quot;kernel is larger than padded input&quot;)
+    return output
+
+
+def conv2d_nchw(
+    x: np.ndarray,
+    weight: np.ndarray,
+    bias: np.ndarray | None = None,
+    *,
+    stride: int = 1,
+    padding: int = 0,
+) -&gt; np.ndarray:
+    inputs = np.asarray(x, dtype=float)
+    kernels = np.asarray(weight, dtype=float)
+
+    if inputs.ndim != 4 or kernels.ndim != 4:
+        raise ValueError(&quot;x and weight must be rank-4 NCHW/OIHW arrays&quot;)
+
+    n, c_in, h, w = inputs.shape
+    c_out, kernel_c_in, kh, kw = kernels.shape
+
+    if c_in != kernel_c_in:
+        raise ValueError(&quot;input channel count does not match kernel&quot;)
+    if stride &lt;= 0 or padding &lt; 0:
+        raise ValueError(&quot;invalid stride/padding&quot;)
+
+    if bias is None:
+        biases = np.zeros(c_out, dtype=float)
+    else:
+        biases = np.asarray(bias, dtype=float).reshape(-1)
+        if biases.shape != (c_out,):
+            raise ValueError(&quot;bias must have shape (out_channels,)&quot;)
+
+    h_out = conv_output_size(h, kh, stride=stride, padding=padding)
+    w_out = conv_output_size(w, kw, stride=stride, padding=padding)
+
+    padded = np.pad(
+        inputs,
+        ((0, 0), (0, 0), (padding, padding), (padding, padding)),
+        mode=&quot;constant&quot;,
+    )
+    output = np.empty((n, c_out, h_out, w_out), dtype=float)
+
+    for batch in range(n):
+        for out_channel in range(c_out):
+            for out_y in range(h_out):
+                y0 = out_y * stride
+                for out_x in range(w_out):
+                    x0 = out_x * stride
+                    window = padded[
+                        batch,
+                        :,
+                        y0 : y0 + kh,
+                        x0 : x0 + kw,
+                    ]
+                    output[batch, out_channel, out_y, out_x] = (
+                        np.sum(window * kernels[out_channel])
+                        + biases[out_channel]
+                    )
+
+    return output
+
+
+def max_pool2d_nchw(
+    x: np.ndarray,
+    *,
+    kernel_size: int = 2,
+    stride: int | None = None,
+) -&gt; np.ndarray:
+    inputs = np.asarray(x, dtype=float)
+    if inputs.ndim != 4:
+        raise ValueError(&quot;x must be rank-4 NCHW&quot;)
+
+    if stride is None:
+        stride = kernel_size
+
+    if kernel_size &lt;= 0 or stride &lt;= 0:
+        raise ValueError(&quot;kernel_size and stride must be positive&quot;)
+
+    n, channels, h, w = inputs.shape
+    h_out = conv_output_size(h, kernel_size, stride=stride)
+    w_out = conv_output_size(w, kernel_size, stride=stride)
+
+    output = np.empty((n, channels, h_out, w_out), dtype=float)
+
+    for batch in range(n):
+        for channel in range(channels):
+            for out_y in range(h_out):
+                y0 = out_y * stride
+                for out_x in range(w_out):
+                    x0 = out_x * stride
+                    window = inputs[
+                        batch,
+                        channel,
+                        y0 : y0 + kernel_size,
+                        x0 : x0 + kernel_size,
+                    ]
+                    output[batch, channel, out_y, out_x] = np.max(window)
+
+    return output
+</code></pre></details><details><summary>24-cnn/tests/test_cnn_numpy.py</summary><pre><code>from pathlib import Path
+import importlib.util
+
+import numpy as np
+
+
+MODULE_PATH = Path(__file__).parents[1] / &quot;src&quot; / &quot;cnn_numpy.py&quot;
+SPEC = importlib.util.spec_from_file_location(&quot;cnn_numpy_course&quot;, MODULE_PATH)
+assert SPEC and SPEC.loader
+mod = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(mod)
+
+
+def test_output_size_formula() -&gt; None:
+    assert mod.conv_output_size(8, 3, stride=1, padding=1) == 8
+    assert mod.conv_output_size(8, 3, stride=2, padding=1) == 4
+    assert mod.conv_output_size(7, 3, stride=1, padding=0) == 5
+
+
+def test_conv2d_known_values() -&gt; None:
+    x = np.arange(1, 10, dtype=float).reshape(1, 1, 3, 3)
+    weight = np.ones((1, 1, 2, 2), dtype=float)
+
+    output = mod.conv2d_nchw(x, weight)
+
+    expected = np.array(
+        [[[[12.0, 16.0], [24.0, 28.0]]]]
+    )
+    np.testing.assert_allclose(output, expected)
+
+
+def test_multichannel_convolution_shape() -&gt; None:
+    rng = np.random.default_rng(4)
+    x = rng.normal(size=(2, 3, 8, 8))
+    weight = rng.normal(size=(5, 3, 3, 3))
+    bias = np.zeros(5)
+
+    output = mod.conv2d_nchw(x, weight, bias, padding=1)
+    assert output.shape == (2, 5, 8, 8)
+
+
+def test_max_pool_known_values() -&gt; None:
+    x = np.array(
+        [[[[1.0, 2.0, 3.0, 4.0],
+           [5.0, 6.0, 7.0, 8.0],
+           [9.0, 10.0, 11.0, 12.0],
+           [13.0, 14.0, 15.0, 16.0]]]]
+    )
+
+    output = mod.max_pool2d_nchw(x, kernel_size=2, stride=2)
+
+    expected = np.array([[[[6.0, 8.0], [14.0, 16.0]]]])
+    np.testing.assert_allclose(output, expected)
+</code></pre></details></section><section id="glossary" class="canonical-section"><h2>อภิธานศัพท์ — คำไทย ความหมาย และข้อควรตรวจ</h2><dl><dt>tensor</dt><dd>เทนเซอร์: ชุดตัวเลขที่มีแกน เช่น scalar ไม่มีแกน, vector หนึ่งแกน, matrix สองแกน; shape บอกขนาดแต่ละแกน ไม่บอกความหมายของแกนจนกว่าจะระบุ</dd><dt>shape</dt><dd>รูปทรงข้อมูล: (B,T,d) หมายถึง batch × เวลา/ตำแหน่ง × features; ใช้ชื่อแกนกำกับเสมอ การ transpose เปลี่ยนแกนแต่ไม่ใช่แค่เปลี่ยนชื่อ</dd><dt>batch</dt><dd>กลุ่มตัวอย่างที่คำนวณร่วมกันหนึ่งครั้ง; B คือจำนวนตัวอย่าง ไม่ใช่จำนวน features หรือจำนวน optimizer updates</dd><dt>weight w / θ</dt><dd>น้ำหนักหรือพารามิเตอร์ที่โมเดลใช้คำนวณ; แก้ด้วยมือทำ forward ใหม่ ส่วน optimizer ต้องรับ gradient แล้วกด update จึงแก้ state</dd><dt>bias b</dt><dd>ค่าคงที่ที่บวกกับผลเชิงเส้น; regression scalar bias เพิ่ม Δ ทำให้ prediction ทุกจุดเพิ่ม Δ เท่ากัน</dd><dt>prediction ŷ</dt><dd>ค่าที่โมเดลทำนายจาก input และพารามิเตอร์ปัจจุบัน; เครื่องหมายหมวกแยกจาก target y ที่มาจากข้อมูล</dd><dt>residual e</dt><dd>ความคลาดเคลื่อน ในเว็บนี้นิยาม prediction − target; บางตำราใช้เครื่องหมายกลับกัน จึงต้องตรวจนิยามก่อนเทียบสูตร gradient</dd><dt>MSE</dt><dd>mean squared error = ผลรวม residual กำลังสองหารจำนวนรายการที่ระบุ; มีหน่วยเป็น target ยกกำลังสอง และการใช้ sum แทน mean เปลี่ยน scale gradient</dd><dt>loss L / objective J</dt><dd>จำนวนที่ optimizer ต้องการลด; objective อาจรวม data loss และ regularization จึงต้องดูองค์ประกอบและ reduction ให้ตรง implementation</dd><dt>gradient ∇ / ∂</dt><dd>เวกเตอร์ของ partial derivatives บอกอัตราเปลี่ยน loss ต่อพารามิเตอร์แต่ละตัว; ∂ ใช้เมื่อเปลี่ยนตัวหนึ่งโดยตรึงตัวอื่น</dd><dt>chain rule</dt><dd>กฎลูกโซ่: คูณอนุพันธ์ตามเส้นทาง และบวก contribution จากทุกเส้นทางที่มารวมกัน ใช้ย้อนจาก loss ถึง weights</dd><dt>learning rate η</dt><dd>ขนาดตัวคูณ gradient ใน update θnew=θ−ηg; η≥0, ศูนย์หมายถึงไม่มีการขยับพารามิเตอร์ ก้าวใหญ่เกินอาจ diverge</dd><dt>regularization λ</dt><dd>ตัวคูณค่าลงโทษ ต้อง λ≥0 ตามนิยามการลงโทษ; Ridge λΣw² เพิ่ม gradient 2λw โดยบท Regression นี้ไม่ลงโทษ bias</dd><dt>baseline</dt><dd>สถานะอ้างอิงที่ตรึงไว้สำหรับเทียบ; ต้องเก็บ snapshot ไม่อ้าง object ปัจจุบันที่แก้ตามไปด้วย</dd><dt>invariant</dt><dd>คุณสมบัติที่กลไกต้องรักษา เช่น probability รวม1, shape สอดคล้อง, queue ไม่เกิน capacity; ใช้ tests ตรวจได้มากกว่าดูภาพสวย</dd><dt>optimizer state</dt><dd>ความจำของอัลกอริทึม เช่น velocity, moments และ completed updates; คืนเฉพาะ weights ยังไม่เท่ากับเริ่มการฝึกใหม่ทั้งหมด</dd><dt>finite difference</dt><dd>ประมาณ derivative ด้วย [f(x+h)−f(x−h)]/(2h); h&gt;0, ใช้ smooth point และลองหลาย h เพื่อแยก truncation error จาก roundoff</dd><dt>softmax</dt><dd>แปลง logits เป็นความน่าจะเป็นตามแกนที่กำหนด; ลบ max ก่อน exp เพื่อความเสถียร และ fully masked row ต้องมีนโยบายชัดเจน</dd><dt>logit</dt><dd>คะแนนก่อน sigmoid/softmax ไม่ใช่ probability; อาจเป็นจำนวนจริงติดลบหรือเกิน1ได้ จึงห้ามส่งให้ loss ที่คาด probability โดยไม่แปลง</dd><dt>temperature τ / T</dt><dd>ตัวหาร logits ก่อน softmax; ต้องเป็นบวก ค่าเล็กทำ distribution แหลมขึ้น โดยไม่เท่ากับ retrain weights</dd><dt>mask</dt><dd>ตัวกำหนดตำแหน่งที่อ่านหรือคิด loss ได้; causal mask ปิดอนาคต, padding mask ปิดข้อมูลเติม, loss mask เลือก target แต่ละอย่างคนละหน้าที่</dd><dt>Q / K / V</dt><dd>query ใช้ค้นข้อมูล, key ใช้จับคู่ query, value เป็นข้อมูลที่ถูกถัวเฉลี่ย; เป็น learned projections ของ representation ไม่ใช่ป้ายความหมายตายตัว</dd><dt>head</dt><dd>ส่วนของ feature representation ที่ทำ attention แยกกัน แล้ว concat/project กลับ; ต้องตรวจ d_model หารจำนวน heads ลงตัว</dd><dt>ε-neighborhood</dt><dd>เพื่อนบ้านทั้งหมดที่มีระยะไม่เกิน ε รวมจุดตัวเองใน DBSCAN นี้; ε มีหน่วยเดียวกับพิกัด ไม่ใช่จำนวน k ที่ใช้โหวต</dd><dt>core / border / noise</dt><dd>DBSCAN core มีเพื่อนบ้านรวมตัวเองถึง min_samples; border อยู่ใกล้ core แต่เพื่อนบ้านไม่ถึง; noise ไม่ถูกเชื่อมกับ core cluster ใด</dd><dt>bootstrap</dt><dd>สุ่ม observations แบบ replacement ขนาดเท่าเดิมซ้ำหลายครั้งแล้วคำนวณ statistic ใหม่; seed ทำให้ตรวจซ้ำได้ แต่ไม่แก้สมมติฐาน IID ที่ผิด</dd><dt>confidence interval</dt><dd>ช่วงที่สร้างด้วย procedure ที่มี coverage ตามสมมติฐาน; ช่วงหนึ่งที่ได้แล้วไม่ใช่ posterior probability ของ parameter และ sample เล็กยังไม่แน่นอนมาก</dd><dt>validation / test</dt><dd>validation ใช้เลือกโมเดล/ค่าตั้ง ส่วน test ใช้ประเมินหลัง freeze การตัดสินใจ; fit preprocessing/tokenizer จาก test เป็น leakage</dd><dt>leakage</dt><dd>ข้อมูลที่ควรยังไม่รู้ไหลเข้า training/การเลือกโมเดล เช่น future feature หรือเอกสารซ้ำข้าม split ทำให้ metric ดูดีเกินการใช้งานจริง</dd><dt>queue / capacity</dt><dd>queue คือรายการรอ, capacity การให้บริการรวม = workers × service rate ตามแบบจำลอง; เพิ่ม timeout ไม่เพิ่มกำลังประมวลผล</dd><dt>state transition</dt><dd>การเปลี่ยนสถานะเมื่อเกิดเหตุการณ์ที่อนุญาต เช่น queued→active→done; ต้องระบุ guard, side effect และเหตุผลเมื่อ transition ถูกปฏิเสธ</dd><dt>latency / throughput</dt><dd>latency คือเวลาต่อคำขอ, throughput คือปริมาณงานต่อหน่วยเวลา; batching อาจเพิ่ม throughput แต่เพิ่มเวลารอ จึงต้องวัดทั้งคู่</dd><dt>idempotency</dt><dd>ทำคำขอ business operation เดิมซ้ำแล้ว side effect เกิดครั้งเดียวตาม key และ transaction protocol; ไม่ได้รับประกันจากการใช้ UUID ใหม่ทุก attempt</dd><dt>local lab</dt><dd>โปรแกรม Python และ tests ที่ผู้เรียนรันบนเครื่อง; เว็บเก็บเพียงคำยืนยันของผู้เรียน การผ่าน tests ของโค้ดต้นแบบไม่ใช่ผลตรวจโค้ดผู้เรียน</dd></dl></section></article>
+<section id="practice" class="practice-section"><span class="eyebrow">PRACTICE · DEBUG · BUILD</span><h2>พิสูจน์ด้วยการลงมือทำ</h2><div id="web-checks"></div><div class="retry-actions"><button class="secondary-button" id="retry-checks">เริ่มทำโจทย์ในเว็บใหม่</button><button class="text-button" id="undo-retry" hidden>คืนผลก่อนเริ่มใหม่</button></div><div id="exercise-content"><h2>แบบฝึก 20 ข้อ — เฉลยเฉพาะข้อ</h2><p>ทำคำตอบก่อนเปิด hints; โจทย์ปลายเปิดให้ใช้ตัวอย่างคำตอบและหลักฐานราย objective ตรวจงานจริง</p><section id="exercise-1" class="exercise-item"><h3>ข้อ 1</h3><p>Define convolution.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Convolution vs Cross-Correlation, Single-Channel Example: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): convolutionในDLมักเป็นcross-correlation: Yᵢⱼ=ΣₐᵦXᵢₛ₊ₐ₋ₚ,ⱼₛ…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: convolutionในDLมักเป็นcross-correlation: Yᵢⱼ=ΣₐᵦXᵢₛ₊ₐ₋ₚ,ⱼₛ₊ᵦ₋ₚKₐᵦ+b; filterเลื่อนใช้weightsเดียวกันทุกตำแ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>convolutionในDLมักเป็นcross-correlation: Yᵢⱼ=ΣₐᵦXᵢₛ₊ₐ₋ₚ,ⱼₛ₊ᵦ₋ₚKₐᵦ+b; filterเลื่อนใช้weightsเดียวกันทุกตำแหน่ง ไม่ใช่matrixmultiplyทั้งภาพครั้งเดียว</p><p>อ้างอิง: <a href="#chapter-24/section/topic-3">Convolution vs Cross-Correlation</a>, <a href="#chapter-24/section/topic-4">Single-Channel Example</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch24-exercise-01"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-2" class="exercise-item"><h3>ข้อ 2</h3><p>Define kernel.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Channels: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): kernelคือweights(Kh,Kw,Cin,Cout); kern…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: kernelคือweights(Kh,Kw,Cin,Cout); kernel2×2[[1,0],[0,−1]]กับpatch[[1…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>kernelคือweights(Kh,Kw,Cin,Cout); kernel2×2[[1,0],[0,−1]]กับpatch[[1,2],[3,4]]ให้1−4=−3ก่อนbias</p><p>อ้างอิง: <a href="#chapter-24/section/topic-6">Channels</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch24-exercise-02"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-3" class="exercise-item"><h3>ข้อ 3</h3><p>Explain stride.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Stride: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): strideคือระยะเลื่อนpatch; H4,K2,p0,…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: strideคือระยะเลื่อนpatch; H4,K2,p0,s2ให้Hout=floor((4−2)/2)+1=2…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>strideคือระยะเลื่อนpatch; H4,K2,p0,s2ให้Hout=floor((4−2)/2)+1=2 จึงมี4ตำแหน่งในoutput2×2</p><p>อ้างอิง: <a href="#chapter-24/section/topic-10">Stride</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch24-exercise-03"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-4" class="exercise-item"><h3>ข้อ 4</h3><p>Explain padding.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Padding: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): paddingเติมขอบก่อนเลือกpatch; zero-padding…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: paddingเติมขอบก่อนเลือกpatch; zero-padding1เปลี่ยนH4,K2,s1จากHout3เป็น5 และค่…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>paddingเติมขอบก่อนเลือกpatch; zero-padding1เปลี่ยนH4,K2,s1จากHout3เป็น5 และค่าขอบผสมศูนย์ไม่เท่ากับจุดในภาพ</p><p>อ้างอิง: <a href="#chapter-24/section/topic-9">Padding</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch24-exercise-04"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-5" class="exercise-item"><h3>ข้อ 5</h3><p>Compare convolution and kernel.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Why Weight Sharing Matters: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): convolutionเป็นoperationส่วนkernelเป็นparameter…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: convolutionเป็นoperationส่วนkernelเป็นparameter; แก้kernelweightหนึ่งตัวเปลี่ยนทุกout…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>convolutionเป็นoperationส่วนkernelเป็นparameter; แก้kernelweightหนึ่งตัวเปลี่ยนทุกoutputpatchที่เห็นตำแหน่งสัมพัทธ์นั้น</p><p>อ้างอิง: <a href="#chapter-24/section/topic-13">Why Weight Sharing Matters</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch24-exercise-05"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-6" class="exercise-item"><h3>ข้อ 6</h3><p>Explain how padding changes model behavior.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Padding: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): paddingเพิ่มโอกาสให้ขอบมีส่วนร่วมและขนาดoutput แต่เต…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: paddingเพิ่มโอกาสให้ขอบมีส่วนร่วมและขนาดoutput แต่เติมข้อมูลสมมติ ไม่ควรอ้างว่าเพิ่มinformatio…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>paddingเพิ่มโอกาสให้ขอบมีส่วนร่วมและขนาดoutput แต่เติมข้อมูลสมมติ ไม่ควรอ้างว่าเพิ่มinformationจริง; inspectpatchที่cornerกับcenter</p><p>อ้างอิง: <a href="#chapter-24/section/topic-9">Padding</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch24-exercise-06"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-7" class="exercise-item"><h3>ข้อ 7</h3><p>Explain a common limitation involving pooling.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Max Pooling: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): maxpoolingทิ้งตำแหน่งย่อยและdetail; pa…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: maxpoolingทิ้งตำแหน่งย่อยและdetail; patternเล็กอาจหาย ยก[1,0;0,0]กับ[…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>maxpoolingทิ้งตำแหน่งย่อยและdetail; patternเล็กอาจหาย ยก[1,0;0,0]กับ[0,1;0,0]ให้pooled1เหมือนกัน</p><p>อ้างอิง: <a href="#chapter-24/section/topic-15">Max Pooling</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch24-exercise-07"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-8" class="exercise-item"><h3>ข้อ 8</h3><p>Explain the tradeoff introduced by receptive field.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Receptive Field: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): receptivefieldใหญ่เห็นบริบทมากขึ้นแต่ละเอียด…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: receptivefieldใหญ่เห็นบริบทมากขึ้นแต่ละเอียดเชิงพื้นที่ลดเมื่อstrideสูง; คำนวณrn…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>receptivefieldใหญ่เห็นบริบทมากขึ้นแต่ละเอียดเชิงพื้นที่ลดเมื่อstrideสูง; คำนวณrnew=rold+(k−1)jump,jumpnew=jump·s</p><p>อ้างอิง: <a href="#chapter-24/section/topic-12">Receptive Field</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch24-exercise-08"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-9" class="exercise-item"><h3>ข้อ 9</h3><p>Implement a small example of convolution.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ From Scratch: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): X=np.arange(1,10).reshape(3,3),K=[[1,0…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: X=np.arange(1,10).reshape(3,3),K=[[1,0],[0,−1]]; loop4patchesแล้วsum(…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>X=np.arange(1,10).reshape(3,3),K=[[1,0],[0,−1]]; loop4patchesแล้วsum(patch*K)ได้[[-4,-4],[-4,-4]]</p><p>อ้างอิง: <a href="#chapter-24/section/topic-22">From Scratch</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch24-exercise-09"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-10" class="exercise-item"><h3>ข้อ 10</h3><p>Add deterministic tests for Exercise 9.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Common Bugs: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): assertoutput[[-4,-4],[-4,-4]],shape(2,2),bias.5เพิ…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: assertoutput[[-4,-4],[-4,-4]],shape(2,2),bias.5เพิ่มทุกช่อง.5; invalidindex8สำหรับoutput2×…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>assertoutput[[-4,-4],[-4,-4]],shape(2,2),bias.5เพิ่มทุกช่อง.5; invalidindex8สำหรับoutput2×2ต้องraiseและsnapshotเดิมไม่เปลี่ยน</p><p>อ้างอิง: <a href="#chapter-24/section/topic-23">Common Bugs</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch24-exercise-10"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-11" class="exercise-item"><h3>ข้อ 11</h3><p>Implement the main calculation behind stride.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ General Output Shape, Stride: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): looprowcolใช้start=i*stride-paddingก่อนดึงpatc…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: looprowcolใช้start=i*stride-paddingก่อนดึงpatch; outputindex3ของ2×2คือ(row1,col1) …</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>looprowcolใช้start=i*stride-paddingก่อนดึงpatch; outputindex3ของ2×2คือ(row1,col1) ไม่ใช้index%4เพื่อรับ8อย่างเงียบๆ</p><p>อ้างอิง: <a href="#chapter-24/section/topic-5">General Output Shape</a>, <a href="#chapter-24/section/topic-10">Stride</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch24-exercise-11"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-12" class="exercise-item"><h3>ข้อ 12</h3><p>Run a small seeded experiment using kernel, padding, and receptive field.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Channels, Padding, Receptive Field: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): seed7image4×4kernel2×2; เปรียบpadding0/1และstride1…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: seed7image4×4kernel2×2; เปรียบpadding0/1และstride1/2,recordactualoutput,receptivefield; จำ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>seed7image4×4kernel2×2; เปรียบpadding0/1และstride1/2,recordactualoutput,receptivefield; จำนวนpatchต้องตรงสูตรทุกconfiguration</p><p>อ้างอิง: <a href="#chapter-24/section/topic-6">Channels</a>, <a href="#chapter-24/section/topic-9">Padding</a>, <a href="#chapter-24/section/topic-12">Receptive Field</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch24-exercise-12"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-13" class="exercise-item"><h3>ข้อ 13</h3><p>Explain a common shape or data mismatch.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ NCHW vs NHWC: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): PyTorchimage(B,C,H,W),TensorFlowdefault(B,H,W,…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: PyTorchimage(B,C,H,W),TensorFlowdefault(B,H,W,C); Cinของkernelต้องตรงinput ไม่ใช่นับ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>PyTorchimage(B,C,H,W),TensorFlowdefault(B,H,W,C); Cinของkernelต้องตรงinput ไม่ใช่นับคอลัมน์ตารางว่าเป็นtensorchannels</p><p>อ้างอิง: <a href="#chapter-24/section/topic-8">NCHW vs NHWC</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch24-exercise-13"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-14" class="exercise-item"><h3>ข้อ 14</h3><p>Explain one numerical-stability concern.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Performance: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): productสะสมในfloat16อาจoverflow/roundoff; ใช้float…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: productสะสมในfloat16อาจoverflow/roundoff; ใช้float64tinyoracleแล้วfloat32tolerance; inputNa…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>productสะสมในfloat16อาจoverflow/roundoff; ใช้float64tinyoracleแล้วfloat32tolerance; inputNaNต้องรายงานตำแหน่งไม่วาดกราฟต่อเป็น0</p><p>อ้างอิง: <a href="#chapter-24/section/topic-24">Performance</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch24-exercise-14"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-15" class="exercise-item"><h3>ข้อ 15</h3><p>Explain a correct train, validation, and test workflow.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ PyTorch CNN, Keras CNN: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): splitตามpatient/sourceก่อนaugmentation; fitnormaliz…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: splitตามpatient/sourceก่อนaugmentation; fitnormalizationtrain; validation/testไม่มีrandomcro…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>splitตามpatient/sourceก่อนaugmentation; fitnormalizationtrain; validation/testไม่มีrandomcropที่เปลี่ยนlabelsemanticโดยไม่ประกาศ</p><p>อ้างอิง: <a href="#chapter-24/section/topic-20">PyTorch CNN</a>, <a href="#chapter-24/section/topic-21">Keras CNN</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch24-exercise-15"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-16" class="exercise-item"><h3>ข้อ 16</h3><p>Measure runtime and memory of the main calculation.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Performance: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): directconv O(BHoutWoutCoutCinKhKw),im2colเพิ่มmem…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: directconv O(BHoutWoutCoutCinKhKw),im2colเพิ่มmemory; วัดkernel/stride/dtypeพร้อมactivat…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>directconv O(BHoutWoutCoutCinKhKw),im2colเพิ่มmemory; วัดkernel/stride/dtypeพร้อมactivationและparameterbytesไม่เฉพาะweights</p><p>อ้างอิง: <a href="#chapter-24/section/topic-24">Performance</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch24-exercise-16"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-17" class="exercise-item"><h3>ข้อ 17</h3><p>Derive the main input-to-output algorithm for Convolutional Neural Networks.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Convolution vs Cross-Correlation, Single-Channel Example: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): image→pad→patch→elementwiseproduct→sumCin/Kh/Kw→…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: image→pad→patch→elementwiseproduct→sumCin/Kh/Kw→bias→outputcell→activation; selectedcel…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>image→pad→patch→elementwiseproduct→sumCin/Kh/Kw→bias→outputcell→activation; selectedcellเน้นpatchเดียวกันในtensorและตาราง</p><p>อ้างอิง: <a href="#chapter-24/section/topic-3">Convolution vs Cross-Correlation</a>, <a href="#chapter-24/section/topic-4">Single-Channel Example</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch24-exercise-17"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-18" class="exercise-item"><h3>ข้อ 18</h3><p>Compare a scratch implementation with a trusted library on identical data.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ From Scratch: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): torch.conv2dใช้crosscorrelationไม่flipk…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: torch.conv2dใช้crosscorrelationไม่flipkernel; copyKเป็น(1,1,2,2),Xเป็น…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>torch.conv2dใช้crosscorrelationไม่flipkernel; copyKเป็น(1,1,2,2),Xเป็น(1,1,3,3)แล้วallcloseกับข้อ9</p><p>อ้างอิง: <a href="#chapter-24/section/topic-22">From Scratch</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch24-exercise-18"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-19" class="exercise-item"><h3>ข้อ 19</h3><p>Compare a baseline with one controlled change involving pooling.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Max Pooling, Average Pooling: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): คงCNN/split/trainingbudget เปลี่ยนmaxpool→avgpool; r…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: คงCNN/split/trainingbudget เปลี่ยนmaxpool→avgpool; reportaccuracyและlatencyจริงพร้อมfeaturemapข…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>คงCNN/split/trainingbudget เปลี่ยนmaxpool→avgpool; reportaccuracyและlatencyจริงพร้อมfeaturemapของtinyinput ไม่สรุปaccuracyดีขึ้นเสมอ</p><p>อ้างอิง: <a href="#chapter-24/section/topic-15">Max Pooling</a>, <a href="#chapter-24/section/topic-16">Average Pooling</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch24-exercise-19"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-20" class="exercise-item"><h3>ข้อ 20</h3><p>Summarize validation, reproducibility, and one open research question.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Exercises / Mini Project: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): บันทึกinputlayout/kernel/stride/padding/dilation/seed;…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: บันทึกinputlayout/kernel/stride/padding/dilation/seed; ทดลองลดstrideในsmallobjecttaskเพิ่มrecallภา…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>บันทึกinputlayout/kernel/stride/padding/dilation/seed; ทดลองลดstrideในsmallobjecttaskเพิ่มrecallภายใต้memorybudget พร้อมbaselineและ3seeds</p><p>อ้างอิง: <a href="#chapter-24/section/topic-26">Exercises / Mini Project</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch24-exercise-20"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section></div><div id="local-lab-content"><section id="local-lab"><h2>Local lab: Python 3.12 บน CPU</h2><p>รันจาก repository root; ใช้ Python 3.12 แยก environment สำหรับ framework ตาม requirements ของชุดบท</p><pre><code>python3.12 -m venv .venv-course
+source .venv-course/bin/activate
+python -m pip install -r requirements-batch08.txt pytest
+(cd 24-cnn &amp;&amp; python -m pytest tests -q -rs)</code></pre><p>ผลที่คาดหวัง: required tests ผ่านและไม่มี required test ถูก skip; GPU/integrations ที่ยังไม่รันต้องระบุแยก Python 3.15 ที่มากับเครื่องอาจใช้กับ framework wheels เหล่านี้ไม่ได้</p><h2>Mini Project — CNN Shape &amp; Performance Lab</h2>
+<p>Use sklearn digits or another small image dataset.</p>
+<p>Build equivalent small CNNs in:
+- PyTorch
+- TensorFlow/Keras</p>
+<p>Required:
+1. same train/validation/test indices
+2. equivalent convolution channel counts
+3. equivalent output logits
+4. validation model selection
+5. final test once
+6. parameter count
+7. fit/predict runtime
+8. confusion matrix
+9. CPU run
+10. GPU run when available</p>
+<p>Do not compare framework speed unless preprocessing, batch size, model, warmup, and synchronization behavior are accounted for.</p><h2>Batch 08 Integration Project — Cross-Framework CNN Lab</h2>
+<p>This project trains equivalent small CNN classifiers on the same sklearn digits dataset using:</p>
+<ul>
+<li>PyTorch</li>
+<li>TensorFlow/Keras</li>
+</ul>
+<p>The goal is not to declare a framework winner. The goal is to understand how the same mathematical model maps to different framework APIs.</p>
+<h3>Shared Protocol</h3>
+<pre><code class="language-text">sklearn digits
+→ fixed stratified split
+→ normalize pixels to [0,1]
+→ same train / validation / test indices
+→ equivalent small CNNs
+→ validation tracking
+→ final test
+</code></pre>
+<h3>Data Layout</h3>
+<p>PyTorch branch:</p>
+<pre><code class="language-text">N × C × H × W
+</code></pre>
+<p>TensorFlow/Keras branch:</p>
+<pre><code class="language-text">N × H × W × C
+</code></pre>
+<p>The conversion is explicit.</p>
+<h3>Run PyTorch</h3>
+<p>Install the core course environment first:</p>
+<pre><code class="language-bash">python -m pip install -r requirements-batch08.txt
+</code></pre>
+<p>Then install PyTorch using the current official selector for your machine.</p>
+<p>Run:</p>
+<pre><code class="language-bash">python integration-project-batch08/src/cnn_framework_lab.py \
+  --framework pytorch \
+  --epochs 8 \
+  --output-dir reports/batch08-pytorch
+</code></pre>
+<h3>Run TensorFlow/Keras</h3>
+<p>CPU/simple install:</p>
+<pre><code class="language-bash">python -m pip install -r requirements-batch08-tensorflow.txt
+</code></pre>
+<p>On a compatible NVIDIA Linux GPU environment, follow the current TensorFlow Linux GPU installation instructions instead of assuming an old CUDA setup.</p>
+<p>Run:</p>
+<pre><code class="language-bash">python integration-project-batch08/src/cnn_framework_lab.py \
+  --framework tensorflow \
+  --epochs 8 \
+  --output-dir reports/batch08-tensorflow
+</code></pre>
+<h3>What To Compare</h3>
+<p>Record:</p>
+<ul>
+<li>parameter count</li>
+<li>best validation accuracy</li>
+<li>final test accuracy</li>
+<li>training time</li>
+<li>prediction time</li>
+<li>CPU or GPU device</li>
+<li>framework version</li>
+</ul>
+<p>A speed comparison is meaningful only if:
+- data split is identical
+- model capacity is close
+- batch size is equal
+- preprocessing is equal
+- warmup is considered
+- asynchronous GPU execution is synchronized appropriately</p>
+<h3>Required Extensions</h3>
+<ol>
+<li>confusion matrix</li>
+<li>per-class recall</li>
+<li>checkpoint saving</li>
+<li>early stopping</li>
+<li>GPU memory measurements</li>
+<li>batch-size sweep</li>
+<li>mixed precision later after Chapter 54 concepts</li>
+<li>add augmentation</li>
+<li>replace pooling with strided convolution</li>
+<li>compare flatten head vs global average pooling</li>
+</ol>
+<h3>Mastery Questions</h3>
+<ul>
+<li>Why does PyTorch receive NCHW while Keras defaults to NHWC?</li>
+<li>Why should CrossEntropy-style losses receive logits?</li>
+<li>Why does model.eval() not itself disable PyTorch gradients?</li>
+<li>What does GradientTape record?</li>
+<li>Why can a tiny CNN be slower on GPU than CPU?</li>
+<li>Which parts of the training loop are framework-specific and which are mathematical?</li>
+</ul></section></div><label class="local-confirm"><input type="checkbox" id="local-lab-confirm"> ฉันรัน local lab และตรวจผลตาม rubric ด้วยตัวเองแล้ว</label><p class="local-note">สถานะนี้เป็นคำยืนยันของผู้เรียน เว็บไม่ได้รันหรือตรวจ Python บนเครื่องแทนคุณ</p></section>
+<section id="mastery-review" class="practice-section"><h2>หลักฐานตามเกณฑ์การเรียนรู้</h2><p>ทุก objective ต้องแสดงหลักฐานอธิบาย ทำนาย คำนวณ อ่าน shape/state debug และประยุกต์ พร้อมกรณีใหม่ ผลรัน source ผู้เรียนจริง และการประเมินซ้ำ เกณฑ์นี้ไม่รับประกันความเข้าใจทุกสถานการณ์ เปิด JavaScript เพื่อดูรายการที่ยังขาดและนำเข้ารายงานผู้ตรวจ</p></section><section class="coverage-section"><h2>แผนที่สิ่งที่เรียน → สิ่งที่ต้องแสดงให้ได้</h2><div id="coverage-table"></div></section><footer><span>ZERO TO ELITE AI ENGINEER · LEARNING STUDIO</span><span>อ่าน · derive · implement · debug · experiment · build</span></footer></div></main><noscript><style>.workbench,.sidebar,.reading-route,.lesson-toc,.mastery-status,#web-checks{display:none}main{margin-left:0}</style>อ่านเนื้อหา HTML ได้ตามปกติ เปิด JavaScript เพื่อใช้ห้องทดลองและตรวจคำตอบ</noscript></body></html>

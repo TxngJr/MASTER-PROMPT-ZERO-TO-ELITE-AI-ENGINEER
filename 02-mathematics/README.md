@@ -1,5 +1,11 @@
 # Chapter 02 — Mathematics Foundations for AI
 
+## Interactive Animation Lab
+
+[เปิดภาพจำลองของบทนี้](animation.html) · [เลือกจากทั้ง 80 บท](../visual-lab/index.html)
+
+ดู flow ทีละขั้น → ทดลองเปลี่ยนค่า → อ่านสมการและโค้ด → ตอบคำถามเช็กความเข้าใจ แล้วกลับมาทำแบบฝึกหัดในบทนี้
+
 ## 1. Why This Matters
 
 AI model ส่วนใหญ่คือฟังก์ชันที่รับตัวเลขจำนวนมาก แล้วปรับ parameter เพื่อให้ objective ดีขึ้น ภาษาที่ใช้อธิบายสิ่งนี้คือ:

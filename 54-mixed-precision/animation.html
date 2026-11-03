@@ -1,0 +1,1096 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="บทเรียน AI Engineer ภาษาไทย พร้อมคณิตศาสตร์ทีละขั้นและห้องทดลองที่คำนวณจริง"><title>Mixed Precision: range กับ precision เป็นคนละเรื่อง · AI Engineer Studio</title><link rel="stylesheet" href="../visual-lab/assets/styles.css"><link rel="stylesheet" href="../visual-lab/assets/course.css"><script defer src="../visual-lab/assets/lessons.js"></script><script defer src="../visual-lab/assets/chapter-meta.js"></script><script defer src="../visual-lab/assets/course-math.js"></script><script defer src="../visual-lab/assets/course-models.js"></script><script defer src="../visual-lab/assets/course-models-v3.js"></script><script defer src="../visual-lab/assets/course-assessment.js"></script><script defer src="../visual-lab/assets/course-mastery.js"></script><script defer src="../visual-lab/assets/course-catalog.js"></script><script defer src="../visual-lab/assets/book-content.js"></script><script defer src="../visual-lab/assets/course-render.js"></script><script defer src="../visual-lab/assets/course-mastery-panel.js"></script><script defer src="../visual-lab/assets/quality-report.js"></script><script defer src="../visual-lab/assets/course-app.js"></script></head>
+<body data-chapter="54" data-root="../"><a class="skip-link" href="#main">ข้ามไปบทเรียน</a>
+<aside class="sidebar" id="sidebar" aria-label="เลือกบทเรียน"><a class="brand" href="../visual-lab/index.html"><span class="brand-mark">ai</span><span>AI ENGINEER<small>LEARN · DERIVE · BUILD</small></span></a><div class="sidebar-intro">อ่านให้เข้าใจ · คำนวณให้เห็น · เขียนให้เป็น</div><label class="search-box"><input id="search" type="search" placeholder="ค้นหาบท / attention" aria-label="ค้นหาบทเรียน"></label><label class="filter-label" for="phase-filter">เส้นทางการเรียน <span id="nav-count"></span></label><select id="phase-filter"><option value="">ทุก Phase</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option></select><nav id="chapter-list" class="chapter-list" aria-label="รายชื่อบท"></nav><div class="course-progress"><div><span>ผ่านโจทย์ในเว็บ</span><strong id="progress-count">0 / 80</strong></div><progress id="course-progress" max="80" value="0" aria-label="บทที่ผ่านโจทย์"></progress><a id="resume-link" href="#chapter-1">อ่านต่อจากเดิม →</a></div></aside>
+<button class="nav-backdrop" id="nav-backdrop" aria-label="ปิดเมนู" hidden></button>
+<main id="main" tabindex="-1"><header class="topbar"><div><button id="nav-toggle" class="icon-button mobile-menu" aria-label="เปิดเมนูบทเรียน" aria-expanded="false" aria-controls="sidebar">☰</button><span id="breadcrumb"></span></div><span class="local-badge"><i></i> คำนวณในเครื่อง · ไม่มี API</span></header><div class="content">
+<div class="chapter-navigation"><label for="chapter-select" class="sr-only">เลือกบทเรียน</label><select id="chapter-select"></select><div class="chapter-arrows"><button id="prev-chapter" class="icon-button" aria-label="บทก่อนหน้า">←</button><button id="next-chapter" class="icon-button" aria-label="บทถัดไป">→</button></div></div>
+<section class="chapter-hero"><div><p id="chapter-kicker" class="eyebrow"></p><h1 id="chapter-title">Mixed Precision: range กับ precision เป็นคนละเรื่อง</h1><p class="english-title" id="chapter-english"></p></div><span class="hero-symbol">f(x) ↗</span></section>
+<p id="quality-status" class="quality-status"></p><div id="mastery-status" class="mastery-status"></div><div class="reading-route"><a href="#chapter-54/section/overview">01 อ่านบทเรียน</a><a href="#workbench">02 ทดลองสมการ</a><a href="#practice">03 ฝึกและตรวจงาน</a><a href="#mastery-review">04 หลักฐานตามเกณฑ์</a></div>
+<nav id="lesson-toc" class="lesson-toc" aria-label="สารบัญบท"></nav>
+<section id="overview" class="course-overview"><span class="eyebrow">THE LEARNING CONTRACT</span><h2>เรียนบทนี้แล้วต้องทำอะไรได้</h2><p id="chapter-purpose"></p><div id="chapter-objectives"></div><div class="learning-hint">ทำนาย → เปลี่ยนทีละค่า → ตรวจตัวเลข → อธิบายเหตุผล → เขียนด้วย Python เอง</div></section>
+<section class="workbench lab-card" id="workbench" aria-label="ห้องทดลองคำนวณจริง"><div class="card-header"><div><span class="live-dot"></span><span class="eyebrow">COMPUTATION WORKBENCH</span></div><span class="simulation-label">ทุกภาพใช้ผลคำนวณชุดเดียวกัน</span></div><div class="lab-top"><label for="lab-select">เลือกกลไกที่ต้องการทดลอง</label><select id="lab-select"></select><p id="lab-question"></p></div><div class="workbench-grid"><div class="viz-column"><div class="compare-labels"><span>เส้นทึบ: ปัจจุบัน</span><span>เส้นประ: baseline ที่ตรึงไว้</span></div><div id="simulation" class="simulation"></div><div id="metrics" class="metrics"></div><div id="baseline-diff" class="baseline-diff"></div><div class="playback"><div class="playback-buttons"><button class="primary-button" id="update-once">อัปเดตหนึ่งก้าว</button><button class="secondary-button" id="train-many">▶ ฝึก 30 ก้าว</button><button class="icon-button" id="back-state" aria-label="ย้อนประวัติ">↶</button><button class="icon-button" id="forward-state" aria-label="ประวัติถัดไป">↷</button></div></div><div class="lab-secondary-actions"><button id="pin-baseline" class="text-button">ตรึง baseline ปัจจุบัน</button><button id="reset-lab" class="text-button">คืนค่าเริ่มต้น</button><button id="download-state" class="text-button">บันทึกผล JSON</button><span id="history-status"></span></div><p id="simulation-note" class="simulation-note"></p><p class="lab-error" id="lab-error" role="alert" hidden></p></div><div class="controls-column"><h3>เปลี่ยนทีละตัว แล้วสังเกตผล</h3><div id="lab-controls"></div><p class="control-note">แก้ weight ด้วยมือจะคำนวณ forward ใหม่; optimizer เปลี่ยน weights เมื่อกดอัปเดตเท่านั้น</p></div></div>
+<div class="trace-section"><div class="trace-toolbar"><h3>เดินสมการทีละ operation</h3><div><button id="trace-prev" class="icon-button" aria-label="operation ก่อนหน้า">←</button><button id="play-trace" class="secondary-button" aria-pressed="false">▶ เล่น flow</button><button id="trace-next" class="icon-button" aria-label="operation ถัดไป">→</button><span id="stage-counter"></span></div></div><label class="motion-control"><input id="reduce-motion" type="checkbox"> ลดภาพเคลื่อนไหว (หยุดการเล่นที่ค้างอยู่)</label><div id="operation-steps" class="operation-steps"></div><div id="flow-diagram" class="flow-diagram"></div><div id="active-operation" class="active-operation" aria-live="polite"></div><p class="control-note">ตัวเลขบนภาพปัดเศษเพื่อให้อ่านง่าย; บันทึก JSON เพื่อดูค่าที่ใช้คำนวณเต็ม precision</p><details open><summary>ตารางค่าระหว่างทาง — ตรวจด้วยมือได้</summary><div id="result-table"></div></details><div id="tensor-tables" class="tensor-tables"></div><details id="surface-details"><summary>ดู loss surface และเส้นทางของ w₁,b (ตรึง controls อื่น)</summary><div id="surface-chart"></div><p>surface คำนวณ objective ปัจจุบันโดยตรึง degree, penalty, ข้อมูล และ weights อื่น เส้นทางแสดงเฉพาะ snapshots ที่ค่าเหล่านี้ตรงกัน; นอกช่วง w=[−1,5], b=[−2,4] ให้ตรวจค่าจริงใน history</p></details><details><summary>ประวัติการเปลี่ยนค่า</summary><div id="history-table"></div></details></div></section>
+<article id="chapter-article" class="chapter-article"><section id="mechanism-1" class="teaching-section"><span class="section-kicker">CHAPTER 54 · ภาพ → สมการ → โค้ด</span><h2>1. floating point แบ่ง bits ให้ exponent กับ mantissa</h2><h3>โจทย์และเหตุผล</h3><p>FP16 กับ BF16 มีจำนวน bits ใกล้กันแต่ trade-off range/precision ต่างกัน การย้าย dtype จึงเปลี่ยนการปัดค่าและความเสี่ยง underflow/overflow ตาม operation</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Cast a range of values to FP16 and identify overflow/underflow.</p><p>np.float16(1e5)overflowเป็นinf,1e−9อาจเป็น0; maxfinite65504,minnormal≈6.10e−5,minsubnormal≈5.96e−8; subnormalbehaviorขึ้นกับhardware</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>exponent: gradient 10^exponent,initial=-8; scale: loss scale,initial=128; format: format,initial=fp16</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = 1e-08; กำหนดความหมายและหน่วยของ input ก่อนทดลอง</li><li>g_scaled=Sg → round(format) → g=g_scaled/S = 9.778887033462524e-09; scale ช่วย underflow แต่มี overflow trade-off; clipping ต้องหลัง unscale</li><li>normal / boundary / comparison = 9.778887033462524e-09; ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="precision-fp16--tiny-gradient-ก-บ-">เปิดการทดลองนี้</a><p class="failure-box">ต่างbatchsizeหรือใช้FP32coldstartเทียบmixedwarmcacheทำthroughputดูดีเกิน; freezebenchmarkและvalidatequalityก่อนสรุป; round-to-nearest scalar format simulator (ties away from zero); hardware ties-to-even/flush-to-zero อาจต่างที่ boundary</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>np.float16(1e5)overflowเป็นinf,1e−9อาจเป็น0; maxfinite65504,minnormal≈6.10e−5,minsubnormal≈5.96e−8; subnormalbehaviorขึ้นกับhardware</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-1-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = 1e-08<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>g_scaled=Sg → round(format) → g=g_scaled/S</code> = 9.778887033462524e-09<p>scale ช่วย underflow แต่มี overflow trade-off; clipping ต้องหลัง unscale</p></li><li><code>normal / boundary / comparison</code> = 9.778887033462524e-09<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-1-visual"><summary>ภาพและ shape</summary><p>round-to-nearest scalar format simulator (ties away from zero); hardware ties-to-even/flush-to-zero อาจต่างที่ boundary</p><ol><li><code>shape / range</code> = 1e-08<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>g_scaled=Sg → round(format) → g=g_scaled/S</code> = 9.778887033462524e-09<p>scale ช่วย underflow แต่มี overflow trade-off; clipping ต้องหลัง unscale</p></li><li><code>normal / boundary / comparison</code> = 9.778887033462524e-09<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-1-code"><summary>โค้ด</summary><p>np.float16(1e5)overflowเป็นinf,1e−9อาจเป็น0; maxfinite65504,minnormal≈6.10e−5,minsubnormal≈5.96e−8; subnormalbehaviorขึ้นกับhardware</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-1-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = 1e-08<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>g_scaled=Sg → round(format) → g=g_scaled/S</code> = 9.778887033462524e-09<p>scale ช่วย underflow แต่มี overflow trade-off; clipping ต้องหลัง unscale</p></li><li><code>normal / boundary / comparison</code> = 9.778887033462524e-09<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-1"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-2" class="teaching-section"><span class="section-kicker">CHAPTER 54 · ภาพ → สมการ → โค้ด</span><h2>2. loss scaling ขยาย gradient ก่อน rounding</h2><h3>โจทย์และเหตุผล</h3><p>คูณ loss ด้วย S แล้ว backward จึงได้ Sg หลังตรวจ finite ต้องหาร S กลับก่อน gradient clipping และ optimizer step ถ้า overflow ต้อง skip update ไม่ใช้ค่าที่เสียไปเปลี่ยน weights</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Scale/unscale tiny gradients.</p><p>g=1e−8,scale65536ได้scaledg.00065536; คำนวณในprecisionที่เก็บได้แล้วunscaleคืน1e−8ก่อนstep; scaleไม่ทำtruegradientใหญ่ขึ้น</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>exponent: gradient 10^exponent,initial=-8; scale: loss scale,initial=128; format: format,initial=bf16</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = 1e-08; กำหนดความหมายและหน่วยของ input ก่อนทดลอง</li><li>g_scaled=Sg → round(format) → g=g_scaled/S = 1.0011717677116394e-08; scale ช่วย underflow แต่มี overflow trade-off; clipping ต้องหลัง unscale</li><li>normal / boundary / comparison = 1.0011717677116394e-08; ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="precision-bf16-ม--exponent-range-ต">เปิดการทดลองนี้</a><p class="failure-box">ต่างbatchsizeหรือใช้FP32coldstartเทียบmixedwarmcacheทำthroughputดูดีเกิน; freezebenchmarkและvalidatequalityก่อนสรุป; round-to-nearest scalar format simulator (ties away from zero); hardware ties-to-even/flush-to-zero อาจต่างที่ boundary</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>g=1e−8,scale65536ได้scaledg.00065536; คำนวณในprecisionที่เก็บได้แล้วunscaleคืน1e−8ก่อนstep; scaleไม่ทำtruegradientใหญ่ขึ้น</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-2-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = 1e-08<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>g_scaled=Sg → round(format) → g=g_scaled/S</code> = 1.0011717677116394e-08<p>scale ช่วย underflow แต่มี overflow trade-off; clipping ต้องหลัง unscale</p></li><li><code>normal / boundary / comparison</code> = 1.0011717677116394e-08<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-2-visual"><summary>ภาพและ shape</summary><p>round-to-nearest scalar format simulator (ties away from zero); hardware ties-to-even/flush-to-zero อาจต่างที่ boundary</p><ol><li><code>shape / range</code> = 1e-08<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>g_scaled=Sg → round(format) → g=g_scaled/S</code> = 1.0011717677116394e-08<p>scale ช่วย underflow แต่มี overflow trade-off; clipping ต้องหลัง unscale</p></li><li><code>normal / boundary / comparison</code> = 1.0011717677116394e-08<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-2-code"><summary>โค้ด</summary><p>g=1e−8,scale65536ได้scaledg.00065536; คำนวณในprecisionที่เก็บได้แล้วunscaleคืน1e−8ก่อนstep; scaleไม่ทำtruegradientใหญ่ขึ้น</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-2-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = 1e-08<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>g_scaled=Sg → round(format) → g=g_scaled/S</code> = 1.0011717677116394e-08<p>scale ช่วย underflow แต่มี overflow trade-off; clipping ต้องหลัง unscale</p></li><li><code>normal / boundary / comparison</code> = 1.0011717677116394e-08<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-2"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-3" class="teaching-section"><span class="section-kicker">CHAPTER 54 · ภาพ → สมการ → โค้ด</span><h2>3. mixed precision ไม่ได้เปลี่ยนทุก state เป็น low precision</h2><h3>โจทย์และเหตุผล</h3><p>autocast เลือก operation dtype ขณะที่ master/optimizer states และ reductions อาจคง FP32 ตรวจ memory decomposition และ actual hardware support แยกจากการคำนวณ scalar rounding ในภาพ</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Explain why clipping must follow unscale.</p><p>clipscaledgradก่อนunscaleทำeffectiveclipthresholdผิด; gnorm4,scale8,maxnorm2: ต้องunscale32→4แล้วclip2 ไม่clip32→2แล้วunscale.25</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>bits: weight bits,initial=4; range: calibration max absolute,initial=1; value: weight value,initial=0.37; channels: independent channels,initial=1</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = 0.37; กำหนดความหมายและหน่วยของ input ก่อนทดลอง</li><li>s=maxAbs/qmax; q=clip(round(w/s)); ŵ=sq = 0.42857142857142855; clipping เกิดเมื่อ abs(w)&gt;calibration range; channels คูณ scale metadata ที่ต้องเก็บแยก</li><li>normal / boundary / comparison = 0.42857142857142855; ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="quantization-เท-ยบก-บ-integer-quantiz">เปิดการทดลองนี้</a><p class="failure-box">ต่างbatchsizeหรือใช้FP32coldstartเทียบmixedwarmcacheทำthroughputดูดีเกิน; freezebenchmarkและvalidatequalityก่อนสรุป; payload คิดขั้นต่ำไม่รวม metadata; 1 FP32 scales เพิ่ม 4 bytes; ตัวอย่างใช้ shared scale เดียวเพื่อแยก rounding effect</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>clipscaledgradก่อนunscaleทำeffectiveclipthresholdผิด; gnorm4,scale8,maxnorm2: ต้องunscale32→4แล้วclip2 ไม่clip32→2แล้วunscale.25</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-3-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = 0.37<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>s=maxAbs/qmax; q=clip(round(w/s)); ŵ=sq</code> = 0.42857142857142855<p>clipping เกิดเมื่อ abs(w)&gt;calibration range; channels คูณ scale metadata ที่ต้องเก็บแยก</p></li><li><code>normal / boundary / comparison</code> = 0.42857142857142855<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-3-visual"><summary>ภาพและ shape</summary><p>payload คิดขั้นต่ำไม่รวม metadata; 1 FP32 scales เพิ่ม 4 bytes; ตัวอย่างใช้ shared scale เดียวเพื่อแยก rounding effect</p><ol><li><code>shape / range</code> = 0.37<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>s=maxAbs/qmax; q=clip(round(w/s)); ŵ=sq</code> = 0.42857142857142855<p>clipping เกิดเมื่อ abs(w)&gt;calibration range; channels คูณ scale metadata ที่ต้องเก็บแยก</p></li><li><code>normal / boundary / comparison</code> = 0.42857142857142855<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-3-code"><summary>โค้ด</summary><p>clipscaledgradก่อนunscaleทำeffectiveclipthresholdผิด; gnorm4,scale8,maxnorm2: ต้องunscale32→4แล้วclip2 ไม่clip32→2แล้วunscale.25</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-3-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = 0.37<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>s=maxAbs/qmax; q=clip(round(w/s)); ŵ=sq</code> = 0.42857142857142855<p>clipping เกิดเมื่อ abs(w)&gt;calibration range; channels คูณ scale metadata ที่ต้องเก็บแยก</p></li><li><code>normal / boundary / comparison</code> = 0.42857142857142855<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-3"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="reference" class="canonical-section"><h2>เนื้อหาครบทุกหัวข้อ พร้อมแผนที่ objective</h2><nav class="source-toc"><a href="#chapter-54/section/topic-1">1. Why Mixed Precision?</a> <a href="#chapter-54/section/topic-2">2. Learning Objectives</a> <a href="#chapter-54/section/topic-3">3. Floating-Point Structure</a> <a href="#chapter-54/section/topic-4">4. FP32</a> <a href="#chapter-54/section/topic-5">5. FP16</a> <a href="#chapter-54/section/topic-6">6. BF16</a> <a href="#chapter-54/section/topic-7">7. Range vs Precision</a> <a href="#chapter-54/section/topic-8">8. Underflow</a> <a href="#chapter-54/section/topic-9">9. Overflow</a> <a href="#chapter-54/section/topic-10">10. Loss Scaling</a> <a href="#chapter-54/section/topic-11">11. Static vs Dynamic Scaling</a> <a href="#chapter-54/section/topic-12">12. Gradient Clipping Order</a> <a href="#chapter-54/section/topic-13">13. Autocast</a> <a href="#chapter-54/section/topic-14">14. Backward Placement</a> <a href="#chapter-54/section/topic-15">15. Current GradScaler API</a> <a href="#chapter-54/section/topic-16">16. Typical CUDA FP16 Loop</a> <a href="#chapter-54/section/topic-17">17. BF16 Autocast</a> <a href="#chapter-54/section/topic-18">18. CPU BF16</a> <a href="#chapter-54/section/topic-19">19. FP32 Master / Optimizer State</a> <a href="#chapter-54/section/topic-20">20. Memory</a> <a href="#chapter-54/section/topic-21">21. Tensor Cores</a> <a href="#chapter-54/section/topic-22">22. Precision-Sensitive Operations</a> <a href="#chapter-54/section/topic-23">23. Detecting Overflow</a> <a href="#chapter-54/section/topic-24">24. Reproducibility</a> <a href="#chapter-54/section/topic-25">25. From Scratch</a> <a href="#chapter-54/section/topic-26">26. Common Mistakes</a> <a href="#chapter-54/section/topic-27">27. Exercises / Mini Project</a> <a href="#chapter-54/section/topic-28">28. Checklist</a> <a href="#chapter-54/section/topic-29">29. What&#x27;s Next</a> </nav><section id="topic-1" class="source-topic"><span id="source-54-mixed-precision-canonical-chapter-54-mixed-precision-fp32-fp16-bf16" class="legacy-anchor"></span><span id="source-54-mixed-precision-canonical-1-why-mixed-precision" class="legacy-anchor"></span><h3>1. Why Mixed Precision?</h3>
+<p>Training in full FP32 is robust but uses more memory/bandwidth than lower-precision arithmetic.</p>
+<p>Mixed precision keeps numerically sensitive work in safer precision while running suitable operations in lower precision.</p>
+<pre><code class="language-text">FP32 model/training state
+       ↓
+autocast chooses operation dtypes
+       ↓
+FP16/BF16 compute where safe
+FP32 compute where needed
+       ↓
+stable backward/update
+</code></pre><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>1. Why Mixed Precision?</h3>
+<p>Training in full FP32 is robust but uses more memory/bandwidth than lower-precision arithmetic.</p>
+<p>Mixed precision keeps numerically sensitive work in safer precision while running suitable operations in lower precision.</p>
+<pre><code class="language-text">FP32 model/training state
+       ↓
+autocast chooses operation dtypes
+       ↓
+FP16/BF16 compute where safe
+FP32 compute where needed
+       ↓
+stable backward/update
+</code></pre><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-1-equation"><summary>สมการ</summary><h3>1. Why Mixed Precision?</h3>
+<p>Training in full FP32 is robust but uses more memory/bandwidth than lower-precision arithmetic.</p>
+<p>Mixed precision keeps numerically sensitive work in safer precision while running suitable operations in lower precision.</p>
+<pre><code class="language-text">FP32 model/training state
+       ↓
+autocast chooses operation dtypes
+       ↓
+FP16/BF16 compute where safe
+FP32 compute where needed
+       ↓
+stable backward/update
+</code></pre></details><details id="help-topic-1-visual"><summary>ภาพและ shape</summary><h3>1. Why Mixed Precision?</h3>
+<p>Training in full FP32 is robust but uses more memory/bandwidth than lower-precision arithmetic.</p>
+<p>Mixed precision keeps numerically sensitive work in safer precision while running suitable operations in lower precision.</p>
+<pre><code class="language-text">FP32 model/training state
+       ↓
+autocast chooses operation dtypes
+       ↓
+FP16/BF16 compute where safe
+FP32 compute where needed
+       ↓
+stable backward/update
+</code></pre></details><details id="help-topic-1-code"><summary>โค้ด</summary><h3>1. Why Mixed Precision?</h3>
+<p>Training in full FP32 is robust but uses more memory/bandwidth than lower-precision arithmetic.</p>
+<p>Mixed precision keeps numerically sensitive work in safer precision while running suitable operations in lower precision.</p>
+<pre><code class="language-text">FP32 model/training state
+       ↓
+autocast chooses operation dtypes
+       ↓
+FP16/BF16 compute where safe
+FP32 compute where needed
+       ↓
+stable backward/update
+</code></pre><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-1-result"><summary>ผลการทดลอง</summary><h3>1. Why Mixed Precision?</h3>
+<p>Training in full FP32 is robust but uses more memory/bandwidth than lower-precision arithmetic.</p>
+<p>Mixed precision keeps numerically sensitive work in safer precision while running suitable operations in lower precision.</p>
+<pre><code class="language-text">FP32 model/training state
+       ↓
+autocast chooses operation dtypes
+       ↓
+FP16/BF16 compute where safe
+FP32 compute where needed
+       ↓
+stable backward/update
+</code></pre><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-1"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-2" class="source-topic"><span id="source-54-mixed-precision-canonical-2-learning-objectives" class="legacy-anchor"></span><h3>2. Learning Objectives</h3>
+<ul>
+<li>understand sign/exponent/fraction fields</li>
+<li>compare FP32, FP16 and BF16</li>
+<li>explain dynamic range vs precision</li>
+<li>identify overflow and underflow</li>
+<li>explain why FP16 often needs loss scaling</li>
+<li>understand BF16's larger exponent range</li>
+<li>explain autocast</li>
+<li>use current torch.amp APIs</li>
+<li>explain GradScaler behavior</li>
+<li>unscale before gradient clipping</li>
+<li>understand FP32 optimizer/master-state concepts</li>
+<li>estimate memory savings</li>
+<li>debug NaN/Inf mixed-precision failures</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>2. Learning Objectives</h3>
+<ul>
+<li>understand sign/exponent/fraction fields</li>
+<li>compare FP32, FP16 and BF16</li>
+<li>explain dynamic range vs precision</li>
+<li>identify overflow and underflow</li>
+<li>explain why FP16 often needs loss scaling</li>
+<li>understand BF16's larger exponent range</li>
+<li>explain autocast</li>
+<li>use current torch.amp APIs</li>
+<li>explain GradScaler behavior</li>
+<li>unscale before gradient clipping</li>
+<li>understand FP32 optimizer/master-state concepts</li>
+<li>estimate memory savings</li>
+<li>debug NaN/Inf mixed-precision failures</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-2-equation"><summary>สมการ</summary><h3>2. Learning Objectives</h3>
+<ul>
+<li>understand sign/exponent/fraction fields</li>
+<li>compare FP32, FP16 and BF16</li>
+<li>explain dynamic range vs precision</li>
+<li>identify overflow and underflow</li>
+<li>explain why FP16 often needs loss scaling</li>
+<li>understand BF16's larger exponent range</li>
+<li>explain autocast</li>
+<li>use current torch.amp APIs</li>
+<li>explain GradScaler behavior</li>
+<li>unscale before gradient clipping</li>
+<li>understand FP32 optimizer/master-state concepts</li>
+<li>estimate memory savings</li>
+<li>debug NaN/Inf mixed-precision failures</li>
+</ul></details><details id="help-topic-2-visual"><summary>ภาพและ shape</summary><h3>2. Learning Objectives</h3>
+<ul>
+<li>understand sign/exponent/fraction fields</li>
+<li>compare FP32, FP16 and BF16</li>
+<li>explain dynamic range vs precision</li>
+<li>identify overflow and underflow</li>
+<li>explain why FP16 often needs loss scaling</li>
+<li>understand BF16's larger exponent range</li>
+<li>explain autocast</li>
+<li>use current torch.amp APIs</li>
+<li>explain GradScaler behavior</li>
+<li>unscale before gradient clipping</li>
+<li>understand FP32 optimizer/master-state concepts</li>
+<li>estimate memory savings</li>
+<li>debug NaN/Inf mixed-precision failures</li>
+</ul></details><details id="help-topic-2-code"><summary>โค้ด</summary><h3>2. Learning Objectives</h3>
+<ul>
+<li>understand sign/exponent/fraction fields</li>
+<li>compare FP32, FP16 and BF16</li>
+<li>explain dynamic range vs precision</li>
+<li>identify overflow and underflow</li>
+<li>explain why FP16 often needs loss scaling</li>
+<li>understand BF16's larger exponent range</li>
+<li>explain autocast</li>
+<li>use current torch.amp APIs</li>
+<li>explain GradScaler behavior</li>
+<li>unscale before gradient clipping</li>
+<li>understand FP32 optimizer/master-state concepts</li>
+<li>estimate memory savings</li>
+<li>debug NaN/Inf mixed-precision failures</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-2-result"><summary>ผลการทดลอง</summary><h3>2. Learning Objectives</h3>
+<ul>
+<li>understand sign/exponent/fraction fields</li>
+<li>compare FP32, FP16 and BF16</li>
+<li>explain dynamic range vs precision</li>
+<li>identify overflow and underflow</li>
+<li>explain why FP16 often needs loss scaling</li>
+<li>understand BF16's larger exponent range</li>
+<li>explain autocast</li>
+<li>use current torch.amp APIs</li>
+<li>explain GradScaler behavior</li>
+<li>unscale before gradient clipping</li>
+<li>understand FP32 optimizer/master-state concepts</li>
+<li>estimate memory savings</li>
+<li>debug NaN/Inf mixed-precision failures</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-2"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-3" class="source-topic"><span id="source-54-mixed-precision-canonical-3-floating-point-structure" class="legacy-anchor"></span><h3>3. Floating-Point Structure</h3>
+<p>Conceptually:</p>
+<pre><code class="language-text">value ≈ (-1)^sign × significand × 2^exponent
+</code></pre>
+<p>More exponent bits increase representable range. More fraction/mantissa bits increase local precision.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>FP32มีsign1/exponent8/fraction23,FP16=1/5/10,BF16=1/8/7; BF16rangeใกล้FP32แต่precisionหยาบกว่าFP16</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>FP32มีsign1/exponent8/fraction23,FP16=1/5/10,BF16=1/8/7; BF16rangeใกล้FP32แต่precisionหยาบกว่าFP16</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-3-equation"><summary>สมการ</summary><p>FP32มีsign1/exponent8/fraction23,FP16=1/5/10,BF16=1/8/7; BF16rangeใกล้FP32แต่precisionหยาบกว่าFP16</p></details><details id="help-topic-3-visual"><summary>ภาพและ shape</summary><p>FP32มีsign1/exponent8/fraction23,FP16=1/5/10,BF16=1/8/7; BF16rangeใกล้FP32แต่precisionหยาบกว่าFP16</p></details><details id="help-topic-3-code"><summary>โค้ด</summary><p>FP32มีsign1/exponent8/fraction23,FP16=1/5/10,BF16=1/8/7; BF16rangeใกล้FP32แต่precisionหยาบกว่าFP16</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-3-result"><summary>ผลการทดลอง</summary><p>FP32มีsign1/exponent8/fraction23,FP16=1/5/10,BF16=1/8/7; BF16rangeใกล้FP32แต่precisionหยาบกว่าFP16</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-3"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-4" class="source-topic"><span id="source-54-mixed-precision-canonical-4-fp32" class="legacy-anchor"></span><h3>4. FP32</h3>
+<p>Typical IEEE binary32:</p>
+<pre><code class="language-text">1 sign
+8 exponent
+23 fraction bits
+</code></pre>
+<p>Strengths:
+- wide range
+- relatively high precision
+- robust default training dtype</p>
+<p>Cost:
+- 4 bytes/element</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>FP32มีsign1/exponent8/fraction23,FP16=1/5/10,BF16=1/8/7; BF16rangeใกล้FP32แต่precisionหยาบกว่าFP16</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-4-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>FP32มีsign1/exponent8/fraction23,FP16=1/5/10,BF16=1/8/7; BF16rangeใกล้FP32แต่precisionหยาบกว่าFP16</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-4-equation"><summary>สมการ</summary><p>FP32มีsign1/exponent8/fraction23,FP16=1/5/10,BF16=1/8/7; BF16rangeใกล้FP32แต่precisionหยาบกว่าFP16</p></details><details id="help-topic-4-visual"><summary>ภาพและ shape</summary><p>FP32มีsign1/exponent8/fraction23,FP16=1/5/10,BF16=1/8/7; BF16rangeใกล้FP32แต่precisionหยาบกว่าFP16</p></details><details id="help-topic-4-code"><summary>โค้ด</summary><p>FP32มีsign1/exponent8/fraction23,FP16=1/5/10,BF16=1/8/7; BF16rangeใกล้FP32แต่precisionหยาบกว่าFP16</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-4-result"><summary>ผลการทดลอง</summary><p>FP32มีsign1/exponent8/fraction23,FP16=1/5/10,BF16=1/8/7; BF16rangeใกล้FP32แต่precisionหยาบกว่าFP16</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-4"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-5" class="source-topic"><span id="source-54-mixed-precision-canonical-5-fp16" class="legacy-anchor"></span><h3>5. FP16</h3>
+<p>IEEE binary16:</p>
+<pre><code class="language-text">1 sign
+5 exponent
+10 fraction bits
+</code></pre>
+<p>Advantages:
+- 2 bytes/element
+- high accelerator throughput on suitable hardware</p>
+<p>Challenge:
+- much smaller exponent range than FP32/BF16
+- gradients can underflow to zero
+- large values can overflow to Inf</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>FP32มีsign1/exponent8/fraction23,FP16=1/5/10,BF16=1/8/7; BF16rangeใกล้FP32แต่precisionหยาบกว่าFP16</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-5-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>FP32มีsign1/exponent8/fraction23,FP16=1/5/10,BF16=1/8/7; BF16rangeใกล้FP32แต่precisionหยาบกว่าFP16</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-5-equation"><summary>สมการ</summary><p>FP32มีsign1/exponent8/fraction23,FP16=1/5/10,BF16=1/8/7; BF16rangeใกล้FP32แต่precisionหยาบกว่าFP16</p></details><details id="help-topic-5-visual"><summary>ภาพและ shape</summary><p>FP32มีsign1/exponent8/fraction23,FP16=1/5/10,BF16=1/8/7; BF16rangeใกล้FP32แต่precisionหยาบกว่าFP16</p></details><details id="help-topic-5-code"><summary>โค้ด</summary><p>FP32มีsign1/exponent8/fraction23,FP16=1/5/10,BF16=1/8/7; BF16rangeใกล้FP32แต่precisionหยาบกว่าFP16</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-5-result"><summary>ผลการทดลอง</summary><p>FP32มีsign1/exponent8/fraction23,FP16=1/5/10,BF16=1/8/7; BF16rangeใกล้FP32แต่precisionหยาบกว่าFP16</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-5"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-6" class="source-topic"><span id="source-54-mixed-precision-canonical-6-bf16" class="legacy-anchor"></span><h3>6. BF16</h3>
+<p>BFloat16:</p>
+<pre><code class="language-text">1 sign
+8 exponent
+7 fraction bits
+</code></pre>
+<p>BF16 keeps the FP32-sized exponent field, giving it a similar broad dynamic range but less significand precision.</p>
+<p>This often makes BF16 easier to train with than FP16 on supported hardware, although rounding error is larger for many values.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>FP32มีsign1/exponent8/fraction23,FP16=1/5/10,BF16=1/8/7; BF16rangeใกล้FP32แต่precisionหยาบกว่าFP16</p><p>BF16roundingเก็บhigh16bitsของfloat32พร้อมround-to-nearest-even; comparetorchfloat32.to(bfloat16).float และrelativeerrorเฉพาะnonzeroreference</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-6-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>FP32มีsign1/exponent8/fraction23,FP16=1/5/10,BF16=1/8/7; BF16rangeใกล้FP32แต่precisionหยาบกว่าFP16</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-6-equation"><summary>สมการ</summary><p>FP32มีsign1/exponent8/fraction23,FP16=1/5/10,BF16=1/8/7; BF16rangeใกล้FP32แต่precisionหยาบกว่าFP16</p></details><details id="help-topic-6-visual"><summary>ภาพและ shape</summary><p>FP32มีsign1/exponent8/fraction23,FP16=1/5/10,BF16=1/8/7; BF16rangeใกล้FP32แต่precisionหยาบกว่าFP16</p></details><details id="help-topic-6-code"><summary>โค้ด</summary><p>FP32มีsign1/exponent8/fraction23,FP16=1/5/10,BF16=1/8/7; BF16rangeใกล้FP32แต่precisionหยาบกว่าFP16</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-6-result"><summary>ผลการทดลอง</summary><p>FP32มีsign1/exponent8/fraction23,FP16=1/5/10,BF16=1/8/7; BF16rangeใกล้FP32แต่precisionหยาบกว่าFP16</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-6"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-7" class="source-topic"><span id="source-54-mixed-precision-canonical-7-range-vs-precision" class="legacy-anchor"></span><h3>7. Range vs Precision</h3>
+<p>Key distinction:</p>
+<pre><code class="language-text">FP16:
+more fraction precision than BF16
+but much smaller numeric range
+
+BF16:
+less fraction precision
+but FP32-like exponent range
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>ทดลอง“BF16ลดnonfiniteupdatesเทียบFP16บนlargeactivationtoyโดยNLLไม่แย่”; samehardware/model/budgetและreportFP32reference</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-7-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>ทดลอง“BF16ลดnonfiniteupdatesเทียบFP16บนlargeactivationtoyโดยNLLไม่แย่”; samehardware/model/budgetและreportFP32reference</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-7-equation"><summary>สมการ</summary><p>ทดลอง“BF16ลดnonfiniteupdatesเทียบFP16บนlargeactivationtoyโดยNLLไม่แย่”; samehardware/model/budgetและreportFP32reference</p></details><details id="help-topic-7-visual"><summary>ภาพและ shape</summary><p>ทดลอง“BF16ลดnonfiniteupdatesเทียบFP16บนlargeactivationtoyโดยNLLไม่แย่”; samehardware/model/budgetและreportFP32reference</p></details><details id="help-topic-7-code"><summary>โค้ด</summary><p>ทดลอง“BF16ลดnonfiniteupdatesเทียบFP16บนlargeactivationtoyโดยNLLไม่แย่”; samehardware/model/budgetและreportFP32reference</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-7-result"><summary>ผลการทดลอง</summary><p>ทดลอง“BF16ลดnonfiniteupdatesเทียบFP16บนlargeactivationtoyโดยNLLไม่แย่”; samehardware/model/budgetและreportFP32reference</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-7"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-8" class="source-topic"><span id="source-54-mixed-precision-canonical-8-underflow" class="legacy-anchor"></span><h3>8. Underflow</h3>
+<p>Very small non-zero values may round to zero.</p>
+<p>In FP16 this can affect tiny gradients:</p>
+<pre><code class="language-text">true gradient
+1e-8
+↓ cast FP16
+0
+</code></pre>
+<p>Once rounded to zero, the optimizer cannot recover that gradient.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>np.float16(1e5)overflowเป็นinf,1e−9อาจเป็น0; maxfinite65504,minnormal≈6.10e−5,minsubnormal≈5.96e−8; subnormalbehaviorขึ้นกับhardware</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-8-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>np.float16(1e5)overflowเป็นinf,1e−9อาจเป็น0; maxfinite65504,minnormal≈6.10e−5,minsubnormal≈5.96e−8; subnormalbehaviorขึ้นกับhardware</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-8-equation"><summary>สมการ</summary><p>np.float16(1e5)overflowเป็นinf,1e−9อาจเป็น0; maxfinite65504,minnormal≈6.10e−5,minsubnormal≈5.96e−8; subnormalbehaviorขึ้นกับhardware</p></details><details id="help-topic-8-visual"><summary>ภาพและ shape</summary><p>np.float16(1e5)overflowเป็นinf,1e−9อาจเป็น0; maxfinite65504,minnormal≈6.10e−5,minsubnormal≈5.96e−8; subnormalbehaviorขึ้นกับhardware</p></details><details id="help-topic-8-code"><summary>โค้ด</summary><p>np.float16(1e5)overflowเป็นinf,1e−9อาจเป็น0; maxfinite65504,minnormal≈6.10e−5,minsubnormal≈5.96e−8; subnormalbehaviorขึ้นกับhardware</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-8-result"><summary>ผลการทดลอง</summary><p>np.float16(1e5)overflowเป็นinf,1e−9อาจเป็น0; maxfinite65504,minnormal≈6.10e−5,minsubnormal≈5.96e−8; subnormalbehaviorขึ้นกับhardware</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-8"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-9" class="source-topic"><span id="source-54-mixed-precision-canonical-9-overflow" class="legacy-anchor"></span><h3>9. Overflow</h3>
+<p>Values above the finite representable maximum become Inf.</p>
+<p>Then operations can produce:
+- Inf
+- NaN
+- invalid optimizer updates</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>np.float16(1e5)overflowเป็นinf,1e−9อาจเป็น0; maxfinite65504,minnormal≈6.10e−5,minsubnormal≈5.96e−8; subnormalbehaviorขึ้นกับhardware</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-9-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>np.float16(1e5)overflowเป็นinf,1e−9อาจเป็น0; maxfinite65504,minnormal≈6.10e−5,minsubnormal≈5.96e−8; subnormalbehaviorขึ้นกับhardware</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-9-equation"><summary>สมการ</summary><p>np.float16(1e5)overflowเป็นinf,1e−9อาจเป็น0; maxfinite65504,minnormal≈6.10e−5,minsubnormal≈5.96e−8; subnormalbehaviorขึ้นกับhardware</p></details><details id="help-topic-9-visual"><summary>ภาพและ shape</summary><p>np.float16(1e5)overflowเป็นinf,1e−9อาจเป็น0; maxfinite65504,minnormal≈6.10e−5,minsubnormal≈5.96e−8; subnormalbehaviorขึ้นกับhardware</p></details><details id="help-topic-9-code"><summary>โค้ด</summary><p>np.float16(1e5)overflowเป็นinf,1e−9อาจเป็น0; maxfinite65504,minnormal≈6.10e−5,minsubnormal≈5.96e−8; subnormalbehaviorขึ้นกับhardware</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-9-result"><summary>ผลการทดลอง</summary><p>np.float16(1e5)overflowเป็นinf,1e−9อาจเป็น0; maxfinite65504,minnormal≈6.10e−5,minsubnormal≈5.96e−8; subnormalbehaviorขึ้นกับhardware</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-9"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-10" class="source-topic"><span id="source-54-mixed-precision-canonical-10-loss-scaling" class="legacy-anchor"></span><h3>10. Loss Scaling</h3>
+<p>FP16 gradient scaling multiplies the loss before backward:</p>
+<pre><code class="language-text">scaled_loss = loss × S
+</code></pre>
+<p>Then:</p>
+<pre><code class="language-text">scaled_grad = true_grad × S
+</code></pre>
+<p>This moves tiny gradients into FP16's representable range.</p>
+<p>Before optimizer update:</p>
+<pre><code class="language-text">true_grad = scaled_grad / S
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>g=1e−8,scale65536ได้scaledg.00065536; คำนวณในprecisionที่เก็บได้แล้วunscaleคืน1e−8ก่อนstep; scaleไม่ทำtruegradientใหญ่ขึ้น</p><p>scale1→dynamicคงmodel/data/seed/precision; reportunderflow/skippedstepfrequency/valqualityหลายruns ไม่เปลี่ยนLRพร้อมกัน</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-10-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>g=1e−8,scale65536ได้scaledg.00065536; คำนวณในprecisionที่เก็บได้แล้วunscaleคืน1e−8ก่อนstep; scaleไม่ทำtruegradientใหญ่ขึ้น</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-10-equation"><summary>สมการ</summary><p>g=1e−8,scale65536ได้scaledg.00065536; คำนวณในprecisionที่เก็บได้แล้วunscaleคืน1e−8ก่อนstep; scaleไม่ทำtruegradientใหญ่ขึ้น</p></details><details id="help-topic-10-visual"><summary>ภาพและ shape</summary><p>g=1e−8,scale65536ได้scaledg.00065536; คำนวณในprecisionที่เก็บได้แล้วunscaleคืน1e−8ก่อนstep; scaleไม่ทำtruegradientใหญ่ขึ้น</p></details><details id="help-topic-10-code"><summary>โค้ด</summary><p>g=1e−8,scale65536ได้scaledg.00065536; คำนวณในprecisionที่เก็บได้แล้วunscaleคืน1e−8ก่อนstep; scaleไม่ทำtruegradientใหญ่ขึ้น</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-10-result"><summary>ผลการทดลอง</summary><p>g=1e−8,scale65536ได้scaledg.00065536; คำนวณในprecisionที่เก็บได้แล้วunscaleคืน1e−8ก่อนstep; scaleไม่ทำtruegradientใหญ่ขึ้น</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-10"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-11" class="source-topic"><span id="source-54-mixed-precision-canonical-11-static-vs-dynamic-scaling" class="legacy-anchor"></span><h3>11. Static vs Dynamic Scaling</h3>
+<p>Static:
+- fixed scale chosen manually</p>
+<p>Dynamic:
+- increase scale after stable steps
+- reduce scale after Inf/NaN
+- skip unsafe optimizer updates when overflow is detected</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>พบnonfinitegrad→skipoptimizerstep,scale*=.5; finiteครบgrowthinterval→scale*=2; growthtrackerและcompletedupdatesต้องแยก</p><p>scale1→dynamicคงmodel/data/seed/precision; reportunderflow/skippedstepfrequency/valqualityหลายruns ไม่เปลี่ยนLRพร้อมกัน</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-11-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>พบnonfinitegrad→skipoptimizerstep,scale*=.5; finiteครบgrowthinterval→scale*=2; growthtrackerและcompletedupdatesต้องแยก</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-11-equation"><summary>สมการ</summary><p>พบnonfinitegrad→skipoptimizerstep,scale*=.5; finiteครบgrowthinterval→scale*=2; growthtrackerและcompletedupdatesต้องแยก</p></details><details id="help-topic-11-visual"><summary>ภาพและ shape</summary><p>พบnonfinitegrad→skipoptimizerstep,scale*=.5; finiteครบgrowthinterval→scale*=2; growthtrackerและcompletedupdatesต้องแยก</p></details><details id="help-topic-11-code"><summary>โค้ด</summary><p>พบnonfinitegrad→skipoptimizerstep,scale*=.5; finiteครบgrowthinterval→scale*=2; growthtrackerและcompletedupdatesต้องแยก</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-11-result"><summary>ผลการทดลอง</summary><p>พบnonfinitegrad→skipoptimizerstep,scale*=.5; finiteครบgrowthinterval→scale*=2; growthtrackerและcompletedupdatesต้องแยก</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-11"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-12" class="source-topic"><span id="source-54-mixed-precision-canonical-12-gradient-clipping-order" class="legacy-anchor"></span><h3>12. Gradient Clipping Order</h3>
+<p>If using scaled gradients:</p>
+<pre><code class="language-text">backward on scaled loss
+↓
+unscale gradients
+↓
+clip true gradient norm
+↓
+optimizer step
+</code></pre>
+<p>Clipping before unscale uses the wrong scale.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>clipscaledgradก่อนunscaleทำeffectiveclipthresholdผิด; gnorm4,scale8,maxnorm2: ต้องunscale32→4แล้วclip2 ไม่clip32→2แล้วunscale.25</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-12-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>clipscaledgradก่อนunscaleทำeffectiveclipthresholdผิด; gnorm4,scale8,maxnorm2: ต้องunscale32→4แล้วclip2 ไม่clip32→2แล้วunscale.25</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-12-equation"><summary>สมการ</summary><p>clipscaledgradก่อนunscaleทำeffectiveclipthresholdผิด; gnorm4,scale8,maxnorm2: ต้องunscale32→4แล้วclip2 ไม่clip32→2แล้วunscale.25</p></details><details id="help-topic-12-visual"><summary>ภาพและ shape</summary><p>clipscaledgradก่อนunscaleทำeffectiveclipthresholdผิด; gnorm4,scale8,maxnorm2: ต้องunscale32→4แล้วclip2 ไม่clip32→2แล้วunscale.25</p></details><details id="help-topic-12-code"><summary>โค้ด</summary><p>clipscaledgradก่อนunscaleทำeffectiveclipthresholdผิด; gnorm4,scale8,maxnorm2: ต้องunscale32→4แล้วclip2 ไม่clip32→2แล้วunscale.25</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-12-result"><summary>ผลการทดลอง</summary><p>clipscaledgradก่อนunscaleทำeffectiveclipthresholdผิด; gnorm4,scale8,maxnorm2: ต้องunscale32→4แล้วclip2 ไม่clip32→2แล้วunscale.25</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-12"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-13" class="source-topic"><span id="source-54-mixed-precision-canonical-13-autocast" class="legacy-anchor"></span><h3>13. Autocast</h3>
+<p>Current PyTorch AMP uses torch.amp.autocast with a device type.</p>
+<pre><code class="language-python">with torch.amp.autocast('cuda', dtype=torch.float16):
+    output = model(inputs)
+    loss = loss_fn(output, targets)
+</code></pre>
+<p>Autocast selects operation-specific dtypes. Do not manually call half() on the whole model just because autocast is enabled.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-13-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>13. Autocast</h3>
+<p>Current PyTorch AMP uses torch.amp.autocast with a device type.</p>
+<pre><code class="language-python">with torch.amp.autocast('cuda', dtype=torch.float16):
+    output = model(inputs)
+    loss = loss_fn(output, targets)
+</code></pre>
+<p>Autocast selects operation-specific dtypes. Do not manually call half() on the whole model just because autocast is enabled.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-13-equation"><summary>สมการ</summary><h3>13. Autocast</h3>
+<p>Current PyTorch AMP uses torch.amp.autocast with a device type.</p>
+<pre><code class="language-python">with torch.amp.autocast('cuda', dtype=torch.float16):
+    output = model(inputs)
+    loss = loss_fn(output, targets)
+</code></pre>
+<p>Autocast selects operation-specific dtypes. Do not manually call half() on the whole model just because autocast is enabled.</p></details><details id="help-topic-13-visual"><summary>ภาพและ shape</summary><h3>13. Autocast</h3>
+<p>Current PyTorch AMP uses torch.amp.autocast with a device type.</p>
+<pre><code class="language-python">with torch.amp.autocast('cuda', dtype=torch.float16):
+    output = model(inputs)
+    loss = loss_fn(output, targets)
+</code></pre>
+<p>Autocast selects operation-specific dtypes. Do not manually call half() on the whole model just because autocast is enabled.</p></details><details id="help-topic-13-code"><summary>โค้ด</summary><h3>13. Autocast</h3>
+<p>Current PyTorch AMP uses torch.amp.autocast with a device type.</p>
+<pre><code class="language-python">with torch.amp.autocast('cuda', dtype=torch.float16):
+    output = model(inputs)
+    loss = loss_fn(output, targets)
+</code></pre>
+<p>Autocast selects operation-specific dtypes. Do not manually call half() on the whole model just because autocast is enabled.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-13-result"><summary>ผลการทดลอง</summary><h3>13. Autocast</h3>
+<p>Current PyTorch AMP uses torch.amp.autocast with a device type.</p>
+<pre><code class="language-python">with torch.amp.autocast('cuda', dtype=torch.float16):
+    output = model(inputs)
+    loss = loss_fn(output, targets)
+</code></pre>
+<p>Autocast selects operation-specific dtypes. Do not manually call half() on the whole model just because autocast is enabled.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-13"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-14" class="source-topic"><span id="source-54-mixed-precision-canonical-14-backward-placement" class="legacy-anchor"></span><h3>14. Backward Placement</h3>
+<p>Current PyTorch guidance wraps forward + loss in autocast and performs backward after leaving the autocast context.</p>
+<p>Backward operations then follow the dtypes chosen by the corresponding forward operations.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-14-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>14. Backward Placement</h3>
+<p>Current PyTorch guidance wraps forward + loss in autocast and performs backward after leaving the autocast context.</p>
+<p>Backward operations then follow the dtypes chosen by the corresponding forward operations.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-14-equation"><summary>สมการ</summary><h3>14. Backward Placement</h3>
+<p>Current PyTorch guidance wraps forward + loss in autocast and performs backward after leaving the autocast context.</p>
+<p>Backward operations then follow the dtypes chosen by the corresponding forward operations.</p></details><details id="help-topic-14-visual"><summary>ภาพและ shape</summary><h3>14. Backward Placement</h3>
+<p>Current PyTorch guidance wraps forward + loss in autocast and performs backward after leaving the autocast context.</p>
+<p>Backward operations then follow the dtypes chosen by the corresponding forward operations.</p></details><details id="help-topic-14-code"><summary>โค้ด</summary><h3>14. Backward Placement</h3>
+<p>Current PyTorch guidance wraps forward + loss in autocast and performs backward after leaving the autocast context.</p>
+<p>Backward operations then follow the dtypes chosen by the corresponding forward operations.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-14-result"><summary>ผลการทดลอง</summary><h3>14. Backward Placement</h3>
+<p>Current PyTorch guidance wraps forward + loss in autocast and performs backward after leaving the autocast context.</p>
+<p>Backward operations then follow the dtypes chosen by the corresponding forward operations.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-14"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-15" class="source-topic"><span id="source-54-mixed-precision-canonical-15-current-gradscaler-api" class="legacy-anchor"></span><h3>15. Current GradScaler API</h3>
+<p>For CUDA FP16 training, current PyTorch uses:</p>
+<pre><code class="language-python">scaler = torch.amp.GradScaler('cuda')
+</code></pre>
+<p>Older torch.cuda.amp GradScaler/autocast entry points are deprecated in current documentation.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p><code>with torch.amp.autocast('cuda',dtype=torch.float16): loss=...</code>; scaler.scale(loss).backward(); scaler.unscale_(opt); clip; scaler.step(opt); scaler.update(); CUDAต้องมีhardwareจริง</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-15-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p><code>with torch.amp.autocast('cuda',dtype=torch.float16): loss=...</code>; scaler.scale(loss).backward(); scaler.unscale_(opt); clip; scaler.step(opt); scaler.update(); CUDAต้องมีhardwareจริง</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-15-equation"><summary>สมการ</summary><p><code>with torch.amp.autocast('cuda',dtype=torch.float16): loss=...</code>; scaler.scale(loss).backward(); scaler.unscale_(opt); clip; scaler.step(opt); scaler.update(); CUDAต้องมีhardwareจริง</p></details><details id="help-topic-15-visual"><summary>ภาพและ shape</summary><p><code>with torch.amp.autocast('cuda',dtype=torch.float16): loss=...</code>; scaler.scale(loss).backward(); scaler.unscale_(opt); clip; scaler.step(opt); scaler.update(); CUDAต้องมีhardwareจริง</p></details><details id="help-topic-15-code"><summary>โค้ด</summary><p><code>with torch.amp.autocast('cuda',dtype=torch.float16): loss=...</code>; scaler.scale(loss).backward(); scaler.unscale_(opt); clip; scaler.step(opt); scaler.update(); CUDAต้องมีhardwareจริง</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-15-result"><summary>ผลการทดลอง</summary><p><code>with torch.amp.autocast('cuda',dtype=torch.float16): loss=...</code>; scaler.scale(loss).backward(); scaler.unscale_(opt); clip; scaler.step(opt); scaler.update(); CUDAต้องมีhardwareจริง</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-15"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-16" class="source-topic"><span id="source-54-mixed-precision-canonical-16-typical-cuda-fp16-loop" class="legacy-anchor"></span><h3>16. Typical CUDA FP16 Loop</h3>
+<pre><code class="language-python">optimizer.zero_grad(set_to_none=True)
+
+with torch.amp.autocast('cuda', dtype=torch.float16):
+    logits = model(x)
+    loss = loss_fn(logits, y)
+
+scaler.scale(loss).backward()
+scaler.unscale_(optimizer)
+torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+scaler.step(optimizer)
+scaler.update()
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p><code>with torch.amp.autocast('cuda',dtype=torch.float16): loss=...</code>; scaler.scale(loss).backward(); scaler.unscale_(opt); clip; scaler.step(opt); scaler.update(); CUDAต้องมีhardwareจริง</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-16-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p><code>with torch.amp.autocast('cuda',dtype=torch.float16): loss=...</code>; scaler.scale(loss).backward(); scaler.unscale_(opt); clip; scaler.step(opt); scaler.update(); CUDAต้องมีhardwareจริง</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-16-equation"><summary>สมการ</summary><p><code>with torch.amp.autocast('cuda',dtype=torch.float16): loss=...</code>; scaler.scale(loss).backward(); scaler.unscale_(opt); clip; scaler.step(opt); scaler.update(); CUDAต้องมีhardwareจริง</p></details><details id="help-topic-16-visual"><summary>ภาพและ shape</summary><p><code>with torch.amp.autocast('cuda',dtype=torch.float16): loss=...</code>; scaler.scale(loss).backward(); scaler.unscale_(opt); clip; scaler.step(opt); scaler.update(); CUDAต้องมีhardwareจริง</p></details><details id="help-topic-16-code"><summary>โค้ด</summary><p><code>with torch.amp.autocast('cuda',dtype=torch.float16): loss=...</code>; scaler.scale(loss).backward(); scaler.unscale_(opt); clip; scaler.step(opt); scaler.update(); CUDAต้องมีhardwareจริง</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-16-result"><summary>ผลการทดลอง</summary><p><code>with torch.amp.autocast('cuda',dtype=torch.float16): loss=...</code>; scaler.scale(loss).backward(); scaler.unscale_(opt); clip; scaler.step(opt); scaler.update(); CUDAต้องมีhardwareจริง</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-16"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-17" class="source-topic"><span id="source-54-mixed-precision-canonical-17-bf16-autocast" class="legacy-anchor"></span><h3>17. BF16 Autocast</h3>
+<p>On supported hardware:</p>
+<pre><code class="language-python">with torch.amp.autocast('cuda', dtype=torch.bfloat16):
+    ...
+</code></pre>
+<p>BF16's exponent range often reduces the need for gradient scaling compared with FP16. Whether scaling is useful still depends on hardware/workload.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>compareFP32/BF16บนCPUdeviceเดียวก่อนmeasureGPUแยก; recordoperatorfallback/dtypeจริงไม่อ้างทุกopBF16เพียงอยู่autocastcontext</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-17-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>compareFP32/BF16บนCPUdeviceเดียวก่อนmeasureGPUแยก; recordoperatorfallback/dtypeจริงไม่อ้างทุกopBF16เพียงอยู่autocastcontext</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-17-equation"><summary>สมการ</summary><p>compareFP32/BF16บนCPUdeviceเดียวก่อนmeasureGPUแยก; recordoperatorfallback/dtypeจริงไม่อ้างทุกopBF16เพียงอยู่autocastcontext</p></details><details id="help-topic-17-visual"><summary>ภาพและ shape</summary><p>compareFP32/BF16บนCPUdeviceเดียวก่อนmeasureGPUแยก; recordoperatorfallback/dtypeจริงไม่อ้างทุกopBF16เพียงอยู่autocastcontext</p></details><details id="help-topic-17-code"><summary>โค้ด</summary><p>compareFP32/BF16บนCPUdeviceเดียวก่อนmeasureGPUแยก; recordoperatorfallback/dtypeจริงไม่อ้างทุกopBF16เพียงอยู่autocastcontext</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-17-result"><summary>ผลการทดลอง</summary><p>compareFP32/BF16บนCPUdeviceเดียวก่อนmeasureGPUแยก; recordoperatorfallback/dtypeจริงไม่อ้างทุกopBF16เพียงอยู่autocastcontext</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-17"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-18" class="source-topic"><span id="source-54-mixed-precision-canonical-18-cpu-bf16" class="legacy-anchor"></span><h3>18. CPU BF16</h3>
+<p>PyTorch also supports CPU autocast on supported operations:</p>
+<pre><code class="language-python">with torch.amp.autocast('cpu', dtype=torch.bfloat16):
+    output = model(x)
+</code></pre>
+<p>This is useful for CI smoke tests even when CUDA is unavailable.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>CPUใช้torch.amp.autocast('cpu',dtype=torch.bfloat16)กับLinearเล็ก,backwardlossfinite,compareFP32tolerance; ไม่ใช้CUDAFP16GradScalerเพื่ออ้างCPUtestเทียบGPU</p><p>compareFP32/BF16บนCPUdeviceเดียวก่อนmeasureGPUแยก; recordoperatorfallback/dtypeจริงไม่อ้างทุกopBF16เพียงอยู่autocastcontext</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-18-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>CPUใช้torch.amp.autocast('cpu',dtype=torch.bfloat16)กับLinearเล็ก,backwardlossfinite,compareFP32tolerance; ไม่ใช้CUDAFP16GradScalerเพื่ออ้างCPUtestเทียบGPU</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-18-equation"><summary>สมการ</summary><p>CPUใช้torch.amp.autocast('cpu',dtype=torch.bfloat16)กับLinearเล็ก,backwardlossfinite,compareFP32tolerance; ไม่ใช้CUDAFP16GradScalerเพื่ออ้างCPUtestเทียบGPU</p></details><details id="help-topic-18-visual"><summary>ภาพและ shape</summary><p>CPUใช้torch.amp.autocast('cpu',dtype=torch.bfloat16)กับLinearเล็ก,backwardlossfinite,compareFP32tolerance; ไม่ใช้CUDAFP16GradScalerเพื่ออ้างCPUtestเทียบGPU</p></details><details id="help-topic-18-code"><summary>โค้ด</summary><p>CPUใช้torch.amp.autocast('cpu',dtype=torch.bfloat16)กับLinearเล็ก,backwardlossfinite,compareFP32tolerance; ไม่ใช้CUDAFP16GradScalerเพื่ออ้างCPUtestเทียบGPU</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-18-result"><summary>ผลการทดลอง</summary><p>CPUใช้torch.amp.autocast('cpu',dtype=torch.bfloat16)กับLinearเล็ก,backwardlossfinite,compareFP32tolerance; ไม่ใช้CUDAFP16GradScalerเพื่ออ้างCPUtestเทียบGPU</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-18"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-19" class="source-topic"><span id="source-54-mixed-precision-canonical-19-fp32-master-optimizer-state" class="legacy-anchor"></span><h3>19. FP32 Master / Optimizer State</h3>
+<p>Mixed precision does not mean every training tensor must be low precision.</p>
+<p>Training systems may retain higher precision for:
+- optimizer states
+- parameter updates/master values
+- reductions
+- sensitive normalization/loss operations</p>
+<p>Exact behavior depends on framework/parallelism strategy.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>fp16rawweights2GBแต่AdamFP32moments8GBต่อ1Bและgrads/masterweightsเพิ่มอีก; precisionweightsไม่เท่ากับtrainingmemoryทั้งหมด</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-19-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>fp16rawweights2GBแต่AdamFP32moments8GBต่อ1Bและgrads/masterweightsเพิ่มอีก; precisionweightsไม่เท่ากับtrainingmemoryทั้งหมด</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-19-equation"><summary>สมการ</summary><p>fp16rawweights2GBแต่AdamFP32moments8GBต่อ1Bและgrads/masterweightsเพิ่มอีก; precisionweightsไม่เท่ากับtrainingmemoryทั้งหมด</p></details><details id="help-topic-19-visual"><summary>ภาพและ shape</summary><p>fp16rawweights2GBแต่AdamFP32moments8GBต่อ1Bและgrads/masterweightsเพิ่มอีก; precisionweightsไม่เท่ากับtrainingmemoryทั้งหมด</p></details><details id="help-topic-19-code"><summary>โค้ด</summary><p>fp16rawweights2GBแต่AdamFP32moments8GBต่อ1Bและgrads/masterweightsเพิ่มอีก; precisionweightsไม่เท่ากับtrainingmemoryทั้งหมด</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-19-result"><summary>ผลการทดลอง</summary><p>fp16rawweights2GBแต่AdamFP32moments8GBต่อ1Bและgrads/masterweightsเพิ่มอีก; precisionweightsไม่เท่ากับtrainingmemoryทั้งหมด</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-19"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-20" class="source-topic"><span id="source-54-mixed-precision-canonical-20-memory" class="legacy-anchor"></span><h3>20. Memory</h3>
+<p>Raw tensor storage:</p>
+<pre><code class="language-text">FP32 = 4 bytes/value
+FP16 = 2 bytes/value
+BF16 = 2 bytes/value
+</code></pre>
+<p>But total training memory also includes:
+- gradients
+- optimizer states
+- activations
+- temporary kernels
+- communication buffers</p>
+<p>Therefore mixed precision does not automatically halve total training memory.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>1Bparameters rawFP32=4GB,FP16/BF16=2GBแบบdecimal ไม่รวมgrad/moments/masterweights/activation/allocator</p><p>คงmodel/batch/sequence/optimizer/warmup; วัดpeakallocated/tokenssecและmaxerror/valNLLแยกprecision CPUผ่านยังไม่พิสูจน์GPUthroughput</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-20-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>1Bparameters rawFP32=4GB,FP16/BF16=2GBแบบdecimal ไม่รวมgrad/moments/masterweights/activation/allocator</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-20-equation"><summary>สมการ</summary><p>1Bparameters rawFP32=4GB,FP16/BF16=2GBแบบdecimal ไม่รวมgrad/moments/masterweights/activation/allocator</p></details><details id="help-topic-20-visual"><summary>ภาพและ shape</summary><p>1Bparameters rawFP32=4GB,FP16/BF16=2GBแบบdecimal ไม่รวมgrad/moments/masterweights/activation/allocator</p></details><details id="help-topic-20-code"><summary>โค้ด</summary><p>1Bparameters rawFP32=4GB,FP16/BF16=2GBแบบdecimal ไม่รวมgrad/moments/masterweights/activation/allocator</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-20-result"><summary>ผลการทดลอง</summary><p>1Bparameters rawFP32=4GB,FP16/BF16=2GBแบบdecimal ไม่รวมgrad/moments/masterweights/activation/allocator</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-20"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-21" class="source-topic"><span id="source-54-mixed-precision-canonical-21-tensor-cores" class="legacy-anchor"></span><h3>21. Tensor Cores</h3>
+<p>Modern NVIDIA GPUs can accelerate matrix operations in lower precision using specialized tensor-core paths when dimensions/layouts/operations are suitable.</p>
+<p>Actual speedup depends on workload and hardware.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>คงmodel/batch/sequence/optimizer/warmup; วัดpeakallocated/tokenssecและmaxerror/valNLLแยกprecision CPUผ่านยังไม่พิสูจน์GPUthroughput</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-21-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>คงmodel/batch/sequence/optimizer/warmup; วัดpeakallocated/tokenssecและmaxerror/valNLLแยกprecision CPUผ่านยังไม่พิสูจน์GPUthroughput</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-21-equation"><summary>สมการ</summary><p>คงmodel/batch/sequence/optimizer/warmup; วัดpeakallocated/tokenssecและmaxerror/valNLLแยกprecision CPUผ่านยังไม่พิสูจน์GPUthroughput</p></details><details id="help-topic-21-visual"><summary>ภาพและ shape</summary><p>คงmodel/batch/sequence/optimizer/warmup; วัดpeakallocated/tokenssecและmaxerror/valNLLแยกprecision CPUผ่านยังไม่พิสูจน์GPUthroughput</p></details><details id="help-topic-21-code"><summary>โค้ด</summary><p>คงmodel/batch/sequence/optimizer/warmup; วัดpeakallocated/tokenssecและmaxerror/valNLLแยกprecision CPUผ่านยังไม่พิสูจน์GPUthroughput</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-21-result"><summary>ผลการทดลอง</summary><p>คงmodel/batch/sequence/optimizer/warmup; วัดpeakallocated/tokenssecและmaxerror/valNLLแยกprecision CPUผ่านยังไม่พิสูจน์GPUthroughput</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-21"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-22" class="source-topic"><span id="source-54-mixed-precision-canonical-22-precision-sensitive-operations" class="legacy-anchor"></span><h3>22. Precision-Sensitive Operations</h3>
+<p>Some operations benefit from FP32 accumulation/computation, for example reductions or certain normalization/loss operations. Autocast maintains an operation-specific eligibility policy rather than blindly forcing one dtype everywhere.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>recordweight/activation/grad/momentdtypes,scale,growthtracker,skippedsteps,maxerrorและvalNLL; monitorinfก่อนoptimizerstateเสีย</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-22-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>recordweight/activation/grad/momentdtypes,scale,growthtracker,skippedsteps,maxerrorและvalNLL; monitorinfก่อนoptimizerstateเสีย</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-22-equation"><summary>สมการ</summary><p>recordweight/activation/grad/momentdtypes,scale,growthtracker,skippedsteps,maxerrorและvalNLL; monitorinfก่อนoptimizerstateเสีย</p></details><details id="help-topic-22-visual"><summary>ภาพและ shape</summary><p>recordweight/activation/grad/momentdtypes,scale,growthtracker,skippedsteps,maxerrorและvalNLL; monitorinfก่อนoptimizerstateเสีย</p></details><details id="help-topic-22-code"><summary>โค้ด</summary><p>recordweight/activation/grad/momentdtypes,scale,growthtracker,skippedsteps,maxerrorและvalNLL; monitorinfก่อนoptimizerstateเสีย</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-22-result"><summary>ผลการทดลอง</summary><p>recordweight/activation/grad/momentdtypes,scale,growthtracker,skippedsteps,maxerrorและvalNLL; monitorinfก่อนoptimizerstateเสีย</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-22"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-23" class="source-topic"><span id="source-54-mixed-precision-canonical-23-detecting-overflow" class="legacy-anchor"></span><h3>23. Detecting Overflow</h3>
+<p>Useful checks:
+- loss finite
+- gradient norm finite
+- parameter values finite
+- scaler trend</p>
+<p>Repeated scale backoff can indicate numerical instability.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>พบnonfinitegrad→skipoptimizerstep,scale*=.5; finiteครบgrowthinterval→scale*=2; growthtrackerและcompletedupdatesต้องแยก</p><p>nonfinitegradต้องไม่เปลี่ยนweights/updates,unscale-before-clipfixtureถูก,CPU-BF16lossfinite; GPUrequiredtestถ้าไม่มีhardwareต้องnot_runชัดเจน</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-23-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>พบnonfinitegrad→skipoptimizerstep,scale*=.5; finiteครบgrowthinterval→scale*=2; growthtrackerและcompletedupdatesต้องแยก</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-23-equation"><summary>สมการ</summary><p>พบnonfinitegrad→skipoptimizerstep,scale*=.5; finiteครบgrowthinterval→scale*=2; growthtrackerและcompletedupdatesต้องแยก</p></details><details id="help-topic-23-visual"><summary>ภาพและ shape</summary><p>พบnonfinitegrad→skipoptimizerstep,scale*=.5; finiteครบgrowthinterval→scale*=2; growthtrackerและcompletedupdatesต้องแยก</p></details><details id="help-topic-23-code"><summary>โค้ด</summary><p>พบnonfinitegrad→skipoptimizerstep,scale*=.5; finiteครบgrowthinterval→scale*=2; growthtrackerและcompletedupdatesต้องแยก</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-23-result"><summary>ผลการทดลอง</summary><p>พบnonfinitegrad→skipoptimizerstep,scale*=.5; finiteครบgrowthinterval→scale*=2; growthtrackerและcompletedupdatesต้องแยก</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-23"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-24" class="source-topic"><span id="source-54-mixed-precision-canonical-24-reproducibility" class="legacy-anchor"></span><h3>24. Reproducibility</h3>
+<p>Changing dtype/kernel can change rounding and reduction order. Numerically valid mixed-precision runs are not guaranteed bitwise identical to FP32.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>ต่างbatchsizeหรือใช้FP32coldstartเทียบmixedwarmcacheทำthroughputดูดีเกิน; freezebenchmarkและvalidatequalityก่อนสรุป</p><p>manifest มีhardware/precision/autocastoplist/masterstate/scalerconfig/cliporder/batch/context/versions/seeds/error-tolerance</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-24-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>ต่างbatchsizeหรือใช้FP32coldstartเทียบmixedwarmcacheทำthroughputดูดีเกิน; freezebenchmarkและvalidatequalityก่อนสรุป</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-24-equation"><summary>สมการ</summary><p>ต่างbatchsizeหรือใช้FP32coldstartเทียบmixedwarmcacheทำthroughputดูดีเกิน; freezebenchmarkและvalidatequalityก่อนสรุป</p></details><details id="help-topic-24-visual"><summary>ภาพและ shape</summary><p>ต่างbatchsizeหรือใช้FP32coldstartเทียบmixedwarmcacheทำthroughputดูดีเกิน; freezebenchmarkและvalidatequalityก่อนสรุป</p></details><details id="help-topic-24-code"><summary>โค้ด</summary><p>ต่างbatchsizeหรือใช้FP32coldstartเทียบmixedwarmcacheทำthroughputดูดีเกิน; freezebenchmarkและvalidatequalityก่อนสรุป</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-24-result"><summary>ผลการทดลอง</summary><p>ต่างbatchsizeหรือใช้FP32coldstartเทียบmixedwarmcacheทำthroughputดูดีเกิน; freezebenchmarkและvalidatequalityก่อนสรุป</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-24"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-25" class="source-topic"><span id="source-54-mixed-precision-canonical-25-from-scratch" class="legacy-anchor"></span><h3>25. From Scratch</h3>
+<p>src/mixed_precision.py includes:</p>
+<ul>
+<li>floating_format_info</li>
+<li>bfloat16_roundtrip</li>
+<li>scale_gradients</li>
+<li>unscale_gradients</li>
+<li>contains_nonfinite</li>
+<li>update_dynamic_loss_scale</li>
+<li>tensor_storage_bytes</li>
+<li>relative_error</li>
+</ul><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>NumPyfloat16castเทียบTorchCPUhalfcastบนrepresentablevalues; BF16เทียบbitroundingoracleและties-to-evenboundaryรวมNaN/infpolicy</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-25-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>NumPyfloat16castเทียบTorchCPUhalfcastบนrepresentablevalues; BF16เทียบbitroundingoracleและties-to-evenboundaryรวมNaN/infpolicy</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-25-equation"><summary>สมการ</summary><p>NumPyfloat16castเทียบTorchCPUhalfcastบนrepresentablevalues; BF16เทียบbitroundingoracleและties-to-evenboundaryรวมNaN/infpolicy</p></details><details id="help-topic-25-visual"><summary>ภาพและ shape</summary><p>NumPyfloat16castเทียบTorchCPUhalfcastบนrepresentablevalues; BF16เทียบbitroundingoracleและties-to-evenboundaryรวมNaN/infpolicy</p></details><details id="help-topic-25-code"><summary>โค้ด</summary><p>NumPyfloat16castเทียบTorchCPUhalfcastบนrepresentablevalues; BF16เทียบbitroundingoracleและties-to-evenboundaryรวมNaN/infpolicy</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-25-result"><summary>ผลการทดลอง</summary><p>NumPyfloat16castเทียบTorchCPUhalfcastบนrepresentablevalues; BF16เทียบbitroundingoracleและties-to-evenboundaryรวมNaN/infpolicy</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-25"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-26" class="source-topic"><span id="source-54-mixed-precision-canonical-26-common-mistakes" class="legacy-anchor"></span><h3>26. Common Mistakes</h3>
+<ol>
+<li>thinking FP16 and BF16 have the same range</li>
+<li>converting the entire model manually while also using autocast</li>
+<li>backward inside autocast unnecessarily</li>
+<li>gradient clipping before unscale</li>
+<li>optimizer step after Inf gradients</li>
+<li>assuming BF16 has FP32 precision</li>
+<li>assuming 16-bit tensors halve total training memory</li>
+<li>using deprecated AMP namespaces in new code</li>
+<li>comparing speed without synchronization/warmup</li>
+<li>ignoring scaler behavior and non-finite diagnostics</li>
+</ol><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-26-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>26. Common Mistakes</h3>
+<ol>
+<li>thinking FP16 and BF16 have the same range</li>
+<li>converting the entire model manually while also using autocast</li>
+<li>backward inside autocast unnecessarily</li>
+<li>gradient clipping before unscale</li>
+<li>optimizer step after Inf gradients</li>
+<li>assuming BF16 has FP32 precision</li>
+<li>assuming 16-bit tensors halve total training memory</li>
+<li>using deprecated AMP namespaces in new code</li>
+<li>comparing speed without synchronization/warmup</li>
+<li>ignoring scaler behavior and non-finite diagnostics</li>
+</ol><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-26-equation"><summary>สมการ</summary><h3>26. Common Mistakes</h3>
+<ol>
+<li>thinking FP16 and BF16 have the same range</li>
+<li>converting the entire model manually while also using autocast</li>
+<li>backward inside autocast unnecessarily</li>
+<li>gradient clipping before unscale</li>
+<li>optimizer step after Inf gradients</li>
+<li>assuming BF16 has FP32 precision</li>
+<li>assuming 16-bit tensors halve total training memory</li>
+<li>using deprecated AMP namespaces in new code</li>
+<li>comparing speed without synchronization/warmup</li>
+<li>ignoring scaler behavior and non-finite diagnostics</li>
+</ol></details><details id="help-topic-26-visual"><summary>ภาพและ shape</summary><h3>26. Common Mistakes</h3>
+<ol>
+<li>thinking FP16 and BF16 have the same range</li>
+<li>converting the entire model manually while also using autocast</li>
+<li>backward inside autocast unnecessarily</li>
+<li>gradient clipping before unscale</li>
+<li>optimizer step after Inf gradients</li>
+<li>assuming BF16 has FP32 precision</li>
+<li>assuming 16-bit tensors halve total training memory</li>
+<li>using deprecated AMP namespaces in new code</li>
+<li>comparing speed without synchronization/warmup</li>
+<li>ignoring scaler behavior and non-finite diagnostics</li>
+</ol></details><details id="help-topic-26-code"><summary>โค้ด</summary><h3>26. Common Mistakes</h3>
+<ol>
+<li>thinking FP16 and BF16 have the same range</li>
+<li>converting the entire model manually while also using autocast</li>
+<li>backward inside autocast unnecessarily</li>
+<li>gradient clipping before unscale</li>
+<li>optimizer step after Inf gradients</li>
+<li>assuming BF16 has FP32 precision</li>
+<li>assuming 16-bit tensors halve total training memory</li>
+<li>using deprecated AMP namespaces in new code</li>
+<li>comparing speed without synchronization/warmup</li>
+<li>ignoring scaler behavior and non-finite diagnostics</li>
+</ol><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-26-result"><summary>ผลการทดลอง</summary><h3>26. Common Mistakes</h3>
+<ol>
+<li>thinking FP16 and BF16 have the same range</li>
+<li>converting the entire model manually while also using autocast</li>
+<li>backward inside autocast unnecessarily</li>
+<li>gradient clipping before unscale</li>
+<li>optimizer step after Inf gradients</li>
+<li>assuming BF16 has FP32 precision</li>
+<li>assuming 16-bit tensors halve total training memory</li>
+<li>using deprecated AMP namespaces in new code</li>
+<li>comparing speed without synchronization/warmup</li>
+<li>ignoring scaler behavior and non-finite diagnostics</li>
+</ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-26"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-27" class="source-topic"><span id="source-54-mixed-precision-canonical-27-exercises-mini-project" class="legacy-anchor"></span><h3>27. Exercises / Mini Project</h3>
+<ul>
+<li><a href="../54-mixed-precision/exercises/README.md">Exercises</a></li>
+<li><a href="../54-mixed-precision/solutions/README.md">Solutions</a></li>
+<li><a href="../54-mixed-precision/mini-project/README.md">Mini Project</a></li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-27-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>27. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-27-equation"><summary>สมการ</summary><h3>27. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-27-visual"><summary>ภาพและ shape</summary><h3>27. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-27-code"><summary>โค้ด</summary><h3>27. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-27-result"><summary>ผลการทดลอง</summary><h3>27. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-27"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-28" class="source-topic"><span id="source-54-mixed-precision-canonical-28-checklist" class="legacy-anchor"></span><h3>28. Checklist</h3>
+<ul>
+<li>[ ] FP32 / FP16 / BF16 formats</li>
+<li>[ ] range vs precision</li>
+<li>[ ] underflow / overflow</li>
+<li>[ ] autocast</li>
+<li>[ ] loss scaling</li>
+<li>[ ] GradScaler</li>
+<li>[ ] unscale → clip → step</li>
+<li>[ ] BF16 behavior</li>
+<li>[ ] optimizer/master state</li>
+<li>[ ] memory accounting</li>
+<li>[ ] stability debugging</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-28-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>28. Checklist</h3>
+<ul>
+<li>[ ] FP32 / FP16 / BF16 formats</li>
+<li>[ ] range vs precision</li>
+<li>[ ] underflow / overflow</li>
+<li>[ ] autocast</li>
+<li>[ ] loss scaling</li>
+<li>[ ] GradScaler</li>
+<li>[ ] unscale → clip → step</li>
+<li>[ ] BF16 behavior</li>
+<li>[ ] optimizer/master state</li>
+<li>[ ] memory accounting</li>
+<li>[ ] stability debugging</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-28-equation"><summary>สมการ</summary><h3>28. Checklist</h3>
+<ul>
+<li>[ ] FP32 / FP16 / BF16 formats</li>
+<li>[ ] range vs precision</li>
+<li>[ ] underflow / overflow</li>
+<li>[ ] autocast</li>
+<li>[ ] loss scaling</li>
+<li>[ ] GradScaler</li>
+<li>[ ] unscale → clip → step</li>
+<li>[ ] BF16 behavior</li>
+<li>[ ] optimizer/master state</li>
+<li>[ ] memory accounting</li>
+<li>[ ] stability debugging</li>
+</ul></details><details id="help-topic-28-visual"><summary>ภาพและ shape</summary><h3>28. Checklist</h3>
+<ul>
+<li>[ ] FP32 / FP16 / BF16 formats</li>
+<li>[ ] range vs precision</li>
+<li>[ ] underflow / overflow</li>
+<li>[ ] autocast</li>
+<li>[ ] loss scaling</li>
+<li>[ ] GradScaler</li>
+<li>[ ] unscale → clip → step</li>
+<li>[ ] BF16 behavior</li>
+<li>[ ] optimizer/master state</li>
+<li>[ ] memory accounting</li>
+<li>[ ] stability debugging</li>
+</ul></details><details id="help-topic-28-code"><summary>โค้ด</summary><h3>28. Checklist</h3>
+<ul>
+<li>[ ] FP32 / FP16 / BF16 formats</li>
+<li>[ ] range vs precision</li>
+<li>[ ] underflow / overflow</li>
+<li>[ ] autocast</li>
+<li>[ ] loss scaling</li>
+<li>[ ] GradScaler</li>
+<li>[ ] unscale → clip → step</li>
+<li>[ ] BF16 behavior</li>
+<li>[ ] optimizer/master state</li>
+<li>[ ] memory accounting</li>
+<li>[ ] stability debugging</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-28-result"><summary>ผลการทดลอง</summary><h3>28. Checklist</h3>
+<ul>
+<li>[ ] FP32 / FP16 / BF16 formats</li>
+<li>[ ] range vs precision</li>
+<li>[ ] underflow / overflow</li>
+<li>[ ] autocast</li>
+<li>[ ] loss scaling</li>
+<li>[ ] GradScaler</li>
+<li>[ ] unscale → clip → step</li>
+<li>[ ] BF16 behavior</li>
+<li>[ ] optimizer/master state</li>
+<li>[ ] memory accounting</li>
+<li>[ ] stability debugging</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-28"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-29" class="source-topic"><span id="source-54-mixed-precision-canonical-29-whats-next" class="legacy-anchor"></span><span id="source-54-mixed-precision-canonical-54-mixed-precision-mixed-precision" class="legacy-anchor"></span><h3>29. What's Next</h3>
+<p>Batch 19 moves from pretraining systems into model adaptation: full fine-tuning, LoRA/QLoRA/PEFT and instruction tuning.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-29-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>29. What's Next</h3>
+<p>Batch 19 moves from pretraining systems into model adaptation: full fine-tuning, LoRA/QLoRA/PEFT and instruction tuning.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-29-equation"><summary>สมการ</summary><h3>29. What's Next</h3>
+<p>Batch 19 moves from pretraining systems into model adaptation: full fine-tuning, LoRA/QLoRA/PEFT and instruction tuning.</p></details><details id="help-topic-29-visual"><summary>ภาพและ shape</summary><h3>29. What's Next</h3>
+<p>Batch 19 moves from pretraining systems into model adaptation: full fine-tuning, LoRA/QLoRA/PEFT and instruction tuning.</p></details><details id="help-topic-29-code"><summary>โค้ด</summary><h3>29. What's Next</h3>
+<p>Batch 19 moves from pretraining systems into model adaptation: full fine-tuning, LoRA/QLoRA/PEFT and instruction tuning.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-29-result"><summary>ผลการทดลอง</summary><h3>29. What's Next</h3>
+<p>Batch 19 moves from pretraining systems into model adaptation: full fine-tuning, LoRA/QLoRA/PEFT and instruction tuning.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-29"> อ่านหัวข้อนี้แล้ว</label></section><details><summary>รายละเอียดเพิ่มเติมและข้อกำหนดของ local lab</summary><h3>54-mixed-precision — Mixed Precision</h3>
+<p><strong>Prerequisites:</strong> Complete 53-gpu-cuda-fundamentals; be able to trace array/tensor shapes, separate train/validation/test data, and explain the core objective of the current chapter.</p>
+<p><strong>Mental model:</strong> Treat Mixed Precision as a pipeline: input representation → central mechanism → objective/state update → observable output. At every boundary, state shape/state, allowed information flow, and the invariant that should remain true.</p>
+<p><strong>Code walkthrough:</strong> Read public API first, then input checks, state/shape transformations, numerical core, returned values and tests. Connect each important code block to the equation or algorithm in the chapter README.</p>
+<p><strong>Visualization / inspection:</strong> Use a tiny case. Inspect intermediate values, distributions, norms, scores, states or trajectories appropriate to Mixed Precision; do not rely only on the final metric.</p>
+<p><strong>Experiment:</strong> Run a baseline, one controlled parameter change, one edge case and one repeated seeded comparison. Record seed, environment, data version, configuration and metric.</p>
+<p><strong>Limitations:</strong> List at least one assumption, one data-related limitation, one numerical/optimization limitation and one scaling limitation for Mixed Precision.</p>
+<p><strong>Analysis workflow:</strong> Check inputs → preprocessing → shapes/state → finite numerical values → objective/update → evaluation protocol. The earliest unexpected state is more informative than a downstream metric.</p>
+<p><strong>Performance:</strong> Identify the dominant time and memory terms and measure them on the local learning run before attempting optimization.</p>
+<p><strong>Production perspective:</strong> Define input validation, artifact/configuration versioning, quality and resource measurements, staged release criteria and a way to return to the previous known-good artifact.</p>
+<p><strong>Research perspective:</strong> State a falsifiable hypothesis, baseline, one-factor change, metric, repeated-run plan when stochastic, and how negative results will be recorded.</p>
+<p><strong>Interview questions:</strong>
+1. Explain Mixed Precision from first principles without naming a library API.
+2. Trace one input through the central mechanism and give the important intermediate shapes/state.
+3. Name the strongest assumption and a case where it fails.
+4. State the dominant compute/memory cost.
+5. Describe how you would validate a new implementation against a trusted baseline.</p>
+<p><strong>Summary / exit condition:</strong> You may move on when you can explain, derive or trace, implement, test, analyze, measure and evaluate Mixed Precision, and when the chapter mini-project plus twenty total exercises are complete.</p></details></section><section id="objective-evidence" class="canonical-section"><h2>พิสูจน์ความสามารถทีละ objective</h2><p>ทำกรณีใหม่ก่อนเปิด reference แล้วบันทึกงานด้านล่าง ให้ผู้ตรวจใช้ rubric ตรวจคำอธิบาย ผลคำนวณ โค้ด และข้อจำกัด บันทึกเก็บในเบราว์เซอร์เครื่องนี้ กดส่งออกเพื่อสำรองหรือส่งให้ผู้ตรวจ เว็บไม่ได้รันโค้ดหรือตัดสินผลงานแทนผู้ตรวจ</p><button type="button" class="secondary-button" data-export-evidence>ส่งออกหลักฐานบทนี้เป็น JSON</button><p role="status" id="evidence-export-status"></p><details id="ch54-objective-01" class="objective-proof"><summary>understand sign/exponent/fraction fields</summary><p>understand sign/exponent/fraction fields: ใช้กรณีในหัวข้อ Floating-Point Structure เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch54-evidence-01"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch54-evidence-01-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch54-evidence-01-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch54-evidence-01-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch54-evidence-01-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch54-evidence-01-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch54-evidence-01-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch54-evidence-01-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch54-evidence-01-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>FP32มีsign1/exponent8/fraction23,FP16=1/5/10,BF16=1/8/7; BF16rangeใกล้FP32แต่precisionหยาบกว่าFP16</p><h3>3. Floating-Point Structure</h3>
+<p>Conceptually:</p>
+<pre><code class="language-text">value ≈ (-1)^sign × significand × 2^exponent
+</code></pre>
+<p>More exponent bits increase representable range. More fraction/mantissa bits increase local precision.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch54-objective-02" class="objective-proof"><summary>compare FP32, FP16 and BF16</summary><p>compare FP32, FP16 and BF16: ใช้กรณีในหัวข้อ FP32, FP16, BF16 เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch54-evidence-02"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch54-evidence-02-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch54-evidence-02-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch54-evidence-02-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch54-evidence-02-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch54-evidence-02-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch54-evidence-02-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch54-evidence-02-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch54-evidence-02-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>FP32มีsign1/exponent8/fraction23,FP16=1/5/10,BF16=1/8/7; BF16rangeใกล้FP32แต่precisionหยาบกว่าFP16</p><h3>4. FP32</h3>
+<p>Typical IEEE binary32:</p>
+<pre><code class="language-text">1 sign
+8 exponent
+23 fraction bits
+</code></pre>
+<p>Strengths:
+- wide range
+- relatively high precision
+- robust default training dtype</p>
+<p>Cost:
+- 4 bytes/element</p>
+<h3>5. FP16</h3>
+<p>IEEE binary16:</p>
+<pre><code class="language-text">1 sign
+5 exponent
+10 fraction bits
+</code></pre>
+<p>Advantages:
+- 2 bytes/element
+- high accelerator throughput on suitable hardware</p>
+<p>Challenge:
+- much smaller exponent range than FP32/BF16
+- gradients can underflow to zero
+- large values can overflow to Inf</p>
+<h3>6. BF16</h3>
+<p>BFloat16:</p>
+<pre><code class="language-text">1 sign
+8 exponent
+7 fraction bits
+</code></pre>
+<p>BF16 keeps the FP32-sized exponent field, giving it a similar broad dynamic range but less significand precision.</p>
+<p>This often makes BF16 easier to train with than FP16 on supported hardware, although rounding error is larger for many values.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch54-objective-03" class="objective-proof"><summary>explain dynamic range vs precision</summary><p>explain dynamic range vs precision: ใช้กรณีในหัวข้อ Range vs Precision เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch54-evidence-03"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch54-evidence-03-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch54-evidence-03-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch54-evidence-03-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch54-evidence-03-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch54-evidence-03-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch54-evidence-03-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch54-evidence-03-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch54-evidence-03-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>ทดลอง“BF16ลดnonfiniteupdatesเทียบFP16บนlargeactivationtoyโดยNLLไม่แย่”; samehardware/model/budgetและreportFP32reference</p><h3>7. Range vs Precision</h3>
+<p>Key distinction:</p>
+<pre><code class="language-text">FP16:
+more fraction precision than BF16
+but much smaller numeric range
+
+BF16:
+less fraction precision
+but FP32-like exponent range
+</code></pre></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch54-objective-04" class="objective-proof"><summary>identify overflow and underflow</summary><p>identify overflow and underflow: ใช้กรณีในหัวข้อ Underflow, Overflow เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch54-evidence-04"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch54-evidence-04-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch54-evidence-04-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch54-evidence-04-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch54-evidence-04-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch54-evidence-04-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch54-evidence-04-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch54-evidence-04-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch54-evidence-04-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>np.float16(1e5)overflowเป็นinf,1e−9อาจเป็น0; maxfinite65504,minnormal≈6.10e−5,minsubnormal≈5.96e−8; subnormalbehaviorขึ้นกับhardware</p><h3>8. Underflow</h3>
+<p>Very small non-zero values may round to zero.</p>
+<p>In FP16 this can affect tiny gradients:</p>
+<pre><code class="language-text">true gradient
+1e-8
+↓ cast FP16
+0
+</code></pre>
+<p>Once rounded to zero, the optimizer cannot recover that gradient.</p>
+<h3>9. Overflow</h3>
+<p>Values above the finite representable maximum become Inf.</p>
+<p>Then operations can produce:
+- Inf
+- NaN
+- invalid optimizer updates</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch54-objective-05" class="objective-proof"><summary>explain why FP16 often needs loss scaling</summary><p>explain why FP16 often needs loss scaling: ใช้กรณีในหัวข้อ Loss Scaling เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch54-evidence-05"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch54-evidence-05-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch54-evidence-05-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch54-evidence-05-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch54-evidence-05-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch54-evidence-05-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch54-evidence-05-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch54-evidence-05-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch54-evidence-05-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>g=1e−8,scale65536ได้scaledg.00065536; คำนวณในprecisionที่เก็บได้แล้วunscaleคืน1e−8ก่อนstep; scaleไม่ทำtruegradientใหญ่ขึ้น</p><h3>10. Loss Scaling</h3>
+<p>FP16 gradient scaling multiplies the loss before backward:</p>
+<pre><code class="language-text">scaled_loss = loss × S
+</code></pre>
+<p>Then:</p>
+<pre><code class="language-text">scaled_grad = true_grad × S
+</code></pre>
+<p>This moves tiny gradients into FP16's representable range.</p>
+<p>Before optimizer update:</p>
+<pre><code class="language-text">true_grad = scaled_grad / S
+</code></pre></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch54-objective-06" class="objective-proof"><summary>understand BF16&#x27;s larger exponent range</summary><p>understand BF16&#x27;s larger exponent range: ใช้กรณีในหัวข้อ BF16 เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch54-evidence-06"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch54-evidence-06-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch54-evidence-06-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch54-evidence-06-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch54-evidence-06-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch54-evidence-06-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch54-evidence-06-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch54-evidence-06-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch54-evidence-06-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>FP32มีsign1/exponent8/fraction23,FP16=1/5/10,BF16=1/8/7; BF16rangeใกล้FP32แต่precisionหยาบกว่าFP16</p><h3>6. BF16</h3>
+<p>BFloat16:</p>
+<pre><code class="language-text">1 sign
+8 exponent
+7 fraction bits
+</code></pre>
+<p>BF16 keeps the FP32-sized exponent field, giving it a similar broad dynamic range but less significand precision.</p>
+<p>This often makes BF16 easier to train with than FP16 on supported hardware, although rounding error is larger for many values.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch54-objective-07" class="objective-proof"><summary>explain autocast</summary><p>explain autocast: ใช้กรณีในหัวข้อ Autocast, Backward Placement เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch54-evidence-07"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch54-evidence-07-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch54-evidence-07-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch54-evidence-07-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch54-evidence-07-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch54-evidence-07-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch54-evidence-07-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch54-evidence-07-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch54-evidence-07-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>13. Autocast</h3>
+<p>Current PyTorch AMP uses torch.amp.autocast with a device type.</p>
+<pre><code class="language-python">with torch.amp.autocast('cuda', dtype=torch.float16):
+    output = model(inputs)
+    loss = loss_fn(output, targets)
+</code></pre>
+<p>Autocast selects operation-specific dtypes. Do not manually call half() on the whole model just because autocast is enabled.</p>
+<h3>14. Backward Placement</h3>
+<p>Current PyTorch guidance wraps forward + loss in autocast and performs backward after leaving the autocast context.</p>
+<p>Backward operations then follow the dtypes chosen by the corresponding forward operations.</p><h3>13. Autocast</h3>
+<p>Current PyTorch AMP uses torch.amp.autocast with a device type.</p>
+<pre><code class="language-python">with torch.amp.autocast('cuda', dtype=torch.float16):
+    output = model(inputs)
+    loss = loss_fn(output, targets)
+</code></pre>
+<p>Autocast selects operation-specific dtypes. Do not manually call half() on the whole model just because autocast is enabled.</p>
+<h3>14. Backward Placement</h3>
+<p>Current PyTorch guidance wraps forward + loss in autocast and performs backward after leaving the autocast context.</p>
+<p>Backward operations then follow the dtypes chosen by the corresponding forward operations.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch54-objective-08" class="objective-proof"><summary>use current torch.amp APIs</summary><p>use current torch.amp APIs: ใช้กรณีในหัวข้อ Current GradScaler API, Typical CUDA FP16 Loop เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch54-evidence-08"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch54-evidence-08-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch54-evidence-08-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch54-evidence-08-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch54-evidence-08-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch54-evidence-08-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch54-evidence-08-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch54-evidence-08-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch54-evidence-08-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p><code>with torch.amp.autocast('cuda',dtype=torch.float16): loss=...</code>; scaler.scale(loss).backward(); scaler.unscale_(opt); clip; scaler.step(opt); scaler.update(); CUDAต้องมีhardwareจริง</p><h3>15. Current GradScaler API</h3>
+<p>For CUDA FP16 training, current PyTorch uses:</p>
+<pre><code class="language-python">scaler = torch.amp.GradScaler('cuda')
+</code></pre>
+<p>Older torch.cuda.amp GradScaler/autocast entry points are deprecated in current documentation.</p>
+<h3>16. Typical CUDA FP16 Loop</h3>
+<pre><code class="language-python">optimizer.zero_grad(set_to_none=True)
+
+with torch.amp.autocast('cuda', dtype=torch.float16):
+    logits = model(x)
+    loss = loss_fn(logits, y)
+
+scaler.scale(loss).backward()
+scaler.unscale_(optimizer)
+torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+scaler.step(optimizer)
+scaler.update()
+</code></pre></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch54-objective-09" class="objective-proof"><summary>explain GradScaler behavior</summary><p>explain GradScaler behavior: ใช้กรณีในหัวข้อ Static vs Dynamic Scaling, Detecting Overflow เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch54-evidence-09"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch54-evidence-09-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch54-evidence-09-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch54-evidence-09-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch54-evidence-09-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch54-evidence-09-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch54-evidence-09-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch54-evidence-09-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch54-evidence-09-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>พบnonfinitegrad→skipoptimizerstep,scale*=.5; finiteครบgrowthinterval→scale*=2; growthtrackerและcompletedupdatesต้องแยก</p><h3>11. Static vs Dynamic Scaling</h3>
+<p>Static:
+- fixed scale chosen manually</p>
+<p>Dynamic:
+- increase scale after stable steps
+- reduce scale after Inf/NaN
+- skip unsafe optimizer updates when overflow is detected</p>
+<h3>23. Detecting Overflow</h3>
+<p>Useful checks:
+- loss finite
+- gradient norm finite
+- parameter values finite
+- scaler trend</p>
+<p>Repeated scale backoff can indicate numerical instability.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch54-objective-10" class="objective-proof"><summary>unscale before gradient clipping</summary><p>unscale before gradient clipping: ใช้กรณีในหัวข้อ Gradient Clipping Order เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch54-evidence-10"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch54-evidence-10-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch54-evidence-10-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch54-evidence-10-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch54-evidence-10-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch54-evidence-10-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch54-evidence-10-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch54-evidence-10-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch54-evidence-10-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>clipscaledgradก่อนunscaleทำeffectiveclipthresholdผิด; gnorm4,scale8,maxnorm2: ต้องunscale32→4แล้วclip2 ไม่clip32→2แล้วunscale.25</p><h3>12. Gradient Clipping Order</h3>
+<p>If using scaled gradients:</p>
+<pre><code class="language-text">backward on scaled loss
+↓
+unscale gradients
+↓
+clip true gradient norm
+↓
+optimizer step
+</code></pre>
+<p>Clipping before unscale uses the wrong scale.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch54-objective-11" class="objective-proof"><summary>understand FP32 optimizer/master-state concepts</summary><p>understand FP32 optimizer/master-state concepts: ใช้กรณีในหัวข้อ FP32 Master / Optimizer State เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch54-evidence-11"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch54-evidence-11-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch54-evidence-11-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch54-evidence-11-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch54-evidence-11-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch54-evidence-11-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch54-evidence-11-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch54-evidence-11-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch54-evidence-11-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>fp16rawweights2GBแต่AdamFP32moments8GBต่อ1Bและgrads/masterweightsเพิ่มอีก; precisionweightsไม่เท่ากับtrainingmemoryทั้งหมด</p><h3>19. FP32 Master / Optimizer State</h3>
+<p>Mixed precision does not mean every training tensor must be low precision.</p>
+<p>Training systems may retain higher precision for:
+- optimizer states
+- parameter updates/master values
+- reductions
+- sensitive normalization/loss operations</p>
+<p>Exact behavior depends on framework/parallelism strategy.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch54-objective-12" class="objective-proof"><summary>estimate memory savings</summary><p>estimate memory savings: ใช้กรณีในหัวข้อ Memory, Tensor Cores เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch54-evidence-12"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch54-evidence-12-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch54-evidence-12-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch54-evidence-12-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch54-evidence-12-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch54-evidence-12-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch54-evidence-12-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch54-evidence-12-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch54-evidence-12-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>1Bparameters rawFP32=4GB,FP16/BF16=2GBแบบdecimal ไม่รวมgrad/moments/masterweights/activation/allocator</p><h3>20. Memory</h3>
+<p>Raw tensor storage:</p>
+<pre><code class="language-text">FP32 = 4 bytes/value
+FP16 = 2 bytes/value
+BF16 = 2 bytes/value
+</code></pre>
+<p>But total training memory also includes:
+- gradients
+- optimizer states
+- activations
+- temporary kernels
+- communication buffers</p>
+<p>Therefore mixed precision does not automatically halve total training memory.</p>
+<h3>21. Tensor Cores</h3>
+<p>Modern NVIDIA GPUs can accelerate matrix operations in lower precision using specialized tensor-core paths when dimensions/layouts/operations are suitable.</p>
+<p>Actual speedup depends on workload and hardware.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch54-objective-13" class="objective-proof"><summary>debug NaN/Inf mixed-precision failures</summary><p>debug NaN/Inf mixed-precision failures: ใช้กรณีในหัวข้อ Precision-Sensitive Operations, Reproducibility, From Scratch เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch54-evidence-13"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch54-evidence-13-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch54-evidence-13-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch54-evidence-13-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch54-evidence-13-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch54-evidence-13-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch54-evidence-13-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch54-evidence-13-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch54-evidence-13-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>recordweight/activation/grad/momentdtypes,scale,growthtracker,skippedsteps,maxerrorและvalNLL; monitorinfก่อนoptimizerstateเสีย</p><h3>22. Precision-Sensitive Operations</h3>
+<p>Some operations benefit from FP32 accumulation/computation, for example reductions or certain normalization/loss operations. Autocast maintains an operation-specific eligibility policy rather than blindly forcing one dtype everywhere.</p>
+<h3>24. Reproducibility</h3>
+<p>Changing dtype/kernel can change rounding and reduction order. Numerically valid mixed-precision runs are not guaranteed bitwise identical to FP32.</p>
+<h3>25. From Scratch</h3>
+<p>src/mixed_precision.py includes:</p>
+<ul>
+<li>floating_format_info</li>
+<li>bfloat16_roundtrip</li>
+<li>scale_gradients</li>
+<li>unscale_gradients</li>
+<li>contains_nonfinite</li>
+<li>update_dynamic_loss_scale</li>
+<li>tensor_storage_bytes</li>
+<li>relative_error</li>
+</ul></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch54-objective-14" class="objective-proof"><summary>CPU BF16</summary><p>CPU BF16: ใช้กรณีในหัวข้อ CPU BF16 เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch54-evidence-14"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch54-evidence-14-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch54-evidence-14-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch54-evidence-14-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch54-evidence-14-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch54-evidence-14-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch54-evidence-14-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch54-evidence-14-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch54-evidence-14-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>CPUใช้torch.amp.autocast('cpu',dtype=torch.bfloat16)กับLinearเล็ก,backwardlossfinite,compareFP32tolerance; ไม่ใช้CUDAFP16GradScalerเพื่ออ้างCPUtestเทียบGPU</p><h3>18. CPU BF16</h3>
+<p>PyTorch also supports CPU autocast on supported operations:</p>
+<pre><code class="language-python">with torch.amp.autocast('cpu', dtype=torch.bfloat16):
+    output = model(x)
+</code></pre>
+<p>This is useful for CI smoke tests even when CUDA is unavailable.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch54-objective-15" class="objective-proof"><summary>BF16 Autocast / CPU BF16</summary><p>BF16 Autocast / CPU BF16: ใช้กรณีในหัวข้อ BF16 Autocast, CPU BF16 เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch54-evidence-15"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch54-evidence-15-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch54-evidence-15-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch54-evidence-15-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch54-evidence-15-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch54-evidence-15-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch54-evidence-15-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch54-evidence-15-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch54-evidence-15-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>CPUใช้torch.amp.autocast('cpu',dtype=torch.bfloat16)กับLinearเล็ก,backwardlossfinite,compareFP32tolerance; ไม่ใช้CUDAFP16GradScalerเพื่ออ้างCPUtestเทียบGPU</p><h3>17. BF16 Autocast</h3>
+<p>On supported hardware:</p>
+<pre><code class="language-python">with torch.amp.autocast('cuda', dtype=torch.bfloat16):
+    ...
+</code></pre>
+<p>BF16's exponent range often reduces the need for gradient scaling compared with FP16. Whether scaling is useful still depends on hardware/workload.</p>
+<h3>18. CPU BF16</h3>
+<p>PyTorch also supports CPU autocast on supported operations:</p>
+<pre><code class="language-python">with torch.amp.autocast('cpu', dtype=torch.bfloat16):
+    output = model(x)
+</code></pre>
+<p>This is useful for CI smoke tests even when CUDA is unavailable.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details></section><section id="implementation" class="canonical-section"><h2>Implementation และ tests ที่รันบนเครื่องได้</h2><details><summary>54-mixed-precision/src/mixed_precision.py</summary><pre><code>&quot;&quot;&quot;Mixed-precision format, quantization and loss-scaling utilities.&quot;&quot;&quot;
+
+from __future__ import annotations
+
+import math
+import numpy as np
+
+
+_FORMATS = {
+    &quot;fp32&quot;: {
+        &quot;bits&quot;: 32,
+        &quot;exponent_bits&quot;: 8,
+        &quot;fraction_bits&quot;: 23,
+        &quot;bytes&quot;: 4,
+        &quot;min_normal&quot;: 2.0 ** -126,
+        &quot;max_finite&quot;: (2.0 - 2.0 ** -23) * 2.0 ** 127,
+    },
+    &quot;fp16&quot;: {
+        &quot;bits&quot;: 16,
+        &quot;exponent_bits&quot;: 5,
+        &quot;fraction_bits&quot;: 10,
+        &quot;bytes&quot;: 2,
+        &quot;min_normal&quot;: 2.0 ** -14,
+        &quot;max_finite&quot;: 65504.0,
+    },
+    &quot;bf16&quot;: {
+        &quot;bits&quot;: 16,
+        &quot;exponent_bits&quot;: 8,
+        &quot;fraction_bits&quot;: 7,
+        &quot;bytes&quot;: 2,
+        &quot;min_normal&quot;: 2.0 ** -126,
+        &quot;max_finite&quot;: (2.0 - 2.0 ** -7) * 2.0 ** 127,
+    },
+}
+
+
+def floating_format_info(name: str) -&gt; dict[str, float | int]:
+    key = name.lower()
+    if key not in _FORMATS:
+        raise ValueError(&quot;format must be fp32, fp16 or bf16&quot;)
+    return dict(_FORMATS[key])
+
+
+def bfloat16_roundtrip(values: np.ndarray) -&gt; np.ndarray:
+    &quot;&quot;&quot;Round float32 to nearest-even BF16 precision, returned as float32.&quot;&quot;&quot;
+    x = np.asarray(values, dtype=np.float32)
+    bits = x.view(np.uint32)
+
+    # Round-to-nearest-even before discarding the low 16 bits.
+    least_significant_kept_bit = (bits &gt;&gt; 16) &amp; 1
+    rounding_bias = np.uint32(0x7FFF) + least_significant_kept_bit
+    rounded = (bits + rounding_bias) &amp; np.uint32(0xFFFF0000)
+
+    return rounded.view(np.float32)
+
+
+def scale_gradients(
+    gradients: list[np.ndarray],
+    scale: float,
+) -&gt; list[np.ndarray]:
+    if scale &lt;= 0 or not math.isfinite(scale):
+        raise ValueError(&quot;scale must be finite and positive&quot;)
+    return [
+        np.asarray(gradient, dtype=float) * scale
+        for gradient in gradients
+    ]
+
+
+def unscale_gradients(
+    gradients: list[np.ndarray],
+    scale: float,
+) -&gt; list[np.ndarray]:
+    if scale &lt;= 0 or not math.isfinite(scale):
+        raise ValueError(&quot;scale must be finite and positive&quot;)
+    return [
+        np.asarray(gradient, dtype=float) / scale
+        for gradient in gradients
+    ]
+
+
+def contains_nonfinite(
+    arrays: list[np.ndarray],
+) -&gt; bool:
+    return any(
+        not np.all(np.isfinite(np.asarray(array)))
+        for array in arrays
+    )
+
+
+def update_dynamic_loss_scale(
+    current_scale: float,
+    *,
+    found_nonfinite: bool,
+    stable_steps: int,
+    growth_interval: int = 2000,
+    growth_factor: float = 2.0,
+    backoff_factor: float = 0.5,
+) -&gt; tuple[float, int]:
+    if current_scale &lt;= 0:
+        raise ValueError(&quot;current_scale must be positive&quot;)
+    if stable_steps &lt; 0:
+        raise ValueError(&quot;stable_steps must be non-negative&quot;)
+    if growth_interval &lt;= 0:
+        raise ValueError(&quot;growth_interval must be positive&quot;)
+    if growth_factor &lt;= 1.0:
+        raise ValueError(&quot;growth_factor must exceed one&quot;)
+    if not 0.0 &lt; backoff_factor &lt; 1.0:
+        raise ValueError(&quot;backoff_factor must lie in (0,1)&quot;)
+
+    if found_nonfinite:
+        return (
+            max(current_scale * backoff_factor, 1.0),
+            0,
+        )
+
+    next_stable = stable_steps + 1
+
+    if next_stable &gt;= growth_interval:
+        return current_scale * growth_factor, 0
+
+    return current_scale, next_stable
+
+
+def tensor_storage_bytes(
+    num_elements: int,
+    *,
+    dtype: str,
+) -&gt; int:
+    if num_elements &lt; 0:
+        raise ValueError(&quot;num_elements must be non-negative&quot;)
+    info = floating_format_info(dtype)
+    return int(num_elements * int(info[&quot;bytes&quot;]))
+
+
+def relative_error(
+    reference: np.ndarray,
+    approximation: np.ndarray,
+    *,
+    eps: float = 1e-12,
+) -&gt; float:
+    if eps &lt;= 0:
+        raise ValueError(&quot;eps must be positive&quot;)
+
+    ref = np.asarray(reference, dtype=float)
+    approx = np.asarray(approximation, dtype=float)
+
+    if ref.shape != approx.shape:
+        raise ValueError(&quot;shape mismatch&quot;)
+
+    numerator = np.linalg.norm(ref - approx)
+    denominator = max(np.linalg.norm(ref), eps)
+    return float(numerator / denominator)
+</code></pre></details><details><summary>54-mixed-precision/tests/test_mixed_precision.py</summary><pre><code>from pathlib import Path
+import importlib.util
+
+import numpy as np
+
+
+MODULE_PATH = Path(__file__).parents[1] / &quot;src&quot; / &quot;mixed_precision.py&quot;
+SPEC = importlib.util.spec_from_file_location(&quot;mixed_precision_course&quot;, MODULE_PATH)
+assert SPEC and SPEC.loader
+mod = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(mod)
+
+
+def test_bf16_has_fp32_like_exponent_range() -&gt; None:
+    fp32 = mod.floating_format_info(&quot;fp32&quot;)
+    fp16 = mod.floating_format_info(&quot;fp16&quot;)
+    bf16 = mod.floating_format_info(&quot;bf16&quot;)
+
+    assert bf16[&quot;exponent_bits&quot;] == fp32[&quot;exponent_bits&quot;]
+    assert bf16[&quot;exponent_bits&quot;] &gt; fp16[&quot;exponent_bits&quot;]
+    assert bf16[&quot;fraction_bits&quot;] &lt; fp16[&quot;fraction_bits&quot;]
+
+
+def test_bfloat16_roundtrip_reduces_precision() -&gt; None:
+    x = np.array([1.234567, -9.876543], dtype=np.float32)
+    rounded = mod.bfloat16_roundtrip(x)
+
+    assert rounded.dtype == np.float32
+    assert np.all(np.isfinite(rounded))
+    assert not np.array_equal(rounded, x)
+    assert mod.relative_error(x, rounded) &lt; 0.02
+
+
+def test_scale_then_unscale_recovers_gradients() -&gt; None:
+    gradients = [
+        np.array([1e-8, -2e-8]),
+        np.array([3e-5]),
+    ]
+    scaled = mod.scale_gradients(gradients, 1024.0)
+    restored = mod.unscale_gradients(scaled, 1024.0)
+
+    for original, recovered in zip(gradients, restored):
+        np.testing.assert_allclose(original, recovered)
+
+
+def test_dynamic_loss_scale_backoff_and_growth() -&gt; None:
+    scale, stable = mod.update_dynamic_loss_scale(
+        1024.0,
+        found_nonfinite=True,
+        stable_steps=10,
+        growth_interval=2,
+    )
+    assert scale == 512.0
+    assert stable == 0
+
+    scale, stable = mod.update_dynamic_loss_scale(
+        scale,
+        found_nonfinite=False,
+        stable_steps=1,
+        growth_interval=2,
+    )
+    assert scale == 1024.0
+    assert stable == 0
+
+
+def test_storage_bytes() -&gt; None:
+    assert mod.tensor_storage_bytes(
+        1000,
+        dtype=&quot;fp32&quot;,
+    ) == 4000
+    assert mod.tensor_storage_bytes(
+        1000,
+        dtype=&quot;fp16&quot;,
+    ) == 2000
+    assert mod.tensor_storage_bytes(
+        1000,
+        dtype=&quot;bf16&quot;,
+    ) == 2000
+
+
+def test_nonfinite_detection() -&gt; None:
+    assert not mod.contains_nonfinite(
+        [np.array([1.0, 2.0])]
+    )
+    assert mod.contains_nonfinite(
+        [np.array([1.0, np.inf])]
+    )
+</code></pre></details></section><section id="glossary" class="canonical-section"><h2>อภิธานศัพท์ — คำไทย ความหมาย และข้อควรตรวจ</h2><dl><dt>tensor</dt><dd>เทนเซอร์: ชุดตัวเลขที่มีแกน เช่น scalar ไม่มีแกน, vector หนึ่งแกน, matrix สองแกน; shape บอกขนาดแต่ละแกน ไม่บอกความหมายของแกนจนกว่าจะระบุ</dd><dt>shape</dt><dd>รูปทรงข้อมูล: (B,T,d) หมายถึง batch × เวลา/ตำแหน่ง × features; ใช้ชื่อแกนกำกับเสมอ การ transpose เปลี่ยนแกนแต่ไม่ใช่แค่เปลี่ยนชื่อ</dd><dt>batch</dt><dd>กลุ่มตัวอย่างที่คำนวณร่วมกันหนึ่งครั้ง; B คือจำนวนตัวอย่าง ไม่ใช่จำนวน features หรือจำนวน optimizer updates</dd><dt>weight w / θ</dt><dd>น้ำหนักหรือพารามิเตอร์ที่โมเดลใช้คำนวณ; แก้ด้วยมือทำ forward ใหม่ ส่วน optimizer ต้องรับ gradient แล้วกด update จึงแก้ state</dd><dt>bias b</dt><dd>ค่าคงที่ที่บวกกับผลเชิงเส้น; regression scalar bias เพิ่ม Δ ทำให้ prediction ทุกจุดเพิ่ม Δ เท่ากัน</dd><dt>prediction ŷ</dt><dd>ค่าที่โมเดลทำนายจาก input และพารามิเตอร์ปัจจุบัน; เครื่องหมายหมวกแยกจาก target y ที่มาจากข้อมูล</dd><dt>residual e</dt><dd>ความคลาดเคลื่อน ในเว็บนี้นิยาม prediction − target; บางตำราใช้เครื่องหมายกลับกัน จึงต้องตรวจนิยามก่อนเทียบสูตร gradient</dd><dt>MSE</dt><dd>mean squared error = ผลรวม residual กำลังสองหารจำนวนรายการที่ระบุ; มีหน่วยเป็น target ยกกำลังสอง และการใช้ sum แทน mean เปลี่ยน scale gradient</dd><dt>loss L / objective J</dt><dd>จำนวนที่ optimizer ต้องการลด; objective อาจรวม data loss และ regularization จึงต้องดูองค์ประกอบและ reduction ให้ตรง implementation</dd><dt>gradient ∇ / ∂</dt><dd>เวกเตอร์ของ partial derivatives บอกอัตราเปลี่ยน loss ต่อพารามิเตอร์แต่ละตัว; ∂ ใช้เมื่อเปลี่ยนตัวหนึ่งโดยตรึงตัวอื่น</dd><dt>chain rule</dt><dd>กฎลูกโซ่: คูณอนุพันธ์ตามเส้นทาง และบวก contribution จากทุกเส้นทางที่มารวมกัน ใช้ย้อนจาก loss ถึง weights</dd><dt>learning rate η</dt><dd>ขนาดตัวคูณ gradient ใน update θnew=θ−ηg; η≥0, ศูนย์หมายถึงไม่มีการขยับพารามิเตอร์ ก้าวใหญ่เกินอาจ diverge</dd><dt>regularization λ</dt><dd>ตัวคูณค่าลงโทษ ต้อง λ≥0 ตามนิยามการลงโทษ; Ridge λΣw² เพิ่ม gradient 2λw โดยบท Regression นี้ไม่ลงโทษ bias</dd><dt>baseline</dt><dd>สถานะอ้างอิงที่ตรึงไว้สำหรับเทียบ; ต้องเก็บ snapshot ไม่อ้าง object ปัจจุบันที่แก้ตามไปด้วย</dd><dt>invariant</dt><dd>คุณสมบัติที่กลไกต้องรักษา เช่น probability รวม1, shape สอดคล้อง, queue ไม่เกิน capacity; ใช้ tests ตรวจได้มากกว่าดูภาพสวย</dd><dt>optimizer state</dt><dd>ความจำของอัลกอริทึม เช่น velocity, moments และ completed updates; คืนเฉพาะ weights ยังไม่เท่ากับเริ่มการฝึกใหม่ทั้งหมด</dd><dt>finite difference</dt><dd>ประมาณ derivative ด้วย [f(x+h)−f(x−h)]/(2h); h&gt;0, ใช้ smooth point และลองหลาย h เพื่อแยก truncation error จาก roundoff</dd><dt>softmax</dt><dd>แปลง logits เป็นความน่าจะเป็นตามแกนที่กำหนด; ลบ max ก่อน exp เพื่อความเสถียร และ fully masked row ต้องมีนโยบายชัดเจน</dd><dt>logit</dt><dd>คะแนนก่อน sigmoid/softmax ไม่ใช่ probability; อาจเป็นจำนวนจริงติดลบหรือเกิน1ได้ จึงห้ามส่งให้ loss ที่คาด probability โดยไม่แปลง</dd><dt>temperature τ / T</dt><dd>ตัวหาร logits ก่อน softmax; ต้องเป็นบวก ค่าเล็กทำ distribution แหลมขึ้น โดยไม่เท่ากับ retrain weights</dd><dt>mask</dt><dd>ตัวกำหนดตำแหน่งที่อ่านหรือคิด loss ได้; causal mask ปิดอนาคต, padding mask ปิดข้อมูลเติม, loss mask เลือก target แต่ละอย่างคนละหน้าที่</dd><dt>Q / K / V</dt><dd>query ใช้ค้นข้อมูล, key ใช้จับคู่ query, value เป็นข้อมูลที่ถูกถัวเฉลี่ย; เป็น learned projections ของ representation ไม่ใช่ป้ายความหมายตายตัว</dd><dt>head</dt><dd>ส่วนของ feature representation ที่ทำ attention แยกกัน แล้ว concat/project กลับ; ต้องตรวจ d_model หารจำนวน heads ลงตัว</dd><dt>ε-neighborhood</dt><dd>เพื่อนบ้านทั้งหมดที่มีระยะไม่เกิน ε รวมจุดตัวเองใน DBSCAN นี้; ε มีหน่วยเดียวกับพิกัด ไม่ใช่จำนวน k ที่ใช้โหวต</dd><dt>core / border / noise</dt><dd>DBSCAN core มีเพื่อนบ้านรวมตัวเองถึง min_samples; border อยู่ใกล้ core แต่เพื่อนบ้านไม่ถึง; noise ไม่ถูกเชื่อมกับ core cluster ใด</dd><dt>bootstrap</dt><dd>สุ่ม observations แบบ replacement ขนาดเท่าเดิมซ้ำหลายครั้งแล้วคำนวณ statistic ใหม่; seed ทำให้ตรวจซ้ำได้ แต่ไม่แก้สมมติฐาน IID ที่ผิด</dd><dt>confidence interval</dt><dd>ช่วงที่สร้างด้วย procedure ที่มี coverage ตามสมมติฐาน; ช่วงหนึ่งที่ได้แล้วไม่ใช่ posterior probability ของ parameter และ sample เล็กยังไม่แน่นอนมาก</dd><dt>validation / test</dt><dd>validation ใช้เลือกโมเดล/ค่าตั้ง ส่วน test ใช้ประเมินหลัง freeze การตัดสินใจ; fit preprocessing/tokenizer จาก test เป็น leakage</dd><dt>leakage</dt><dd>ข้อมูลที่ควรยังไม่รู้ไหลเข้า training/การเลือกโมเดล เช่น future feature หรือเอกสารซ้ำข้าม split ทำให้ metric ดูดีเกินการใช้งานจริง</dd><dt>queue / capacity</dt><dd>queue คือรายการรอ, capacity การให้บริการรวม = workers × service rate ตามแบบจำลอง; เพิ่ม timeout ไม่เพิ่มกำลังประมวลผล</dd><dt>state transition</dt><dd>การเปลี่ยนสถานะเมื่อเกิดเหตุการณ์ที่อนุญาต เช่น queued→active→done; ต้องระบุ guard, side effect และเหตุผลเมื่อ transition ถูกปฏิเสธ</dd><dt>latency / throughput</dt><dd>latency คือเวลาต่อคำขอ, throughput คือปริมาณงานต่อหน่วยเวลา; batching อาจเพิ่ม throughput แต่เพิ่มเวลารอ จึงต้องวัดทั้งคู่</dd><dt>idempotency</dt><dd>ทำคำขอ business operation เดิมซ้ำแล้ว side effect เกิดครั้งเดียวตาม key และ transaction protocol; ไม่ได้รับประกันจากการใช้ UUID ใหม่ทุก attempt</dd><dt>local lab</dt><dd>โปรแกรม Python และ tests ที่ผู้เรียนรันบนเครื่อง; เว็บเก็บเพียงคำยืนยันของผู้เรียน การผ่าน tests ของโค้ดต้นแบบไม่ใช่ผลตรวจโค้ดผู้เรียน</dd></dl></section></article>
+<section id="practice" class="practice-section"><span class="eyebrow">PRACTICE · DEBUG · BUILD</span><h2>พิสูจน์ด้วยการลงมือทำ</h2><div id="web-checks"></div><div class="retry-actions"><button class="secondary-button" id="retry-checks">เริ่มทำโจทย์ในเว็บใหม่</button><button class="text-button" id="undo-retry" hidden>คืนผลก่อนเริ่มใหม่</button></div><div id="exercise-content"><h2>แบบฝึก 20 ข้อ — เฉลยเฉพาะข้อ</h2><p>ทำคำตอบก่อนเปิด hints; โจทย์ปลายเปิดให้ใช้ตัวอย่างคำตอบและหลักฐานราย objective ตรวจงานจริง</p><section id="exercise-1" class="exercise-item"><h3>ข้อ 1</h3><p>Compare exponent/fraction bits of FP32/FP16/BF16.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Floating-Point Structure, FP32, FP16, BF16: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): FP32มีsign1/exponent8/fraction23,FP16=1…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: FP32มีsign1/exponent8/fraction23,FP16=1/5/10,BF16=1/8/7; BF16rangeใกล้…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>FP32มีsign1/exponent8/fraction23,FP16=1/5/10,BF16=1/8/7; BF16rangeใกล้FP32แต่precisionหยาบกว่าFP16</p><p>อ้างอิง: <a href="#chapter-54/section/topic-3">Floating-Point Structure</a>, <a href="#chapter-54/section/topic-4">FP32</a>, <a href="#chapter-54/section/topic-5">FP16</a>, <a href="#chapter-54/section/topic-6">BF16</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch54-exercise-01"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-2" class="exercise-item"><h3>ข้อ 2</h3><p>Calculate raw storage for one billion parameters in each dtype.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Memory: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): 1Bparameters rawFP32=4GB,FP16/BF16=2GBแบ…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: 1Bparameters rawFP32=4GB,FP16/BF16=2GBแบบdecimal ไม่รวมgrad/moments/maste…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>1Bparameters rawFP32=4GB,FP16/BF16=2GBแบบdecimal ไม่รวมgrad/moments/masterweights/activation/allocator</p><p>อ้างอิง: <a href="#chapter-54/section/topic-20">Memory</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch54-exercise-02"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-3" class="exercise-item"><h3>ข้อ 3</h3><p>Cast a range of values to FP16 and identify overflow/underflow.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Underflow, Overflow: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): np.float16(1e5)overflowเป็นinf,1e−9อาจเป็น0; maxfini…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: np.float16(1e5)overflowเป็นinf,1e−9อาจเป็น0; maxfinite65504,minnormal≈6.10e−5,minsubnormal≈5.96…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>np.float16(1e5)overflowเป็นinf,1e−9อาจเป็น0; maxfinite65504,minnormal≈6.10e−5,minsubnormal≈5.96e−8; subnormalbehaviorขึ้นกับhardware</p><p>อ้างอิง: <a href="#chapter-54/section/topic-8">Underflow</a>, <a href="#chapter-54/section/topic-9">Overflow</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch54-exercise-03"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-4" class="exercise-item"><h3>ข้อ 4</h3><p>Simulate BF16 rounding and measure relative error.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ BF16: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): BF16roundingเก็บhigh16bitsของfloat32พร้อมround-to-neares…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: BF16roundingเก็บhigh16bitsของfloat32พร้อมround-to-nearest-even; comparetorchfloat32.to(bfloat16).flo…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>BF16roundingเก็บhigh16bitsของfloat32พร้อมround-to-nearest-even; comparetorchfloat32.to(bfloat16).float และrelativeerrorเฉพาะnonzeroreference</p><p>อ้างอิง: <a href="#chapter-54/section/topic-6">BF16</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch54-exercise-04"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-5" class="exercise-item"><h3>ข้อ 5</h3><p>Scale/unscale tiny gradients.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Loss Scaling: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): g=1e−8,scale65536ได้scaledg.00065536; คำนวณในpre…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: g=1e−8,scale65536ได้scaledg.00065536; คำนวณในprecisionที่เก็บได้แล้วunscaleคืน1e−8ก่อนs…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>g=1e−8,scale65536ได้scaledg.00065536; คำนวณในprecisionที่เก็บได้แล้วunscaleคืน1e−8ก่อนstep; scaleไม่ทำtruegradientใหญ่ขึ้น</p><p>อ้างอิง: <a href="#chapter-54/section/topic-10">Loss Scaling</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch54-exercise-05"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-6" class="exercise-item"><h3>ข้อ 6</h3><p>Implement dynamic scale backoff/growth.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Static vs Dynamic Scaling, Detecting Overflow: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): พบnonfinitegrad→skipoptimizerstep,scale*=.5; fi…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: พบnonfinitegrad→skipoptimizerstep,scale*=.5; finiteครบgrowthinterval→scale*=2; growt…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>พบnonfinitegrad→skipoptimizerstep,scale*=.5; finiteครบgrowthinterval→scale*=2; growthtrackerและcompletedupdatesต้องแยก</p><p>อ้างอิง: <a href="#chapter-54/section/topic-11">Static vs Dynamic Scaling</a>, <a href="#chapter-54/section/topic-23">Detecting Overflow</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch54-exercise-06"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-7" class="exercise-item"><h3>ข้อ 7</h3><p>Explain why clipping must follow unscale.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Gradient Clipping Order: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): clipscaledgradก่อนunscaleทำeffectiveclipthresholdผิ…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: clipscaledgradก่อนunscaleทำeffectiveclipthresholdผิด; gnorm4,scale8,maxnorm2: ต้องunscale32→…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>clipscaledgradก่อนunscaleทำeffectiveclipthresholdผิด; gnorm4,scale8,maxnorm2: ต้องunscale32→4แล้วclip2 ไม่clip32→2แล้วunscale.25</p><p>อ้างอิง: <a href="#chapter-54/section/topic-12">Gradient Clipping Order</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch54-exercise-07"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-8" class="exercise-item"><h3>ข้อ 8</h3><p>Write a current torch.amp FP16 loop.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Current GradScaler API, Typical CUDA FP16 Loop: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): <code>with torch.amp.autocast('cuda',dtype=torch.float16): loss=...</code>; scaler.…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: <code>with torch.amp.autocast('cuda',dtype=torch.float16): loss=...</code>; scaler.scale(loss).backward(); scaler.unscale_(opt); clip; scaler…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p><code>with torch.amp.autocast('cuda',dtype=torch.float16): loss=...</code>; scaler.scale(loss).backward(); scaler.unscale_(opt); clip; scaler.step(opt); scaler.update(); CUDAต้องมีhardwareจริง</p><p>อ้างอิง: <a href="#chapter-54/section/topic-15">Current GradScaler API</a>, <a href="#chapter-54/section/topic-16">Typical CUDA FP16 Loop</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch54-exercise-08"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-9" class="exercise-item"><h3>ข้อ 9</h3><p>Write a CPU BF16 autocast smoke test.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ CPU BF16: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): CPUใช้torch.amp.autocast('cpu',dtype=torch.bfloat16)กับLinearเ…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: CPUใช้torch.amp.autocast('cpu',dtype=torch.bfloat16)กับLinearเล็ก,backwardlossfinite,compareFP32tolerance; ไม่ใ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>CPUใช้torch.amp.autocast('cpu',dtype=torch.bfloat16)กับLinearเล็ก,backwardlossfinite,compareFP32tolerance; ไม่ใช้CUDAFP16GradScalerเพื่ออ้างCPUtestเทียบGPU</p><p>อ้างอิง: <a href="#chapter-54/section/topic-18">CPU BF16</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch54-exercise-09"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-10" class="exercise-item"><h3>ข้อ 10</h3><p>Compare FP32 and mixed-precision memory/throughput measurements.</p>
+<p>Challenge:
+- add mixed precision to the Batch 17 tiny LLM trainer
+- log scaler, gradient norm and non-finite events</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Memory, Tensor Cores: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): คงmodel/batch/sequence/optimizer/warmup; วัดpeakallo…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: คงmodel/batch/sequence/optimizer/warmup; วัดpeakallocated/tokenssecและmaxerror/valNLLแยกprecis…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>คงmodel/batch/sequence/optimizer/warmup; วัดpeakallocated/tokenssecและmaxerror/valNLLแยกprecision CPUผ่านยังไม่พิสูจน์GPUthroughput</p><p>อ้างอิง: <a href="#chapter-54/section/topic-20">Memory</a>, <a href="#chapter-54/section/topic-21">Tensor Cores</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch54-exercise-10"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-11" class="exercise-item"><h3>ข้อ 11</h3><p>Reproduce one central calculation from Mixed Precision using a tiny hand-checkable input.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ FP32 Master / Optimizer State: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): fp16rawweights2GBแต่AdamFP32moments8GBต่อ1Bและgr…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: fp16rawweights2GBแต่AdamFP32moments8GBต่อ1Bและgrads/masterweightsเพิ่มอีก; precisionwei…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>fp16rawweights2GBแต่AdamFP32moments8GBต่อ1Bและgrads/masterweightsเพิ่มอีก; precisionweightsไม่เท่ากับtrainingmemoryทั้งหมด</p><p>อ้างอิง: <a href="#chapter-54/section/topic-19">FP32 Master / Optimizer State</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch54-exercise-11"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-12" class="exercise-item"><h3>ข้อ 12</h3><p>Write a deterministic test that verifies the most important invariant in Mixed Precision.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Detecting Overflow: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): nonfinitegradต้องไม่เปลี่ยนweights/updates,unscale-befor…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: nonfinitegradต้องไม่เปลี่ยนweights/updates,unscale-before-clipfixtureถูก,CPU-BF16lossfinite; GPUrequi…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>nonfinitegradต้องไม่เปลี่ยนweights/updates,unscale-before-clipfixtureถูก,CPU-BF16lossfinite; GPUrequiredtestถ้าไม่มีhardwareต้องnot_runชัดเจน</p><p>อ้างอิง: <a href="#chapter-54/section/topic-23">Detecting Overflow</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch54-exercise-12"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-13" class="exercise-item"><h3>ข้อ 13</h3><p>Compare two meaningful configurations while keeping data and seed fixed.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ BF16 Autocast, CPU BF16: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): compareFP32/BF16บนCPUdeviceเดียวก่อนmeasureGPUแยก…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: compareFP32/BF16บนCPUdeviceเดียวก่อนmeasureGPUแยก; recordoperatorfallback/dtypeจริงไม่อ้…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>compareFP32/BF16บนCPUdeviceเดียวก่อนmeasureGPUแยก; recordoperatorfallback/dtypeจริงไม่อ้างทุกopBF16เพียงอยู่autocastcontext</p><p>อ้างอิง: <a href="#chapter-54/section/topic-17">BF16 Autocast</a>, <a href="#chapter-54/section/topic-18">CPU BF16</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch54-exercise-13"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-14" class="exercise-item"><h3>ข้อ 14</h3><p>Record intermediate shapes, ranges, and one quality metric for a tiny end-to-end run.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Precision-Sensitive Operations: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): recordweight/activation/grad/momentdtypes,scale,gr…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: recordweight/activation/grad/momentdtypes,scale,growthtracker,skippedsteps,maxerrorและvalN…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>recordweight/activation/grad/momentdtypes,scale,growthtracker,skippedsteps,maxerrorและvalNLL; monitorinfก่อนoptimizerstateเสีย</p><p>อ้างอิง: <a href="#chapter-54/section/topic-22">Precision-Sensitive Operations</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch54-exercise-14"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-15" class="exercise-item"><h3>ข้อ 15</h3><p>Explain one evaluation mistake that could make a Mixed Precision result look better than it really is.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Reproducibility: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ต่างbatchsizeหรือใช้FP32coldstartเทียบmixedwar…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ต่างbatchsizeหรือใช้FP32coldstartเทียบmixedwarmcacheทำthroughputดูดีเกิน; freezebe…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ต่างbatchsizeหรือใช้FP32coldstartเทียบmixedwarmcacheทำthroughputดูดีเกิน; freezebenchmarkและvalidatequalityก่อนสรุป</p><p>อ้างอิง: <a href="#chapter-54/section/topic-24">Reproducibility</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch54-exercise-15"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-16" class="exercise-item"><h3>ข้อ 16</h3><p>State the dominant time and memory complexity for the main operation in Mixed Precision.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Memory: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): storageO(P)เปลี่ยนbytesperelement,computeขึ้นกับsupporte…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: storageO(P)เปลี่ยนbytesperelement,computeขึ้นกับsupportedkernels; autocastconversionมีoverheadและactiv…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>storageO(P)เปลี่ยนbytesperelement,computeขึ้นกับsupportedkernels; autocastconversionมีoverheadและactivationoften dominates ไม่คาดspeedup2×เสมอ</p><p>อ้างอิง: <a href="#chapter-54/section/topic-20">Memory</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch54-exercise-16"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-17" class="exercise-item"><h3>ข้อ 17</h3><p>Compare a from-scratch result with a trusted implementation using identical inputs and settings.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ From Scratch: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): NumPyfloat16castเทียบTorchCPUhalfcastบนrepresentab…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: NumPyfloat16castเทียบTorchCPUhalfcastบนrepresentablevalues; BF16เทียบbitroundingoracleและt…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>NumPyfloat16castเทียบTorchCPUhalfcastบนrepresentablevalues; BF16เทียบbitroundingoracleและties-to-evenboundaryรวมNaN/infpolicy</p><p>อ้างอิง: <a href="#chapter-54/section/topic-25">From Scratch</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch54-exercise-17"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-18" class="exercise-item"><h3>ข้อ 18</h3><p>Run a one-factor ablation and report the measured change over repeated runs when randomness matters.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Loss Scaling, Static vs Dynamic Scaling: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): scale1→dynamicคงmodel/data/seed/precision; repo…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: scale1→dynamicคงmodel/data/seed/precision; reportunderflow/skippedstepfrequency/valqu…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>scale1→dynamicคงmodel/data/seed/precision; reportunderflow/skippedstepfrequency/valqualityหลายruns ไม่เปลี่ยนLRพร้อมกัน</p><p>อ้างอิง: <a href="#chapter-54/section/topic-10">Loss Scaling</a>, <a href="#chapter-54/section/topic-11">Static vs Dynamic Scaling</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch54-exercise-18"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-19" class="exercise-item"><h3>ข้อ 19</h3><p>Design a small reproducibility record containing seed, code version, data version, configuration, and metric.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Reproducibility: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): manifest มีhardware/precision/autocastoplist/mast…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: manifest มีhardware/precision/autocastoplist/masterstate/scalerconfig/cliporder/batch/con…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>manifest มีhardware/precision/autocastoplist/masterstate/scalerconfig/cliporder/batch/context/versions/seeds/error-tolerance</p><p>อ้างอิง: <a href="#chapter-54/section/topic-24">Reproducibility</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch54-exercise-19"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-20" class="exercise-item"><h3>ข้อ 20</h3><p>Propose one falsifiable research question for Mixed Precision and specify the baseline, changed factor, and acceptance metric.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Range vs Precision: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ทดลอง“BF16ลดnonfiniteupdatesเทียบFP16บนlargeact…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ทดลอง“BF16ลดnonfiniteupdatesเทียบFP16บนlargeactivationtoyโดยNLLไม่แย่”; samehardware/…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ทดลอง“BF16ลดnonfiniteupdatesเทียบFP16บนlargeactivationtoyโดยNLLไม่แย่”; samehardware/model/budgetและreportFP32reference</p><p>อ้างอิง: <a href="#chapter-54/section/topic-7">Range vs Precision</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch54-exercise-20"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section></div><div id="local-lab-content"><section id="local-lab"><h2>Local lab: Python 3.12 บน CPU</h2><p>รันจาก repository root; ใช้ Python 3.12 แยก environment สำหรับ framework ตาม requirements ของชุดบท</p><pre><code>python3.12 -m venv .venv-course
+source .venv-course/bin/activate
+python -m pip install -r requirements-batch18.txt pytest
+(cd 54-mixed-precision &amp;&amp; python -m pytest tests -q -rs)</code></pre><p>ผลที่คาดหวัง: required tests ผ่านและไม่มี required test ถูก skip; GPU/integrations ที่ยังไม่รันต้องระบุแยก Python 3.15 ที่มากับเครื่องอาจใช้กับ framework wheels เหล่านี้ไม่ได้</p><h2>Mini Project — Precision Stability Lab</h2>
+<p>Train the same tiny network under:
+- FP32
+- CPU BF16 autocast
+- CUDA FP16 autocast + GradScaler when CUDA is available
+- CUDA BF16 autocast when hardware supports it</p>
+<p>Track:
+- loss curve
+- gradient norm
+- non-finite events
+- scale value
+- peak memory
+- step time
+- final validation metric</p>
+<p>Explain any numerical differences rather than assuming lower precision is incorrect.</p><h2>Batch 18 Integration Project — Distributed, CUDA &amp; Precision Lab</h2>
+<p>Batch 18 connects large-model systems concepts with runtime behavior.</p>
+<h3>Part A — Distributed Planner</h3>
+<p>Pure NumPy/system math verifies:</p>
+<pre><code class="language-text">dataset
+↓
+rank shards
+
+local gradients
+↓
+all-reduce mean
+
+model-state bytes
+↓
+DDP / ZeRO-style stage estimates
+
+gradient bytes
+↓
+ring all-reduce payload estimate
+</code></pre>
+<p>The lab reports:
+- sample shard sizes
+- unique sample coverage
+- averaged gradient
+- effective global batch
+- ring payload/rank
+- stage 0–3 model-state memory
+- pipeline efficiency</p>
+<h3>Part B — CUDA Inspection</h3>
+<p>PyTorch path reports:</p>
+<pre><code class="language-text">torch.cuda.is_available()
+device count
+GPU name
+device memory
+SM count
+compute capability
+</code></pre>
+<p>When CUDA is unavailable, the lab exits the CUDA-specific part cleanly instead of failing CPU CI.</p>
+<p>On CUDA hardware it also runs a small synchronized matrix-multiply smoke.</p>
+<h3>Part C — Mixed Precision</h3>
+<p>One tiny network trains with:</p>
+<pre><code class="language-text">CUDA available:
+torch.amp.autocast(cuda, FP16)
++
+torch.amp.GradScaler(cuda)
+
+CPU CI:
+torch.amp.autocast(cpu, BF16)
+</code></pre>
+<p>CUDA path follows:</p>
+<pre><code class="language-text">forward/loss under autocast
+↓
+scale(loss).backward()
+↓
+unscale optimizer gradients
+↓
+clip global norm
+↓
+scaler.step()
+↓
+scaler.update()
+</code></pre>
+<p>CPU BF16 path does not require the CUDA GradScaler.</p>
+<h3>Run</h3>
+<pre><code class="language-bash">python integration-project-batch18/src/distributed_cuda_precision_lab.py --mode distributed
+python integration-project-batch18/src/distributed_cuda_precision_lab.py --mode gpu
+python integration-project-batch18/src/distributed_cuda_precision_lab.py --mode precision --steps 10
+</code></pre>
+<h3>Required Extensions</h3>
+<ol>
+<li>two-process Gloo all-reduce demo</li>
+<li>multi-GPU NCCL DDP when hardware is available</li>
+<li>distributed sampler epoch/shuffle audit</li>
+<li>FSDP memory experiment</li>
+<li>CUDA-event timing</li>
+<li>profiler trace</li>
+<li>FP32 vs BF16 validation comparison</li>
+<li>CUDA FP16 scaler overflow experiment</li>
+<li>throughput/tokens-per-second benchmark</li>
+<li>integrate AMP into Batch 17 tiny LLM pretraining</li>
+</ol></section></div><label class="local-confirm"><input type="checkbox" id="local-lab-confirm"> ฉันรัน local lab และตรวจผลตาม rubric ด้วยตัวเองแล้ว</label><p class="local-note">สถานะนี้เป็นคำยืนยันของผู้เรียน เว็บไม่ได้รันหรือตรวจ Python บนเครื่องแทนคุณ</p></section>
+<section id="mastery-review" class="practice-section"><h2>หลักฐานตามเกณฑ์การเรียนรู้</h2><p>ทุก objective ต้องแสดงหลักฐานอธิบาย ทำนาย คำนวณ อ่าน shape/state debug และประยุกต์ พร้อมกรณีใหม่ ผลรัน source ผู้เรียนจริง และการประเมินซ้ำ เกณฑ์นี้ไม่รับประกันความเข้าใจทุกสถานการณ์ เปิด JavaScript เพื่อดูรายการที่ยังขาดและนำเข้ารายงานผู้ตรวจ</p></section><section class="coverage-section"><h2>แผนที่สิ่งที่เรียน → สิ่งที่ต้องแสดงให้ได้</h2><div id="coverage-table"></div></section><footer><span>ZERO TO ELITE AI ENGINEER · LEARNING STUDIO</span><span>อ่าน · derive · implement · debug · experiment · build</span></footer></div></main><noscript><style>.workbench,.sidebar,.reading-route,.lesson-toc,.mastery-status,#web-checks{display:none}main{margin-left:0}</style>อ่านเนื้อหา HTML ได้ตามปกติ เปิด JavaScript เพื่อใช้ห้องทดลองและตรวจคำตอบ</noscript></body></html>

@@ -1,5 +1,11 @@
 # Chapter 34 — BERT & Encoder-Only Models
 
+## Interactive Animation Lab
+
+[เปิดภาพจำลองของบทนี้](animation.html) · [เลือกจากทั้ง 80 บท](../visual-lab/index.html)
+
+ดู flow ทีละขั้น → ทดลองเปลี่ยนค่า → อ่านสมการและโค้ด → ตอบคำถามเช็กความเข้าใจ แล้วกลับมาทำแบบฝึกหัดในบทนี้
+
 ## 1. Why Encoder-Only Models?
 
 Encoder-only Transformers build a contextual representation for every input token using bidirectional self-attention.

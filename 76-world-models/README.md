@@ -1,5 +1,11 @@
 # Chapter 76 — World Models
 
+## Interactive Animation Lab
+
+[เปิดภาพจำลองของบทนี้](animation.html) · [เลือกจากทั้ง 80 บท](../visual-lab/index.html)
+
+ดู flow ทีละขั้น → ทดลองเปลี่ยนค่า → อ่านสมการและโค้ด → ตอบคำถามเช็กความเข้าใจ แล้วกลับมาทำแบบฝึกหัดในบทนี้
+
 ## 1. What Is a World Model?
 
 A world model learns enough structure about environment dynamics to predict useful future representations/outcomes and support planning or control.

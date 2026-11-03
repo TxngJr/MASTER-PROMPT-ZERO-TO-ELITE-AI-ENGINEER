@@ -1,0 +1,1387 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="บทเรียน AI Engineer ภาษาไทย พร้อมคณิตศาสตร์ทีละขั้นและห้องทดลองที่คำนวณจริง"><title>MLOps: ผูกการทดลองกับ version และตรวจสิ่งที่เปลี่ยน · AI Engineer Studio</title><link rel="stylesheet" href="../visual-lab/assets/styles.css"><link rel="stylesheet" href="../visual-lab/assets/course.css"><script defer src="../visual-lab/assets/lessons.js"></script><script defer src="../visual-lab/assets/chapter-meta.js"></script><script defer src="../visual-lab/assets/course-math.js"></script><script defer src="../visual-lab/assets/course-models.js"></script><script defer src="../visual-lab/assets/course-models-v3.js"></script><script defer src="../visual-lab/assets/course-assessment.js"></script><script defer src="../visual-lab/assets/course-mastery.js"></script><script defer src="../visual-lab/assets/course-catalog.js"></script><script defer src="../visual-lab/assets/book-content.js"></script><script defer src="../visual-lab/assets/course-render.js"></script><script defer src="../visual-lab/assets/course-mastery-panel.js"></script><script defer src="../visual-lab/assets/quality-report.js"></script><script defer src="../visual-lab/assets/course-app.js"></script></head>
+<body data-chapter="65" data-root="../"><a class="skip-link" href="#main">ข้ามไปบทเรียน</a>
+<aside class="sidebar" id="sidebar" aria-label="เลือกบทเรียน"><a class="brand" href="../visual-lab/index.html"><span class="brand-mark">ai</span><span>AI ENGINEER<small>LEARN · DERIVE · BUILD</small></span></a><div class="sidebar-intro">อ่านให้เข้าใจ · คำนวณให้เห็น · เขียนให้เป็น</div><label class="search-box"><input id="search" type="search" placeholder="ค้นหาบท / attention" aria-label="ค้นหาบทเรียน"></label><label class="filter-label" for="phase-filter">เส้นทางการเรียน <span id="nav-count"></span></label><select id="phase-filter"><option value="">ทุก Phase</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option></select><nav id="chapter-list" class="chapter-list" aria-label="รายชื่อบท"></nav><div class="course-progress"><div><span>ผ่านโจทย์ในเว็บ</span><strong id="progress-count">0 / 80</strong></div><progress id="course-progress" max="80" value="0" aria-label="บทที่ผ่านโจทย์"></progress><a id="resume-link" href="#chapter-1">อ่านต่อจากเดิม →</a></div></aside>
+<button class="nav-backdrop" id="nav-backdrop" aria-label="ปิดเมนู" hidden></button>
+<main id="main" tabindex="-1"><header class="topbar"><div><button id="nav-toggle" class="icon-button mobile-menu" aria-label="เปิดเมนูบทเรียน" aria-expanded="false" aria-controls="sidebar">☰</button><span id="breadcrumb"></span></div><span class="local-badge"><i></i> คำนวณในเครื่อง · ไม่มี API</span></header><div class="content">
+<div class="chapter-navigation"><label for="chapter-select" class="sr-only">เลือกบทเรียน</label><select id="chapter-select"></select><div class="chapter-arrows"><button id="prev-chapter" class="icon-button" aria-label="บทก่อนหน้า">←</button><button id="next-chapter" class="icon-button" aria-label="บทถัดไป">→</button></div></div>
+<section class="chapter-hero"><div><p id="chapter-kicker" class="eyebrow"></p><h1 id="chapter-title">MLOps: ผูกการทดลองกับ version และตรวจสิ่งที่เปลี่ยน</h1><p class="english-title" id="chapter-english"></p></div><span class="hero-symbol">f(x) ↗</span></section>
+<p id="quality-status" class="quality-status"></p><div id="mastery-status" class="mastery-status"></div><div class="reading-route"><a href="#chapter-65/section/overview">01 อ่านบทเรียน</a><a href="#workbench">02 ทดลองสมการ</a><a href="#practice">03 ฝึกและตรวจงาน</a><a href="#mastery-review">04 หลักฐานตามเกณฑ์</a></div>
+<nav id="lesson-toc" class="lesson-toc" aria-label="สารบัญบท"></nav>
+<section id="overview" class="course-overview"><span class="eyebrow">THE LEARNING CONTRACT</span><h2>เรียนบทนี้แล้วต้องทำอะไรได้</h2><p id="chapter-purpose"></p><div id="chapter-objectives"></div><div class="learning-hint">ทำนาย → เปลี่ยนทีละค่า → ตรวจตัวเลข → อธิบายเหตุผล → เขียนด้วย Python เอง</div></section>
+<section class="workbench lab-card" id="workbench" aria-label="ห้องทดลองคำนวณจริง"><div class="card-header"><div><span class="live-dot"></span><span class="eyebrow">COMPUTATION WORKBENCH</span></div><span class="simulation-label">ทุกภาพใช้ผลคำนวณชุดเดียวกัน</span></div><div class="lab-top"><label for="lab-select">เลือกกลไกที่ต้องการทดลอง</label><select id="lab-select"></select><p id="lab-question"></p></div><div class="workbench-grid"><div class="viz-column"><div class="compare-labels"><span>เส้นทึบ: ปัจจุบัน</span><span>เส้นประ: baseline ที่ตรึงไว้</span></div><div id="simulation" class="simulation"></div><div id="metrics" class="metrics"></div><div id="baseline-diff" class="baseline-diff"></div><div class="playback"><div class="playback-buttons"><button class="primary-button" id="update-once">อัปเดตหนึ่งก้าว</button><button class="secondary-button" id="train-many">▶ ฝึก 30 ก้าว</button><button class="icon-button" id="back-state" aria-label="ย้อนประวัติ">↶</button><button class="icon-button" id="forward-state" aria-label="ประวัติถัดไป">↷</button></div></div><div class="lab-secondary-actions"><button id="pin-baseline" class="text-button">ตรึง baseline ปัจจุบัน</button><button id="reset-lab" class="text-button">คืนค่าเริ่มต้น</button><button id="download-state" class="text-button">บันทึกผล JSON</button><span id="history-status"></span></div><p id="simulation-note" class="simulation-note"></p><p class="lab-error" id="lab-error" role="alert" hidden></p></div><div class="controls-column"><h3>เปลี่ยนทีละตัว แล้วสังเกตผล</h3><div id="lab-controls"></div><p class="control-note">แก้ weight ด้วยมือจะคำนวณ forward ใหม่; optimizer เปลี่ยน weights เมื่อกดอัปเดตเท่านั้น</p></div></div>
+<div class="trace-section"><div class="trace-toolbar"><h3>เดินสมการทีละ operation</h3><div><button id="trace-prev" class="icon-button" aria-label="operation ก่อนหน้า">←</button><button id="play-trace" class="secondary-button" aria-pressed="false">▶ เล่น flow</button><button id="trace-next" class="icon-button" aria-label="operation ถัดไป">→</button><span id="stage-counter"></span></div></div><label class="motion-control"><input id="reduce-motion" type="checkbox"> ลดภาพเคลื่อนไหว (หยุดการเล่นที่ค้างอยู่)</label><div id="operation-steps" class="operation-steps"></div><div id="flow-diagram" class="flow-diagram"></div><div id="active-operation" class="active-operation" aria-live="polite"></div><p class="control-note">ตัวเลขบนภาพปัดเศษเพื่อให้อ่านง่าย; บันทึก JSON เพื่อดูค่าที่ใช้คำนวณเต็ม precision</p><details open><summary>ตารางค่าระหว่างทาง — ตรวจด้วยมือได้</summary><div id="result-table"></div></details><div id="tensor-tables" class="tensor-tables"></div><details id="surface-details"><summary>ดู loss surface และเส้นทางของ w₁,b (ตรึง controls อื่น)</summary><div id="surface-chart"></div><p>surface คำนวณ objective ปัจจุบันโดยตรึง degree, penalty, ข้อมูล และ weights อื่น เส้นทางแสดงเฉพาะ snapshots ที่ค่าเหล่านี้ตรงกัน; นอกช่วง w=[−1,5], b=[−2,4] ให้ตรวจค่าจริงใน history</p></details><details><summary>ประวัติการเปลี่ยนค่า</summary><div id="history-table"></div></details></div></section>
+<article id="chapter-article" class="chapter-article"><section id="mechanism-1" class="teaching-section"><span class="section-kicker">CHAPTER 65 · ภาพ → สมการ → โค้ด</span><h2>1. run identity ทำให้ metric มีที่มา</h2><h3>โจทย์และเหตุผล</h3><p>เก็บ data/code/config/seed/metrics/artifacts ต่อ run แล้ว registry version ชี้ไป artifact นั้น alias เปลี่ยนได้จึงไม่ควรใช้แทน immutable identity ใน reproduction record</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Calculate PSI on shifted histograms.</p><p>PSIΣ(q−p)log(q/p); p[.5,.5],q[.25,.75]ได้≈.274653; bin0ต้องsmoothingpolicyและfixedtrainbinsไม่refitตามcurrent</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>shift: new-data shift,initial=1; threshold: high-value bin threshold,initial=1.5; eps: histogram smoothing,initial=0.01</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = [-0.8, -0.4, 0, 0.2, 0.5, 0.8, 1.1, 1.7]; กำหนดความหมายและหน่วยของ input ก่อนทดลอง</li><li>PSI=Σ(q−p)ln(q/p) = 0.7247084925910214; bin thresholds และ smoothing คงที่; data drift ยังไม่พิสูจน์ concept drift หรือ model quality</li><li>normal / boundary / comparison = 0.7247084925910214; ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="drift-reference-new-histograms">เปิดการทดลองนี้</a><p class="failure-box">เทียบmetricscorerversionต่างหรือdelayedlabelsไม่ครบทำclaimqualityผิด; freezecohort/censoringpolicyและreportcoverage/lagdistribution; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>PSIΣ(q−p)log(q/p); p[.5,.5],q[.25,.75]ได้≈.274653; bin0ต้องsmoothingpolicyและfixedtrainbinsไม่refitตามcurrent</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-1-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = [-0.8, -0.4, 0, 0.2, 0.5, 0.8, 1.1, 1.7]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>PSI=Σ(q−p)ln(q/p)</code> = 0.7247084925910214<p>bin thresholds และ smoothing คงที่; data drift ยังไม่พิสูจน์ concept drift หรือ model quality</p></li><li><code>normal / boundary / comparison</code> = 0.7247084925910214<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-1-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>shape / range</code> = [-0.8, -0.4, 0, 0.2, 0.5, 0.8, 1.1, 1.7]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>PSI=Σ(q−p)ln(q/p)</code> = 0.7247084925910214<p>bin thresholds และ smoothing คงที่; data drift ยังไม่พิสูจน์ concept drift หรือ model quality</p></li><li><code>normal / boundary / comparison</code> = 0.7247084925910214<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-1-code"><summary>โค้ด</summary><p>PSIΣ(q−p)log(q/p); p[.5,.5],q[.25,.75]ได้≈.274653; bin0ต้องsmoothingpolicyและfixedtrainbinsไม่refitตามcurrent</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-1-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = [-0.8, -0.4, 0, 0.2, 0.5, 0.8, 1.1, 1.7]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>PSI=Σ(q−p)ln(q/p)</code> = 0.7247084925910214<p>bin thresholds และ smoothing คงที่; data drift ยังไม่พิสูจน์ concept drift หรือ model quality</p></li><li><code>normal / boundary / comparison</code> = 0.7247084925910214<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-1"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-2" class="teaching-section"><span class="section-kicker">CHAPTER 65 · ภาพ → สมการ → โค้ด</span><h2>2. data drift ไม่เท่ากับ concept drift</h2><h3>โจทย์และเหตุผล</h3><p>P(x) เปลี่ยนอาจไม่ทำ performance แย่ ส่วน P(y|x) เปลี่ยนอาจเกิดแม้ histogram inputs คล้ายเดิม PSI ในภาพขึ้นกับ bins และ smoothing ต้องคงนิยามตอนเทียบเวลา</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Monitor missing rate and freshness separately from model drift.</p><p>missingrate=countnull/rows,freshness=now−latesteventtimeคนละsignalกับfeaturedistributiondrift; pipelineหยุดอาจdistributionเหมือนเดิมแต่stale</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>shift: new-data shift,initial=1; threshold: high-value bin threshold,initial=0.5; eps: histogram smoothing,initial=0.01</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = [-0.8, -0.4, 0, 0.2, 0.5, 0.8, 1.1, 1.7]; กำหนดความหมายและหน่วยของ input ก่อนทดลอง</li><li>PSI=Σ(q−p)ln(q/p) = 0.7247084925910214; bin thresholds และ smoothing คงที่; data drift ยังไม่พิสูจน์ concept drift หรือ model quality</li><li>normal / boundary / comparison = 0.7247084925910214; ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="drift-เปล--ยน-bin-threshold-ต-">เปิดการทดลองนี้</a><p class="failure-box">เทียบmetricscorerversionต่างหรือdelayedlabelsไม่ครบทำclaimqualityผิด; freezecohort/censoringpolicyและreportcoverage/lagdistribution; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>missingrate=countnull/rows,freshness=now−latesteventtimeคนละsignalกับfeaturedistributiondrift; pipelineหยุดอาจdistributionเหมือนเดิมแต่stale</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-2-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = [-0.8, -0.4, 0, 0.2, 0.5, 0.8, 1.1, 1.7]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>PSI=Σ(q−p)ln(q/p)</code> = 0.7247084925910214<p>bin thresholds และ smoothing คงที่; data drift ยังไม่พิสูจน์ concept drift หรือ model quality</p></li><li><code>normal / boundary / comparison</code> = 0.7247084925910214<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-2-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>shape / range</code> = [-0.8, -0.4, 0, 0.2, 0.5, 0.8, 1.1, 1.7]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>PSI=Σ(q−p)ln(q/p)</code> = 0.7247084925910214<p>bin thresholds และ smoothing คงที่; data drift ยังไม่พิสูจน์ concept drift หรือ model quality</p></li><li><code>normal / boundary / comparison</code> = 0.7247084925910214<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-2-code"><summary>โค้ด</summary><p>missingrate=countnull/rows,freshness=now−latesteventtimeคนละsignalกับfeaturedistributiondrift; pipelineหยุดอาจdistributionเหมือนเดิมแต่stale</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-2-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = [-0.8, -0.4, 0, 0.2, 0.5, 0.8, 1.1, 1.7]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>PSI=Σ(q−p)ln(q/p)</code> = 0.7247084925910214<p>bin thresholds และ smoothing คงที่; data drift ยังไม่พิสูจน์ concept drift หรือ model quality</p></li><li><code>normal / boundary / comparison</code> = 0.7247084925910214<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-2"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-3" class="teaching-section"><span class="section-kicker">CHAPTER 65 · ภาพ → สมการ → โค้ด</span><h2>3. monitor ต้องเชื่อมกับการลงมือที่ตรวจได้</h2><h3>โจทย์และเหตุผล</h3><p>กำหนด alert owner, investigation, labels feedback และ rollback/retrain criteria ก่อน automate CT อย่า retrain เพราะ threshold drift เดียวโดยไม่ตรวจคุณภาพและ root cause</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Build a promotion gate from quality + latency thresholds.</p><p>gatequality≥.8,p95≤200ms,requiredtestspass; score.82/latency210ต้องfail แม้qualityดี; missingmetricเป็นunknown/failไม่default0pass</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>elapsed: elapsed startup ms,initial=500; loadTime: model load time ms,initial=300; warmup: warmup duration ms,initial=100; newError: canary errors /100,initial=1; errorLimit: allowed errors /100,initial=3</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = [500, 300, 100]; กำหนดความหมายและหน่วยของ input ก่อนทดลอง</li><li>ready=elapsed≥load+warmup; rollback=error&gt;limit = &quot;canary&quot;; process alive กับ model ready เป็นคนละเงื่อนไข; error gate ปิด traffic ไปเวอร์ชันใหม่</li><li>normal / boundary / comparison = &quot;canary&quot;; ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="deployment-model-promotion-gates-ก-">เปิดการทดลองนี้</a><p class="failure-box">เทียบmetricscorerversionต่างหรือdelayedlabelsไม่ครบทำclaimqualityผิด; freezecohort/censoringpolicyและreportcoverage/lagdistribution; deployment decision state machine; ไม่ได้เปิด container หรือเปลี่ยน traffic จริง</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>gatequality≥.8,p95≤200ms,requiredtestspass; score.82/latency210ต้องfail แม้qualityดี; missingmetricเป็นunknown/failไม่default0pass</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-3-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = [500, 300, 100]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>ready=elapsed≥load+warmup; rollback=error&gt;limit</code> = &quot;canary&quot;<p>process alive กับ model ready เป็นคนละเงื่อนไข; error gate ปิด traffic ไปเวอร์ชันใหม่</p></li><li><code>normal / boundary / comparison</code> = &quot;canary&quot;<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-3-visual"><summary>ภาพและ shape</summary><p>deployment decision state machine; ไม่ได้เปิด container หรือเปลี่ยน traffic จริง</p><ol><li><code>shape / range</code> = [500, 300, 100]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>ready=elapsed≥load+warmup; rollback=error&gt;limit</code> = &quot;canary&quot;<p>process alive กับ model ready เป็นคนละเงื่อนไข; error gate ปิด traffic ไปเวอร์ชันใหม่</p></li><li><code>normal / boundary / comparison</code> = &quot;canary&quot;<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-3-code"><summary>โค้ด</summary><p>gatequality≥.8,p95≤200ms,requiredtestspass; score.82/latency210ต้องfail แม้qualityดี; missingmetricเป็นunknown/failไม่default0pass</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-3-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = [500, 300, 100]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>ready=elapsed≥load+warmup; rollback=error&gt;limit</code> = &quot;canary&quot;<p>process alive กับ model ready เป็นคนละเงื่อนไข; error gate ปิด traffic ไปเวอร์ชันใหม่</p></li><li><code>normal / boundary / comparison</code> = &quot;canary&quot;<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-3"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="reference" class="canonical-section"><h2>เนื้อหาครบทุกหัวข้อ พร้อมแผนที่ objective</h2><nav class="source-toc"><a href="#chapter-65/section/topic-1">1. What MLOps Solves</a> <a href="#chapter-65/section/topic-2">2. Learning Objectives</a> <a href="#chapter-65/section/topic-3">3. Experiment Tracking</a> <a href="#chapter-65/section/topic-4">4. Run Identity</a> <a href="#chapter-65/section/topic-5">5. Artifacts</a> <a href="#chapter-65/section/topic-6">6. MLflow Tracking</a> <a href="#chapter-65/section/topic-7">7. Model Registry</a> <a href="#chapter-65/section/topic-8">8. Version vs Alias</a> <a href="#chapter-65/section/topic-9">9. Promotion Gate</a> <a href="#chapter-65/section/topic-10">10. CI / CD / CT</a> <a href="#chapter-65/section/topic-11">11. Offline vs Online Metrics</a> <a href="#chapter-65/section/topic-12">12. Data Drift</a> <a href="#chapter-65/section/topic-13">13. Concept Drift</a> <a href="#chapter-65/section/topic-14">14. Prediction Drift</a> <a href="#chapter-65/section/topic-15">15. Population Stability Index</a> <a href="#chapter-65/section/topic-16">16. Data Quality Monitoring</a> <a href="#chapter-65/section/topic-17">17. Training-Serving Skew</a> <a href="#chapter-65/section/topic-18">18. Delayed Labels</a> <a href="#chapter-65/section/topic-19">19. Retraining Trigger</a> <a href="#chapter-65/section/topic-20">20. Champion / Challenger</a> <a href="#chapter-65/section/topic-21">21. Rollback</a> <a href="#chapter-65/section/topic-22">22. Lineage</a> <a href="#chapter-65/section/topic-23">23. Reproducibility</a> <a href="#chapter-65/section/topic-24">24. Monitoring Windows</a> <a href="#chapter-65/section/topic-25">25. Alert Design</a> <a href="#chapter-65/section/topic-26">26. From Scratch</a> <a href="#chapter-65/section/topic-27">27. Optional MLflow Lab</a> <a href="#chapter-65/section/topic-28">28. Common Mistakes</a> <a href="#chapter-65/section/topic-29">29. Exercises / Mini Project</a> <a href="#chapter-65/section/topic-30">30. Checklist</a> <a href="#chapter-65/section/topic-31">31. What&#x27;s Next</a> </nav><section id="topic-1" class="source-topic"><span id="source-65-mlops-canonical-chapter-65-mlops-tracking-registry-monitoring-lifecycle" class="legacy-anchor"></span><span id="source-65-mlops-canonical-1-what-mlops-solves" class="legacy-anchor"></span><h3>1. What MLOps Solves</h3>
+<p>MLOps makes experiments, models, data and deployments reproducible and governable.</p>
+<pre><code class="language-text">data + code + config
+↓
+training run
+↓
+metrics + artifacts
+↓
+model registry
+↓
+validation / promotion
+↓
+deployment
+↓
+monitoring
+↓
+retrain / rollback
+</code></pre><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>1. What MLOps Solves</h3>
+<p>MLOps makes experiments, models, data and deployments reproducible and governable.</p>
+<pre><code class="language-text">data + code + config
+↓
+training run
+↓
+metrics + artifacts
+↓
+model registry
+↓
+validation / promotion
+↓
+deployment
+↓
+monitoring
+↓
+retrain / rollback
+</code></pre><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-1-equation"><summary>สมการ</summary><h3>1. What MLOps Solves</h3>
+<p>MLOps makes experiments, models, data and deployments reproducible and governable.</p>
+<pre><code class="language-text">data + code + config
+↓
+training run
+↓
+metrics + artifacts
+↓
+model registry
+↓
+validation / promotion
+↓
+deployment
+↓
+monitoring
+↓
+retrain / rollback
+</code></pre></details><details id="help-topic-1-visual"><summary>ภาพและ shape</summary><h3>1. What MLOps Solves</h3>
+<p>MLOps makes experiments, models, data and deployments reproducible and governable.</p>
+<pre><code class="language-text">data + code + config
+↓
+training run
+↓
+metrics + artifacts
+↓
+model registry
+↓
+validation / promotion
+↓
+deployment
+↓
+monitoring
+↓
+retrain / rollback
+</code></pre></details><details id="help-topic-1-code"><summary>โค้ด</summary><h3>1. What MLOps Solves</h3>
+<p>MLOps makes experiments, models, data and deployments reproducible and governable.</p>
+<pre><code class="language-text">data + code + config
+↓
+training run
+↓
+metrics + artifacts
+↓
+model registry
+↓
+validation / promotion
+↓
+deployment
+↓
+monitoring
+↓
+retrain / rollback
+</code></pre><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-1-result"><summary>ผลการทดลอง</summary><h3>1. What MLOps Solves</h3>
+<p>MLOps makes experiments, models, data and deployments reproducible and governable.</p>
+<pre><code class="language-text">data + code + config
+↓
+training run
+↓
+metrics + artifacts
+↓
+model registry
+↓
+validation / promotion
+↓
+deployment
+↓
+monitoring
+↓
+retrain / rollback
+</code></pre><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-1"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-2" class="source-topic"><span id="source-65-mlops-canonical-2-learning-objectives" class="legacy-anchor"></span><h3>2. Learning Objectives</h3>
+<ul>
+<li>track parameters, metrics and artifacts</li>
+<li>fingerprint experiments</li>
+<li>version model/data/code together</li>
+<li>understand model registries</li>
+<li>design aliases/tags and promotion gates</li>
+<li>distinguish offline and online metrics</li>
+<li>detect data and prediction drift</li>
+<li>monitor data quality</li>
+<li>design retraining triggers</li>
+<li>understand CI/CD/CT</li>
+<li>implement rollback</li>
+<li>preserve lineage</li>
+<li>avoid training-serving skew</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>2. Learning Objectives</h3>
+<ul>
+<li>track parameters, metrics and artifacts</li>
+<li>fingerprint experiments</li>
+<li>version model/data/code together</li>
+<li>understand model registries</li>
+<li>design aliases/tags and promotion gates</li>
+<li>distinguish offline and online metrics</li>
+<li>detect data and prediction drift</li>
+<li>monitor data quality</li>
+<li>design retraining triggers</li>
+<li>understand CI/CD/CT</li>
+<li>implement rollback</li>
+<li>preserve lineage</li>
+<li>avoid training-serving skew</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-2-equation"><summary>สมการ</summary><h3>2. Learning Objectives</h3>
+<ul>
+<li>track parameters, metrics and artifacts</li>
+<li>fingerprint experiments</li>
+<li>version model/data/code together</li>
+<li>understand model registries</li>
+<li>design aliases/tags and promotion gates</li>
+<li>distinguish offline and online metrics</li>
+<li>detect data and prediction drift</li>
+<li>monitor data quality</li>
+<li>design retraining triggers</li>
+<li>understand CI/CD/CT</li>
+<li>implement rollback</li>
+<li>preserve lineage</li>
+<li>avoid training-serving skew</li>
+</ul></details><details id="help-topic-2-visual"><summary>ภาพและ shape</summary><h3>2. Learning Objectives</h3>
+<ul>
+<li>track parameters, metrics and artifacts</li>
+<li>fingerprint experiments</li>
+<li>version model/data/code together</li>
+<li>understand model registries</li>
+<li>design aliases/tags and promotion gates</li>
+<li>distinguish offline and online metrics</li>
+<li>detect data and prediction drift</li>
+<li>monitor data quality</li>
+<li>design retraining triggers</li>
+<li>understand CI/CD/CT</li>
+<li>implement rollback</li>
+<li>preserve lineage</li>
+<li>avoid training-serving skew</li>
+</ul></details><details id="help-topic-2-code"><summary>โค้ด</summary><h3>2. Learning Objectives</h3>
+<ul>
+<li>track parameters, metrics and artifacts</li>
+<li>fingerprint experiments</li>
+<li>version model/data/code together</li>
+<li>understand model registries</li>
+<li>design aliases/tags and promotion gates</li>
+<li>distinguish offline and online metrics</li>
+<li>detect data and prediction drift</li>
+<li>monitor data quality</li>
+<li>design retraining triggers</li>
+<li>understand CI/CD/CT</li>
+<li>implement rollback</li>
+<li>preserve lineage</li>
+<li>avoid training-serving skew</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-2-result"><summary>ผลการทดลอง</summary><h3>2. Learning Objectives</h3>
+<ul>
+<li>track parameters, metrics and artifacts</li>
+<li>fingerprint experiments</li>
+<li>version model/data/code together</li>
+<li>understand model registries</li>
+<li>design aliases/tags and promotion gates</li>
+<li>distinguish offline and online metrics</li>
+<li>detect data and prediction drift</li>
+<li>monitor data quality</li>
+<li>design retraining triggers</li>
+<li>understand CI/CD/CT</li>
+<li>implement rollback</li>
+<li>preserve lineage</li>
+<li>avoid training-serving skew</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-2"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-3" class="source-topic"><span id="source-65-mlops-canonical-3-experiment-tracking" class="legacy-anchor"></span><h3>3. Experiment Tracking</h3>
+<p>Every run should record at minimum:
+- code revision
+- dataset version
+- hyperparameters
+- seed
+- environment/dependencies
+- metrics
+- artifacts
+- start/end timestamps</p>
+<p>An experiment dashboard is useful only if runs are comparable.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>3. Experiment Tracking</h3>
+<p>Every run should record at minimum:
+- code revision
+- dataset version
+- hyperparameters
+- seed
+- environment/dependencies
+- metrics
+- artifacts
+- start/end timestamps</p>
+<p>An experiment dashboard is useful only if runs are comparable.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-3-equation"><summary>สมการ</summary><h3>3. Experiment Tracking</h3>
+<p>Every run should record at minimum:
+- code revision
+- dataset version
+- hyperparameters
+- seed
+- environment/dependencies
+- metrics
+- artifacts
+- start/end timestamps</p>
+<p>An experiment dashboard is useful only if runs are comparable.</p></details><details id="help-topic-3-visual"><summary>ภาพและ shape</summary><h3>3. Experiment Tracking</h3>
+<p>Every run should record at minimum:
+- code revision
+- dataset version
+- hyperparameters
+- seed
+- environment/dependencies
+- metrics
+- artifacts
+- start/end timestamps</p>
+<p>An experiment dashboard is useful only if runs are comparable.</p></details><details id="help-topic-3-code"><summary>โค้ด</summary><h3>3. Experiment Tracking</h3>
+<p>Every run should record at minimum:
+- code revision
+- dataset version
+- hyperparameters
+- seed
+- environment/dependencies
+- metrics
+- artifacts
+- start/end timestamps</p>
+<p>An experiment dashboard is useful only if runs are comparable.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-3-result"><summary>ผลการทดลอง</summary><h3>3. Experiment Tracking</h3>
+<p>Every run should record at minimum:
+- code revision
+- dataset version
+- hyperparameters
+- seed
+- environment/dependencies
+- metrics
+- artifacts
+- start/end timestamps</p>
+<p>An experiment dashboard is useful only if runs are comparable.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-3"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-4" class="source-topic"><span id="source-65-mlops-canonical-4-run-identity" class="legacy-anchor"></span><h3>4. Run Identity</h3>
+<p>A reproducible run can be fingerprinted from canonicalized inputs:</p>
+<pre><code class="language-text">hash(
+  code_revision
+  dataset_revision
+  config
+  environment
+)
+</code></pre>
+<p>Do not rely only on a human-written run name.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>fingerprint=SHA256canonicalJSON(code,data_version,model,config,seed); data-v1/v2แม้rowscountเท่ากันต้องhashต่างและmanifestอ้างsourcechecksums</p><p>modifiedartifactdigestfails,canonicalfingerprintstable,keyorderไม่เปลี่ยนhash,promotionmissingmetricfailsและchampiontargetexists</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-4-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>fingerprint=SHA256canonicalJSON(code,data_version,model,config,seed); data-v1/v2แม้rowscountเท่ากันต้องhashต่างและmanifestอ้างsourcechecksums</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-4-equation"><summary>สมการ</summary><p>fingerprint=SHA256canonicalJSON(code,data_version,model,config,seed); data-v1/v2แม้rowscountเท่ากันต้องhashต่างและmanifestอ้างsourcechecksums</p></details><details id="help-topic-4-visual"><summary>ภาพและ shape</summary><p>fingerprint=SHA256canonicalJSON(code,data_version,model,config,seed); data-v1/v2แม้rowscountเท่ากันต้องhashต่างและmanifestอ้างsourcechecksums</p></details><details id="help-topic-4-code"><summary>โค้ด</summary><p>fingerprint=SHA256canonicalJSON(code,data_version,model,config,seed); data-v1/v2แม้rowscountเท่ากันต้องhashต่างและmanifestอ้างsourcechecksums</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-4-result"><summary>ผลการทดลอง</summary><p>fingerprint=SHA256canonicalJSON(code,data_version,model,config,seed); data-v1/v2แม้rowscountเท่ากันต้องhashต่างและmanifestอ้างsourcechecksums</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-4"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-5" class="source-topic"><span id="source-65-mlops-canonical-5-artifacts" class="legacy-anchor"></span><h3>5. Artifacts</h3>
+<p>Artifacts can include:
+- model weights
+- tokenizer
+- plots
+- evaluation JSON
+- preprocessing objects
+- manifests</p>
+<p>Store content digests so corrupted or replaced artifacts can be detected.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>hashlib.sha256(artifactbytes); flipbyteหนึ่งตำแหน่งdigestเปลี่ยน; verifyก่อนloadและไม่ใช้filemtime/filenameแทนcontentintegrity</p><p>modifiedartifactdigestfails,canonicalfingerprintstable,keyorderไม่เปลี่ยนhash,promotionmissingmetricfailsและchampiontargetexists</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-5-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>hashlib.sha256(artifactbytes); flipbyteหนึ่งตำแหน่งdigestเปลี่ยน; verifyก่อนloadและไม่ใช้filemtime/filenameแทนcontentintegrity</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-5-equation"><summary>สมการ</summary><p>hashlib.sha256(artifactbytes); flipbyteหนึ่งตำแหน่งdigestเปลี่ยน; verifyก่อนloadและไม่ใช้filemtime/filenameแทนcontentintegrity</p></details><details id="help-topic-5-visual"><summary>ภาพและ shape</summary><p>hashlib.sha256(artifactbytes); flipbyteหนึ่งตำแหน่งdigestเปลี่ยน; verifyก่อนloadและไม่ใช้filemtime/filenameแทนcontentintegrity</p></details><details id="help-topic-5-code"><summary>โค้ด</summary><p>hashlib.sha256(artifactbytes); flipbyteหนึ่งตำแหน่งdigestเปลี่ยน; verifyก่อนloadและไม่ใช้filemtime/filenameแทนcontentintegrity</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-5-result"><summary>ผลการทดลอง</summary><p>hashlib.sha256(artifactbytes); flipbyteหนึ่งตำแหน่งdigestเปลี่ยน; verifyก่อนloadและไม่ใช้filemtime/filenameแทนcontentintegrity</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-5"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-6" class="source-topic"><span id="source-65-mlops-canonical-6-mlflow-tracking" class="legacy-anchor"></span><h3>6. MLflow Tracking</h3>
+<p>Current MLflow Tracking records run parameters, code versions, metrics and output artifacts and exposes API/UI workflows for inspecting runs.</p>
+<p>Use MLflow as one concrete implementation of the broader tracking concepts.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>MLflowstart_run→log_params→log_metrics(step)→log_artifactพร้อมrunID; localfilebackendใช้ได้offline แต่connectiontestไม่แทนmodelquality</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-6-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>MLflowstart_run→log_params→log_metrics(step)→log_artifactพร้อมrunID; localfilebackendใช้ได้offline แต่connectiontestไม่แทนmodelquality</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-6-equation"><summary>สมการ</summary><p>MLflowstart_run→log_params→log_metrics(step)→log_artifactพร้อมrunID; localfilebackendใช้ได้offline แต่connectiontestไม่แทนmodelquality</p></details><details id="help-topic-6-visual"><summary>ภาพและ shape</summary><p>MLflowstart_run→log_params→log_metrics(step)→log_artifactพร้อมrunID; localfilebackendใช้ได้offline แต่connectiontestไม่แทนmodelquality</p></details><details id="help-topic-6-code"><summary>โค้ด</summary><p>MLflowstart_run→log_params→log_metrics(step)→log_artifactพร้อมrunID; localfilebackendใช้ได้offline แต่connectiontestไม่แทนmodelquality</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-6-result"><summary>ผลการทดลอง</summary><p>MLflowstart_run→log_params→log_metrics(step)→log_artifactพร้อมrunID; localfilebackendใช้ได้offline แต่connectiontestไม่แทนmodelquality</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-6"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-7" class="source-topic"><span id="source-65-mlops-canonical-7-model-registry" class="legacy-anchor"></span><h3>7. Model Registry</h3>
+<p>A registry provides a controlled model namespace with versions and metadata.</p>
+<p>Current MLflow Model Registry supports model versions, aliases, tags, descriptions and lineage back to runs.</p>
+<p>Examples of aliases:
+- candidate
+- champion
+- rollback</p>
+<p>Alias names should express operational intent rather than being treated as immutable history.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>registrymodelversionผูกartifactdigest/runID/datasplit/metricversion/validationreport; ไม่registerชื่อversionอย่างเดียวโดยไม่มีprovenance</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-7-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>registrymodelversionผูกartifactdigest/runID/datasplit/metricversion/validationreport; ไม่registerชื่อversionอย่างเดียวโดยไม่มีprovenance</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-7-equation"><summary>สมการ</summary><p>registrymodelversionผูกartifactdigest/runID/datasplit/metricversion/validationreport; ไม่registerชื่อversionอย่างเดียวโดยไม่มีprovenance</p></details><details id="help-topic-7-visual"><summary>ภาพและ shape</summary><p>registrymodelversionผูกartifactdigest/runID/datasplit/metricversion/validationreport; ไม่registerชื่อversionอย่างเดียวโดยไม่มีprovenance</p></details><details id="help-topic-7-code"><summary>โค้ด</summary><p>registrymodelversionผูกartifactdigest/runID/datasplit/metricversion/validationreport; ไม่registerชื่อversionอย่างเดียวโดยไม่มีprovenance</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-7-result"><summary>ผลการทดลอง</summary><p>registrymodelversionผูกartifactdigest/runID/datasplit/metricversion/validationreport; ไม่registerชื่อversionอย่างเดียวโดยไม่มีprovenance</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-7"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-8" class="source-topic"><span id="source-65-mlops-canonical-8-version-vs-alias" class="legacy-anchor"></span><h3>8. Version vs Alias</h3>
+<p>Version:</p>
+<pre><code class="language-text">immutable historical identity
+</code></pre>
+<p>Alias:</p>
+<pre><code class="language-text">movable pointer to a version
+</code></pre>
+<p>Deploy by immutable version/digest underneath even when humans use aliases operationally.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>candidatealiasชี้versionรอgate,championชี้approvedversion; aliasเป็นpointerเปลี่ยนได้จึงlogก่อน/หลังพร้อมimmutableversionID</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-8-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>candidatealiasชี้versionรอgate,championชี้approvedversion; aliasเป็นpointerเปลี่ยนได้จึงlogก่อน/หลังพร้อมimmutableversionID</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-8-equation"><summary>สมการ</summary><p>candidatealiasชี้versionรอgate,championชี้approvedversion; aliasเป็นpointerเปลี่ยนได้จึงlogก่อน/หลังพร้อมimmutableversionID</p></details><details id="help-topic-8-visual"><summary>ภาพและ shape</summary><p>candidatealiasชี้versionรอgate,championชี้approvedversion; aliasเป็นpointerเปลี่ยนได้จึงlogก่อน/หลังพร้อมimmutableversionID</p></details><details id="help-topic-8-code"><summary>โค้ด</summary><p>candidatealiasชี้versionรอgate,championชี้approvedversion; aliasเป็นpointerเปลี่ยนได้จึงlogก่อน/หลังพร้อมimmutableversionID</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-8-result"><summary>ผลการทดลอง</summary><p>candidatealiasชี้versionรอgate,championชี้approvedversion; aliasเป็นpointerเปลี่ยนได้จึงlogก่อน/หลังพร้อมimmutableversionID</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-8"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-9" class="source-topic"><span id="source-65-mlops-canonical-9-promotion-gate" class="legacy-anchor"></span><h3>9. Promotion Gate</h3>
+<p>A candidate should pass explicit requirements:
+- validation quality
+- slice quality
+- latency/memory
+- robustness
+- security/safety checks where relevant
+- reproducibility</p>
+<p>Promotion is a policy decision, not simply highest validation score.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>gatequality≥.8,p95≤200ms,requiredtestspass; score.82/latency210ต้องfail แม้qualityดี; missingmetricเป็นunknown/failไม่default0pass</p><p>quality.82≥.8จริงแต่p95210&gt;200ทำgatefail; ต้องแสดงเงื่อนไขที่ไม่ผ่าน ไม่เอาweightedscoreเฉลี่ยกลบrequiredgate</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-9-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>gatequality≥.8,p95≤200ms,requiredtestspass; score.82/latency210ต้องfail แม้qualityดี; missingmetricเป็นunknown/failไม่default0pass</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-9-equation"><summary>สมการ</summary><p>gatequality≥.8,p95≤200ms,requiredtestspass; score.82/latency210ต้องfail แม้qualityดี; missingmetricเป็นunknown/failไม่default0pass</p></details><details id="help-topic-9-visual"><summary>ภาพและ shape</summary><p>gatequality≥.8,p95≤200ms,requiredtestspass; score.82/latency210ต้องfail แม้qualityดี; missingmetricเป็นunknown/failไม่default0pass</p></details><details id="help-topic-9-code"><summary>โค้ด</summary><p>gatequality≥.8,p95≤200ms,requiredtestspass; score.82/latency210ต้องfail แม้qualityดี; missingmetricเป็นunknown/failไม่default0pass</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-9-result"><summary>ผลการทดลอง</summary><p>gatequality≥.8,p95≤200ms,requiredtestspass; score.82/latency210ต้องfail แม้qualityดี; missingmetricเป็นunknown/failไม่default0pass</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-9"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-10" class="source-topic"><span id="source-65-mlops-canonical-10-ci-cd-ct" class="legacy-anchor"></span><span id="source-65-mlops-canonical-ci" class="legacy-anchor"></span><span id="source-65-mlops-canonical-cd" class="legacy-anchor"></span><span id="source-65-mlops-canonical-ct" class="legacy-anchor"></span><h3>10. CI / CD / CT</h3>
+<h4>CI</h4>
+<p>test code, data contracts and training components.</p>
+<h4>CD</h4>
+<p>package/promote/deploy a validated artifact.</p>
+<h4>CT</h4>
+<p>continuous training or retraining when policy says new training is needed.</p>
+<p>Continuous training does not mean retrain on every new row.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-10-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>10. CI / CD / CT</h3>
+<h4>CI</h4>
+<p>test code, data contracts and training components.</p>
+<h4>CD</h4>
+<p>package/promote/deploy a validated artifact.</p>
+<h4>CT</h4>
+<p>continuous training or retraining when policy says new training is needed.</p>
+<p>Continuous training does not mean retrain on every new row.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-10-equation"><summary>สมการ</summary><h3>10. CI / CD / CT</h3>
+<h4>CI</h4>
+<p>test code, data contracts and training components.</p>
+<h4>CD</h4>
+<p>package/promote/deploy a validated artifact.</p>
+<h4>CT</h4>
+<p>continuous training or retraining when policy says new training is needed.</p>
+<p>Continuous training does not mean retrain on every new row.</p></details><details id="help-topic-10-visual"><summary>ภาพและ shape</summary><h3>10. CI / CD / CT</h3>
+<h4>CI</h4>
+<p>test code, data contracts and training components.</p>
+<h4>CD</h4>
+<p>package/promote/deploy a validated artifact.</p>
+<h4>CT</h4>
+<p>continuous training or retraining when policy says new training is needed.</p>
+<p>Continuous training does not mean retrain on every new row.</p></details><details id="help-topic-10-code"><summary>โค้ด</summary><h3>10. CI / CD / CT</h3>
+<h4>CI</h4>
+<p>test code, data contracts and training components.</p>
+<h4>CD</h4>
+<p>package/promote/deploy a validated artifact.</p>
+<h4>CT</h4>
+<p>continuous training or retraining when policy says new training is needed.</p>
+<p>Continuous training does not mean retrain on every new row.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-10-result"><summary>ผลการทดลอง</summary><h3>10. CI / CD / CT</h3>
+<h4>CI</h4>
+<p>test code, data contracts and training components.</p>
+<h4>CD</h4>
+<p>package/promote/deploy a validated artifact.</p>
+<h4>CT</h4>
+<p>continuous training or retraining when policy says new training is needed.</p>
+<p>Continuous training does not mean retrain on every new row.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-10"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-11" class="source-topic"><span id="source-65-mlops-canonical-11-offline-vs-online-metrics" class="legacy-anchor"></span><h3>11. Offline vs Online Metrics</h3>
+<p>Offline:
+- validation loss
+- F1
+- ranking metrics
+- benchmark quality</p>
+<p>Online:
+- request errors
+- latency
+- business/task outcomes
+- human feedback</p>
+<p>A model can improve offline while hurting production outcomes.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>เทียบmetricscorerversionต่างหรือdelayedlabelsไม่ครบทำclaimqualityผิด; freezecohort/censoringpolicyและreportcoverage/lagdistribution</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-11-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>เทียบmetricscorerversionต่างหรือdelayedlabelsไม่ครบทำclaimqualityผิด; freezecohort/censoringpolicyและreportcoverage/lagdistribution</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-11-equation"><summary>สมการ</summary><p>เทียบmetricscorerversionต่างหรือdelayedlabelsไม่ครบทำclaimqualityผิด; freezecohort/censoringpolicyและreportcoverage/lagdistribution</p></details><details id="help-topic-11-visual"><summary>ภาพและ shape</summary><p>เทียบmetricscorerversionต่างหรือdelayedlabelsไม่ครบทำclaimqualityผิด; freezecohort/censoringpolicyและreportcoverage/lagdistribution</p></details><details id="help-topic-11-code"><summary>โค้ด</summary><p>เทียบmetricscorerversionต่างหรือdelayedlabelsไม่ครบทำclaimqualityผิด; freezecohort/censoringpolicyและreportcoverage/lagdistribution</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-11-result"><summary>ผลการทดลอง</summary><p>เทียบmetricscorerversionต่างหรือdelayedlabelsไม่ครบทำclaimqualityผิด; freezecohort/censoringpolicyและreportcoverage/lagdistribution</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-11"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-12" class="source-topic"><span id="source-65-mlops-canonical-12-data-drift" class="legacy-anchor"></span><h3>12. Data Drift</h3>
+<p>Input distribution changes:</p>
+<pre><code class="language-text">P_train(X) != P_prod(X)
+</code></pre>
+<p>Drift is a warning signal, not proof that model quality has degraded.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-12-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>12. Data Drift</h3>
+<p>Input distribution changes:</p>
+<pre><code class="language-text">P_train(X) != P_prod(X)
+</code></pre>
+<p>Drift is a warning signal, not proof that model quality has degraded.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-12-equation"><summary>สมการ</summary><h3>12. Data Drift</h3>
+<p>Input distribution changes:</p>
+<pre><code class="language-text">P_train(X) != P_prod(X)
+</code></pre>
+<p>Drift is a warning signal, not proof that model quality has degraded.</p></details><details id="help-topic-12-visual"><summary>ภาพและ shape</summary><h3>12. Data Drift</h3>
+<p>Input distribution changes:</p>
+<pre><code class="language-text">P_train(X) != P_prod(X)
+</code></pre>
+<p>Drift is a warning signal, not proof that model quality has degraded.</p></details><details id="help-topic-12-code"><summary>โค้ด</summary><h3>12. Data Drift</h3>
+<p>Input distribution changes:</p>
+<pre><code class="language-text">P_train(X) != P_prod(X)
+</code></pre>
+<p>Drift is a warning signal, not proof that model quality has degraded.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-12-result"><summary>ผลการทดลอง</summary><h3>12. Data Drift</h3>
+<p>Input distribution changes:</p>
+<pre><code class="language-text">P_train(X) != P_prod(X)
+</code></pre>
+<p>Drift is a warning signal, not proof that model quality has degraded.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-12"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-13" class="source-topic"><span id="source-65-mlops-canonical-13-concept-drift" class="legacy-anchor"></span><h3>13. Concept Drift</h3>
+<p>The relationship between inputs and targets changes:</p>
+<pre><code class="language-text">P_train(Y|X) != P_prod(Y|X)
+</code></pre>
+<p>This can directly invalidate learned decision rules.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-13-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>13. Concept Drift</h3>
+<p>The relationship between inputs and targets changes:</p>
+<pre><code class="language-text">P_train(Y|X) != P_prod(Y|X)
+</code></pre>
+<p>This can directly invalidate learned decision rules.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-13-equation"><summary>สมการ</summary><h3>13. Concept Drift</h3>
+<p>The relationship between inputs and targets changes:</p>
+<pre><code class="language-text">P_train(Y|X) != P_prod(Y|X)
+</code></pre>
+<p>This can directly invalidate learned decision rules.</p></details><details id="help-topic-13-visual"><summary>ภาพและ shape</summary><h3>13. Concept Drift</h3>
+<p>The relationship between inputs and targets changes:</p>
+<pre><code class="language-text">P_train(Y|X) != P_prod(Y|X)
+</code></pre>
+<p>This can directly invalidate learned decision rules.</p></details><details id="help-topic-13-code"><summary>โค้ด</summary><h3>13. Concept Drift</h3>
+<p>The relationship between inputs and targets changes:</p>
+<pre><code class="language-text">P_train(Y|X) != P_prod(Y|X)
+</code></pre>
+<p>This can directly invalidate learned decision rules.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-13-result"><summary>ผลการทดลอง</summary><h3>13. Concept Drift</h3>
+<p>The relationship between inputs and targets changes:</p>
+<pre><code class="language-text">P_train(Y|X) != P_prod(Y|X)
+</code></pre>
+<p>This can directly invalidate learned decision rules.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-13"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-14" class="source-topic"><span id="source-65-mlops-canonical-14-prediction-drift" class="legacy-anchor"></span><h3>14. Prediction Drift</h3>
+<p>Monitor changes in model output distributions when labels are delayed/unavailable.</p>
+<p>Again, output drift does not automatically mean failure.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-14-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>14. Prediction Drift</h3>
+<p>Monitor changes in model output distributions when labels are delayed/unavailable.</p>
+<p>Again, output drift does not automatically mean failure.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-14-equation"><summary>สมการ</summary><h3>14. Prediction Drift</h3>
+<p>Monitor changes in model output distributions when labels are delayed/unavailable.</p>
+<p>Again, output drift does not automatically mean failure.</p></details><details id="help-topic-14-visual"><summary>ภาพและ shape</summary><h3>14. Prediction Drift</h3>
+<p>Monitor changes in model output distributions when labels are delayed/unavailable.</p>
+<p>Again, output drift does not automatically mean failure.</p></details><details id="help-topic-14-code"><summary>โค้ด</summary><h3>14. Prediction Drift</h3>
+<p>Monitor changes in model output distributions when labels are delayed/unavailable.</p>
+<p>Again, output drift does not automatically mean failure.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-14-result"><summary>ผลการทดลอง</summary><h3>14. Prediction Drift</h3>
+<p>Monitor changes in model output distributions when labels are delayed/unavailable.</p>
+<p>Again, output drift does not automatically mean failure.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-14"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-15" class="source-topic"><span id="source-65-mlops-canonical-15-population-stability-index" class="legacy-anchor"></span><h3>15. Population Stability Index</h3>
+<p>For reference/current bin proportions p_i and q_i:</p>
+<pre><code class="language-text">PSI = sum((q_i - p_i) * ln(q_i/p_i))
+</code></pre>
+<p>Use smoothing for zero bins.</p>
+<p>Thresholds are domain-dependent; do not treat one internet rule as universal.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>PSIΣ(q−p)log(q/p); p[.5,.5],q[.25,.75]ได้≈.274653; bin0ต้องsmoothingpolicyและfixedtrainbinsไม่refitตามcurrent</p><p>fingerprintO(totalbytes)เมื่อhashartifact,PSIO(bins),streammonitorO(events); registrylatencyไม่ใช่inferenceperformanceและhistogrammemoryตามslices</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-15-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>PSIΣ(q−p)log(q/p); p[.5,.5],q[.25,.75]ได้≈.274653; bin0ต้องsmoothingpolicyและfixedtrainbinsไม่refitตามcurrent</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-15-equation"><summary>สมการ</summary><p>PSIΣ(q−p)log(q/p); p[.5,.5],q[.25,.75]ได้≈.274653; bin0ต้องsmoothingpolicyและfixedtrainbinsไม่refitตามcurrent</p></details><details id="help-topic-15-visual"><summary>ภาพและ shape</summary><p>PSIΣ(q−p)log(q/p); p[.5,.5],q[.25,.75]ได้≈.274653; bin0ต้องsmoothingpolicyและfixedtrainbinsไม่refitตามcurrent</p></details><details id="help-topic-15-code"><summary>โค้ด</summary><p>PSIΣ(q−p)log(q/p); p[.5,.5],q[.25,.75]ได้≈.274653; bin0ต้องsmoothingpolicyและfixedtrainbinsไม่refitตามcurrent</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-15-result"><summary>ผลการทดลอง</summary><p>PSIΣ(q−p)log(q/p); p[.5,.5],q[.25,.75]ได้≈.274653; bin0ต้องsmoothingpolicyและfixedtrainbinsไม่refitตามcurrent</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-15"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-16" class="source-topic"><span id="source-65-mlops-canonical-16-data-quality-monitoring" class="legacy-anchor"></span><h3>16. Data Quality Monitoring</h3>
+<p>Track:
+- missing rate
+- invalid categories
+- schema violations
+- duplicate rate
+- out-of-range values
+- freshness
+- volume</p>
+<p>Data failures can look like model drift.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>missingrate=countnull/rows,freshness=now−latesteventtimeคนละsignalกับfeaturedistributiondrift; pipelineหยุดอาจdistributionเหมือนเดิมแต่stale</p><p>เพิ่มfreshnessgateคงmodel/requesttrace; reportstaleeventsblockedกับfalsealertsและdeploymentdelayไม่ใช้driftแทนfreshness</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-16-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>missingrate=countnull/rows,freshness=now−latesteventtimeคนละsignalกับfeaturedistributiondrift; pipelineหยุดอาจdistributionเหมือนเดิมแต่stale</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-16-equation"><summary>สมการ</summary><p>missingrate=countnull/rows,freshness=now−latesteventtimeคนละsignalกับfeaturedistributiondrift; pipelineหยุดอาจdistributionเหมือนเดิมแต่stale</p></details><details id="help-topic-16-visual"><summary>ภาพและ shape</summary><p>missingrate=countnull/rows,freshness=now−latesteventtimeคนละsignalกับfeaturedistributiondrift; pipelineหยุดอาจdistributionเหมือนเดิมแต่stale</p></details><details id="help-topic-16-code"><summary>โค้ด</summary><p>missingrate=countnull/rows,freshness=now−latesteventtimeคนละsignalกับfeaturedistributiondrift; pipelineหยุดอาจdistributionเหมือนเดิมแต่stale</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-16-result"><summary>ผลการทดลอง</summary><p>missingrate=countnull/rows,freshness=now−latesteventtimeคนละsignalกับfeaturedistributiondrift; pipelineหยุดอาจdistributionเหมือนเดิมแต่stale</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-16"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-17" class="source-topic"><span id="source-65-mlops-canonical-17-training-serving-skew" class="legacy-anchor"></span><h3>17. Training-Serving Skew</h3>
+<p>Occurs when feature/preprocessing logic differs between training and production.</p>
+<p>Mitigations:
+- shared transformation code
+- versioned features
+- contract tests
+- replay production samples through training pipeline</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>ทดลอง“freshnessgateตรวจpipelineหยุดภายใน5นาทีโดยfalsealert≤1/week”; baselinePSI-only,fixedhistoricalreplayและincidentlabels</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-17-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>ทดลอง“freshnessgateตรวจpipelineหยุดภายใน5นาทีโดยfalsealert≤1/week”; baselinePSI-only,fixedhistoricalreplayและincidentlabels</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-17-equation"><summary>สมการ</summary><p>ทดลอง“freshnessgateตรวจpipelineหยุดภายใน5นาทีโดยfalsealert≤1/week”; baselinePSI-only,fixedhistoricalreplayและincidentlabels</p></details><details id="help-topic-17-visual"><summary>ภาพและ shape</summary><p>ทดลอง“freshnessgateตรวจpipelineหยุดภายใน5นาทีโดยfalsealert≤1/week”; baselinePSI-only,fixedhistoricalreplayและincidentlabels</p></details><details id="help-topic-17-code"><summary>โค้ด</summary><p>ทดลอง“freshnessgateตรวจpipelineหยุดภายใน5นาทีโดยfalsealert≤1/week”; baselinePSI-only,fixedhistoricalreplayและincidentlabels</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-17-result"><summary>ผลการทดลอง</summary><p>ทดลอง“freshnessgateตรวจpipelineหยุดภายใน5นาทีโดยfalsealert≤1/week”; baselinePSI-only,fixedhistoricalreplayและincidentlabels</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-17"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-18" class="source-topic"><span id="source-65-mlops-canonical-18-delayed-labels" class="legacy-anchor"></span><h3>18. Delayed Labels</h3>
+<p>Many production labels arrive hours/days/weeks later.</p>
+<p>Separate:
+- immediate proxy monitoring
+- delayed ground-truth evaluation</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>เก็บpredictionID/timestamp/modelversion/featureschema,joinlabelเมื่อมาถึงแล้วmetricตามcohortlabel-delay; อย่านับunlabeledเป็นnegativeทันที</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-18-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>เก็บpredictionID/timestamp/modelversion/featureschema,joinlabelเมื่อมาถึงแล้วmetricตามcohortlabel-delay; อย่านับunlabeledเป็นnegativeทันที</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-18-equation"><summary>สมการ</summary><p>เก็บpredictionID/timestamp/modelversion/featureschema,joinlabelเมื่อมาถึงแล้วmetricตามcohortlabel-delay; อย่านับunlabeledเป็นnegativeทันที</p></details><details id="help-topic-18-visual"><summary>ภาพและ shape</summary><p>เก็บpredictionID/timestamp/modelversion/featureschema,joinlabelเมื่อมาถึงแล้วmetricตามcohortlabel-delay; อย่านับunlabeledเป็นnegativeทันที</p></details><details id="help-topic-18-code"><summary>โค้ด</summary><p>เก็บpredictionID/timestamp/modelversion/featureschema,joinlabelเมื่อมาถึงแล้วmetricตามcohortlabel-delay; อย่านับunlabeledเป็นnegativeทันที</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-18-result"><summary>ผลการทดลอง</summary><p>เก็บpredictionID/timestamp/modelversion/featureschema,joinlabelเมื่อมาถึงแล้วmetricตามcohortlabel-delay; อย่านับunlabeledเป็นnegativeทันที</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-18"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-19" class="source-topic"><span id="source-65-mlops-canonical-19-retraining-trigger" class="legacy-anchor"></span><h3>19. Retraining Trigger</h3>
+<p>Possible triggers:
+- scheduled
+- enough new labeled data
+- quality degradation
+- drift + validated impact
+- domain/business change</p>
+<p>Retrain only when policy and evaluation justify it.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-19-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>19. Retraining Trigger</h3>
+<p>Possible triggers:
+- scheduled
+- enough new labeled data
+- quality degradation
+- drift + validated impact
+- domain/business change</p>
+<p>Retrain only when policy and evaluation justify it.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-19-equation"><summary>สมการ</summary><h3>19. Retraining Trigger</h3>
+<p>Possible triggers:
+- scheduled
+- enough new labeled data
+- quality degradation
+- drift + validated impact
+- domain/business change</p>
+<p>Retrain only when policy and evaluation justify it.</p></details><details id="help-topic-19-visual"><summary>ภาพและ shape</summary><h3>19. Retraining Trigger</h3>
+<p>Possible triggers:
+- scheduled
+- enough new labeled data
+- quality degradation
+- drift + validated impact
+- domain/business change</p>
+<p>Retrain only when policy and evaluation justify it.</p></details><details id="help-topic-19-code"><summary>โค้ด</summary><h3>19. Retraining Trigger</h3>
+<p>Possible triggers:
+- scheduled
+- enough new labeled data
+- quality degradation
+- drift + validated impact
+- domain/business change</p>
+<p>Retrain only when policy and evaluation justify it.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-19-result"><summary>ผลการทดลอง</summary><h3>19. Retraining Trigger</h3>
+<p>Possible triggers:
+- scheduled
+- enough new labeled data
+- quality degradation
+- drift + validated impact
+- domain/business change</p>
+<p>Retrain only when policy and evaluation justify it.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-19"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-20" class="source-topic"><span id="source-65-mlops-canonical-20-champion-challenger" class="legacy-anchor"></span><h3>20. Champion / Challenger</h3>
+<p>Champion is currently serving.</p>
+<p>Challenger is a candidate evaluated against champion.</p>
+<p>Use paired/consistent datasets and production shadow/canary evidence where possible.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-20-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>20. Champion / Challenger</h3>
+<p>Champion is currently serving.</p>
+<p>Challenger is a candidate evaluated against champion.</p>
+<p>Use paired/consistent datasets and production shadow/canary evidence where possible.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-20-equation"><summary>สมการ</summary><h3>20. Champion / Challenger</h3>
+<p>Champion is currently serving.</p>
+<p>Challenger is a candidate evaluated against champion.</p>
+<p>Use paired/consistent datasets and production shadow/canary evidence where possible.</p></details><details id="help-topic-20-visual"><summary>ภาพและ shape</summary><h3>20. Champion / Challenger</h3>
+<p>Champion is currently serving.</p>
+<p>Challenger is a candidate evaluated against champion.</p>
+<p>Use paired/consistent datasets and production shadow/canary evidence where possible.</p></details><details id="help-topic-20-code"><summary>โค้ด</summary><h3>20. Champion / Challenger</h3>
+<p>Champion is currently serving.</p>
+<p>Challenger is a candidate evaluated against champion.</p>
+<p>Use paired/consistent datasets and production shadow/canary evidence where possible.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-20-result"><summary>ผลการทดลอง</summary><h3>20. Champion / Challenger</h3>
+<p>Champion is currently serving.</p>
+<p>Challenger is a candidate evaluated against champion.</p>
+<p>Use paired/consistent datasets and production shadow/canary evidence where possible.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-20"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-21" class="source-topic"><span id="source-65-mlops-canonical-21-rollback" class="legacy-anchor"></span><h3>21. Rollback</h3>
+<p>Rollback requires:
+- previous immutable model version
+- previous preprocessing/config
+- compatible runtime
+- deployment manifest</p>
+<p>Keeping only model weights is not enough.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>rollbackrecordมีfrom/toimmutableversions,trigger/gatereport/time/actor/config/data-contractcompatibilityและverificationresultsหลังrollback</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-21-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>rollbackrecordมีfrom/toimmutableversions,trigger/gatereport/time/actor/config/data-contractcompatibilityและverificationresultsหลังrollback</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-21-equation"><summary>สมการ</summary><p>rollbackrecordมีfrom/toimmutableversions,trigger/gatereport/time/actor/config/data-contractcompatibilityและverificationresultsหลังrollback</p></details><details id="help-topic-21-visual"><summary>ภาพและ shape</summary><p>rollbackrecordมีfrom/toimmutableversions,trigger/gatereport/time/actor/config/data-contractcompatibilityและverificationresultsหลังrollback</p></details><details id="help-topic-21-code"><summary>โค้ด</summary><p>rollbackrecordมีfrom/toimmutableversions,trigger/gatereport/time/actor/config/data-contractcompatibilityและverificationresultsหลังrollback</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-21-result"><summary>ผลการทดลอง</summary><p>rollbackrecordมีfrom/toimmutableversions,trigger/gatereport/time/actor/config/data-contractcompatibilityและverificationresultsหลังrollback</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-21"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-22" class="source-topic"><span id="source-65-mlops-canonical-22-lineage" class="legacy-anchor"></span><h3>22. Lineage</h3>
+<p>Lineage connects:</p>
+<pre><code class="language-text">source data
+↓
+dataset snapshot
+↓
+training run
+↓
+model version
+↓
+deployment
+↓
+predictions / metrics
+</code></pre>
+<p>This enables debugging and auditability.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-22-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>22. Lineage</h3>
+<p>Lineage connects:</p>
+<pre><code class="language-text">source data
+↓
+dataset snapshot
+↓
+training run
+↓
+model version
+↓
+deployment
+↓
+predictions / metrics
+</code></pre>
+<p>This enables debugging and auditability.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-22-equation"><summary>สมการ</summary><h3>22. Lineage</h3>
+<p>Lineage connects:</p>
+<pre><code class="language-text">source data
+↓
+dataset snapshot
+↓
+training run
+↓
+model version
+↓
+deployment
+↓
+predictions / metrics
+</code></pre>
+<p>This enables debugging and auditability.</p></details><details id="help-topic-22-visual"><summary>ภาพและ shape</summary><h3>22. Lineage</h3>
+<p>Lineage connects:</p>
+<pre><code class="language-text">source data
+↓
+dataset snapshot
+↓
+training run
+↓
+model version
+↓
+deployment
+↓
+predictions / metrics
+</code></pre>
+<p>This enables debugging and auditability.</p></details><details id="help-topic-22-code"><summary>โค้ด</summary><h3>22. Lineage</h3>
+<p>Lineage connects:</p>
+<pre><code class="language-text">source data
+↓
+dataset snapshot
+↓
+training run
+↓
+model version
+↓
+deployment
+↓
+predictions / metrics
+</code></pre>
+<p>This enables debugging and auditability.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-22-result"><summary>ผลการทดลอง</summary><h3>22. Lineage</h3>
+<p>Lineage connects:</p>
+<pre><code class="language-text">source data
+↓
+dataset snapshot
+↓
+training run
+↓
+model version
+↓
+deployment
+↓
+predictions / metrics
+</code></pre>
+<p>This enables debugging and auditability.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-22"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-23" class="source-topic"><span id="source-65-mlops-canonical-23-reproducibility" class="legacy-anchor"></span><h3>23. Reproducibility</h3>
+<p>Exact numerical determinism is not always possible on all accelerators.</p>
+<p>Still record enough metadata to reproduce the process and explain expected nondeterminism.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>reproducibilityรวมrun/config/source/artifacthash,metricversion,evalsplit,gatepolicy,promotion/rollbackhistoryและtimestampทุกevidence</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-23-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>reproducibilityรวมrun/config/source/artifacthash,metricversion,evalsplit,gatepolicy,promotion/rollbackhistoryและtimestampทุกevidence</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-23-equation"><summary>สมการ</summary><p>reproducibilityรวมrun/config/source/artifacthash,metricversion,evalsplit,gatepolicy,promotion/rollbackhistoryและtimestampทุกevidence</p></details><details id="help-topic-23-visual"><summary>ภาพและ shape</summary><p>reproducibilityรวมrun/config/source/artifacthash,metricversion,evalsplit,gatepolicy,promotion/rollbackhistoryและtimestampทุกevidence</p></details><details id="help-topic-23-code"><summary>โค้ด</summary><p>reproducibilityรวมrun/config/source/artifacthash,metricversion,evalsplit,gatepolicy,promotion/rollbackhistoryและtimestampทุกevidence</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-23-result"><summary>ผลการทดลอง</summary><p>reproducibilityรวมrun/config/source/artifacthash,metricversion,evalsplit,gatepolicy,promotion/rollbackhistoryและtimestampทุกevidence</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-23"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-24" class="source-topic"><span id="source-65-mlops-canonical-24-monitoring-windows" class="legacy-anchor"></span><h3>24. Monitoring Windows</h3>
+<p>Use windows appropriate to traffic volume:
+- fixed time
+- rolling count
+- event-time windows</p>
+<p>Very small windows create noisy alerts.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>recordrunID/modeldigest/datahash/per-slicequality/p95/missing/freshness/PSI/labelcoverageและpromotionstatetransition</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-24-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>recordrunID/modeldigest/datahash/per-slicequality/p95/missing/freshness/PSI/labelcoverageและpromotionstatetransition</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-24-equation"><summary>สมการ</summary><p>recordrunID/modeldigest/datahash/per-slicequality/p95/missing/freshness/PSI/labelcoverageและpromotionstatetransition</p></details><details id="help-topic-24-visual"><summary>ภาพและ shape</summary><p>recordrunID/modeldigest/datahash/per-slicequality/p95/missing/freshness/PSI/labelcoverageและpromotionstatetransition</p></details><details id="help-topic-24-code"><summary>โค้ด</summary><p>recordrunID/modeldigest/datahash/per-slicequality/p95/missing/freshness/PSI/labelcoverageและpromotionstatetransition</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-24-result"><summary>ผลการทดลอง</summary><p>recordrunID/modeldigest/datahash/per-slicequality/p95/missing/freshness/PSI/labelcoverageและpromotionstatetransition</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-24"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-25" class="source-topic"><span id="source-65-mlops-canonical-25-alert-design" class="legacy-anchor"></span><h3>25. Alert Design</h3>
+<p>Alerts should be:
+- actionable
+- rate limited
+- severity classified
+- linked to runbooks</p>
+<p>Alerting on every small metric movement creates fatigue.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-25-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>25. Alert Design</h3>
+<p>Alerts should be:
+- actionable
+- rate limited
+- severity classified
+- linked to runbooks</p>
+<p>Alerting on every small metric movement creates fatigue.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-25-equation"><summary>สมการ</summary><h3>25. Alert Design</h3>
+<p>Alerts should be:
+- actionable
+- rate limited
+- severity classified
+- linked to runbooks</p>
+<p>Alerting on every small metric movement creates fatigue.</p></details><details id="help-topic-25-visual"><summary>ภาพและ shape</summary><h3>25. Alert Design</h3>
+<p>Alerts should be:
+- actionable
+- rate limited
+- severity classified
+- linked to runbooks</p>
+<p>Alerting on every small metric movement creates fatigue.</p></details><details id="help-topic-25-code"><summary>โค้ด</summary><h3>25. Alert Design</h3>
+<p>Alerts should be:
+- actionable
+- rate limited
+- severity classified
+- linked to runbooks</p>
+<p>Alerting on every small metric movement creates fatigue.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-25-result"><summary>ผลการทดลอง</summary><h3>25. Alert Design</h3>
+<p>Alerts should be:
+- actionable
+- rate limited
+- severity classified
+- linked to runbooks</p>
+<p>Alerting on every small metric movement creates fatigue.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-25"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-26" class="source-topic"><span id="source-65-mlops-canonical-26-from-scratch" class="legacy-anchor"></span><h3>26. From Scratch</h3>
+<p>src/mlops_utils.py implements:</p>
+<ul>
+<li>canonical_json</li>
+<li>experiment_fingerprint</li>
+<li>artifact_sha256</li>
+<li>population_stability_index</li>
+<li>missing_rate</li>
+<li>promotion_gate</li>
+<li>registry_alias_update</li>
+<li>rolling_error_rate</li>
+</ul><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>PSIเทียบexplicitNumPysumfixtureและgateเทียบtruth-tableทุกrequiredcondition; MLflowoptionalintegrationseparateจากlocalmanifesttests</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-26-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>PSIเทียบexplicitNumPysumfixtureและgateเทียบtruth-tableทุกrequiredcondition; MLflowoptionalintegrationseparateจากlocalmanifesttests</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-26-equation"><summary>สมการ</summary><p>PSIเทียบexplicitNumPysumfixtureและgateเทียบtruth-tableทุกrequiredcondition; MLflowoptionalintegrationseparateจากlocalmanifesttests</p></details><details id="help-topic-26-visual"><summary>ภาพและ shape</summary><p>PSIเทียบexplicitNumPysumfixtureและgateเทียบtruth-tableทุกrequiredcondition; MLflowoptionalintegrationseparateจากlocalmanifesttests</p></details><details id="help-topic-26-code"><summary>โค้ด</summary><p>PSIเทียบexplicitNumPysumfixtureและgateเทียบtruth-tableทุกrequiredcondition; MLflowoptionalintegrationseparateจากlocalmanifesttests</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-26-result"><summary>ผลการทดลอง</summary><p>PSIเทียบexplicitNumPysumfixtureและgateเทียบtruth-tableทุกrequiredcondition; MLflowoptionalintegrationseparateจากlocalmanifesttests</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-26"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-27" class="source-topic"><span id="source-65-mlops-canonical-27-optional-mlflow-lab" class="legacy-anchor"></span><h3>27. Optional MLflow Lab</h3>
+<p>Install:</p>
+<pre><code class="language-bash">python -m pip install -r requirements-batch22-mlops.txt
+</code></pre>
+<p>Then reproduce run tracking and model registration with MLflow.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-27-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>27. Optional MLflow Lab</h3>
+<p>Install:</p>
+<pre><code class="language-bash">python -m pip install -r requirements-batch22-mlops.txt
+</code></pre>
+<p>Then reproduce run tracking and model registration with MLflow.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-27-equation"><summary>สมการ</summary><h3>27. Optional MLflow Lab</h3>
+<p>Install:</p>
+<pre><code class="language-bash">python -m pip install -r requirements-batch22-mlops.txt
+</code></pre>
+<p>Then reproduce run tracking and model registration with MLflow.</p></details><details id="help-topic-27-visual"><summary>ภาพและ shape</summary><h3>27. Optional MLflow Lab</h3>
+<p>Install:</p>
+<pre><code class="language-bash">python -m pip install -r requirements-batch22-mlops.txt
+</code></pre>
+<p>Then reproduce run tracking and model registration with MLflow.</p></details><details id="help-topic-27-code"><summary>โค้ด</summary><h3>27. Optional MLflow Lab</h3>
+<p>Install:</p>
+<pre><code class="language-bash">python -m pip install -r requirements-batch22-mlops.txt
+</code></pre>
+<p>Then reproduce run tracking and model registration with MLflow.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-27-result"><summary>ผลการทดลอง</summary><h3>27. Optional MLflow Lab</h3>
+<p>Install:</p>
+<pre><code class="language-bash">python -m pip install -r requirements-batch22-mlops.txt
+</code></pre>
+<p>Then reproduce run tracking and model registration with MLflow.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-27"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-28" class="source-topic"><span id="source-65-mlops-canonical-28-common-mistakes" class="legacy-anchor"></span><h3>28. Common Mistakes</h3>
+<ol>
+<li>run names used as unique identity</li>
+<li>data revision not recorded</li>
+<li>model registered without evaluation artifact</li>
+<li>alias confused with immutable version</li>
+<li>drift threshold copied without validation</li>
+<li>missing-data outage labeled concept drift</li>
+<li>retraining automatically triggered by any drift</li>
+<li>training-serving preprocessing differs</li>
+<li>no rollback artifact bundle</li>
+<li>monitoring has no actionable runbook</li>
+</ol><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-28-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>28. Common Mistakes</h3>
+<ol>
+<li>run names used as unique identity</li>
+<li>data revision not recorded</li>
+<li>model registered without evaluation artifact</li>
+<li>alias confused with immutable version</li>
+<li>drift threshold copied without validation</li>
+<li>missing-data outage labeled concept drift</li>
+<li>retraining automatically triggered by any drift</li>
+<li>training-serving preprocessing differs</li>
+<li>no rollback artifact bundle</li>
+<li>monitoring has no actionable runbook</li>
+</ol><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-28-equation"><summary>สมการ</summary><h3>28. Common Mistakes</h3>
+<ol>
+<li>run names used as unique identity</li>
+<li>data revision not recorded</li>
+<li>model registered without evaluation artifact</li>
+<li>alias confused with immutable version</li>
+<li>drift threshold copied without validation</li>
+<li>missing-data outage labeled concept drift</li>
+<li>retraining automatically triggered by any drift</li>
+<li>training-serving preprocessing differs</li>
+<li>no rollback artifact bundle</li>
+<li>monitoring has no actionable runbook</li>
+</ol></details><details id="help-topic-28-visual"><summary>ภาพและ shape</summary><h3>28. Common Mistakes</h3>
+<ol>
+<li>run names used as unique identity</li>
+<li>data revision not recorded</li>
+<li>model registered without evaluation artifact</li>
+<li>alias confused with immutable version</li>
+<li>drift threshold copied without validation</li>
+<li>missing-data outage labeled concept drift</li>
+<li>retraining automatically triggered by any drift</li>
+<li>training-serving preprocessing differs</li>
+<li>no rollback artifact bundle</li>
+<li>monitoring has no actionable runbook</li>
+</ol></details><details id="help-topic-28-code"><summary>โค้ด</summary><h3>28. Common Mistakes</h3>
+<ol>
+<li>run names used as unique identity</li>
+<li>data revision not recorded</li>
+<li>model registered without evaluation artifact</li>
+<li>alias confused with immutable version</li>
+<li>drift threshold copied without validation</li>
+<li>missing-data outage labeled concept drift</li>
+<li>retraining automatically triggered by any drift</li>
+<li>training-serving preprocessing differs</li>
+<li>no rollback artifact bundle</li>
+<li>monitoring has no actionable runbook</li>
+</ol><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-28-result"><summary>ผลการทดลอง</summary><h3>28. Common Mistakes</h3>
+<ol>
+<li>run names used as unique identity</li>
+<li>data revision not recorded</li>
+<li>model registered without evaluation artifact</li>
+<li>alias confused with immutable version</li>
+<li>drift threshold copied without validation</li>
+<li>missing-data outage labeled concept drift</li>
+<li>retraining automatically triggered by any drift</li>
+<li>training-serving preprocessing differs</li>
+<li>no rollback artifact bundle</li>
+<li>monitoring has no actionable runbook</li>
+</ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-28"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-29" class="source-topic"><span id="source-65-mlops-canonical-29-exercises-mini-project" class="legacy-anchor"></span><h3>29. Exercises / Mini Project</h3>
+<ul>
+<li><a href="../65-mlops/exercises/README.md">Exercises</a></li>
+<li><a href="../65-mlops/solutions/README.md">Solutions</a></li>
+<li><a href="../65-mlops/mini-project/README.md">Mini Project</a></li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-29-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>29. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-29-equation"><summary>สมการ</summary><h3>29. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-29-visual"><summary>ภาพและ shape</summary><h3>29. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-29-code"><summary>โค้ด</summary><h3>29. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-29-result"><summary>ผลการทดลอง</summary><h3>29. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-29"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-30" class="source-topic"><span id="source-65-mlops-canonical-30-checklist" class="legacy-anchor"></span><h3>30. Checklist</h3>
+<ul>
+<li>[ ] tracking</li>
+<li>[ ] artifact hashes</li>
+<li>[ ] model registry</li>
+<li>[ ] aliases/tags</li>
+<li>[ ] promotion gate</li>
+<li>[ ] CI/CD/CT</li>
+<li>[ ] data/prediction drift</li>
+<li>[ ] quality monitoring</li>
+<li>[ ] training-serving skew</li>
+<li>[ ] lineage</li>
+<li>[ ] rollback</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-30-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>30. Checklist</h3>
+<ul>
+<li>[ ] tracking</li>
+<li>[ ] artifact hashes</li>
+<li>[ ] model registry</li>
+<li>[ ] aliases/tags</li>
+<li>[ ] promotion gate</li>
+<li>[ ] CI/CD/CT</li>
+<li>[ ] data/prediction drift</li>
+<li>[ ] quality monitoring</li>
+<li>[ ] training-serving skew</li>
+<li>[ ] lineage</li>
+<li>[ ] rollback</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-30-equation"><summary>สมการ</summary><h3>30. Checklist</h3>
+<ul>
+<li>[ ] tracking</li>
+<li>[ ] artifact hashes</li>
+<li>[ ] model registry</li>
+<li>[ ] aliases/tags</li>
+<li>[ ] promotion gate</li>
+<li>[ ] CI/CD/CT</li>
+<li>[ ] data/prediction drift</li>
+<li>[ ] quality monitoring</li>
+<li>[ ] training-serving skew</li>
+<li>[ ] lineage</li>
+<li>[ ] rollback</li>
+</ul></details><details id="help-topic-30-visual"><summary>ภาพและ shape</summary><h3>30. Checklist</h3>
+<ul>
+<li>[ ] tracking</li>
+<li>[ ] artifact hashes</li>
+<li>[ ] model registry</li>
+<li>[ ] aliases/tags</li>
+<li>[ ] promotion gate</li>
+<li>[ ] CI/CD/CT</li>
+<li>[ ] data/prediction drift</li>
+<li>[ ] quality monitoring</li>
+<li>[ ] training-serving skew</li>
+<li>[ ] lineage</li>
+<li>[ ] rollback</li>
+</ul></details><details id="help-topic-30-code"><summary>โค้ด</summary><h3>30. Checklist</h3>
+<ul>
+<li>[ ] tracking</li>
+<li>[ ] artifact hashes</li>
+<li>[ ] model registry</li>
+<li>[ ] aliases/tags</li>
+<li>[ ] promotion gate</li>
+<li>[ ] CI/CD/CT</li>
+<li>[ ] data/prediction drift</li>
+<li>[ ] quality monitoring</li>
+<li>[ ] training-serving skew</li>
+<li>[ ] lineage</li>
+<li>[ ] rollback</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-30-result"><summary>ผลการทดลอง</summary><h3>30. Checklist</h3>
+<ul>
+<li>[ ] tracking</li>
+<li>[ ] artifact hashes</li>
+<li>[ ] model registry</li>
+<li>[ ] aliases/tags</li>
+<li>[ ] promotion gate</li>
+<li>[ ] CI/CD/CT</li>
+<li>[ ] data/prediction drift</li>
+<li>[ ] quality monitoring</li>
+<li>[ ] training-serving skew</li>
+<li>[ ] lineage</li>
+<li>[ ] rollback</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-30"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-31" class="source-topic"><span id="source-65-mlops-canonical-31-whats-next" class="legacy-anchor"></span><span id="source-65-mlops-canonical-65-mlops-mlops" class="legacy-anchor"></span><h3>31. What's Next</h3>
+<p>Chapter 66 builds the data pipelines and contracts that feed reproducible training and production systems.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-31-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>31. What's Next</h3>
+<p>Chapter 66 builds the data pipelines and contracts that feed reproducible training and production systems.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-31-equation"><summary>สมการ</summary><h3>31. What's Next</h3>
+<p>Chapter 66 builds the data pipelines and contracts that feed reproducible training and production systems.</p></details><details id="help-topic-31-visual"><summary>ภาพและ shape</summary><h3>31. What's Next</h3>
+<p>Chapter 66 builds the data pipelines and contracts that feed reproducible training and production systems.</p></details><details id="help-topic-31-code"><summary>โค้ด</summary><h3>31. What's Next</h3>
+<p>Chapter 66 builds the data pipelines and contracts that feed reproducible training and production systems.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-31-result"><summary>ผลการทดลอง</summary><h3>31. What's Next</h3>
+<p>Chapter 66 builds the data pipelines and contracts that feed reproducible training and production systems.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-31"> อ่านหัวข้อนี้แล้ว</label></section><details><summary>รายละเอียดเพิ่มเติมและข้อกำหนดของ local lab</summary><h3>65-mlops — MLOps</h3>
+<p><strong>Prerequisites:</strong> Complete 64-deploy-ai; be able to trace array/tensor shapes, separate train/validation/test data, and explain the core objective of the current chapter.</p>
+<p><strong>Mental model:</strong> Treat MLOps as a pipeline: input representation → central mechanism → objective/state update → observable output. At every boundary, state shape/state, allowed information flow, and the invariant that should remain true.</p>
+<p><strong>Code walkthrough:</strong> Read public API first, then input checks, state/shape transformations, numerical core, returned values and tests. Connect each important code block to the equation or algorithm in the chapter README.</p>
+<p><strong>Visualization / inspection:</strong> Use a tiny case. Inspect intermediate values, distributions, norms, scores, states or trajectories appropriate to MLOps; do not rely only on the final metric.</p>
+<p><strong>Experiment:</strong> Run a baseline, one controlled parameter change, one edge case and one repeated seeded comparison. Record seed, environment, data version, configuration and metric.</p>
+<p><strong>Limitations:</strong> List at least one assumption, one data-related limitation, one numerical/optimization limitation and one scaling limitation for MLOps.</p>
+<p><strong>Analysis workflow:</strong> Check inputs → preprocessing → shapes/state → finite numerical values → objective/update → evaluation protocol. The earliest unexpected state is more informative than a downstream metric.</p>
+<p><strong>Performance:</strong> Identify the dominant time and memory terms and measure them on the local learning run before attempting optimization.</p>
+<p><strong>Production perspective:</strong> Define input validation, artifact/configuration versioning, quality and resource measurements, staged release criteria and a way to return to the previous known-good artifact.</p>
+<p><strong>Research perspective:</strong> State a falsifiable hypothesis, baseline, one-factor change, metric, repeated-run plan when stochastic, and how negative results will be recorded.</p>
+<p><strong>Interview questions:</strong>
+1. Explain MLOps from first principles without naming a library API.
+2. Trace one input through the central mechanism and give the important intermediate shapes/state.
+3. Name the strongest assumption and a case where it fails.
+4. State the dominant compute/memory cost.
+5. Describe how you would validate a new implementation against a trusted baseline.</p>
+<p><strong>Summary / exit condition:</strong> You may move on when you can explain, derive or trace, implement, test, analyze, measure and evaluate MLOps, and when the chapter mini-project plus twenty total exercises are complete.</p></details></section><section id="objective-evidence" class="canonical-section"><h2>พิสูจน์ความสามารถทีละ objective</h2><p>ทำกรณีใหม่ก่อนเปิด reference แล้วบันทึกงานด้านล่าง ให้ผู้ตรวจใช้ rubric ตรวจคำอธิบาย ผลคำนวณ โค้ด และข้อจำกัด บันทึกเก็บในเบราว์เซอร์เครื่องนี้ กดส่งออกเพื่อสำรองหรือส่งให้ผู้ตรวจ เว็บไม่ได้รันโค้ดหรือตัดสินผลงานแทนผู้ตรวจ</p><button type="button" class="secondary-button" data-export-evidence>ส่งออกหลักฐานบทนี้เป็น JSON</button><p role="status" id="evidence-export-status"></p><details id="ch65-objective-01" class="objective-proof"><summary>track parameters, metrics and artifacts</summary><p>track parameters, metrics and artifacts: ใช้กรณีในหัวข้อ Experiment Tracking, MLflow Tracking เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch65-evidence-01"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch65-evidence-01-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch65-evidence-01-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch65-evidence-01-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch65-evidence-01-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch65-evidence-01-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch65-evidence-01-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch65-evidence-01-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch65-evidence-01-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>MLflowstart_run→log_params→log_metrics(step)→log_artifactพร้อมrunID; localfilebackendใช้ได้offline แต่connectiontestไม่แทนmodelquality</p><h3>3. Experiment Tracking</h3>
+<p>Every run should record at minimum:
+- code revision
+- dataset version
+- hyperparameters
+- seed
+- environment/dependencies
+- metrics
+- artifacts
+- start/end timestamps</p>
+<p>An experiment dashboard is useful only if runs are comparable.</p>
+<h3>6. MLflow Tracking</h3>
+<p>Current MLflow Tracking records run parameters, code versions, metrics and output artifacts and exposes API/UI workflows for inspecting runs.</p>
+<p>Use MLflow as one concrete implementation of the broader tracking concepts.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch65-objective-02" class="objective-proof"><summary>fingerprint experiments</summary><p>fingerprint experiments: ใช้กรณีในหัวข้อ Run Identity เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch65-evidence-02"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch65-evidence-02-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch65-evidence-02-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch65-evidence-02-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch65-evidence-02-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch65-evidence-02-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch65-evidence-02-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch65-evidence-02-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch65-evidence-02-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>fingerprint=SHA256canonicalJSON(code,data_version,model,config,seed); data-v1/v2แม้rowscountเท่ากันต้องhashต่างและmanifestอ้างsourcechecksums</p><h3>4. Run Identity</h3>
+<p>A reproducible run can be fingerprinted from canonicalized inputs:</p>
+<pre><code class="language-text">hash(
+  code_revision
+  dataset_revision
+  config
+  environment
+)
+</code></pre>
+<p>Do not rely only on a human-written run name.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch65-objective-03" class="objective-proof"><summary>version model/data/code together</summary><p>version model/data/code together: ใช้กรณีในหัวข้อ Artifacts, Reproducibility เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch65-evidence-03"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch65-evidence-03-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch65-evidence-03-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch65-evidence-03-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch65-evidence-03-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch65-evidence-03-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch65-evidence-03-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch65-evidence-03-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch65-evidence-03-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>hashlib.sha256(artifactbytes); flipbyteหนึ่งตำแหน่งdigestเปลี่ยน; verifyก่อนloadและไม่ใช้filemtime/filenameแทนcontentintegrity</p><h3>5. Artifacts</h3>
+<p>Artifacts can include:
+- model weights
+- tokenizer
+- plots
+- evaluation JSON
+- preprocessing objects
+- manifests</p>
+<p>Store content digests so corrupted or replaced artifacts can be detected.</p>
+<h3>23. Reproducibility</h3>
+<p>Exact numerical determinism is not always possible on all accelerators.</p>
+<p>Still record enough metadata to reproduce the process and explain expected nondeterminism.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch65-objective-04" class="objective-proof"><summary>understand model registries</summary><p>understand model registries: ใช้กรณีในหัวข้อ Model Registry เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch65-evidence-04"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch65-evidence-04-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch65-evidence-04-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch65-evidence-04-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch65-evidence-04-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch65-evidence-04-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch65-evidence-04-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch65-evidence-04-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch65-evidence-04-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>registrymodelversionผูกartifactdigest/runID/datasplit/metricversion/validationreport; ไม่registerชื่อversionอย่างเดียวโดยไม่มีprovenance</p><h3>7. Model Registry</h3>
+<p>A registry provides a controlled model namespace with versions and metadata.</p>
+<p>Current MLflow Model Registry supports model versions, aliases, tags, descriptions and lineage back to runs.</p>
+<p>Examples of aliases:
+- candidate
+- champion
+- rollback</p>
+<p>Alias names should express operational intent rather than being treated as immutable history.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch65-objective-05" class="objective-proof"><summary>design aliases/tags and promotion gates</summary><p>design aliases/tags and promotion gates: ใช้กรณีในหัวข้อ Version vs Alias, Promotion Gate, Champion / Challenger เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch65-evidence-05"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch65-evidence-05-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch65-evidence-05-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch65-evidence-05-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch65-evidence-05-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch65-evidence-05-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch65-evidence-05-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch65-evidence-05-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch65-evidence-05-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>candidatealiasชี้versionรอgate,championชี้approvedversion; aliasเป็นpointerเปลี่ยนได้จึงlogก่อน/หลังพร้อมimmutableversionID</p><h3>8. Version vs Alias</h3>
+<p>Version:</p>
+<pre><code class="language-text">immutable historical identity
+</code></pre>
+<p>Alias:</p>
+<pre><code class="language-text">movable pointer to a version
+</code></pre>
+<p>Deploy by immutable version/digest underneath even when humans use aliases operationally.</p>
+<h3>9. Promotion Gate</h3>
+<p>A candidate should pass explicit requirements:
+- validation quality
+- slice quality
+- latency/memory
+- robustness
+- security/safety checks where relevant
+- reproducibility</p>
+<p>Promotion is a policy decision, not simply highest validation score.</p>
+<h3>20. Champion / Challenger</h3>
+<p>Champion is currently serving.</p>
+<p>Challenger is a candidate evaluated against champion.</p>
+<p>Use paired/consistent datasets and production shadow/canary evidence where possible.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch65-objective-06" class="objective-proof"><summary>distinguish offline and online metrics</summary><p>distinguish offline and online metrics: ใช้กรณีในหัวข้อ Offline vs Online Metrics เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch65-evidence-06"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch65-evidence-06-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch65-evidence-06-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch65-evidence-06-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch65-evidence-06-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch65-evidence-06-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch65-evidence-06-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch65-evidence-06-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch65-evidence-06-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>เทียบmetricscorerversionต่างหรือdelayedlabelsไม่ครบทำclaimqualityผิด; freezecohort/censoringpolicyและreportcoverage/lagdistribution</p><h3>11. Offline vs Online Metrics</h3>
+<p>Offline:
+- validation loss
+- F1
+- ranking metrics
+- benchmark quality</p>
+<p>Online:
+- request errors
+- latency
+- business/task outcomes
+- human feedback</p>
+<p>A model can improve offline while hurting production outcomes.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch65-objective-07" class="objective-proof"><summary>detect data and prediction drift</summary><p>detect data and prediction drift: ใช้กรณีในหัวข้อ Data Drift, Concept Drift, Prediction Drift, Population Stability Index เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch65-evidence-07"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch65-evidence-07-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch65-evidence-07-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch65-evidence-07-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch65-evidence-07-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch65-evidence-07-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch65-evidence-07-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch65-evidence-07-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch65-evidence-07-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>PSIΣ(q−p)log(q/p); p[.5,.5],q[.25,.75]ได้≈.274653; bin0ต้องsmoothingpolicyและfixedtrainbinsไม่refitตามcurrent</p><h3>12. Data Drift</h3>
+<p>Input distribution changes:</p>
+<pre><code class="language-text">P_train(X) != P_prod(X)
+</code></pre>
+<p>Drift is a warning signal, not proof that model quality has degraded.</p>
+<h3>13. Concept Drift</h3>
+<p>The relationship between inputs and targets changes:</p>
+<pre><code class="language-text">P_train(Y|X) != P_prod(Y|X)
+</code></pre>
+<p>This can directly invalidate learned decision rules.</p>
+<h3>14. Prediction Drift</h3>
+<p>Monitor changes in model output distributions when labels are delayed/unavailable.</p>
+<p>Again, output drift does not automatically mean failure.</p>
+<h3>15. Population Stability Index</h3>
+<p>For reference/current bin proportions p_i and q_i:</p>
+<pre><code class="language-text">PSI = sum((q_i - p_i) * ln(q_i/p_i))
+</code></pre>
+<p>Use smoothing for zero bins.</p>
+<p>Thresholds are domain-dependent; do not treat one internet rule as universal.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch65-objective-08" class="objective-proof"><summary>monitor data quality</summary><p>monitor data quality: ใช้กรณีในหัวข้อ Data Quality Monitoring เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch65-evidence-08"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch65-evidence-08-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch65-evidence-08-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch65-evidence-08-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch65-evidence-08-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch65-evidence-08-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch65-evidence-08-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch65-evidence-08-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch65-evidence-08-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>missingrate=countnull/rows,freshness=now−latesteventtimeคนละsignalกับfeaturedistributiondrift; pipelineหยุดอาจdistributionเหมือนเดิมแต่stale</p><h3>16. Data Quality Monitoring</h3>
+<p>Track:
+- missing rate
+- invalid categories
+- schema violations
+- duplicate rate
+- out-of-range values
+- freshness
+- volume</p>
+<p>Data failures can look like model drift.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch65-objective-09" class="objective-proof"><summary>design retraining triggers</summary><p>design retraining triggers: ใช้กรณีในหัวข้อ Retraining Trigger เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch65-evidence-09"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch65-evidence-09-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch65-evidence-09-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch65-evidence-09-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch65-evidence-09-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch65-evidence-09-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch65-evidence-09-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch65-evidence-09-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch65-evidence-09-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>19. Retraining Trigger</h3>
+<p>Possible triggers:
+- scheduled
+- enough new labeled data
+- quality degradation
+- drift + validated impact
+- domain/business change</p>
+<p>Retrain only when policy and evaluation justify it.</p><h3>19. Retraining Trigger</h3>
+<p>Possible triggers:
+- scheduled
+- enough new labeled data
+- quality degradation
+- drift + validated impact
+- domain/business change</p>
+<p>Retrain only when policy and evaluation justify it.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch65-objective-10" class="objective-proof"><summary>understand CI/CD/CT</summary><p>understand CI/CD/CT: ใช้กรณีในหัวข้อ CI / CD / CT เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch65-evidence-10"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch65-evidence-10-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch65-evidence-10-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch65-evidence-10-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch65-evidence-10-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch65-evidence-10-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch65-evidence-10-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch65-evidence-10-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch65-evidence-10-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>10. CI / CD / CT</h3>
+<h4>CI</h4>
+<p>test code, data contracts and training components.</p>
+<h4>CD</h4>
+<p>package/promote/deploy a validated artifact.</p>
+<h4>CT</h4>
+<p>continuous training or retraining when policy says new training is needed.</p>
+<p>Continuous training does not mean retrain on every new row.</p><h3>10. CI / CD / CT</h3>
+<h4>CI</h4>
+<p>test code, data contracts and training components.</p>
+<h4>CD</h4>
+<p>package/promote/deploy a validated artifact.</p>
+<h4>CT</h4>
+<p>continuous training or retraining when policy says new training is needed.</p>
+<p>Continuous training does not mean retrain on every new row.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch65-objective-11" class="objective-proof"><summary>implement rollback</summary><p>implement rollback: ใช้กรณีในหัวข้อ Rollback เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch65-evidence-11"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch65-evidence-11-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch65-evidence-11-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch65-evidence-11-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch65-evidence-11-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch65-evidence-11-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch65-evidence-11-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch65-evidence-11-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch65-evidence-11-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>rollbackrecordมีfrom/toimmutableversions,trigger/gatereport/time/actor/config/data-contractcompatibilityและverificationresultsหลังrollback</p><h3>21. Rollback</h3>
+<p>Rollback requires:
+- previous immutable model version
+- previous preprocessing/config
+- compatible runtime
+- deployment manifest</p>
+<p>Keeping only model weights is not enough.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch65-objective-12" class="objective-proof"><summary>preserve lineage</summary><p>preserve lineage: ใช้กรณีในหัวข้อ Lineage เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch65-evidence-12"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch65-evidence-12-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch65-evidence-12-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch65-evidence-12-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch65-evidence-12-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch65-evidence-12-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch65-evidence-12-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch65-evidence-12-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch65-evidence-12-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>22. Lineage</h3>
+<p>Lineage connects:</p>
+<pre><code class="language-text">source data
+↓
+dataset snapshot
+↓
+training run
+↓
+model version
+↓
+deployment
+↓
+predictions / metrics
+</code></pre>
+<p>This enables debugging and auditability.</p><h3>22. Lineage</h3>
+<p>Lineage connects:</p>
+<pre><code class="language-text">source data
+↓
+dataset snapshot
+↓
+training run
+↓
+model version
+↓
+deployment
+↓
+predictions / metrics
+</code></pre>
+<p>This enables debugging and auditability.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch65-objective-13" class="objective-proof"><summary>avoid training-serving skew</summary><p>avoid training-serving skew: ใช้กรณีในหัวข้อ Training-Serving Skew, Delayed Labels เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch65-evidence-13"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch65-evidence-13-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch65-evidence-13-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch65-evidence-13-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch65-evidence-13-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch65-evidence-13-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch65-evidence-13-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch65-evidence-13-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch65-evidence-13-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>เก็บpredictionID/timestamp/modelversion/featureschema,joinlabelเมื่อมาถึงแล้วmetricตามcohortlabel-delay; อย่านับunlabeledเป็นnegativeทันที</p><h3>17. Training-Serving Skew</h3>
+<p>Occurs when feature/preprocessing logic differs between training and production.</p>
+<p>Mitigations:
+- shared transformation code
+- versioned features
+- contract tests
+- replay production samples through training pipeline</p>
+<h3>18. Delayed Labels</h3>
+<p>Many production labels arrive hours/days/weeks later.</p>
+<p>Separate:
+- immediate proxy monitoring
+- delayed ground-truth evaluation</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch65-objective-14" class="objective-proof"><summary>Monitoring Windows</summary><p>Monitoring Windows: ใช้กรณีในหัวข้อ Monitoring Windows เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch65-evidence-14"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch65-evidence-14-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch65-evidence-14-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch65-evidence-14-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch65-evidence-14-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch65-evidence-14-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch65-evidence-14-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch65-evidence-14-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch65-evidence-14-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>recordrunID/modeldigest/datahash/per-slicequality/p95/missing/freshness/PSI/labelcoverageและpromotionstatetransition</p><h3>24. Monitoring Windows</h3>
+<p>Use windows appropriate to traffic volume:
+- fixed time
+- rolling count
+- event-time windows</p>
+<p>Very small windows create noisy alerts.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch65-objective-15" class="objective-proof"><summary>From Scratch</summary><p>From Scratch: ใช้กรณีในหัวข้อ From Scratch เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch65-evidence-15"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch65-evidence-15-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch65-evidence-15-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch65-evidence-15-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch65-evidence-15-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch65-evidence-15-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch65-evidence-15-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch65-evidence-15-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch65-evidence-15-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>PSIเทียบexplicitNumPysumfixtureและgateเทียบtruth-tableทุกrequiredcondition; MLflowoptionalintegrationseparateจากlocalmanifesttests</p><h3>26. From Scratch</h3>
+<p>src/mlops_utils.py implements:</p>
+<ul>
+<li>canonical_json</li>
+<li>experiment_fingerprint</li>
+<li>artifact_sha256</li>
+<li>population_stability_index</li>
+<li>missing_rate</li>
+<li>promotion_gate</li>
+<li>registry_alias_update</li>
+<li>rolling_error_rate</li>
+</ul></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details></section><section id="implementation" class="canonical-section"><h2>Implementation และ tests ที่รันบนเครื่องได้</h2><details><summary>65-mlops/src/mlops_utils.py</summary><pre><code>&quot;&quot;&quot;Framework-independent MLOps tracking, drift and promotion utilities.&quot;&quot;&quot;
+
+from __future__ import annotations
+
+import hashlib
+import json
+from pathlib import Path
+from typing import Any
+
+import numpy as np
+
+
+def canonical_json(value: Any) -&gt; str:
+    return json.dumps(
+        value,
+        sort_keys=True,
+        separators=(&quot;,&quot;, &quot;:&quot;),
+        ensure_ascii=False,
+    )
+
+
+def experiment_fingerprint(
+    *,
+    code_revision: str,
+    dataset_revision: str,
+    config: dict[str, Any],
+    environment: dict[str, str] | None = None,
+) -&gt; str:
+    payload = {
+        &quot;code_revision&quot;: code_revision,
+        &quot;dataset_revision&quot;: dataset_revision,
+        &quot;config&quot;: config,
+        &quot;environment&quot;: environment or {},
+    }
+    return hashlib.sha256(
+        canonical_json(payload).encode(&quot;utf-8&quot;)
+    ).hexdigest()
+
+
+def artifact_sha256(path: str | Path) -&gt; str:
+    digest = hashlib.sha256()
+    with Path(path).open(&quot;rb&quot;) as handle:
+        while True:
+            chunk = handle.read(1024 * 1024)
+            if not chunk:
+                break
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def population_stability_index(
+    reference_counts: np.ndarray,
+    current_counts: np.ndarray,
+    *,
+    smoothing: float = 1e-6,
+) -&gt; float:
+    ref = np.asarray(reference_counts, dtype=float)
+    cur = np.asarray(current_counts, dtype=float)
+
+    if ref.shape != cur.shape or ref.size == 0:
+        raise ValueError(&quot;matching non-empty counts required&quot;)
+    if np.any(ref &lt; 0) or np.any(cur &lt; 0):
+        raise ValueError(&quot;counts must be non-negative&quot;)
+    if ref.sum() &lt;= 0 or cur.sum() &lt;= 0:
+        raise ValueError(&quot;each histogram needs positive mass&quot;)
+    if smoothing &lt;= 0:
+        raise ValueError(&quot;smoothing must be positive&quot;)
+
+    p = ref / ref.sum()
+    q = cur / cur.sum()
+
+    p = np.clip(p, smoothing, None)
+    q = np.clip(q, smoothing, None)
+    p = p / p.sum()
+    q = q / q.sum()
+
+    return float(np.sum((q - p) * np.log(q / p)))
+
+
+def missing_rate(values: list[Any]) -&gt; float:
+    if not values:
+        raise ValueError(&quot;values must be non-empty&quot;)
+    missing = sum(
+        value is None
+        or (
+            isinstance(value, float)
+            and np.isnan(value)
+        )
+        for value in values
+    )
+    return float(missing / len(values))
+
+
+def promotion_gate(
+    metrics: dict[str, float],
+    requirements: dict[str, tuple[str, float]],
+) -&gt; tuple[bool, list[str]]:
+    failures: list[str] = []
+
+    for name, (operator, threshold) in requirements.items():
+        if name not in metrics:
+            failures.append(f&quot;missing metric: {name}&quot;)
+            continue
+
+        value = metrics[name]
+
+        if operator == &quot;&gt;=&quot;:
+            passed = value &gt;= threshold
+        elif operator == &quot;&lt;=&quot;:
+            passed = value &lt;= threshold
+        else:
+            raise ValueError(
+                f&quot;unsupported operator for {name}: {operator}&quot;
+            )
+
+        if not passed:
+            failures.append(
+                f&quot;{name}={value} fails {operator} {threshold}&quot;
+            )
+
+    return len(failures) == 0, failures
+
+
+def registry_alias_update(
+    aliases: dict[str, str],
+    *,
+    alias: str,
+    version: str,
+) -&gt; dict[str, str]:
+    if not alias or not version:
+        raise ValueError(&quot;alias and version must be non-empty&quot;)
+
+    updated = dict(aliases)
+    updated[alias] = version
+    return updated
+
+
+def rolling_error_rate(
+    outcomes: list[bool],
+    *,
+    window: int,
+) -&gt; list[float]:
+    if window &lt;= 0:
+        raise ValueError(&quot;window must be positive&quot;)
+    if not outcomes:
+        return []
+
+    rates = []
+    for end in range(1, len(outcomes) + 1):
+        start = max(0, end - window)
+        values = outcomes[start:end]
+        errors = sum(not value for value in values)
+        rates.append(errors / len(values))
+
+    return rates
+</code></pre></details><details><summary>65-mlops/tests/test_mlops_utils.py</summary><pre><code>from pathlib import Path
+import importlib.util
+
+import numpy as np
+
+
+MODULE_PATH = Path(__file__).parents[1] / &quot;src&quot; / &quot;mlops_utils.py&quot;
+SPEC = importlib.util.spec_from_file_location(&quot;mlops_utils_course&quot;, MODULE_PATH)
+assert SPEC and SPEC.loader
+mod = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(mod)
+
+
+def test_fingerprint_is_order_independent_for_config() -&gt; None:
+    first = mod.experiment_fingerprint(
+        code_revision=&quot;abc&quot;,
+        dataset_revision=&quot;data-v1&quot;,
+        config={&quot;lr&quot;: 0.1, &quot;batch&quot;: 32},
+    )
+    second = mod.experiment_fingerprint(
+        code_revision=&quot;abc&quot;,
+        dataset_revision=&quot;data-v1&quot;,
+        config={&quot;batch&quot;: 32, &quot;lr&quot;: 0.1},
+    )
+    assert first == second
+
+
+def test_psi_zero_for_same_distribution() -&gt; None:
+    score = mod.population_stability_index(
+        np.array([10, 20, 30]),
+        np.array([10, 20, 30]),
+    )
+    np.testing.assert_allclose(score, 0.0)
+
+
+def test_psi_detects_shift() -&gt; None:
+    same = mod.population_stability_index(
+        np.array([50, 50]),
+        np.array([50, 50]),
+    )
+    shifted = mod.population_stability_index(
+        np.array([50, 50]),
+        np.array([90, 10]),
+    )
+    assert shifted &gt; same
+
+
+def test_promotion_gate() -&gt; None:
+    passed, failures = mod.promotion_gate(
+        {&quot;accuracy&quot;: 0.91, &quot;p99_ms&quot;: 400},
+        {
+            &quot;accuracy&quot;: (&quot;&gt;=&quot;, 0.90),
+            &quot;p99_ms&quot;: (&quot;&lt;=&quot;, 500),
+        },
+    )
+    assert passed
+    assert failures == []
+
+
+def test_alias_is_movable_pointer() -&gt; None:
+    aliases = {&quot;champion&quot;: &quot;v3&quot;}
+    updated = mod.registry_alias_update(
+        aliases,
+        alias=&quot;champion&quot;,
+        version=&quot;v4&quot;,
+    )
+    assert aliases[&quot;champion&quot;] == &quot;v3&quot;
+    assert updated[&quot;champion&quot;] == &quot;v4&quot;
+
+
+def test_rolling_error_rate() -&gt; None:
+    rates = mod.rolling_error_rate(
+        [True, False, False, True],
+        window=2,
+    )
+    np.testing.assert_allclose(
+        rates,
+        [0.0, 0.5, 1.0, 0.5],
+    )
+</code></pre></details></section><section id="glossary" class="canonical-section"><h2>อภิธานศัพท์ — คำไทย ความหมาย และข้อควรตรวจ</h2><dl><dt>tensor</dt><dd>เทนเซอร์: ชุดตัวเลขที่มีแกน เช่น scalar ไม่มีแกน, vector หนึ่งแกน, matrix สองแกน; shape บอกขนาดแต่ละแกน ไม่บอกความหมายของแกนจนกว่าจะระบุ</dd><dt>shape</dt><dd>รูปทรงข้อมูล: (B,T,d) หมายถึง batch × เวลา/ตำแหน่ง × features; ใช้ชื่อแกนกำกับเสมอ การ transpose เปลี่ยนแกนแต่ไม่ใช่แค่เปลี่ยนชื่อ</dd><dt>batch</dt><dd>กลุ่มตัวอย่างที่คำนวณร่วมกันหนึ่งครั้ง; B คือจำนวนตัวอย่าง ไม่ใช่จำนวน features หรือจำนวน optimizer updates</dd><dt>weight w / θ</dt><dd>น้ำหนักหรือพารามิเตอร์ที่โมเดลใช้คำนวณ; แก้ด้วยมือทำ forward ใหม่ ส่วน optimizer ต้องรับ gradient แล้วกด update จึงแก้ state</dd><dt>bias b</dt><dd>ค่าคงที่ที่บวกกับผลเชิงเส้น; regression scalar bias เพิ่ม Δ ทำให้ prediction ทุกจุดเพิ่ม Δ เท่ากัน</dd><dt>prediction ŷ</dt><dd>ค่าที่โมเดลทำนายจาก input และพารามิเตอร์ปัจจุบัน; เครื่องหมายหมวกแยกจาก target y ที่มาจากข้อมูล</dd><dt>residual e</dt><dd>ความคลาดเคลื่อน ในเว็บนี้นิยาม prediction − target; บางตำราใช้เครื่องหมายกลับกัน จึงต้องตรวจนิยามก่อนเทียบสูตร gradient</dd><dt>MSE</dt><dd>mean squared error = ผลรวม residual กำลังสองหารจำนวนรายการที่ระบุ; มีหน่วยเป็น target ยกกำลังสอง และการใช้ sum แทน mean เปลี่ยน scale gradient</dd><dt>loss L / objective J</dt><dd>จำนวนที่ optimizer ต้องการลด; objective อาจรวม data loss และ regularization จึงต้องดูองค์ประกอบและ reduction ให้ตรง implementation</dd><dt>gradient ∇ / ∂</dt><dd>เวกเตอร์ของ partial derivatives บอกอัตราเปลี่ยน loss ต่อพารามิเตอร์แต่ละตัว; ∂ ใช้เมื่อเปลี่ยนตัวหนึ่งโดยตรึงตัวอื่น</dd><dt>chain rule</dt><dd>กฎลูกโซ่: คูณอนุพันธ์ตามเส้นทาง และบวก contribution จากทุกเส้นทางที่มารวมกัน ใช้ย้อนจาก loss ถึง weights</dd><dt>learning rate η</dt><dd>ขนาดตัวคูณ gradient ใน update θnew=θ−ηg; η≥0, ศูนย์หมายถึงไม่มีการขยับพารามิเตอร์ ก้าวใหญ่เกินอาจ diverge</dd><dt>regularization λ</dt><dd>ตัวคูณค่าลงโทษ ต้อง λ≥0 ตามนิยามการลงโทษ; Ridge λΣw² เพิ่ม gradient 2λw โดยบท Regression นี้ไม่ลงโทษ bias</dd><dt>baseline</dt><dd>สถานะอ้างอิงที่ตรึงไว้สำหรับเทียบ; ต้องเก็บ snapshot ไม่อ้าง object ปัจจุบันที่แก้ตามไปด้วย</dd><dt>invariant</dt><dd>คุณสมบัติที่กลไกต้องรักษา เช่น probability รวม1, shape สอดคล้อง, queue ไม่เกิน capacity; ใช้ tests ตรวจได้มากกว่าดูภาพสวย</dd><dt>optimizer state</dt><dd>ความจำของอัลกอริทึม เช่น velocity, moments และ completed updates; คืนเฉพาะ weights ยังไม่เท่ากับเริ่มการฝึกใหม่ทั้งหมด</dd><dt>finite difference</dt><dd>ประมาณ derivative ด้วย [f(x+h)−f(x−h)]/(2h); h&gt;0, ใช้ smooth point และลองหลาย h เพื่อแยก truncation error จาก roundoff</dd><dt>softmax</dt><dd>แปลง logits เป็นความน่าจะเป็นตามแกนที่กำหนด; ลบ max ก่อน exp เพื่อความเสถียร และ fully masked row ต้องมีนโยบายชัดเจน</dd><dt>logit</dt><dd>คะแนนก่อน sigmoid/softmax ไม่ใช่ probability; อาจเป็นจำนวนจริงติดลบหรือเกิน1ได้ จึงห้ามส่งให้ loss ที่คาด probability โดยไม่แปลง</dd><dt>temperature τ / T</dt><dd>ตัวหาร logits ก่อน softmax; ต้องเป็นบวก ค่าเล็กทำ distribution แหลมขึ้น โดยไม่เท่ากับ retrain weights</dd><dt>mask</dt><dd>ตัวกำหนดตำแหน่งที่อ่านหรือคิด loss ได้; causal mask ปิดอนาคต, padding mask ปิดข้อมูลเติม, loss mask เลือก target แต่ละอย่างคนละหน้าที่</dd><dt>Q / K / V</dt><dd>query ใช้ค้นข้อมูล, key ใช้จับคู่ query, value เป็นข้อมูลที่ถูกถัวเฉลี่ย; เป็น learned projections ของ representation ไม่ใช่ป้ายความหมายตายตัว</dd><dt>head</dt><dd>ส่วนของ feature representation ที่ทำ attention แยกกัน แล้ว concat/project กลับ; ต้องตรวจ d_model หารจำนวน heads ลงตัว</dd><dt>ε-neighborhood</dt><dd>เพื่อนบ้านทั้งหมดที่มีระยะไม่เกิน ε รวมจุดตัวเองใน DBSCAN นี้; ε มีหน่วยเดียวกับพิกัด ไม่ใช่จำนวน k ที่ใช้โหวต</dd><dt>core / border / noise</dt><dd>DBSCAN core มีเพื่อนบ้านรวมตัวเองถึง min_samples; border อยู่ใกล้ core แต่เพื่อนบ้านไม่ถึง; noise ไม่ถูกเชื่อมกับ core cluster ใด</dd><dt>bootstrap</dt><dd>สุ่ม observations แบบ replacement ขนาดเท่าเดิมซ้ำหลายครั้งแล้วคำนวณ statistic ใหม่; seed ทำให้ตรวจซ้ำได้ แต่ไม่แก้สมมติฐาน IID ที่ผิด</dd><dt>confidence interval</dt><dd>ช่วงที่สร้างด้วย procedure ที่มี coverage ตามสมมติฐาน; ช่วงหนึ่งที่ได้แล้วไม่ใช่ posterior probability ของ parameter และ sample เล็กยังไม่แน่นอนมาก</dd><dt>validation / test</dt><dd>validation ใช้เลือกโมเดล/ค่าตั้ง ส่วน test ใช้ประเมินหลัง freeze การตัดสินใจ; fit preprocessing/tokenizer จาก test เป็น leakage</dd><dt>leakage</dt><dd>ข้อมูลที่ควรยังไม่รู้ไหลเข้า training/การเลือกโมเดล เช่น future feature หรือเอกสารซ้ำข้าม split ทำให้ metric ดูดีเกินการใช้งานจริง</dd><dt>queue / capacity</dt><dd>queue คือรายการรอ, capacity การให้บริการรวม = workers × service rate ตามแบบจำลอง; เพิ่ม timeout ไม่เพิ่มกำลังประมวลผล</dd><dt>state transition</dt><dd>การเปลี่ยนสถานะเมื่อเกิดเหตุการณ์ที่อนุญาต เช่น queued→active→done; ต้องระบุ guard, side effect และเหตุผลเมื่อ transition ถูกปฏิเสธ</dd><dt>latency / throughput</dt><dd>latency คือเวลาต่อคำขอ, throughput คือปริมาณงานต่อหน่วยเวลา; batching อาจเพิ่ม throughput แต่เพิ่มเวลารอ จึงต้องวัดทั้งคู่</dd><dt>idempotency</dt><dd>ทำคำขอ business operation เดิมซ้ำแล้ว side effect เกิดครั้งเดียวตาม key และ transaction protocol; ไม่ได้รับประกันจากการใช้ UUID ใหม่ทุก attempt</dd><dt>local lab</dt><dd>โปรแกรม Python และ tests ที่ผู้เรียนรันบนเครื่อง; เว็บเก็บเพียงคำยืนยันของผู้เรียน การผ่าน tests ของโค้ดต้นแบบไม่ใช่ผลตรวจโค้ดผู้เรียน</dd></dl></section></article>
+<section id="practice" class="practice-section"><span class="eyebrow">PRACTICE · DEBUG · BUILD</span><h2>พิสูจน์ด้วยการลงมือทำ</h2><div id="web-checks"></div><div class="retry-actions"><button class="secondary-button" id="retry-checks">เริ่มทำโจทย์ในเว็บใหม่</button><button class="text-button" id="undo-retry" hidden>คืนผลก่อนเริ่มใหม่</button></div><div id="exercise-content"><h2>แบบฝึก 20 ข้อ — เฉลยเฉพาะข้อ</h2><p>ทำคำตอบก่อนเปิด hints; โจทย์ปลายเปิดให้ใช้ตัวอย่างคำตอบและหลักฐานราย objective ตรวจงานจริง</p><section id="exercise-1" class="exercise-item"><h3>ข้อ 1</h3><p>Fingerprint two runs with different dataset versions.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Run Identity: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): fingerprint=SHA256canonicalJSON(code,data_version,model,…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: fingerprint=SHA256canonicalJSON(code,data_version,model,config,seed); data-v1/v2แม้rowscountเท่ากันต้…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>fingerprint=SHA256canonicalJSON(code,data_version,model,config,seed); data-v1/v2แม้rowscountเท่ากันต้องhashต่างและmanifestอ้างsourcechecksums</p><p>อ้างอิง: <a href="#chapter-65/section/topic-4">Run Identity</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch65-exercise-01"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-2" class="exercise-item"><h3>ข้อ 2</h3><p>Hash a model artifact and verify a modified artifact changes digest.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Artifacts: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): hashlib.sha256(artifactbytes); flipbyteหนึ่งตำแหน่…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: hashlib.sha256(artifactbytes); flipbyteหนึ่งตำแหน่งdigestเปลี่ยน; verifyก่อนloadและไม่ใช้f…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>hashlib.sha256(artifactbytes); flipbyteหนึ่งตำแหน่งdigestเปลี่ยน; verifyก่อนloadและไม่ใช้filemtime/filenameแทนcontentintegrity</p><p>อ้างอิง: <a href="#chapter-65/section/topic-5">Artifacts</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch65-exercise-02"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-3" class="exercise-item"><h3>ข้อ 3</h3><p>Log params/metrics/artifacts in MLflow.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ MLflow Tracking: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): MLflowstart_run→log_params→log_metrics(step)→log_arti…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: MLflowstart_run→log_params→log_metrics(step)→log_artifactพร้อมrunID; localfilebackendใช้ได้offli…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>MLflowstart_run→log_params→log_metrics(step)→log_artifactพร้อมrunID; localfilebackendใช้ได้offline แต่connectiontestไม่แทนmodelquality</p><p>อ้างอิง: <a href="#chapter-65/section/topic-6">MLflow Tracking</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch65-exercise-03"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-4" class="exercise-item"><h3>ข้อ 4</h3><p>Register a model and attach metadata.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Model Registry: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): registrymodelversionผูกartifactdigest/runID/datasplit/…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: registrymodelversionผูกartifactdigest/runID/datasplit/metricversion/validationreport; ไม่register…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>registrymodelversionผูกartifactdigest/runID/datasplit/metricversion/validationreport; ไม่registerชื่อversionอย่างเดียวโดยไม่มีprovenance</p><p>อ้างอิง: <a href="#chapter-65/section/topic-7">Model Registry</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch65-exercise-04"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-5" class="exercise-item"><h3>ข้อ 5</h3><p>Design candidate/champion aliases.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Version vs Alias: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): candidatealiasชี้versionรอgate,championชี้approve…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: candidatealiasชี้versionรอgate,championชี้approvedversion; aliasเป็นpointerเปลี่ยนได้จึง…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>candidatealiasชี้versionรอgate,championชี้approvedversion; aliasเป็นpointerเปลี่ยนได้จึงlogก่อน/หลังพร้อมimmutableversionID</p><p>อ้างอิง: <a href="#chapter-65/section/topic-8">Version vs Alias</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch65-exercise-05"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-6" class="exercise-item"><h3>ข้อ 6</h3><p>Build a promotion gate from quality + latency thresholds.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Promotion Gate: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): gatequality≥.8,p95≤200ms,requiredtestspass; score.82…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: gatequality≥.8,p95≤200ms,requiredtestspass; score.82/latency210ต้องfail แม้qualityดี; missing…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>gatequality≥.8,p95≤200ms,requiredtestspass; score.82/latency210ต้องfail แม้qualityดี; missingmetricเป็นunknown/failไม่default0pass</p><p>อ้างอิง: <a href="#chapter-65/section/topic-9">Promotion Gate</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch65-exercise-06"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-7" class="exercise-item"><h3>ข้อ 7</h3><p>Calculate PSI on shifted histograms.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Population Stability Index: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): PSIΣ(q−p)log(q/p); p[.5,.5],q[.25,.75]ได้≈.…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: PSIΣ(q−p)log(q/p); p[.5,.5],q[.25,.75]ได้≈.274653; bin0ต้องsmoothingpolicyและf…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>PSIΣ(q−p)log(q/p); p[.5,.5],q[.25,.75]ได้≈.274653; bin0ต้องsmoothingpolicyและfixedtrainbinsไม่refitตามcurrent</p><p>อ้างอิง: <a href="#chapter-65/section/topic-15">Population Stability Index</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch65-exercise-07"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-8" class="exercise-item"><h3>ข้อ 8</h3><p>Monitor missing rate and freshness separately from model drift.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Data Quality Monitoring: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): missingrate=countnull/rows,freshness=now−latesteventtime…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: missingrate=countnull/rows,freshness=now−latesteventtimeคนละsignalกับfeaturedistributiondrift; pipel…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>missingrate=countnull/rows,freshness=now−latesteventtimeคนละsignalกับfeaturedistributiondrift; pipelineหยุดอาจdistributionเหมือนเดิมแต่stale</p><p>อ้างอิง: <a href="#chapter-65/section/topic-16">Data Quality Monitoring</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch65-exercise-08"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-9" class="exercise-item"><h3>ข้อ 9</h3><p>Design a delayed-label monitoring strategy.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Delayed Labels: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): เก็บpredictionID/timestamp/modelversion/featureschema,j…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: เก็บpredictionID/timestamp/modelversion/featureschema,joinlabelเมื่อมาถึงแล้วmetricตามcohortlabel-d…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>เก็บpredictionID/timestamp/modelversion/featureschema,joinlabelเมื่อมาถึงแล้วmetricตามcohortlabel-delay; อย่านับunlabeledเป็นnegativeทันที</p><p>อ้างอิง: <a href="#chapter-65/section/topic-18">Delayed Labels</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch65-exercise-09"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-10" class="exercise-item"><h3>ข้อ 10</h3><p>Write rollback metadata for a production model.</p>
+<p>Challenge:
+- build a local MLflow tracking + registry workflow
+- simulate champion/challenger promotion with automatic validation gates</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Rollback: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): rollbackrecordมีfrom/toimmutableversions,trigger/gatere…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: rollbackrecordมีfrom/toimmutableversions,trigger/gatereport/time/actor/config/data-contractcompatib…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>rollbackrecordมีfrom/toimmutableversions,trigger/gatereport/time/actor/config/data-contractcompatibilityและverificationresultsหลังrollback</p><p>อ้างอิง: <a href="#chapter-65/section/topic-21">Rollback</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch65-exercise-10"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-11" class="exercise-item"><h3>ข้อ 11</h3><p>Reproduce one central calculation from MLOps using a tiny hand-checkable input.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Promotion Gate: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): quality.82≥.8จริงแต่p95210&gt;200ทำgatefail; ต…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: quality.82≥.8จริงแต่p95210&gt;200ทำgatefail; ต้องแสดงเงื่อนไขที่ไม่ผ่าน ไม่เอาwei…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>quality.82≥.8จริงแต่p95210&gt;200ทำgatefail; ต้องแสดงเงื่อนไขที่ไม่ผ่าน ไม่เอาweightedscoreเฉลี่ยกลบrequiredgate</p><p>อ้างอิง: <a href="#chapter-65/section/topic-9">Promotion Gate</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch65-exercise-11"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-12" class="exercise-item"><h3>ข้อ 12</h3><p>Write a deterministic test that verifies the most important invariant in MLOps.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Run Identity, Artifacts: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): modifiedartifactdigestfails,canonicalfingerprintsta…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: modifiedartifactdigestfails,canonicalfingerprintstable,keyorderไม่เปลี่ยนhash,promotionmissi…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>modifiedartifactdigestfails,canonicalfingerprintstable,keyorderไม่เปลี่ยนhash,promotionmissingmetricfailsและchampiontargetexists</p><p>อ้างอิง: <a href="#chapter-65/section/topic-4">Run Identity</a>, <a href="#chapter-65/section/topic-5">Artifacts</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch65-exercise-12"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-13" class="exercise-item"><h3>ข้อ 13</h3><p>Compare two meaningful configurations while keeping data and seed fixed.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Promotion Gate: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): thresholdquality.8/.85คงcandidate/evaldata; reportprom…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: thresholdquality.8/.85คงcandidate/evaldata; reportpromoterejectreasonsและfalsepromotionย้อนหลัง ไม…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>thresholdquality.8/.85คงcandidate/evaldata; reportpromoterejectreasonsและfalsepromotionย้อนหลัง ไม่tunequalitygateจากincidenttestsetเดียว</p><p>อ้างอิง: <a href="#chapter-65/section/topic-9">Promotion Gate</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch65-exercise-13"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-14" class="exercise-item"><h3>ข้อ 14</h3><p>Record intermediate shapes, ranges, and one quality metric for a tiny end-to-end run.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Monitoring Windows: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): recordrunID/modeldigest/datahash/per-slicequal…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: recordrunID/modeldigest/datahash/per-slicequality/p95/missing/freshness/PSI/labelco…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>recordrunID/modeldigest/datahash/per-slicequality/p95/missing/freshness/PSI/labelcoverageและpromotionstatetransition</p><p>อ้างอิง: <a href="#chapter-65/section/topic-24">Monitoring Windows</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch65-exercise-14"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-15" class="exercise-item"><h3>ข้อ 15</h3><p>Explain one evaluation mistake that could make a MLOps result look better than it really is.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Offline vs Online Metrics: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): เทียบmetricscorerversionต่างหรือdelayedlabelsไม่ครบท…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: เทียบmetricscorerversionต่างหรือdelayedlabelsไม่ครบทำclaimqualityผิด; freezecohort/censoringpo…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>เทียบmetricscorerversionต่างหรือdelayedlabelsไม่ครบทำclaimqualityผิด; freezecohort/censoringpolicyและreportcoverage/lagdistribution</p><p>อ้างอิง: <a href="#chapter-65/section/topic-11">Offline vs Online Metrics</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch65-exercise-15"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-16" class="exercise-item"><h3>ข้อ 16</h3><p>State the dominant time and memory complexity for the main operation in MLOps.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Population Stability Index: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): fingerprintO(totalbytes)เมื่อhashartifact,PSIO(bins),strea…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: fingerprintO(totalbytes)เมื่อhashartifact,PSIO(bins),streammonitorO(events); registrylatencyไม่ใช่infere…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>fingerprintO(totalbytes)เมื่อhashartifact,PSIO(bins),streammonitorO(events); registrylatencyไม่ใช่inferenceperformanceและhistogrammemoryตามslices</p><p>อ้างอิง: <a href="#chapter-65/section/topic-15">Population Stability Index</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch65-exercise-16"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-17" class="exercise-item"><h3>ข้อ 17</h3><p>Compare a from-scratch result with a trusted implementation using identical inputs and settings.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ From Scratch: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): PSIเทียบexplicitNumPysumfixtureและgateเทียบtruth-tab…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: PSIเทียบexplicitNumPysumfixtureและgateเทียบtruth-tableทุกrequiredcondition; MLflowoptionalint…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>PSIเทียบexplicitNumPysumfixtureและgateเทียบtruth-tableทุกrequiredcondition; MLflowoptionalintegrationseparateจากlocalmanifesttests</p><p>อ้างอิง: <a href="#chapter-65/section/topic-26">From Scratch</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch65-exercise-17"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-18" class="exercise-item"><h3>ข้อ 18</h3><p>Run a one-factor ablation and report the measured change over repeated runs when randomness matters.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Data Quality Monitoring: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): เพิ่มfreshnessgateคงmodel/requesttrace; reports…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: เพิ่มfreshnessgateคงmodel/requesttrace; reportstaleeventsblockedกับfalsealertsและdepl…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>เพิ่มfreshnessgateคงmodel/requesttrace; reportstaleeventsblockedกับfalsealertsและdeploymentdelayไม่ใช้driftแทนfreshness</p><p>อ้างอิง: <a href="#chapter-65/section/topic-16">Data Quality Monitoring</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch65-exercise-18"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-19" class="exercise-item"><h3>ข้อ 19</h3><p>Design a small reproducibility record containing seed, code version, data version, configuration, and metric.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Reproducibility: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): reproducibilityรวมrun/config/source/artifacthash,met…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: reproducibilityรวมrun/config/source/artifacthash,metricversion,evalsplit,gatepolicy,promotion/r…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>reproducibilityรวมrun/config/source/artifacthash,metricversion,evalsplit,gatepolicy,promotion/rollbackhistoryและtimestampทุกevidence</p><p>อ้างอิง: <a href="#chapter-65/section/topic-23">Reproducibility</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch65-exercise-19"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-20" class="exercise-item"><h3>ข้อ 20</h3><p>Propose one falsifiable research question for MLOps and specify the baseline, changed factor, and acceptance metric.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Training-Serving Skew: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ทดลอง“freshnessgateตรวจpipelineหยุดภายใน5นาทีโดยf…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ทดลอง“freshnessgateตรวจpipelineหยุดภายใน5นาทีโดยfalsealert≤1/week”; baselinePSI-only,fix…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ทดลอง“freshnessgateตรวจpipelineหยุดภายใน5นาทีโดยfalsealert≤1/week”; baselinePSI-only,fixedhistoricalreplayและincidentlabels</p><p>อ้างอิง: <a href="#chapter-65/section/topic-17">Training-Serving Skew</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch65-exercise-20"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section></div><div id="local-lab-content"><section id="local-lab"><h2>Local lab: Python 3.12 บน CPU</h2><p>รันจาก repository root; ใช้ Python 3.12 แยก environment สำหรับ framework ตาม requirements ของชุดบท</p><pre><code>python3.12 -m venv .venv-course
+source .venv-course/bin/activate
+python -m pip install -r requirements-batch22.txt pytest
+(cd 65-mlops &amp;&amp; python -m pytest tests -q -rs)</code></pre><p>ผลที่คาดหวัง: required tests ผ่านและไม่มี required test ถูก skip; GPU/integrations ที่ยังไม่รันต้องระบุแยก Python 3.15 ที่มากับเครื่องอาจใช้กับ framework wheels เหล่านี้ไม่ได้</p><h2>Mini Project — Model Promotion Pipeline</h2>
+<p>Build a local pipeline that:
+1. records a training-run fingerprint
+2. stores evaluation artifacts
+3. registers candidate metadata
+4. checks quality/latency gates
+5. promotes candidate to champion only if all gates pass
+6. monitors simulated production drift/error rate
+7. rolls champion alias back after a forced regression</p>
+<p>Optional: reproduce registry operations using MLflow.</p><h2>Batch 22 Integration Project — Production ML Lifecycle Lab</h2>
+<p>Batch 22 connects data engineering, MLOps governance and deployment planning.</p>
+<h3>Part A — Data Pipeline</h3>
+<pre><code class="language-text">raw events
+↓
+data contract validation
+↓
+deduplicate latest version
+↓
+partition planning
+↓
+lineage fingerprint
+</code></pre>
+<p>Outputs:
+- validation errors
+- input/output record counts
+- partitions
+- lineage fingerprint</p>
+<h3>Part B — MLOps Promotion</h3>
+<pre><code class="language-text">code + data + config
+↓
+run fingerprint
+↓
+candidate metrics
+↓
+promotion gates
+↓
+registry alias update
+</code></pre>
+<p>Also computes a drift diagnostic using PSI.</p>
+<h3>Part C — Deployment Plan</h3>
+<pre><code class="language-text">current replicas + load
+↓
+HPA-style desired replica math
+↓
+rolling-update surge bound
+↓
+GPU pool capacity check
+↓
+5% canary split
+</code></pre>
+<h3>Part D — Full Lifecycle Gate</h3>
+<p>A rollout is allowed only when:</p>
+<pre><code class="language-text">data contract passes
+AND
+model promotion gate passes
+AND
+rollout fits GPU capacity
+</code></pre>
+<p>This deliberately demonstrates that deployment readiness is more than "the container starts".</p>
+<h3>Run</h3>
+<pre><code class="language-bash">python integration-project-batch22/src/production_ml_lifecycle_lab.py --mode data
+python integration-project-batch22/src/production_ml_lifecycle_lab.py --mode mlops
+python integration-project-batch22/src/production_ml_lifecycle_lab.py --mode deploy
+python integration-project-batch22/src/production_ml_lifecycle_lab.py --mode full
+</code></pre>
+<h3>Optional Ecosystem Labs</h3>
+<p>MLflow:</p>
+<pre><code class="language-bash">python -m pip install -r requirements-batch22-mlops.txt
+</code></pre>
+<p>PyArrow:</p>
+<pre><code class="language-bash">python -m pip install -r requirements-batch22-data.txt
+</code></pre>
+<h3>Required Extensions</h3>
+<ol>
+<li>persist a real MLflow run</li>
+<li>register a model version and alias</li>
+<li>write a real partitioned Parquet snapshot</li>
+<li>inspect row-group metadata</li>
+<li>add delayed-label production metrics</li>
+<li>add drift/data-quality alert policies</li>
+<li>generate Kubernetes manifests from immutable artifact IDs</li>
+<li>add canary quality+latency rollback gates</li>
+<li>implement backfill lineage</li>
+<li>rehearse a rollback to a previous champion</li>
+</ol></section></div><label class="local-confirm"><input type="checkbox" id="local-lab-confirm"> ฉันรัน local lab และตรวจผลตาม rubric ด้วยตัวเองแล้ว</label><p class="local-note">สถานะนี้เป็นคำยืนยันของผู้เรียน เว็บไม่ได้รันหรือตรวจ Python บนเครื่องแทนคุณ</p></section>
+<section id="mastery-review" class="practice-section"><h2>หลักฐานตามเกณฑ์การเรียนรู้</h2><p>ทุก objective ต้องแสดงหลักฐานอธิบาย ทำนาย คำนวณ อ่าน shape/state debug และประยุกต์ พร้อมกรณีใหม่ ผลรัน source ผู้เรียนจริง และการประเมินซ้ำ เกณฑ์นี้ไม่รับประกันความเข้าใจทุกสถานการณ์ เปิด JavaScript เพื่อดูรายการที่ยังขาดและนำเข้ารายงานผู้ตรวจ</p></section><section class="coverage-section"><h2>แผนที่สิ่งที่เรียน → สิ่งที่ต้องแสดงให้ได้</h2><div id="coverage-table"></div></section><footer><span>ZERO TO ELITE AI ENGINEER · LEARNING STUDIO</span><span>อ่าน · derive · implement · debug · experiment · build</span></footer></div></main><noscript><style>.workbench,.sidebar,.reading-route,.lesson-toc,.mastery-status,#web-checks{display:none}main{margin-left:0}</style>อ่านเนื้อหา HTML ได้ตามปกติ เปิด JavaScript เพื่อใช้ห้องทดลองและตรวจคำตอบ</noscript></body></html>

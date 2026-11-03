@@ -1,0 +1,1222 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="บทเรียน AI Engineer ภาษาไทย พร้อมคณิตศาสตร์ทีละขั้นและห้องทดลองที่คำนวณจริง"><title>Decision Tree: เลือกคำถามที่ลด impurity · AI Engineer Studio</title><link rel="stylesheet" href="../visual-lab/assets/styles.css"><link rel="stylesheet" href="../visual-lab/assets/course.css"><script defer src="../visual-lab/assets/lessons.js"></script><script defer src="../visual-lab/assets/chapter-meta.js"></script><script defer src="../visual-lab/assets/course-math.js"></script><script defer src="../visual-lab/assets/course-models.js"></script><script defer src="../visual-lab/assets/course-models-v3.js"></script><script defer src="../visual-lab/assets/course-assessment.js"></script><script defer src="../visual-lab/assets/course-mastery.js"></script><script defer src="../visual-lab/assets/course-catalog.js"></script><script defer src="../visual-lab/assets/book-content.js"></script><script defer src="../visual-lab/assets/course-render.js"></script><script defer src="../visual-lab/assets/course-mastery-panel.js"></script><script defer src="../visual-lab/assets/quality-report.js"></script><script defer src="../visual-lab/assets/course-app.js"></script></head>
+<body data-chapter="10" data-root="../"><a class="skip-link" href="#main">ข้ามไปบทเรียน</a>
+<aside class="sidebar" id="sidebar" aria-label="เลือกบทเรียน"><a class="brand" href="../visual-lab/index.html"><span class="brand-mark">ai</span><span>AI ENGINEER<small>LEARN · DERIVE · BUILD</small></span></a><div class="sidebar-intro">อ่านให้เข้าใจ · คำนวณให้เห็น · เขียนให้เป็น</div><label class="search-box"><input id="search" type="search" placeholder="ค้นหาบท / attention" aria-label="ค้นหาบทเรียน"></label><label class="filter-label" for="phase-filter">เส้นทางการเรียน <span id="nav-count"></span></label><select id="phase-filter"><option value="">ทุก Phase</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option></select><nav id="chapter-list" class="chapter-list" aria-label="รายชื่อบท"></nav><div class="course-progress"><div><span>ผ่านโจทย์ในเว็บ</span><strong id="progress-count">0 / 80</strong></div><progress id="course-progress" max="80" value="0" aria-label="บทที่ผ่านโจทย์"></progress><a id="resume-link" href="#chapter-1">อ่านต่อจากเดิม →</a></div></aside>
+<button class="nav-backdrop" id="nav-backdrop" aria-label="ปิดเมนู" hidden></button>
+<main id="main" tabindex="-1"><header class="topbar"><div><button id="nav-toggle" class="icon-button mobile-menu" aria-label="เปิดเมนูบทเรียน" aria-expanded="false" aria-controls="sidebar">☰</button><span id="breadcrumb"></span></div><span class="local-badge"><i></i> คำนวณในเครื่อง · ไม่มี API</span></header><div class="content">
+<div class="chapter-navigation"><label for="chapter-select" class="sr-only">เลือกบทเรียน</label><select id="chapter-select"></select><div class="chapter-arrows"><button id="prev-chapter" class="icon-button" aria-label="บทก่อนหน้า">←</button><button id="next-chapter" class="icon-button" aria-label="บทถัดไป">→</button></div></div>
+<section class="chapter-hero"><div><p id="chapter-kicker" class="eyebrow"></p><h1 id="chapter-title">Decision Tree: เลือกคำถามที่ลด impurity</h1><p class="english-title" id="chapter-english"></p></div><span class="hero-symbol">f(x) ↗</span></section>
+<p id="quality-status" class="quality-status"></p><div id="mastery-status" class="mastery-status"></div><div class="reading-route"><a href="#chapter-10/section/overview">01 อ่านบทเรียน</a><a href="#workbench">02 ทดลองสมการ</a><a href="#practice">03 ฝึกและตรวจงาน</a><a href="#mastery-review">04 หลักฐานตามเกณฑ์</a></div>
+<nav id="lesson-toc" class="lesson-toc" aria-label="สารบัญบท"></nav>
+<section id="overview" class="course-overview"><span class="eyebrow">THE LEARNING CONTRACT</span><h2>เรียนบทนี้แล้วต้องทำอะไรได้</h2><p id="chapter-purpose"></p><div id="chapter-objectives"></div><div class="learning-hint">ทำนาย → เปลี่ยนทีละค่า → ตรวจตัวเลข → อธิบายเหตุผล → เขียนด้วย Python เอง</div></section>
+<section class="workbench lab-card" id="workbench" aria-label="ห้องทดลองคำนวณจริง"><div class="card-header"><div><span class="live-dot"></span><span class="eyebrow">COMPUTATION WORKBENCH</span></div><span class="simulation-label">ทุกภาพใช้ผลคำนวณชุดเดียวกัน</span></div><div class="lab-top"><label for="lab-select">เลือกกลไกที่ต้องการทดลอง</label><select id="lab-select"></select><p id="lab-question"></p></div><div class="workbench-grid"><div class="viz-column"><div class="compare-labels"><span>เส้นทึบ: ปัจจุบัน</span><span>เส้นประ: baseline ที่ตรึงไว้</span></div><div id="simulation" class="simulation"></div><div id="metrics" class="metrics"></div><div id="baseline-diff" class="baseline-diff"></div><div class="playback"><div class="playback-buttons"><button class="primary-button" id="update-once">อัปเดตหนึ่งก้าว</button><button class="secondary-button" id="train-many">▶ ฝึก 30 ก้าว</button><button class="icon-button" id="back-state" aria-label="ย้อนประวัติ">↶</button><button class="icon-button" id="forward-state" aria-label="ประวัติถัดไป">↷</button></div></div><div class="lab-secondary-actions"><button id="pin-baseline" class="text-button">ตรึง baseline ปัจจุบัน</button><button id="reset-lab" class="text-button">คืนค่าเริ่มต้น</button><button id="download-state" class="text-button">บันทึกผล JSON</button><span id="history-status"></span></div><p id="simulation-note" class="simulation-note"></p><p class="lab-error" id="lab-error" role="alert" hidden></p></div><div class="controls-column"><h3>เปลี่ยนทีละตัว แล้วสังเกตผล</h3><div id="lab-controls"></div><p class="control-note">แก้ weight ด้วยมือจะคำนวณ forward ใหม่; optimizer เปลี่ยน weights เมื่อกดอัปเดตเท่านั้น</p></div></div>
+<div class="trace-section"><div class="trace-toolbar"><h3>เดินสมการทีละ operation</h3><div><button id="trace-prev" class="icon-button" aria-label="operation ก่อนหน้า">←</button><button id="play-trace" class="secondary-button" aria-pressed="false">▶ เล่น flow</button><button id="trace-next" class="icon-button" aria-label="operation ถัดไป">→</button><span id="stage-counter"></span></div></div><label class="motion-control"><input id="reduce-motion" type="checkbox"> ลดภาพเคลื่อนไหว (หยุดการเล่นที่ค้างอยู่)</label><div id="operation-steps" class="operation-steps"></div><div id="flow-diagram" class="flow-diagram"></div><div id="active-operation" class="active-operation" aria-live="polite"></div><p class="control-note">ตัวเลขบนภาพปัดเศษเพื่อให้อ่านง่าย; บันทึก JSON เพื่อดูค่าที่ใช้คำนวณเต็ม precision</p><details open><summary>ตารางค่าระหว่างทาง — ตรวจด้วยมือได้</summary><div id="result-table"></div></details><div id="tensor-tables" class="tensor-tables"></div><details id="surface-details"><summary>ดู loss surface และเส้นทางของ w₁,b (ตรึง controls อื่น)</summary><div id="surface-chart"></div><p>surface คำนวณ objective ปัจจุบันโดยตรึง degree, penalty, ข้อมูล และ weights อื่น เส้นทางแสดงเฉพาะ snapshots ที่ค่าเหล่านี้ตรงกัน; นอกช่วง w=[−1,5], b=[−2,4] ให้ตรวจค่าจริงใน history</p></details><details><summary>ประวัติการเปลี่ยนค่า</summary><div id="history-table"></div></details></div></section>
+<article id="chapter-article" class="chapter-article"><section id="mechanism-1" class="teaching-section"><span class="section-kicker">CHAPTER 10 · ภาพ → สมการ → โค้ด</span><h2>1. node สรุป distribution ของ labels</h2><h3>โจทย์และเหตุผล</h3><p>Gini=1-Σp² เป็นศูนย์เมื่อ node มี class เดียว เมื่อแบ่งต้องคำนวณ impurity ของลูกทั้งสองแบบถ่วงจำนวนตัวอย่าง มิฉะนั้นกลุ่มเล็กที่ pure อาจหลอกให้เลือก split ผิด</p><h3>ตัวอย่างและคำอธิบาย</h3><p>คำนวณ Gini ของ labels [0,0,0,1]</p><p>labels[0,0,0,1]มีp0=.75,p1=.25จึงGini=.375. ถ้าแบ่งเป็น[0,0]กับ[0,1],weightedGini=.25,gain=.125; แสดงการถ่วง2/4ต่อchildเพื่อจับสูตรที่ใช้averageผิด.</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>threshold: split threshold,initial=4; minLeaf: min samples per leaf,initial=1; query: query x,initial=6</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = [0, 0, 0, 1, 0, 1, 1, 1, 1, 1]; ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</li><li>Gini=1−Σp²; gain=parent−weighted children = 0.16333333333333339; ลูกทั้งสองต้องผ่าน minLeaf; leaf probability คือ class proportion ใน node นั้น</li><li>finite / normalized / bounded = 0.16333333333333339; เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="tree-เปล--ยน-threshold-แล-วอ-">เปิดการทดลองนี้</a><p class="failure-box">ตรวจbasecases purelabels,maxdepth,min_samples และต้องมีvalidsplitที่แบ่งsamplesจริง. ถ้าthresholdเท่าค่าสุดท้ายทำให้subsetไม่เล็กลง recursionจะวน; testallfeaturesconstantต้องคืนleafทันที.; คำนวณ split ของ decision stump จริง; บทเต็มต่อ recursion, stopping และ pruning</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>labels[0,0,0,1]มีp0=.75,p1=.25จึงGini=.375. ถ้าแบ่งเป็น[0,0]กับ[0,1],weightedGini=.25,gain=.125; แสดงการถ่วง2/4ต่อchildเพื่อจับสูตรที่ใช้averageผิด.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-1-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = [0, 0, 0, 1, 0, 1, 1, 1, 1, 1]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>Gini=1−Σp²; gain=parent−weighted children</code> = 0.16333333333333339<p>ลูกทั้งสองต้องผ่าน minLeaf; leaf probability คือ class proportion ใน node นั้น</p></li><li><code>finite / normalized / bounded</code> = 0.16333333333333339<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-1-visual"><summary>ภาพและ shape</summary><p>คำนวณ split ของ decision stump จริง; บทเต็มต่อ recursion, stopping และ pruning</p><ol><li><code>shape / range</code> = [0, 0, 0, 1, 0, 1, 1, 1, 1, 1]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>Gini=1−Σp²; gain=parent−weighted children</code> = 0.16333333333333339<p>ลูกทั้งสองต้องผ่าน minLeaf; leaf probability คือ class proportion ใน node นั้น</p></li><li><code>finite / normalized / bounded</code> = 0.16333333333333339<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-1-code"><summary>โค้ด</summary><p>labels[0,0,0,1]มีp0=.75,p1=.25จึงGini=.375. ถ้าแบ่งเป็น[0,0]กับ[0,1],weightedGini=.25,gain=.125; แสดงการถ่วง2/4ต่อchildเพื่อจับสูตรที่ใช้averageผิด.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-1-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = [0, 0, 0, 1, 0, 1, 1, 1, 1, 1]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>Gini=1−Σp²; gain=parent−weighted children</code> = 0.16333333333333339<p>ลูกทั้งสองต้องผ่าน minLeaf; leaf probability คือ class proportion ใน node นั้น</p></li><li><code>finite / normalized / bounded</code> = 0.16333333333333339<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-1"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-2" class="teaching-section"><span class="section-kicker">CHAPTER 10 · ภาพ → สมการ → โค้ด</span><h2>2. training กับ prediction ทำคนละงาน</h2><h3>โจทย์และเหตุผล</h3><p>training ค้น candidate thresholds แล้วเลือก gain ดีสุด ส่วน prediction เอา query เดินผ่านกติกาที่เลือกไว้แล้ว การเปลี่ยน query ไม่ควรไป fit threshold ใหม่</p><h3>ตัวอย่างและคำอธิบาย</h3><p>greedy split ไม่ guarantee global optimum เพราะอะไร?</p><p>Greedyเลือกsplitที่gainดีที่สุดตอนนี้โดยไม่ค้นทุกsubtreecombination. Splitที่gainน้อยตอนต้นอาจนำไปtreeรวมดีกว่า; จึงไม่พิสูจน์globaloptimumจากการที่แต่ละnodeหาbestlocalได้.</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>threshold: split threshold,initial=4; minLeaf: min samples per leaf,initial=4; query: query x,initial=6</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = [0, 0, 0, 1, 0, 1, 1, 1, 1, 1]; ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</li><li>Gini=1−Σp²; gain=parent−weighted children = 0.16333333333333339; ลูกทั้งสองต้องผ่าน minLeaf; leaf probability คือ class proportion ใน node นั้น</li><li>finite / normalized / bounded = 0.16333333333333339; เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="tree-stopping--min-samples-le">เปิดการทดลองนี้</a><p class="failure-box">ตรวจbasecases purelabels,maxdepth,min_samples และต้องมีvalidsplitที่แบ่งsamplesจริง. ถ้าthresholdเท่าค่าสุดท้ายทำให้subsetไม่เล็กลง recursionจะวน; testallfeaturesconstantต้องคืนleafทันที.; คำนวณ split ของ decision stump จริง; บทเต็มต่อ recursion, stopping และ pruning</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Greedyเลือกsplitที่gainดีที่สุดตอนนี้โดยไม่ค้นทุกsubtreecombination. Splitที่gainน้อยตอนต้นอาจนำไปtreeรวมดีกว่า; จึงไม่พิสูจน์globaloptimumจากการที่แต่ละnodeหาbestlocalได้.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-2-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = [0, 0, 0, 1, 0, 1, 1, 1, 1, 1]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>Gini=1−Σp²; gain=parent−weighted children</code> = 0.16333333333333339<p>ลูกทั้งสองต้องผ่าน minLeaf; leaf probability คือ class proportion ใน node นั้น</p></li><li><code>finite / normalized / bounded</code> = 0.16333333333333339<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-2-visual"><summary>ภาพและ shape</summary><p>คำนวณ split ของ decision stump จริง; บทเต็มต่อ recursion, stopping และ pruning</p><ol><li><code>shape / range</code> = [0, 0, 0, 1, 0, 1, 1, 1, 1, 1]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>Gini=1−Σp²; gain=parent−weighted children</code> = 0.16333333333333339<p>ลูกทั้งสองต้องผ่าน minLeaf; leaf probability คือ class proportion ใน node นั้น</p></li><li><code>finite / normalized / bounded</code> = 0.16333333333333339<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-2-code"><summary>โค้ด</summary><p>Greedyเลือกsplitที่gainดีที่สุดตอนนี้โดยไม่ค้นทุกsubtreecombination. Splitที่gainน้อยตอนต้นอาจนำไปtreeรวมดีกว่า; จึงไม่พิสูจน์globaloptimumจากการที่แต่ละnodeหาbestlocalได้.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-2-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = [0, 0, 0, 1, 0, 1, 1, 1, 1, 1]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>Gini=1−Σp²; gain=parent−weighted children</code> = 0.16333333333333339<p>ลูกทั้งสองต้องผ่าน minLeaf; leaf probability คือ class proportion ใน node นั้น</p></li><li><code>finite / normalized / bounded</code> = 0.16333333333333339<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-2"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-3" class="teaching-section"><span class="section-kicker">CHAPTER 10 · ภาพ → สมการ → โค้ด</span><h2>3. ต้นไม้ลึกขึ้นอาจจำข้อมูล</h2><h3>โจทย์และเหตุผล</h3><p>ใช้ depth, min leaf หรือ pruning คุม capacity ตรวจกรณี gain เท่ากันและ feature มีค่าซ้ำ ขอบเขตแบบขั้นบันไดไม่เหมาะกับการ extrapolate เส้นต่อเนื่องเสมอ</p><h3>ตัวอย่างและคำอธิบาย</h3><p>implement cost-complexity pruning แบบ simplified</p><p>เปรียบเทียบcost <code>R(T)+α|leaves|</code> โดยRใช้trainingriskนิยามเดียวกัน; collapse subtreeเมื่อcostleaf≤costsubtree. αสูงควรไม่ทำจำนวนleavesเพิ่มตามpruningpath; เลือกαด้วยvalidationและทดสอบpredictionหลังcollapse.</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>threshold: split threshold,initial=4; minLeaf: min samples per leaf,initial=1; query: query x,initial=2</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = [0, 0, 0, 1, 0, 1, 1, 1, 1, 1]; ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</li><li>Gini=1−Σp²; gain=parent−weighted children = 0.16333333333333339; ลูกทั้งสองต้องผ่าน minLeaf; leaf probability คือ class proportion ใน node นั้น</li><li>finite / normalized / bounded = 0.16333333333333339; เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="tree-query-เด-น-branch-โดยไม-">เปิดการทดลองนี้</a><p class="failure-box">ตรวจbasecases purelabels,maxdepth,min_samples และต้องมีvalidsplitที่แบ่งsamplesจริง. ถ้าthresholdเท่าค่าสุดท้ายทำให้subsetไม่เล็กลง recursionจะวน; testallfeaturesconstantต้องคืนleafทันที.; คำนวณ split ของ decision stump จริง; บทเต็มต่อ recursion, stopping และ pruning</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>เปรียบเทียบcost <code>R(T)+α|leaves|</code> โดยRใช้trainingriskนิยามเดียวกัน; collapse subtreeเมื่อcostleaf≤costsubtree. αสูงควรไม่ทำจำนวนleavesเพิ่มตามpruningpath; เลือกαด้วยvalidationและทดสอบpredictionหลังcollapse.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-3-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = [0, 0, 0, 1, 0, 1, 1, 1, 1, 1]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>Gini=1−Σp²; gain=parent−weighted children</code> = 0.16333333333333339<p>ลูกทั้งสองต้องผ่าน minLeaf; leaf probability คือ class proportion ใน node นั้น</p></li><li><code>finite / normalized / bounded</code> = 0.16333333333333339<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-3-visual"><summary>ภาพและ shape</summary><p>คำนวณ split ของ decision stump จริง; บทเต็มต่อ recursion, stopping และ pruning</p><ol><li><code>shape / range</code> = [0, 0, 0, 1, 0, 1, 1, 1, 1, 1]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>Gini=1−Σp²; gain=parent−weighted children</code> = 0.16333333333333339<p>ลูกทั้งสองต้องผ่าน minLeaf; leaf probability คือ class proportion ใน node นั้น</p></li><li><code>finite / normalized / bounded</code> = 0.16333333333333339<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-3-code"><summary>โค้ด</summary><p>เปรียบเทียบcost <code>R(T)+α|leaves|</code> โดยRใช้trainingriskนิยามเดียวกัน; collapse subtreeเมื่อcostleaf≤costsubtree. αสูงควรไม่ทำจำนวนleavesเพิ่มตามpruningpath; เลือกαด้วยvalidationและทดสอบpredictionหลังcollapse.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-3-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = [0, 0, 0, 1, 0, 1, 1, 1, 1, 1]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>Gini=1−Σp²; gain=parent−weighted children</code> = 0.16333333333333339<p>ลูกทั้งสองต้องผ่าน minLeaf; leaf probability คือ class proportion ใน node นั้น</p></li><li><code>finite / normalized / bounded</code> = 0.16333333333333339<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-3"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="reference" class="canonical-section"><h2>เนื้อหาครบทุกหัวข้อ พร้อมแผนที่ objective</h2><nav class="source-toc"><a href="#chapter-10/section/topic-1">1. Why This Matters</a> <a href="#chapter-10/section/topic-2">2. Prerequisites</a> <a href="#chapter-10/section/topic-3">3. Learning Objectives</a> <a href="#chapter-10/section/topic-4">4. Tree Mental Model</a> <a href="#chapter-10/section/topic-5">5. Impurity</a> <a href="#chapter-10/section/topic-6">6. Gini Impurity</a> <a href="#chapter-10/section/topic-7">7. Entropy</a> <a href="#chapter-10/section/topic-8">8. Weighted Child Impurity</a> <a href="#chapter-10/section/topic-9">9. Information Gain</a> <a href="#chapter-10/section/topic-10">10. Candidate Thresholds</a> <a href="#chapter-10/section/topic-11">11. Greedy Learning</a> <a href="#chapter-10/section/topic-12">12. Stopping Rules</a> <a href="#chapter-10/section/topic-13">13. Overfitting</a> <a href="#chapter-10/section/topic-14">14. Pruning</a> <a href="#chapter-10/section/topic-15">15. Classification Probability</a> <a href="#chapter-10/section/topic-16">16. Why Scaling Usually Not Needed</a> <a href="#chapter-10/section/topic-17">17. Missing Values</a> <a href="#chapter-10/section/topic-18">18. Categorical Features</a> <a href="#chapter-10/section/topic-19">19. Feature Importance</a> <a href="#chapter-10/section/topic-20">20. Complexity</a> <a href="#chapter-10/section/topic-21">21. From Scratch</a> <a href="#chapter-10/section/topic-22">22. scikit-learn</a> <a href="#chapter-10/section/topic-23">23. Failure Cases</a> <a href="#chapter-10/section/topic-24">24. Debugging</a> <a href="#chapter-10/section/topic-25">25. Common Mistakes</a> <a href="#chapter-10/section/topic-26">26. Exercises / Project</a> <a href="#chapter-10/section/topic-27">27. Checklist</a> <a href="#chapter-10/section/topic-28">28. What&#x27;s Next</a> </nav><section id="topic-1" class="source-topic"><span id="source-10-decision-tree-canonical-chapter-10-decision-trees" class="legacy-anchor"></span><span id="source-10-decision-tree-canonical-1-why-this-matters" class="legacy-anchor"></span><h3>1. Why This Matters</h3>
+<p>Decision Tree เปลี่ยนวิธีคิดจากสมการเส้นตรงและ distance ไปเป็นชุดคำถามแบบ if/else:</p>
+<pre><code class="language-text">feature_2 &lt;= 1.7 ?
+├── yes → feature_0 &lt;= -0.4 ?
+│         ├── yes → class 0
+│         └── no  → class 1
+└── no  → class 1
+</code></pre>
+<p>Tree เป็นพื้นฐานของ Random Forest, Gradient Boosting, XGBoost, LightGBM และ CatBoost</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>1. Why This Matters</h3>
+<p>Decision Tree เปลี่ยนวิธีคิดจากสมการเส้นตรงและ distance ไปเป็นชุดคำถามแบบ if/else:</p>
+<pre><code class="language-text">feature_2 &lt;= 1.7 ?
+├── yes → feature_0 &lt;= -0.4 ?
+│         ├── yes → class 0
+│         └── no  → class 1
+└── no  → class 1
+</code></pre>
+<p>Tree เป็นพื้นฐานของ Random Forest, Gradient Boosting, XGBoost, LightGBM และ CatBoost</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-1-equation"><summary>สมการ</summary><h3>1. Why This Matters</h3>
+<p>Decision Tree เปลี่ยนวิธีคิดจากสมการเส้นตรงและ distance ไปเป็นชุดคำถามแบบ if/else:</p>
+<pre><code class="language-text">feature_2 &lt;= 1.7 ?
+├── yes → feature_0 &lt;= -0.4 ?
+│         ├── yes → class 0
+│         └── no  → class 1
+└── no  → class 1
+</code></pre>
+<p>Tree เป็นพื้นฐานของ Random Forest, Gradient Boosting, XGBoost, LightGBM และ CatBoost</p></details><details id="help-topic-1-visual"><summary>ภาพและ shape</summary><h3>1. Why This Matters</h3>
+<p>Decision Tree เปลี่ยนวิธีคิดจากสมการเส้นตรงและ distance ไปเป็นชุดคำถามแบบ if/else:</p>
+<pre><code class="language-text">feature_2 &lt;= 1.7 ?
+├── yes → feature_0 &lt;= -0.4 ?
+│         ├── yes → class 0
+│         └── no  → class 1
+└── no  → class 1
+</code></pre>
+<p>Tree เป็นพื้นฐานของ Random Forest, Gradient Boosting, XGBoost, LightGBM และ CatBoost</p></details><details id="help-topic-1-code"><summary>โค้ด</summary><h3>1. Why This Matters</h3>
+<p>Decision Tree เปลี่ยนวิธีคิดจากสมการเส้นตรงและ distance ไปเป็นชุดคำถามแบบ if/else:</p>
+<pre><code class="language-text">feature_2 &lt;= 1.7 ?
+├── yes → feature_0 &lt;= -0.4 ?
+│         ├── yes → class 0
+│         └── no  → class 1
+└── no  → class 1
+</code></pre>
+<p>Tree เป็นพื้นฐานของ Random Forest, Gradient Boosting, XGBoost, LightGBM และ CatBoost</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-1-result"><summary>ผลการทดลอง</summary><h3>1. Why This Matters</h3>
+<p>Decision Tree เปลี่ยนวิธีคิดจากสมการเส้นตรงและ distance ไปเป็นชุดคำถามแบบ if/else:</p>
+<pre><code class="language-text">feature_2 &lt;= 1.7 ?
+├── yes → feature_0 &lt;= -0.4 ?
+│         ├── yes → class 0
+│         └── no  → class 1
+└── no  → class 1
+</code></pre>
+<p>Tree เป็นพื้นฐานของ Random Forest, Gradient Boosting, XGBoost, LightGBM และ CatBoost</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-1"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-2" class="source-topic"><span id="source-10-decision-tree-canonical-2-prerequisites" class="legacy-anchor"></span><h3>2. Prerequisites</h3>
+<ul>
+<li>classification metrics</li>
+<li>probability</li>
+<li>entropy concept</li>
+<li>NumPy</li>
+<li>train/validation/test</li>
+<li>overfitting / regularization</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>2. Prerequisites</h3>
+<ul>
+<li>classification metrics</li>
+<li>probability</li>
+<li>entropy concept</li>
+<li>NumPy</li>
+<li>train/validation/test</li>
+<li>overfitting / regularization</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-2-equation"><summary>สมการ</summary><h3>2. Prerequisites</h3>
+<ul>
+<li>classification metrics</li>
+<li>probability</li>
+<li>entropy concept</li>
+<li>NumPy</li>
+<li>train/validation/test</li>
+<li>overfitting / regularization</li>
+</ul></details><details id="help-topic-2-visual"><summary>ภาพและ shape</summary><h3>2. Prerequisites</h3>
+<ul>
+<li>classification metrics</li>
+<li>probability</li>
+<li>entropy concept</li>
+<li>NumPy</li>
+<li>train/validation/test</li>
+<li>overfitting / regularization</li>
+</ul></details><details id="help-topic-2-code"><summary>โค้ด</summary><h3>2. Prerequisites</h3>
+<ul>
+<li>classification metrics</li>
+<li>probability</li>
+<li>entropy concept</li>
+<li>NumPy</li>
+<li>train/validation/test</li>
+<li>overfitting / regularization</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-2-result"><summary>ผลการทดลอง</summary><h3>2. Prerequisites</h3>
+<ul>
+<li>classification metrics</li>
+<li>probability</li>
+<li>entropy concept</li>
+<li>NumPy</li>
+<li>train/validation/test</li>
+<li>overfitting / regularization</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-2"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-3" class="source-topic"><span id="source-10-decision-tree-canonical-3-learning-objectives" class="legacy-anchor"></span><h3>3. Learning Objectives</h3>
+<p>เมื่อจบบทนี้คุณควร:</p>
+<ul>
+<li>อธิบาย root / node / branch / leaf</li>
+<li>คำนวณ Gini impurity</li>
+<li>คำนวณ entropy และ information gain</li>
+<li>หา candidate thresholds</li>
+<li>implement greedy classification tree จากศูนย์</li>
+<li>อธิบาย recursive partitioning</li>
+<li>อธิบาย max_depth / min_samples_split / min_samples_leaf</li>
+<li>อธิบาย pruning concept</li>
+<li>อธิบาย why trees usually do not need feature scaling</li>
+<li>inspect feature importance limitations</li>
+<li>compare implementation กับ scikit-learn</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>3. Learning Objectives</h3>
+<p>เมื่อจบบทนี้คุณควร:</p>
+<ul>
+<li>อธิบาย root / node / branch / leaf</li>
+<li>คำนวณ Gini impurity</li>
+<li>คำนวณ entropy และ information gain</li>
+<li>หา candidate thresholds</li>
+<li>implement greedy classification tree จากศูนย์</li>
+<li>อธิบาย recursive partitioning</li>
+<li>อธิบาย max_depth / min_samples_split / min_samples_leaf</li>
+<li>อธิบาย pruning concept</li>
+<li>อธิบาย why trees usually do not need feature scaling</li>
+<li>inspect feature importance limitations</li>
+<li>compare implementation กับ scikit-learn</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-3-equation"><summary>สมการ</summary><h3>3. Learning Objectives</h3>
+<p>เมื่อจบบทนี้คุณควร:</p>
+<ul>
+<li>อธิบาย root / node / branch / leaf</li>
+<li>คำนวณ Gini impurity</li>
+<li>คำนวณ entropy และ information gain</li>
+<li>หา candidate thresholds</li>
+<li>implement greedy classification tree จากศูนย์</li>
+<li>อธิบาย recursive partitioning</li>
+<li>อธิบาย max_depth / min_samples_split / min_samples_leaf</li>
+<li>อธิบาย pruning concept</li>
+<li>อธิบาย why trees usually do not need feature scaling</li>
+<li>inspect feature importance limitations</li>
+<li>compare implementation กับ scikit-learn</li>
+</ul></details><details id="help-topic-3-visual"><summary>ภาพและ shape</summary><h3>3. Learning Objectives</h3>
+<p>เมื่อจบบทนี้คุณควร:</p>
+<ul>
+<li>อธิบาย root / node / branch / leaf</li>
+<li>คำนวณ Gini impurity</li>
+<li>คำนวณ entropy และ information gain</li>
+<li>หา candidate thresholds</li>
+<li>implement greedy classification tree จากศูนย์</li>
+<li>อธิบาย recursive partitioning</li>
+<li>อธิบาย max_depth / min_samples_split / min_samples_leaf</li>
+<li>อธิบาย pruning concept</li>
+<li>อธิบาย why trees usually do not need feature scaling</li>
+<li>inspect feature importance limitations</li>
+<li>compare implementation กับ scikit-learn</li>
+</ul></details><details id="help-topic-3-code"><summary>โค้ด</summary><h3>3. Learning Objectives</h3>
+<p>เมื่อจบบทนี้คุณควร:</p>
+<ul>
+<li>อธิบาย root / node / branch / leaf</li>
+<li>คำนวณ Gini impurity</li>
+<li>คำนวณ entropy และ information gain</li>
+<li>หา candidate thresholds</li>
+<li>implement greedy classification tree จากศูนย์</li>
+<li>อธิบาย recursive partitioning</li>
+<li>อธิบาย max_depth / min_samples_split / min_samples_leaf</li>
+<li>อธิบาย pruning concept</li>
+<li>อธิบาย why trees usually do not need feature scaling</li>
+<li>inspect feature importance limitations</li>
+<li>compare implementation กับ scikit-learn</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-3-result"><summary>ผลการทดลอง</summary><h3>3. Learning Objectives</h3>
+<p>เมื่อจบบทนี้คุณควร:</p>
+<ul>
+<li>อธิบาย root / node / branch / leaf</li>
+<li>คำนวณ Gini impurity</li>
+<li>คำนวณ entropy และ information gain</li>
+<li>หา candidate thresholds</li>
+<li>implement greedy classification tree จากศูนย์</li>
+<li>อธิบาย recursive partitioning</li>
+<li>อธิบาย max_depth / min_samples_split / min_samples_leaf</li>
+<li>อธิบาย pruning concept</li>
+<li>อธิบาย why trees usually do not need feature scaling</li>
+<li>inspect feature importance limitations</li>
+<li>compare implementation กับ scikit-learn</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-3"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-4" class="source-topic"><span id="source-10-decision-tree-canonical-4-tree-mental-model" class="legacy-anchor"></span><h3>4. Tree Mental Model</h3>
+<p>Tree แบ่ง feature space เป็น regions</p>
+<pre><code class="language-text">R² feature space
+     ↓ split x₁ &lt;= t
+left region | right region
+     ↓ split again
+smaller regions
+     ↓
+leaf prediction
+</code></pre>
+<p>ใน classification แต่ละ leaf มักทำนาย majority class หรือ class probabilities จาก label distribution ใน leaf</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>Leafเป็นnodeปลายทางที่ไม่splitต่อ คืนclassdistributionหรือค่าทำนายคงที่. Leafcounts[3,1]ให้Pclass1=.25และmajorityclass0; ไม่ใช่ความน่าจะเป็นที่calibratedแน่นอนบนข้อมูลใหม่.</p><p>เก็บn_samplesและclasscountsในnodeตอนfitเพื่อใช้weightedgain/debug. rootcountต้องเท่าผลรวมchildcountsทุกsplit; testleafที่stopเพราะpure/minleafยังมีcountsถูกต้อง.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-4-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Leafเป็นnodeปลายทางที่ไม่splitต่อ คืนclassdistributionหรือค่าทำนายคงที่. Leafcounts[3,1]ให้Pclass1=.25และmajorityclass0; ไม่ใช่ความน่าจะเป็นที่calibratedแน่นอนบนข้อมูลใหม่.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-4-equation"><summary>สมการ</summary><p>Leafเป็นnodeปลายทางที่ไม่splitต่อ คืนclassdistributionหรือค่าทำนายคงที่. Leafcounts[3,1]ให้Pclass1=.25และmajorityclass0; ไม่ใช่ความน่าจะเป็นที่calibratedแน่นอนบนข้อมูลใหม่.</p></details><details id="help-topic-4-visual"><summary>ภาพและ shape</summary><p>Leafเป็นnodeปลายทางที่ไม่splitต่อ คืนclassdistributionหรือค่าทำนายคงที่. Leafcounts[3,1]ให้Pclass1=.25และmajorityclass0; ไม่ใช่ความน่าจะเป็นที่calibratedแน่นอนบนข้อมูลใหม่.</p></details><details id="help-topic-4-code"><summary>โค้ด</summary><p>Leafเป็นnodeปลายทางที่ไม่splitต่อ คืนclassdistributionหรือค่าทำนายคงที่. Leafcounts[3,1]ให้Pclass1=.25และmajorityclass0; ไม่ใช่ความน่าจะเป็นที่calibratedแน่นอนบนข้อมูลใหม่.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-4-result"><summary>ผลการทดลอง</summary><p>Leafเป็นnodeปลายทางที่ไม่splitต่อ คืนclassdistributionหรือค่าทำนายคงที่. Leafcounts[3,1]ให้Pclass1=.25และmajorityclass0; ไม่ใช่ความน่าจะเป็นที่calibratedแน่นอนบนข้อมูลใหม่.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-4"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-5" class="source-topic"><span id="source-10-decision-tree-canonical-5-impurity" class="legacy-anchor"></span><h3>5. Impurity</h3>
+<p>node ที่ pure:</p>
+<pre><code class="language-text">[0,0,0,0] → impurity ต่ำ
+</code></pre>
+<p>node ที่ mixed:</p>
+<pre><code class="language-text">[0,0,1,1] → impurity สูงกว่า
+</code></pre>
+<p>split ที่ดีทำให้ children บริสุทธิ์ขึ้น</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-5-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>5. Impurity</h3>
+<p>node ที่ pure:</p>
+<pre><code class="language-text">[0,0,0,0] → impurity ต่ำ
+</code></pre>
+<p>node ที่ mixed:</p>
+<pre><code class="language-text">[0,0,1,1] → impurity สูงกว่า
+</code></pre>
+<p>split ที่ดีทำให้ children บริสุทธิ์ขึ้น</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-5-equation"><summary>สมการ</summary><h3>5. Impurity</h3>
+<p>node ที่ pure:</p>
+<pre><code class="language-text">[0,0,0,0] → impurity ต่ำ
+</code></pre>
+<p>node ที่ mixed:</p>
+<pre><code class="language-text">[0,0,1,1] → impurity สูงกว่า
+</code></pre>
+<p>split ที่ดีทำให้ children บริสุทธิ์ขึ้น</p></details><details id="help-topic-5-visual"><summary>ภาพและ shape</summary><h3>5. Impurity</h3>
+<p>node ที่ pure:</p>
+<pre><code class="language-text">[0,0,0,0] → impurity ต่ำ
+</code></pre>
+<p>node ที่ mixed:</p>
+<pre><code class="language-text">[0,0,1,1] → impurity สูงกว่า
+</code></pre>
+<p>split ที่ดีทำให้ children บริสุทธิ์ขึ้น</p></details><details id="help-topic-5-code"><summary>โค้ด</summary><h3>5. Impurity</h3>
+<p>node ที่ pure:</p>
+<pre><code class="language-text">[0,0,0,0] → impurity ต่ำ
+</code></pre>
+<p>node ที่ mixed:</p>
+<pre><code class="language-text">[0,0,1,1] → impurity สูงกว่า
+</code></pre>
+<p>split ที่ดีทำให้ children บริสุทธิ์ขึ้น</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-5-result"><summary>ผลการทดลอง</summary><h3>5. Impurity</h3>
+<p>node ที่ pure:</p>
+<pre><code class="language-text">[0,0,0,0] → impurity ต่ำ
+</code></pre>
+<p>node ที่ mixed:</p>
+<pre><code class="language-text">[0,0,1,1] → impurity สูงกว่า
+</code></pre>
+<p>split ที่ดีทำให้ children บริสุทธิ์ขึ้น</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-5"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-6" class="source-topic"><span id="source-10-decision-tree-canonical-6-gini-impurity" class="legacy-anchor"></span><h3>6. Gini Impurity</h3>
+<p>ถ้า class proportions คือ <code>p₁,...,p_K</code>:</p>
+<pre><code class="language-text">Gini = 1 - Σ p_k²
+</code></pre>
+<p>binary 50/50:</p>
+<pre><code class="language-text">1 - 0.5² - 0.5² = 0.5
+</code></pre>
+<p>pure node:</p>
+<pre><code class="language-text">1 - 1² = 0
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>Gini=<code>1−Σ_c p_c²</code>. labeldistribution[.75,.25]ให้1−.5625−.0625=.375; pureleafให้0. ตรวจcountsnormalizeจากnodeนั้น ไม่ใช้classpriorทั้งdataset.</p><p>labels[0,0,0,1]มีp0=.75,p1=.25จึงGini=.375. ถ้าแบ่งเป็น[0,0]กับ[0,1],weightedGini=.25,gain=.125; แสดงการถ่วง2/4ต่อchildเพื่อจับสูตรที่ใช้averageผิด.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-6-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Gini=<code>1−Σ_c p_c²</code>. labeldistribution[.75,.25]ให้1−.5625−.0625=.375; pureleafให้0. ตรวจcountsnormalizeจากnodeนั้น ไม่ใช้classpriorทั้งdataset.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-6-equation"><summary>สมการ</summary><p>Gini=<code>1−Σ_c p_c²</code>. labeldistribution[.75,.25]ให้1−.5625−.0625=.375; pureleafให้0. ตรวจcountsnormalizeจากnodeนั้น ไม่ใช้classpriorทั้งdataset.</p></details><details id="help-topic-6-visual"><summary>ภาพและ shape</summary><p>Gini=<code>1−Σ_c p_c²</code>. labeldistribution[.75,.25]ให้1−.5625−.0625=.375; pureleafให้0. ตรวจcountsnormalizeจากnodeนั้น ไม่ใช้classpriorทั้งdataset.</p></details><details id="help-topic-6-code"><summary>โค้ด</summary><p>Gini=<code>1−Σ_c p_c²</code>. labeldistribution[.75,.25]ให้1−.5625−.0625=.375; pureleafให้0. ตรวจcountsnormalizeจากnodeนั้น ไม่ใช้classpriorทั้งdataset.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-6-result"><summary>ผลการทดลอง</summary><p>Gini=<code>1−Σ_c p_c²</code>. labeldistribution[.75,.25]ให้1−.5625−.0625=.375; pureleafให้0. ตรวจcountsnormalizeจากnodeนั้น ไม่ใช้classpriorทั้งdataset.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-6"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-7" class="source-topic"><span id="source-10-decision-tree-canonical-7-entropy" class="legacy-anchor"></span><h3>7. Entropy</h3>
+<pre><code class="language-text">H = -Σ p_k log₂(p_k)
+</code></pre>
+<p>pure node → 0</p>
+<p>binary 50/50 → 1 bit</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>Entropy<code>−Σp_c log2 p_c</code>โดยให้0log0=0. balancedbinaryได้1bit,pureได้0; baseของlogต้องตรงตอนเทียบgain ไม่ผสมnatsกับbits.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-7-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Entropy<code>−Σp_c log2 p_c</code>โดยให้0log0=0. balancedbinaryได้1bit,pureได้0; baseของlogต้องตรงตอนเทียบgain ไม่ผสมnatsกับbits.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-7-equation"><summary>สมการ</summary><p>Entropy<code>−Σp_c log2 p_c</code>โดยให้0log0=0. balancedbinaryได้1bit,pureได้0; baseของlogต้องตรงตอนเทียบgain ไม่ผสมnatsกับbits.</p></details><details id="help-topic-7-visual"><summary>ภาพและ shape</summary><p>Entropy<code>−Σp_c log2 p_c</code>โดยให้0log0=0. balancedbinaryได้1bit,pureได้0; baseของlogต้องตรงตอนเทียบgain ไม่ผสมnatsกับbits.</p></details><details id="help-topic-7-code"><summary>โค้ด</summary><p>Entropy<code>−Σp_c log2 p_c</code>โดยให้0log0=0. balancedbinaryได้1bit,pureได้0; baseของlogต้องตรงตอนเทียบgain ไม่ผสมnatsกับbits.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-7-result"><summary>ผลการทดลอง</summary><p>Entropy<code>−Σp_c log2 p_c</code>โดยให้0log0=0. balancedbinaryได้1bit,pureได้0; baseของlogต้องตรงตอนเทียบgain ไม่ผสมnatsกับbits.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-7"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-8" class="source-topic"><span id="source-10-decision-tree-canonical-8-weighted-child-impurity" class="legacy-anchor"></span><h3>8. Weighted Child Impurity</h3>
+<p>parent มี n samples</p>
+<p>left มี <code>n_L</code>, right มี <code>n_R</code></p>
+<pre><code class="language-text">I_children
+=
+(n_L/n) I(left)
++
+(n_R/n) I(right)
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>Gain=impurity_parent−Σ_child(n_child/n_parent)*impurity_child. ลูกpureหนึ่งตัวไม่ได้พอ ต้องถ่วงขนาดทั้งสองลูก; หากweightedchildimpurityเท่าพ่อgain0และไม่มีประโยชน์ตามobjectiveนี้.</p><p>Regressionleafคืนmean(y_node),splitลดweightedMSEหรือSSEด้วยreductionเดียวกัน. y=[1,1,5,5]แยกสองคู่ให้SSE0จากparentSSE16; testconstanttargetและminleafเพื่อกันoverfittingsampleเดียว.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-8-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Gain=impurity_parent−Σ_child(n_child/n_parent)*impurity_child. ลูกpureหนึ่งตัวไม่ได้พอ ต้องถ่วงขนาดทั้งสองลูก; หากweightedchildimpurityเท่าพ่อgain0และไม่มีประโยชน์ตามobjectiveนี้.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-8-equation"><summary>สมการ</summary><p>Gain=impurity_parent−Σ_child(n_child/n_parent)*impurity_child. ลูกpureหนึ่งตัวไม่ได้พอ ต้องถ่วงขนาดทั้งสองลูก; หากweightedchildimpurityเท่าพ่อgain0และไม่มีประโยชน์ตามobjectiveนี้.</p></details><details id="help-topic-8-visual"><summary>ภาพและ shape</summary><p>Gain=impurity_parent−Σ_child(n_child/n_parent)*impurity_child. ลูกpureหนึ่งตัวไม่ได้พอ ต้องถ่วงขนาดทั้งสองลูก; หากweightedchildimpurityเท่าพ่อgain0และไม่มีประโยชน์ตามobjectiveนี้.</p></details><details id="help-topic-8-code"><summary>โค้ด</summary><p>Gain=impurity_parent−Σ_child(n_child/n_parent)*impurity_child. ลูกpureหนึ่งตัวไม่ได้พอ ต้องถ่วงขนาดทั้งสองลูก; หากweightedchildimpurityเท่าพ่อgain0และไม่มีประโยชน์ตามobjectiveนี้.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-8-result"><summary>ผลการทดลอง</summary><p>Gain=impurity_parent−Σ_child(n_child/n_parent)*impurity_child. ลูกpureหนึ่งตัวไม่ได้พอ ต้องถ่วงขนาดทั้งสองลูก; หากweightedchildimpurityเท่าพ่อgain0และไม่มีประโยชน์ตามobjectiveนี้.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-8"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-9" class="source-topic"><span id="source-10-decision-tree-canonical-9-information-gain" class="legacy-anchor"></span><h3>9. Information Gain</h3>
+<pre><code class="language-text">Gain
+=
+I(parent)
+-
+I_children
+</code></pre>
+<p>เลือก split ที่ gain สูงสุด</p>
+<p>ถ้าใช้ Gini ก็เรียก impurity decrease ได้เช่นกัน</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>Gain=impurity_parent−Σ_child(n_child/n_parent)*impurity_child. ลูกpureหนึ่งตัวไม่ได้พอ ต้องถ่วงขนาดทั้งสองลูก; หากweightedchildimpurityเท่าพ่อgain0และไม่มีประโยชน์ตามobjectiveนี้.</p><p>เลือกbestvalidsplitแล้วหยุดถ้าgain&lt;min_impurity_decreaseตามinequalityที่ระบุ. Datasetที่bestgain.125กับthreshold.2ต้องไม่split; threshold0ยังต้องป้องกันnonpositivegain/emptychildrenตามcontract.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-9-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Gain=impurity_parent−Σ_child(n_child/n_parent)*impurity_child. ลูกpureหนึ่งตัวไม่ได้พอ ต้องถ่วงขนาดทั้งสองลูก; หากweightedchildimpurityเท่าพ่อgain0และไม่มีประโยชน์ตามobjectiveนี้.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-9-equation"><summary>สมการ</summary><p>Gain=impurity_parent−Σ_child(n_child/n_parent)*impurity_child. ลูกpureหนึ่งตัวไม่ได้พอ ต้องถ่วงขนาดทั้งสองลูก; หากweightedchildimpurityเท่าพ่อgain0และไม่มีประโยชน์ตามobjectiveนี้.</p></details><details id="help-topic-9-visual"><summary>ภาพและ shape</summary><p>Gain=impurity_parent−Σ_child(n_child/n_parent)*impurity_child. ลูกpureหนึ่งตัวไม่ได้พอ ต้องถ่วงขนาดทั้งสองลูก; หากweightedchildimpurityเท่าพ่อgain0และไม่มีประโยชน์ตามobjectiveนี้.</p></details><details id="help-topic-9-code"><summary>โค้ด</summary><p>Gain=impurity_parent−Σ_child(n_child/n_parent)*impurity_child. ลูกpureหนึ่งตัวไม่ได้พอ ต้องถ่วงขนาดทั้งสองลูก; หากweightedchildimpurityเท่าพ่อgain0และไม่มีประโยชน์ตามobjectiveนี้.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-9-result"><summary>ผลการทดลอง</summary><p>Gain=impurity_parent−Σ_child(n_child/n_parent)*impurity_child. ลูกpureหนึ่งตัวไม่ได้พอ ต้องถ่วงขนาดทั้งสองลูก; หากweightedchildimpurityเท่าพ่อgain0และไม่มีประโยชน์ตามobjectiveนี้.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-9"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-10" class="source-topic"><span id="source-10-decision-tree-canonical-10-candidate-thresholds" class="legacy-anchor"></span><h3>10. Candidate Thresholds</h3>
+<p>สำหรับ numeric feature:</p>
+<pre><code class="language-text">values = [1, 2, 5, 9]
+</code></pre>
+<p>candidate thresholds ที่มีเหตุผลคือ midpoint ระหว่าง unique sorted values:</p>
+<pre><code class="language-text">1.5, 3.5, 7.0
+</code></pre>
+<p>ไม่จำเป็นต้องลองทุก real number</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>ตัดcandidateที่n_leftหรือn_rightเป็น0หรือไม่ถึงminleafก่อนคำนวณgain. เช่นxทุกตัวเท่ากันไม่มีsplitที่valid; อย่าหาร0แล้วเลือกNaNgainเพราะsortbehavior.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-10-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>ตัดcandidateที่n_leftหรือn_rightเป็น0หรือไม่ถึงminleafก่อนคำนวณgain. เช่นxทุกตัวเท่ากันไม่มีsplitที่valid; อย่าหาร0แล้วเลือกNaNgainเพราะsortbehavior.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-10-equation"><summary>สมการ</summary><p>ตัดcandidateที่n_leftหรือn_rightเป็น0หรือไม่ถึงminleafก่อนคำนวณgain. เช่นxทุกตัวเท่ากันไม่มีsplitที่valid; อย่าหาร0แล้วเลือกNaNgainเพราะsortbehavior.</p></details><details id="help-topic-10-visual"><summary>ภาพและ shape</summary><p>ตัดcandidateที่n_leftหรือn_rightเป็น0หรือไม่ถึงminleafก่อนคำนวณgain. เช่นxทุกตัวเท่ากันไม่มีsplitที่valid; อย่าหาร0แล้วเลือกNaNgainเพราะsortbehavior.</p></details><details id="help-topic-10-code"><summary>โค้ด</summary><p>ตัดcandidateที่n_leftหรือn_rightเป็น0หรือไม่ถึงminleafก่อนคำนวณgain. เช่นxทุกตัวเท่ากันไม่มีsplitที่valid; อย่าหาร0แล้วเลือกNaNgainเพราะsortbehavior.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-10-result"><summary>ผลการทดลอง</summary><p>ตัดcandidateที่n_leftหรือn_rightเป็น0หรือไม่ถึงminleafก่อนคำนวณgain. เช่นxทุกตัวเท่ากันไม่มีsplitที่valid; อย่าหาร0แล้วเลือกNaNgainเพราะsortbehavior.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-10"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-11" class="source-topic"><span id="source-10-decision-tree-canonical-11-greedy-learning" class="legacy-anchor"></span><h3>11. Greedy Learning</h3>
+<p>Decision Tree แบบมาตรฐานสร้างแบบ greedy:</p>
+<ol>
+<li>หา best split ที่ node ปัจจุบัน</li>
+<li>แบ่ง data</li>
+<li>recurse ซ้าย/ขวา</li>
+<li>หยุดตาม stopping rules</li>
+</ol>
+<p>greedy ไม่รับประกัน global optimal tree</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>Greedyเลือกsplitที่gainดีที่สุดตอนนี้โดยไม่ค้นทุกsubtreecombination. Splitที่gainน้อยตอนต้นอาจนำไปtreeรวมดีกว่า; จึงไม่พิสูจน์globaloptimumจากการที่แต่ละnodeหาbestlocalได้.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-11-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Greedyเลือกsplitที่gainดีที่สุดตอนนี้โดยไม่ค้นทุกsubtreecombination. Splitที่gainน้อยตอนต้นอาจนำไปtreeรวมดีกว่า; จึงไม่พิสูจน์globaloptimumจากการที่แต่ละnodeหาbestlocalได้.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-11-equation"><summary>สมการ</summary><p>Greedyเลือกsplitที่gainดีที่สุดตอนนี้โดยไม่ค้นทุกsubtreecombination. Splitที่gainน้อยตอนต้นอาจนำไปtreeรวมดีกว่า; จึงไม่พิสูจน์globaloptimumจากการที่แต่ละnodeหาbestlocalได้.</p></details><details id="help-topic-11-visual"><summary>ภาพและ shape</summary><p>Greedyเลือกsplitที่gainดีที่สุดตอนนี้โดยไม่ค้นทุกsubtreecombination. Splitที่gainน้อยตอนต้นอาจนำไปtreeรวมดีกว่า; จึงไม่พิสูจน์globaloptimumจากการที่แต่ละnodeหาbestlocalได้.</p></details><details id="help-topic-11-code"><summary>โค้ด</summary><p>Greedyเลือกsplitที่gainดีที่สุดตอนนี้โดยไม่ค้นทุกsubtreecombination. Splitที่gainน้อยตอนต้นอาจนำไปtreeรวมดีกว่า; จึงไม่พิสูจน์globaloptimumจากการที่แต่ละnodeหาbestlocalได้.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-11-result"><summary>ผลการทดลอง</summary><p>Greedyเลือกsplitที่gainดีที่สุดตอนนี้โดยไม่ค้นทุกsubtreecombination. Splitที่gainน้อยตอนต้นอาจนำไปtreeรวมดีกว่า; จึงไม่พิสูจน์globaloptimumจากการที่แต่ละnodeหาbestlocalได้.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-11"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-12" class="source-topic"><span id="source-10-decision-tree-canonical-12-stopping-rules" class="legacy-anchor"></span><h3>12. Stopping Rules</h3>
+<p>สำคัญ:</p>
+<ul>
+<li><code>max_depth</code></li>
+<li><code>min_samples_split</code></li>
+<li><code>min_samples_leaf</code></li>
+<li>minimum impurity decrease</li>
+<li>pure node</li>
+</ul>
+<p>ถ้าไม่ constrain tree สามารถ memorize training data ได้ง่าย</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>max_depthจำกัดจำนวนการsplitตามทางroot→leaf; นิยามrootdepth0ให้stumpdepth1. เพิ่มdepthเพิ่มcapacityแต่ไม่รับประกันvalidationดีขึ้น; testsต้องตรวจจริงว่าnodesไม่เกินเงื่อนไข.</p><p>เลือกbestvalidsplitแล้วหยุดถ้าgain&lt;min_impurity_decreaseตามinequalityที่ระบุ. Datasetที่bestgain.125กับthreshold.2ต้องไม่split; threshold0ยังต้องป้องกันnonpositivegain/emptychildrenตามcontract.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-12-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>max_depthจำกัดจำนวนการsplitตามทางroot→leaf; นิยามrootdepth0ให้stumpdepth1. เพิ่มdepthเพิ่มcapacityแต่ไม่รับประกันvalidationดีขึ้น; testsต้องตรวจจริงว่าnodesไม่เกินเงื่อนไข.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-12-equation"><summary>สมการ</summary><p>max_depthจำกัดจำนวนการsplitตามทางroot→leaf; นิยามrootdepth0ให้stumpdepth1. เพิ่มdepthเพิ่มcapacityแต่ไม่รับประกันvalidationดีขึ้น; testsต้องตรวจจริงว่าnodesไม่เกินเงื่อนไข.</p></details><details id="help-topic-12-visual"><summary>ภาพและ shape</summary><p>max_depthจำกัดจำนวนการsplitตามทางroot→leaf; นิยามrootdepth0ให้stumpdepth1. เพิ่มdepthเพิ่มcapacityแต่ไม่รับประกันvalidationดีขึ้น; testsต้องตรวจจริงว่าnodesไม่เกินเงื่อนไข.</p></details><details id="help-topic-12-code"><summary>โค้ด</summary><p>max_depthจำกัดจำนวนการsplitตามทางroot→leaf; นิยามrootdepth0ให้stumpdepth1. เพิ่มdepthเพิ่มcapacityแต่ไม่รับประกันvalidationดีขึ้น; testsต้องตรวจจริงว่าnodesไม่เกินเงื่อนไข.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-12-result"><summary>ผลการทดลอง</summary><p>max_depthจำกัดจำนวนการsplitตามทางroot→leaf; นิยามrootdepth0ให้stumpdepth1. เพิ่มdepthเพิ่มcapacityแต่ไม่รับประกันvalidationดีขึ้น; testsต้องตรวจจริงว่าnodesไม่เกินเงื่อนไข.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-12"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-13" class="source-topic"><span id="source-10-decision-tree-canonical-13-overfitting" class="legacy-anchor"></span><h3>13. Overfitting</h3>
+<p>deep tree:</p>
+<ul>
+<li>training error ต่ำ</li>
+<li>boundary ซับซ้อน</li>
+<li>variance สูง</li>
+</ul>
+<p>shallow tree:</p>
+<ul>
+<li>bias สูงขึ้น</li>
+<li>variance ลดลง</li>
+</ul>
+<p>นี่คือเหตุผลที่ Random Forest aggregate trees หลายต้น</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>Deep treeสร้างregionsเล็กจนleafอาจมีsampleเดียวจึงจำlabelnoise. ใช้minleaf/depth/pruningและvalidation; trainaccuracy100%อาจเหมาะข้อมูลไร้noiseหรือoverfitก็ได้ ต้องดูheld-out.</p><p>ประเมินdepth/minleaf/pruningจากvalidationที่ไม่ใช้fit และตรวจduplicates/groupsleakage. เก็บtrain/validationlearningcurvesกับleafsizes; ไม่รายงานtrain100%แทนความสามารถgeneralize.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-13-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Deep treeสร้างregionsเล็กจนleafอาจมีsampleเดียวจึงจำlabelnoise. ใช้minleaf/depth/pruningและvalidation; trainaccuracy100%อาจเหมาะข้อมูลไร้noiseหรือoverfitก็ได้ ต้องดูheld-out.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-13-equation"><summary>สมการ</summary><p>Deep treeสร้างregionsเล็กจนleafอาจมีsampleเดียวจึงจำlabelnoise. ใช้minleaf/depth/pruningและvalidation; trainaccuracy100%อาจเหมาะข้อมูลไร้noiseหรือoverfitก็ได้ ต้องดูheld-out.</p></details><details id="help-topic-13-visual"><summary>ภาพและ shape</summary><p>Deep treeสร้างregionsเล็กจนleafอาจมีsampleเดียวจึงจำlabelnoise. ใช้minleaf/depth/pruningและvalidation; trainaccuracy100%อาจเหมาะข้อมูลไร้noiseหรือoverfitก็ได้ ต้องดูheld-out.</p></details><details id="help-topic-13-code"><summary>โค้ด</summary><p>Deep treeสร้างregionsเล็กจนleafอาจมีsampleเดียวจึงจำlabelnoise. ใช้minleaf/depth/pruningและvalidation; trainaccuracy100%อาจเหมาะข้อมูลไร้noiseหรือoverfitก็ได้ ต้องดูheld-out.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-13-result"><summary>ผลการทดลอง</summary><p>Deep treeสร้างregionsเล็กจนleafอาจมีsampleเดียวจึงจำlabelnoise. ใช้minleaf/depth/pruningและvalidation; trainaccuracy100%อาจเหมาะข้อมูลไร้noiseหรือoverfitก็ได้ ต้องดูheld-out.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-13"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-14" class="source-topic"><span id="source-10-decision-tree-canonical-14-pruning" class="legacy-anchor"></span><span id="source-10-decision-tree-canonical-pre-pruning" class="legacy-anchor"></span><span id="source-10-decision-tree-canonical-post-pruning" class="legacy-anchor"></span><h3>14. Pruning</h3>
+<p>สองแนวคิด:</p>
+<h4>Pre-pruning</h4>
+<p>หยุดก่อน tree โตมาก:</p>
+<ul>
+<li>max_depth</li>
+<li>min_samples_leaf</li>
+<li>min_samples_split</li>
+</ul>
+<h4>Post-pruning</h4>
+<p>ปลูก tree ก่อนแล้วตัด branches ที่ไม่คุ้ม complexity</p>
+<p>scikit-learn รองรับ cost-complexity pruning ผ่าน <code>ccp_alpha</code></p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>ประเมินdepth/minleaf/pruningจากvalidationที่ไม่ใช้fit และตรวจduplicates/groupsleakage. เก็บtrain/validationlearningcurvesกับleafsizes; ไม่รายงานtrain100%แทนความสามารถgeneralize.</p><p>เปรียบเทียบcost <code>R(T)+α|leaves|</code> โดยRใช้trainingriskนิยามเดียวกัน; collapse subtreeเมื่อcostleaf≤costsubtree. αสูงควรไม่ทำจำนวนleavesเพิ่มตามpruningpath; เลือกαด้วยvalidationและทดสอบpredictionหลังcollapse.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-14-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>ประเมินdepth/minleaf/pruningจากvalidationที่ไม่ใช้fit และตรวจduplicates/groupsleakage. เก็บtrain/validationlearningcurvesกับleafsizes; ไม่รายงานtrain100%แทนความสามารถgeneralize.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-14-equation"><summary>สมการ</summary><p>ประเมินdepth/minleaf/pruningจากvalidationที่ไม่ใช้fit และตรวจduplicates/groupsleakage. เก็บtrain/validationlearningcurvesกับleafsizes; ไม่รายงานtrain100%แทนความสามารถgeneralize.</p></details><details id="help-topic-14-visual"><summary>ภาพและ shape</summary><p>ประเมินdepth/minleaf/pruningจากvalidationที่ไม่ใช้fit และตรวจduplicates/groupsleakage. เก็บtrain/validationlearningcurvesกับleafsizes; ไม่รายงานtrain100%แทนความสามารถgeneralize.</p></details><details id="help-topic-14-code"><summary>โค้ด</summary><p>ประเมินdepth/minleaf/pruningจากvalidationที่ไม่ใช้fit และตรวจduplicates/groupsleakage. เก็บtrain/validationlearningcurvesกับleafsizes; ไม่รายงานtrain100%แทนความสามารถgeneralize.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-14-result"><summary>ผลการทดลอง</summary><p>ประเมินdepth/minleaf/pruningจากvalidationที่ไม่ใช้fit และตรวจduplicates/groupsleakage. เก็บtrain/validationlearningcurvesกับleafsizes; ไม่รายงานtrain100%แทนความสามารถgeneralize.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-14"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-15" class="source-topic"><span id="source-10-decision-tree-canonical-15-classification-probability" class="legacy-anchor"></span><h3>15. Classification Probability</h3>
+<p>leaf มี:</p>
+<pre><code class="language-text">class 0: 8 samples
+class 1: 2 samples
+</code></pre>
+<p>probability estimate แบบง่าย:</p>
+<pre><code class="language-text">P(0)=0.8
+P(1)=0.2
+</code></pre>
+<p>แต่ probability จาก leaf อาจไม่ calibrated โดยเฉพาะ leaf เล็ก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-15-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>15. Classification Probability</h3>
+<p>leaf มี:</p>
+<pre><code class="language-text">class 0: 8 samples
+class 1: 2 samples
+</code></pre>
+<p>probability estimate แบบง่าย:</p>
+<pre><code class="language-text">P(0)=0.8
+P(1)=0.2
+</code></pre>
+<p>แต่ probability จาก leaf อาจไม่ calibrated โดยเฉพาะ leaf เล็ก</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-15-equation"><summary>สมการ</summary><h3>15. Classification Probability</h3>
+<p>leaf มี:</p>
+<pre><code class="language-text">class 0: 8 samples
+class 1: 2 samples
+</code></pre>
+<p>probability estimate แบบง่าย:</p>
+<pre><code class="language-text">P(0)=0.8
+P(1)=0.2
+</code></pre>
+<p>แต่ probability จาก leaf อาจไม่ calibrated โดยเฉพาะ leaf เล็ก</p></details><details id="help-topic-15-visual"><summary>ภาพและ shape</summary><h3>15. Classification Probability</h3>
+<p>leaf มี:</p>
+<pre><code class="language-text">class 0: 8 samples
+class 1: 2 samples
+</code></pre>
+<p>probability estimate แบบง่าย:</p>
+<pre><code class="language-text">P(0)=0.8
+P(1)=0.2
+</code></pre>
+<p>แต่ probability จาก leaf อาจไม่ calibrated โดยเฉพาะ leaf เล็ก</p></details><details id="help-topic-15-code"><summary>โค้ด</summary><h3>15. Classification Probability</h3>
+<p>leaf มี:</p>
+<pre><code class="language-text">class 0: 8 samples
+class 1: 2 samples
+</code></pre>
+<p>probability estimate แบบง่าย:</p>
+<pre><code class="language-text">P(0)=0.8
+P(1)=0.2
+</code></pre>
+<p>แต่ probability จาก leaf อาจไม่ calibrated โดยเฉพาะ leaf เล็ก</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-15-result"><summary>ผลการทดลอง</summary><h3>15. Classification Probability</h3>
+<p>leaf มี:</p>
+<pre><code class="language-text">class 0: 8 samples
+class 1: 2 samples
+</code></pre>
+<p>probability estimate แบบง่าย:</p>
+<pre><code class="language-text">P(0)=0.8
+P(1)=0.2
+</code></pre>
+<p>แต่ probability จาก leaf อาจไม่ calibrated โดยเฉพาะ leaf เล็ก</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-15"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-16" class="source-topic"><span id="source-10-decision-tree-canonical-16-why-scaling-usually-not-needed" class="legacy-anchor"></span><h3>16. Why Scaling Usually Not Needed</h3>
+<p>Tree ถาม:</p>
+<pre><code class="language-text">x_j &lt;= threshold
+</code></pre>
+<p>monotonic rescaling เช่น:</p>
+<pre><code class="language-text">meters → centimeters
+</code></pre>
+<p>เปลี่ยน threshold แต่ไม่เปลี่ยน ordering ของ values</p>
+<p>ต่างจาก KNN / linear regularization ที่ scale มีผลโดยตรง</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>Treeเลือกthresholdตามลำดับค่าต่อfeature จึงinvariantต่อstrictlymonotonicpositiveaffinetransformเมื่อadjustthresholdตาม. KNNใช้distanceข้ามfeaturesจึงscaleมีผล; caveatเรื่องtiesและfloating-pointยังต้องตรวจ.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-16-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Treeเลือกthresholdตามลำดับค่าต่อfeature จึงinvariantต่อstrictlymonotonicpositiveaffinetransformเมื่อadjustthresholdตาม. KNNใช้distanceข้ามfeaturesจึงscaleมีผล; caveatเรื่องtiesและfloating-pointยังต้องตรวจ.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-16-equation"><summary>สมการ</summary><p>Treeเลือกthresholdตามลำดับค่าต่อfeature จึงinvariantต่อstrictlymonotonicpositiveaffinetransformเมื่อadjustthresholdตาม. KNNใช้distanceข้ามfeaturesจึงscaleมีผล; caveatเรื่องtiesและfloating-pointยังต้องตรวจ.</p></details><details id="help-topic-16-visual"><summary>ภาพและ shape</summary><p>Treeเลือกthresholdตามลำดับค่าต่อfeature จึงinvariantต่อstrictlymonotonicpositiveaffinetransformเมื่อadjustthresholdตาม. KNNใช้distanceข้ามfeaturesจึงscaleมีผล; caveatเรื่องtiesและfloating-pointยังต้องตรวจ.</p></details><details id="help-topic-16-code"><summary>โค้ด</summary><p>Treeเลือกthresholdตามลำดับค่าต่อfeature จึงinvariantต่อstrictlymonotonicpositiveaffinetransformเมื่อadjustthresholdตาม. KNNใช้distanceข้ามfeaturesจึงscaleมีผล; caveatเรื่องtiesและfloating-pointยังต้องตรวจ.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-16-result"><summary>ผลการทดลอง</summary><p>Treeเลือกthresholdตามลำดับค่าต่อfeature จึงinvariantต่อstrictlymonotonicpositiveaffinetransformเมื่อadjustthresholdตาม. KNNใช้distanceข้ามfeaturesจึงscaleมีผล; caveatเรื่องtiesและfloating-pointยังต้องตรวจ.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-16"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-17" class="source-topic"><span id="source-10-decision-tree-canonical-17-missing-values" class="legacy-anchor"></span><h3>17. Missing Values</h3>
+<p>การจัดการ missing values แตกต่างตาม implementation/library</p>
+<p>อย่า assume ว่า tree ทุก library handle NaN เหมือนกัน</p>
+<p>ใน from-scratch implementation ของบทนี้:
+- NaN ถูก reject เพื่อให้ logic ชัด</p>
+<p>ใน production ต้องกำหนด missing-value policy อย่าง explicit</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-17-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>17. Missing Values</h3>
+<p>การจัดการ missing values แตกต่างตาม implementation/library</p>
+<p>อย่า assume ว่า tree ทุก library handle NaN เหมือนกัน</p>
+<p>ใน from-scratch implementation ของบทนี้:
+- NaN ถูก reject เพื่อให้ logic ชัด</p>
+<p>ใน production ต้องกำหนด missing-value policy อย่าง explicit</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-17-equation"><summary>สมการ</summary><h3>17. Missing Values</h3>
+<p>การจัดการ missing values แตกต่างตาม implementation/library</p>
+<p>อย่า assume ว่า tree ทุก library handle NaN เหมือนกัน</p>
+<p>ใน from-scratch implementation ของบทนี้:
+- NaN ถูก reject เพื่อให้ logic ชัด</p>
+<p>ใน production ต้องกำหนด missing-value policy อย่าง explicit</p></details><details id="help-topic-17-visual"><summary>ภาพและ shape</summary><h3>17. Missing Values</h3>
+<p>การจัดการ missing values แตกต่างตาม implementation/library</p>
+<p>อย่า assume ว่า tree ทุก library handle NaN เหมือนกัน</p>
+<p>ใน from-scratch implementation ของบทนี้:
+- NaN ถูก reject เพื่อให้ logic ชัด</p>
+<p>ใน production ต้องกำหนด missing-value policy อย่าง explicit</p></details><details id="help-topic-17-code"><summary>โค้ด</summary><h3>17. Missing Values</h3>
+<p>การจัดการ missing values แตกต่างตาม implementation/library</p>
+<p>อย่า assume ว่า tree ทุก library handle NaN เหมือนกัน</p>
+<p>ใน from-scratch implementation ของบทนี้:
+- NaN ถูก reject เพื่อให้ logic ชัด</p>
+<p>ใน production ต้องกำหนด missing-value policy อย่าง explicit</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-17-result"><summary>ผลการทดลอง</summary><h3>17. Missing Values</h3>
+<p>การจัดการ missing values แตกต่างตาม implementation/library</p>
+<p>อย่า assume ว่า tree ทุก library handle NaN เหมือนกัน</p>
+<p>ใน from-scratch implementation ของบทนี้:
+- NaN ถูก reject เพื่อให้ logic ชัด</p>
+<p>ใน production ต้องกำหนด missing-value policy อย่าง explicit</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-17"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-18" class="source-topic"><span id="source-10-decision-tree-canonical-18-categorical-features" class="legacy-anchor"></span><h3>18. Categorical Features</h3>
+<p>tree แบบพื้นฐานรับ numeric split</p>
+<p>categorical options:</p>
+<ul>
+<li>one-hot encode</li>
+<li>ordinal encode อย่างระวัง</li>
+<li>native categorical split ในบาง libraries เช่น LightGBM/CatBoost/XGBoost รุ่นใหม่</li>
+</ul>
+<p>Chapter 12 จะกลับมาเรื่องนี้</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-18-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>18. Categorical Features</h3>
+<p>tree แบบพื้นฐานรับ numeric split</p>
+<p>categorical options:</p>
+<ul>
+<li>one-hot encode</li>
+<li>ordinal encode อย่างระวัง</li>
+<li>native categorical split ในบาง libraries เช่น LightGBM/CatBoost/XGBoost รุ่นใหม่</li>
+</ul>
+<p>Chapter 12 จะกลับมาเรื่องนี้</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-18-equation"><summary>สมการ</summary><h3>18. Categorical Features</h3>
+<p>tree แบบพื้นฐานรับ numeric split</p>
+<p>categorical options:</p>
+<ul>
+<li>one-hot encode</li>
+<li>ordinal encode อย่างระวัง</li>
+<li>native categorical split ในบาง libraries เช่น LightGBM/CatBoost/XGBoost รุ่นใหม่</li>
+</ul>
+<p>Chapter 12 จะกลับมาเรื่องนี้</p></details><details id="help-topic-18-visual"><summary>ภาพและ shape</summary><h3>18. Categorical Features</h3>
+<p>tree แบบพื้นฐานรับ numeric split</p>
+<p>categorical options:</p>
+<ul>
+<li>one-hot encode</li>
+<li>ordinal encode อย่างระวัง</li>
+<li>native categorical split ในบาง libraries เช่น LightGBM/CatBoost/XGBoost รุ่นใหม่</li>
+</ul>
+<p>Chapter 12 จะกลับมาเรื่องนี้</p></details><details id="help-topic-18-code"><summary>โค้ด</summary><h3>18. Categorical Features</h3>
+<p>tree แบบพื้นฐานรับ numeric split</p>
+<p>categorical options:</p>
+<ul>
+<li>one-hot encode</li>
+<li>ordinal encode อย่างระวัง</li>
+<li>native categorical split ในบาง libraries เช่น LightGBM/CatBoost/XGBoost รุ่นใหม่</li>
+</ul>
+<p>Chapter 12 จะกลับมาเรื่องนี้</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-18-result"><summary>ผลการทดลอง</summary><h3>18. Categorical Features</h3>
+<p>tree แบบพื้นฐานรับ numeric split</p>
+<p>categorical options:</p>
+<ul>
+<li>one-hot encode</li>
+<li>ordinal encode อย่างระวัง</li>
+<li>native categorical split ในบาง libraries เช่น LightGBM/CatBoost/XGBoost รุ่นใหม่</li>
+</ul>
+<p>Chapter 12 จะกลับมาเรื่องนี้</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-18"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-19" class="source-topic"><span id="source-10-decision-tree-canonical-19-feature-importance" class="legacy-anchor"></span><h3>19. Feature Importance</h3>
+<p>Mean Decrease in Impurity (MDI) สรุป impurity decrease ที่ feature สร้าง</p>
+<p>ข้อจำกัด:</p>
+<ul>
+<li>biased ต่อ high-cardinality / many-split features</li>
+<li>correlated features แบ่ง importance กัน</li>
+<li>importance ≠ causality</li>
+</ul>
+<p>ใช้ permutation importance / SHAP ในบท interpretability ต่อไป</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>MDIสะสมweightedimpuritydecreaseจึงเอนหาfeaturesที่มีcandidatevaluesมาก และแบ่งimportanceระหว่างcorrelatedfeaturesไม่เสถียร. เทียบheld-outpermutationimportanceและตรวจleakage ไม่ตีความเป็นcausalimportance.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-19-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>MDIสะสมweightedimpuritydecreaseจึงเอนหาfeaturesที่มีcandidatevaluesมาก และแบ่งimportanceระหว่างcorrelatedfeaturesไม่เสถียร. เทียบheld-outpermutationimportanceและตรวจleakage ไม่ตีความเป็นcausalimportance.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-19-equation"><summary>สมการ</summary><p>MDIสะสมweightedimpuritydecreaseจึงเอนหาfeaturesที่มีcandidatevaluesมาก และแบ่งimportanceระหว่างcorrelatedfeaturesไม่เสถียร. เทียบheld-outpermutationimportanceและตรวจleakage ไม่ตีความเป็นcausalimportance.</p></details><details id="help-topic-19-visual"><summary>ภาพและ shape</summary><p>MDIสะสมweightedimpuritydecreaseจึงเอนหาfeaturesที่มีcandidatevaluesมาก และแบ่งimportanceระหว่างcorrelatedfeaturesไม่เสถียร. เทียบheld-outpermutationimportanceและตรวจleakage ไม่ตีความเป็นcausalimportance.</p></details><details id="help-topic-19-code"><summary>โค้ด</summary><p>MDIสะสมweightedimpuritydecreaseจึงเอนหาfeaturesที่มีcandidatevaluesมาก และแบ่งimportanceระหว่างcorrelatedfeaturesไม่เสถียร. เทียบheld-outpermutationimportanceและตรวจleakage ไม่ตีความเป็นcausalimportance.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-19-result"><summary>ผลการทดลอง</summary><p>MDIสะสมweightedimpuritydecreaseจึงเอนหาfeaturesที่มีcandidatevaluesมาก และแบ่งimportanceระหว่างcorrelatedfeaturesไม่เสถียร. เทียบheld-outpermutationimportanceและตรวจleakage ไม่ตีความเป็นcausalimportance.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-19"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-20" class="source-topic"><span id="source-10-decision-tree-canonical-20-complexity" class="legacy-anchor"></span><h3>20. Complexity</h3>
+<p>naive exact split search implementation ของเราเน้นการเรียนรู้ ไม่ได้ optimize</p>
+<p>production implementations ใช้ sorting/cache/histograms และ low-level optimization</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-20-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>20. Complexity</h3>
+<p>naive exact split search implementation ของเราเน้นการเรียนรู้ ไม่ได้ optimize</p>
+<p>production implementations ใช้ sorting/cache/histograms และ low-level optimization</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-20-equation"><summary>สมการ</summary><h3>20. Complexity</h3>
+<p>naive exact split search implementation ของเราเน้นการเรียนรู้ ไม่ได้ optimize</p>
+<p>production implementations ใช้ sorting/cache/histograms และ low-level optimization</p></details><details id="help-topic-20-visual"><summary>ภาพและ shape</summary><h3>20. Complexity</h3>
+<p>naive exact split search implementation ของเราเน้นการเรียนรู้ ไม่ได้ optimize</p>
+<p>production implementations ใช้ sorting/cache/histograms และ low-level optimization</p></details><details id="help-topic-20-code"><summary>โค้ด</summary><h3>20. Complexity</h3>
+<p>naive exact split search implementation ของเราเน้นการเรียนรู้ ไม่ได้ optimize</p>
+<p>production implementations ใช้ sorting/cache/histograms และ low-level optimization</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-20-result"><summary>ผลการทดลอง</summary><h3>20. Complexity</h3>
+<p>naive exact split search implementation ของเราเน้นการเรียนรู้ ไม่ได้ optimize</p>
+<p>production implementations ใช้ sorting/cache/histograms และ low-level optimization</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-20"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-21" class="source-topic"><span id="source-10-decision-tree-canonical-21-from-scratch" class="legacy-anchor"></span><h3>21. From Scratch</h3>
+<p><a href="../10-decision-tree/src/decision_tree.py">src/decision_tree.py</a></p>
+<p>ประกอบด้วย:</p>
+<ul>
+<li><code>gini_impurity</code></li>
+<li>threshold generation</li>
+<li>best split search</li>
+<li>recursive nodes</li>
+<li>predict</li>
+<li>predict_proba</li>
+</ul><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p><code>score(X,y)=mean(predict(X)==y)</code>หลังตรวจNเท่ากันและnonempty. Exactlabels[0,1]ได้1,pred[0,0]ได้.5; scoreไม่ควรเรียกfitหรือใช้yในการเลือกbranch.</p><p>Regressionleafคืนmean(y_node),splitลดweightedMSEหรือSSEด้วยreductionเดียวกัน. y=[1,1,5,5]แยกสองคู่ให้SSE0จากparentSSE16; testconstanttargetและminleafเพื่อกันoverfittingsampleเดียว.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-21-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p><code>score(X,y)=mean(predict(X)==y)</code>หลังตรวจNเท่ากันและnonempty. Exactlabels[0,1]ได้1,pred[0,0]ได้.5; scoreไม่ควรเรียกfitหรือใช้yในการเลือกbranch.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-21-equation"><summary>สมการ</summary><p><code>score(X,y)=mean(predict(X)==y)</code>หลังตรวจNเท่ากันและnonempty. Exactlabels[0,1]ได้1,pred[0,0]ได้.5; scoreไม่ควรเรียกfitหรือใช้yในการเลือกbranch.</p></details><details id="help-topic-21-visual"><summary>ภาพและ shape</summary><p><code>score(X,y)=mean(predict(X)==y)</code>หลังตรวจNเท่ากันและnonempty. Exactlabels[0,1]ได้1,pred[0,0]ได้.5; scoreไม่ควรเรียกfitหรือใช้yในการเลือกbranch.</p></details><details id="help-topic-21-code"><summary>โค้ด</summary><p><code>score(X,y)=mean(predict(X)==y)</code>หลังตรวจNเท่ากันและnonempty. Exactlabels[0,1]ได้1,pred[0,0]ได้.5; scoreไม่ควรเรียกfitหรือใช้yในการเลือกbranch.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-21-result"><summary>ผลการทดลอง</summary><p><code>score(X,y)=mean(predict(X)==y)</code>หลังตรวจNเท่ากันและnonempty. Exactlabels[0,1]ได้1,pred[0,0]ได้.5; scoreไม่ควรเรียกfitหรือใช้yในการเลือกbranch.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-21"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-22" class="source-topic"><span id="source-10-decision-tree-canonical-22-scikit-learn" class="legacy-anchor"></span><h3>22. scikit-learn</h3>
+<p>ใช้:</p>
+<pre><code class="language-python">DecisionTreeClassifier(
+    criterion=&quot;gini&quot;,
+    max_depth=...,
+    min_samples_leaf=...,
+    random_state=...
+)
+</code></pre>
+<p>สำคัญ: tune complexity บน validation/CV</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>สร้าง2Dmeshแล้วpredictด้วยtreeที่fitไว้ครั้งเดียว ระบายclassพร้อมoverlaytrain/validation. แสดงmaxdepth/minleafและunits; รูปboundaryแบบaxis-alignedเป็นผลจากsplitcriterion ไม่ใช่เส้นsmoothที่interpolateเอาเอง.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-22-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>สร้าง2Dmeshแล้วpredictด้วยtreeที่fitไว้ครั้งเดียว ระบายclassพร้อมoverlaytrain/validation. แสดงmaxdepth/minleafและunits; รูปboundaryแบบaxis-alignedเป็นผลจากsplitcriterion ไม่ใช่เส้นsmoothที่interpolateเอาเอง.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-22-equation"><summary>สมการ</summary><p>สร้าง2Dmeshแล้วpredictด้วยtreeที่fitไว้ครั้งเดียว ระบายclassพร้อมoverlaytrain/validation. แสดงmaxdepth/minleafและunits; รูปboundaryแบบaxis-alignedเป็นผลจากsplitcriterion ไม่ใช่เส้นsmoothที่interpolateเอาเอง.</p></details><details id="help-topic-22-visual"><summary>ภาพและ shape</summary><p>สร้าง2Dmeshแล้วpredictด้วยtreeที่fitไว้ครั้งเดียว ระบายclassพร้อมoverlaytrain/validation. แสดงmaxdepth/minleafและunits; รูปboundaryแบบaxis-alignedเป็นผลจากsplitcriterion ไม่ใช่เส้นsmoothที่interpolateเอาเอง.</p></details><details id="help-topic-22-code"><summary>โค้ด</summary><p>สร้าง2Dmeshแล้วpredictด้วยtreeที่fitไว้ครั้งเดียว ระบายclassพร้อมoverlaytrain/validation. แสดงmaxdepth/minleafและunits; รูปboundaryแบบaxis-alignedเป็นผลจากsplitcriterion ไม่ใช่เส้นsmoothที่interpolateเอาเอง.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-22-result"><summary>ผลการทดลอง</summary><p>สร้าง2Dmeshแล้วpredictด้วยtreeที่fitไว้ครั้งเดียว ระบายclassพร้อมoverlaytrain/validation. แสดงmaxdepth/minleafและunits; รูปboundaryแบบaxis-alignedเป็นผลจากsplitcriterion ไม่ใช่เส้นsmoothที่interpolateเอาเอง.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-22"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-23" class="source-topic"><span id="source-10-decision-tree-canonical-23-failure-cases" class="legacy-anchor"></span><h3>23. Failure Cases</h3>
+<ul>
+<li>noisy labels</li>
+<li>small dataset + deep tree</li>
+<li>unstable small data changes</li>
+<li>extrapolation ใน regression tree</li>
+<li>high-cardinality noise features</li>
+<li>leakage</li>
+<li>wrong validation protocol</li>
+</ul><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>ตัดcandidateที่n_leftหรือn_rightเป็น0หรือไม่ถึงminleafก่อนคำนวณgain. เช่นxทุกตัวเท่ากันไม่มีsplitที่valid; อย่าหาร0แล้วเลือกNaNgainเพราะsortbehavior.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-23-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>ตัดcandidateที่n_leftหรือn_rightเป็น0หรือไม่ถึงminleafก่อนคำนวณgain. เช่นxทุกตัวเท่ากันไม่มีsplitที่valid; อย่าหาร0แล้วเลือกNaNgainเพราะsortbehavior.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-23-equation"><summary>สมการ</summary><p>ตัดcandidateที่n_leftหรือn_rightเป็น0หรือไม่ถึงminleafก่อนคำนวณgain. เช่นxทุกตัวเท่ากันไม่มีsplitที่valid; อย่าหาร0แล้วเลือกNaNgainเพราะsortbehavior.</p></details><details id="help-topic-23-visual"><summary>ภาพและ shape</summary><p>ตัดcandidateที่n_leftหรือn_rightเป็น0หรือไม่ถึงminleafก่อนคำนวณgain. เช่นxทุกตัวเท่ากันไม่มีsplitที่valid; อย่าหาร0แล้วเลือกNaNgainเพราะsortbehavior.</p></details><details id="help-topic-23-code"><summary>โค้ด</summary><p>ตัดcandidateที่n_leftหรือn_rightเป็น0หรือไม่ถึงminleafก่อนคำนวณgain. เช่นxทุกตัวเท่ากันไม่มีsplitที่valid; อย่าหาร0แล้วเลือกNaNgainเพราะsortbehavior.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-23-result"><summary>ผลการทดลอง</summary><p>ตัดcandidateที่n_leftหรือn_rightเป็น0หรือไม่ถึงminleafก่อนคำนวณgain. เช่นxทุกตัวเท่ากันไม่มีsplitที่valid; อย่าหาร0แล้วเลือกNaNgainเพราะsortbehavior.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-23"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-24" class="source-topic"><span id="source-10-decision-tree-canonical-24-debugging" class="legacy-anchor"></span><h3>24. Debugging</h3>
+<p>ถ้า tree แปลก:</p>
+<ul>
+<li>print node sample count</li>
+<li>print impurity</li>
+<li>print selected feature/threshold</li>
+<li>verify children non-empty</li>
+<li>inspect depth</li>
+<li>compare stump manually</li>
+<li>test pure node</li>
+<li>test constant feature</li>
+</ul><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>ตรวจbasecases purelabels,maxdepth,min_samples และต้องมีvalidsplitที่แบ่งsamplesจริง. ถ้าthresholdเท่าค่าสุดท้ายทำให้subsetไม่เล็กลง recursionจะวน; testallfeaturesconstantต้องคืนleafทันที.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-24-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>ตรวจbasecases purelabels,maxdepth,min_samples และต้องมีvalidsplitที่แบ่งsamplesจริง. ถ้าthresholdเท่าค่าสุดท้ายทำให้subsetไม่เล็กลง recursionจะวน; testallfeaturesconstantต้องคืนleafทันที.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-24-equation"><summary>สมการ</summary><p>ตรวจbasecases purelabels,maxdepth,min_samples และต้องมีvalidsplitที่แบ่งsamplesจริง. ถ้าthresholdเท่าค่าสุดท้ายทำให้subsetไม่เล็กลง recursionจะวน; testallfeaturesconstantต้องคืนleafทันที.</p></details><details id="help-topic-24-visual"><summary>ภาพและ shape</summary><p>ตรวจbasecases purelabels,maxdepth,min_samples และต้องมีvalidsplitที่แบ่งsamplesจริง. ถ้าthresholdเท่าค่าสุดท้ายทำให้subsetไม่เล็กลง recursionจะวน; testallfeaturesconstantต้องคืนleafทันที.</p></details><details id="help-topic-24-code"><summary>โค้ด</summary><p>ตรวจbasecases purelabels,maxdepth,min_samples และต้องมีvalidsplitที่แบ่งsamplesจริง. ถ้าthresholdเท่าค่าสุดท้ายทำให้subsetไม่เล็กลง recursionจะวน; testallfeaturesconstantต้องคืนleafทันที.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-24-result"><summary>ผลการทดลอง</summary><p>ตรวจbasecases purelabels,maxdepth,min_samples และต้องมีvalidsplitที่แบ่งsamplesจริง. ถ้าthresholdเท่าค่าสุดท้ายทำให้subsetไม่เล็กลง recursionจะวน; testallfeaturesconstantต้องคืนleafทันที.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-24"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-25" class="source-topic"><span id="source-10-decision-tree-canonical-25-common-mistakes" class="legacy-anchor"></span><h3>25. Common Mistakes</h3>
+<ol>
+<li>ใช้ train accuracy เลือก depth</li>
+<li>ปล่อย tree เต็ม depth โดยไม่ validate</li>
+<li>feature importance = causality</li>
+<li>scale data โดยคิดว่าจำเป็นเสมอ</li>
+<li>threshold candidates ผิด</li>
+<li>allow empty child</li>
+<li>recurse โดยไม่มี stopping condition</li>
+<li>entropy log(0) โดยไม่ skip p=0</li>
+<li>test set ใช้เลือก pruning</li>
+<li>compare different splits</li>
+</ol><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-25-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>25. Common Mistakes</h3>
+<ol>
+<li>ใช้ train accuracy เลือก depth</li>
+<li>ปล่อย tree เต็ม depth โดยไม่ validate</li>
+<li>feature importance = causality</li>
+<li>scale data โดยคิดว่าจำเป็นเสมอ</li>
+<li>threshold candidates ผิด</li>
+<li>allow empty child</li>
+<li>recurse โดยไม่มี stopping condition</li>
+<li>entropy log(0) โดยไม่ skip p=0</li>
+<li>test set ใช้เลือก pruning</li>
+<li>compare different splits</li>
+</ol><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-25-equation"><summary>สมการ</summary><h3>25. Common Mistakes</h3>
+<ol>
+<li>ใช้ train accuracy เลือก depth</li>
+<li>ปล่อย tree เต็ม depth โดยไม่ validate</li>
+<li>feature importance = causality</li>
+<li>scale data โดยคิดว่าจำเป็นเสมอ</li>
+<li>threshold candidates ผิด</li>
+<li>allow empty child</li>
+<li>recurse โดยไม่มี stopping condition</li>
+<li>entropy log(0) โดยไม่ skip p=0</li>
+<li>test set ใช้เลือก pruning</li>
+<li>compare different splits</li>
+</ol></details><details id="help-topic-25-visual"><summary>ภาพและ shape</summary><h3>25. Common Mistakes</h3>
+<ol>
+<li>ใช้ train accuracy เลือก depth</li>
+<li>ปล่อย tree เต็ม depth โดยไม่ validate</li>
+<li>feature importance = causality</li>
+<li>scale data โดยคิดว่าจำเป็นเสมอ</li>
+<li>threshold candidates ผิด</li>
+<li>allow empty child</li>
+<li>recurse โดยไม่มี stopping condition</li>
+<li>entropy log(0) โดยไม่ skip p=0</li>
+<li>test set ใช้เลือก pruning</li>
+<li>compare different splits</li>
+</ol></details><details id="help-topic-25-code"><summary>โค้ด</summary><h3>25. Common Mistakes</h3>
+<ol>
+<li>ใช้ train accuracy เลือก depth</li>
+<li>ปล่อย tree เต็ม depth โดยไม่ validate</li>
+<li>feature importance = causality</li>
+<li>scale data โดยคิดว่าจำเป็นเสมอ</li>
+<li>threshold candidates ผิด</li>
+<li>allow empty child</li>
+<li>recurse โดยไม่มี stopping condition</li>
+<li>entropy log(0) โดยไม่ skip p=0</li>
+<li>test set ใช้เลือก pruning</li>
+<li>compare different splits</li>
+</ol><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-25-result"><summary>ผลการทดลอง</summary><h3>25. Common Mistakes</h3>
+<ol>
+<li>ใช้ train accuracy เลือก depth</li>
+<li>ปล่อย tree เต็ม depth โดยไม่ validate</li>
+<li>feature importance = causality</li>
+<li>scale data โดยคิดว่าจำเป็นเสมอ</li>
+<li>threshold candidates ผิด</li>
+<li>allow empty child</li>
+<li>recurse โดยไม่มี stopping condition</li>
+<li>entropy log(0) โดยไม่ skip p=0</li>
+<li>test set ใช้เลือก pruning</li>
+<li>compare different splits</li>
+</ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-25"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-26" class="source-topic"><span id="source-10-decision-tree-canonical-26-exercises-project" class="legacy-anchor"></span><h3>26. Exercises / Project</h3>
+<ul>
+<li><a href="../10-decision-tree/exercises/README.md">Exercises</a></li>
+<li><a href="../10-decision-tree/solutions/README.md">Solutions</a></li>
+<li><a href="../10-decision-tree/mini-project/README.md">Mini Project</a></li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-26-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>26. Exercises / Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-26-equation"><summary>สมการ</summary><h3>26. Exercises / Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-26-visual"><summary>ภาพและ shape</summary><h3>26. Exercises / Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-26-code"><summary>โค้ด</summary><h3>26. Exercises / Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-26-result"><summary>ผลการทดลอง</summary><h3>26. Exercises / Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-26"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-27" class="source-topic"><span id="source-10-decision-tree-canonical-27-checklist" class="legacy-anchor"></span><h3>27. Checklist</h3>
+<ul>
+<li>[ ] Gini</li>
+<li>[ ] Entropy</li>
+<li>[ ] weighted impurity</li>
+<li>[ ] information gain</li>
+<li>[ ] threshold generation</li>
+<li>[ ] recursion</li>
+<li>[ ] stopping rules</li>
+<li>[ ] pruning concept</li>
+<li>[ ] scaling reasoning</li>
+<li>[ ] feature-importance caveats</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-27-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>27. Checklist</h3>
+<ul>
+<li>[ ] Gini</li>
+<li>[ ] Entropy</li>
+<li>[ ] weighted impurity</li>
+<li>[ ] information gain</li>
+<li>[ ] threshold generation</li>
+<li>[ ] recursion</li>
+<li>[ ] stopping rules</li>
+<li>[ ] pruning concept</li>
+<li>[ ] scaling reasoning</li>
+<li>[ ] feature-importance caveats</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-27-equation"><summary>สมการ</summary><h3>27. Checklist</h3>
+<ul>
+<li>[ ] Gini</li>
+<li>[ ] Entropy</li>
+<li>[ ] weighted impurity</li>
+<li>[ ] information gain</li>
+<li>[ ] threshold generation</li>
+<li>[ ] recursion</li>
+<li>[ ] stopping rules</li>
+<li>[ ] pruning concept</li>
+<li>[ ] scaling reasoning</li>
+<li>[ ] feature-importance caveats</li>
+</ul></details><details id="help-topic-27-visual"><summary>ภาพและ shape</summary><h3>27. Checklist</h3>
+<ul>
+<li>[ ] Gini</li>
+<li>[ ] Entropy</li>
+<li>[ ] weighted impurity</li>
+<li>[ ] information gain</li>
+<li>[ ] threshold generation</li>
+<li>[ ] recursion</li>
+<li>[ ] stopping rules</li>
+<li>[ ] pruning concept</li>
+<li>[ ] scaling reasoning</li>
+<li>[ ] feature-importance caveats</li>
+</ul></details><details id="help-topic-27-code"><summary>โค้ด</summary><h3>27. Checklist</h3>
+<ul>
+<li>[ ] Gini</li>
+<li>[ ] Entropy</li>
+<li>[ ] weighted impurity</li>
+<li>[ ] information gain</li>
+<li>[ ] threshold generation</li>
+<li>[ ] recursion</li>
+<li>[ ] stopping rules</li>
+<li>[ ] pruning concept</li>
+<li>[ ] scaling reasoning</li>
+<li>[ ] feature-importance caveats</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-27-result"><summary>ผลการทดลอง</summary><h3>27. Checklist</h3>
+<ul>
+<li>[ ] Gini</li>
+<li>[ ] Entropy</li>
+<li>[ ] weighted impurity</li>
+<li>[ ] information gain</li>
+<li>[ ] threshold generation</li>
+<li>[ ] recursion</li>
+<li>[ ] stopping rules</li>
+<li>[ ] pruning concept</li>
+<li>[ ] scaling reasoning</li>
+<li>[ ] feature-importance caveats</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-27"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-28" class="source-topic"><span id="source-10-decision-tree-canonical-28-whats-next" class="legacy-anchor"></span><h3>28. What's Next</h3>
+<p>Chapter 11 จะลด variance ของ single tree ด้วย <strong>bagging + random feature subsets → Random Forest</strong></p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-28-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>28. What's Next</h3>
+<p>Chapter 11 จะลด variance ของ single tree ด้วย <strong>bagging + random feature subsets → Random Forest</strong></p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-28-equation"><summary>สมการ</summary><h3>28. What's Next</h3>
+<p>Chapter 11 จะลด variance ของ single tree ด้วย <strong>bagging + random feature subsets → Random Forest</strong></p></details><details id="help-topic-28-visual"><summary>ภาพและ shape</summary><h3>28. What's Next</h3>
+<p>Chapter 11 จะลด variance ของ single tree ด้วย <strong>bagging + random feature subsets → Random Forest</strong></p></details><details id="help-topic-28-code"><summary>โค้ด</summary><h3>28. What's Next</h3>
+<p>Chapter 11 จะลด variance ของ single tree ด้วย <strong>bagging + random feature subsets → Random Forest</strong></p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-28-result"><summary>ผลการทดลอง</summary><h3>28. What's Next</h3>
+<p>Chapter 11 จะลด variance ของ single tree ด้วย <strong>bagging + random feature subsets → Random Forest</strong></p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-28"> อ่านหัวข้อนี้แล้ว</label></section></section><section id="objective-evidence" class="canonical-section"><h2>พิสูจน์ความสามารถทีละ objective</h2><p>ทำกรณีใหม่ก่อนเปิด reference แล้วบันทึกงานด้านล่าง ให้ผู้ตรวจใช้ rubric ตรวจคำอธิบาย ผลคำนวณ โค้ด และข้อจำกัด บันทึกเก็บในเบราว์เซอร์เครื่องนี้ กดส่งออกเพื่อสำรองหรือส่งให้ผู้ตรวจ เว็บไม่ได้รันโค้ดหรือตัดสินผลงานแทนผู้ตรวจ</p><button type="button" class="secondary-button" data-export-evidence>ส่งออกหลักฐานบทนี้เป็น JSON</button><p role="status" id="evidence-export-status"></p><details id="ch10-objective-01" class="objective-proof"><summary>อธิบาย root / node / branch / leaf</summary><p>อธิบาย root / node / branch / leaf: ใช้กรณีในหัวข้อ Tree Mental Model เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch10-evidence-01"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch10-evidence-01-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch10-evidence-01-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch10-evidence-01-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch10-evidence-01-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch10-evidence-01-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch10-evidence-01-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch10-evidence-01-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch10-evidence-01-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>Leafเป็นnodeปลายทางที่ไม่splitต่อ คืนclassdistributionหรือค่าทำนายคงที่. Leafcounts[3,1]ให้Pclass1=.25และmajorityclass0; ไม่ใช่ความน่าจะเป็นที่calibratedแน่นอนบนข้อมูลใหม่.</p><h3>4. Tree Mental Model</h3>
+<p>Tree แบ่ง feature space เป็น regions</p>
+<pre><code class="language-text">R² feature space
+     ↓ split x₁ &lt;= t
+left region | right region
+     ↓ split again
+smaller regions
+     ↓
+leaf prediction
+</code></pre>
+<p>ใน classification แต่ละ leaf มักทำนาย majority class หรือ class probabilities จาก label distribution ใน leaf</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch10-objective-02" class="objective-proof"><summary>คำนวณ Gini impurity</summary><p>คำนวณ Gini impurity: ใช้กรณีในหัวข้อ Gini Impurity เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch10-evidence-02"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch10-evidence-02-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch10-evidence-02-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch10-evidence-02-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch10-evidence-02-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch10-evidence-02-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch10-evidence-02-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch10-evidence-02-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch10-evidence-02-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>Gini=<code>1−Σ_c p_c²</code>. labeldistribution[.75,.25]ให้1−.5625−.0625=.375; pureleafให้0. ตรวจcountsnormalizeจากnodeนั้น ไม่ใช้classpriorทั้งdataset.</p><h3>6. Gini Impurity</h3>
+<p>ถ้า class proportions คือ <code>p₁,...,p_K</code>:</p>
+<pre><code class="language-text">Gini = 1 - Σ p_k²
+</code></pre>
+<p>binary 50/50:</p>
+<pre><code class="language-text">1 - 0.5² - 0.5² = 0.5
+</code></pre>
+<p>pure node:</p>
+<pre><code class="language-text">1 - 1² = 0
+</code></pre></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch10-objective-03" class="objective-proof"><summary>คำนวณ entropy และ information gain</summary><p>คำนวณ entropy และ information gain: ใช้กรณีในหัวข้อ Entropy, Weighted Child Impurity, Information Gain เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch10-evidence-03"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch10-evidence-03-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch10-evidence-03-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch10-evidence-03-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch10-evidence-03-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch10-evidence-03-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch10-evidence-03-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch10-evidence-03-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch10-evidence-03-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>Entropy<code>−Σp_c log2 p_c</code>โดยให้0log0=0. balancedbinaryได้1bit,pureได้0; baseของlogต้องตรงตอนเทียบgain ไม่ผสมnatsกับbits.</p><h3>7. Entropy</h3>
+<pre><code class="language-text">H = -Σ p_k log₂(p_k)
+</code></pre>
+<p>pure node → 0</p>
+<p>binary 50/50 → 1 bit</p>
+<h3>8. Weighted Child Impurity</h3>
+<p>parent มี n samples</p>
+<p>left มี <code>n_L</code>, right มี <code>n_R</code></p>
+<pre><code class="language-text">I_children
+=
+(n_L/n) I(left)
++
+(n_R/n) I(right)
+</code></pre>
+<h3>9. Information Gain</h3>
+<pre><code class="language-text">Gain
+=
+I(parent)
+-
+I_children
+</code></pre>
+<p>เลือก split ที่ gain สูงสุด</p>
+<p>ถ้าใช้ Gini ก็เรียก impurity decrease ได้เช่นกัน</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch10-objective-04" class="objective-proof"><summary>หา candidate thresholds</summary><p>หา candidate thresholds: ใช้กรณีในหัวข้อ Candidate Thresholds เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch10-evidence-04"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch10-evidence-04-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch10-evidence-04-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch10-evidence-04-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch10-evidence-04-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch10-evidence-04-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch10-evidence-04-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch10-evidence-04-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch10-evidence-04-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>ตัดcandidateที่n_leftหรือn_rightเป็น0หรือไม่ถึงminleafก่อนคำนวณgain. เช่นxทุกตัวเท่ากันไม่มีsplitที่valid; อย่าหาร0แล้วเลือกNaNgainเพราะsortbehavior.</p><h3>10. Candidate Thresholds</h3>
+<p>สำหรับ numeric feature:</p>
+<pre><code class="language-text">values = [1, 2, 5, 9]
+</code></pre>
+<p>candidate thresholds ที่มีเหตุผลคือ midpoint ระหว่าง unique sorted values:</p>
+<pre><code class="language-text">1.5, 3.5, 7.0
+</code></pre>
+<p>ไม่จำเป็นต้องลองทุก real number</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch10-objective-05" class="objective-proof"><summary>implement greedy classification tree จากศูนย์</summary><p>implement greedy classification tree จากศูนย์: ใช้กรณีในหัวข้อ Greedy Learning, From Scratch เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch10-evidence-05"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch10-evidence-05-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch10-evidence-05-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch10-evidence-05-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch10-evidence-05-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch10-evidence-05-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch10-evidence-05-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch10-evidence-05-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch10-evidence-05-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>Greedyเลือกsplitที่gainดีที่สุดตอนนี้โดยไม่ค้นทุกsubtreecombination. Splitที่gainน้อยตอนต้นอาจนำไปtreeรวมดีกว่า; จึงไม่พิสูจน์globaloptimumจากการที่แต่ละnodeหาbestlocalได้.</p><h3>11. Greedy Learning</h3>
+<p>Decision Tree แบบมาตรฐานสร้างแบบ greedy:</p>
+<ol>
+<li>หา best split ที่ node ปัจจุบัน</li>
+<li>แบ่ง data</li>
+<li>recurse ซ้าย/ขวา</li>
+<li>หยุดตาม stopping rules</li>
+</ol>
+<p>greedy ไม่รับประกัน global optimal tree</p>
+<h3>21. From Scratch</h3>
+<p><a href="src/decision_tree.py">src/decision_tree.py</a></p>
+<p>ประกอบด้วย:</p>
+<ul>
+<li><code>gini_impurity</code></li>
+<li>threshold generation</li>
+<li>best split search</li>
+<li>recursive nodes</li>
+<li>predict</li>
+<li>predict_proba</li>
+</ul></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch10-objective-06" class="objective-proof"><summary>อธิบาย recursive partitioning</summary><p>อธิบาย recursive partitioning: ใช้กรณีในหัวข้อ Tree Mental Model, Greedy Learning เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch10-evidence-06"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch10-evidence-06-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch10-evidence-06-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch10-evidence-06-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch10-evidence-06-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch10-evidence-06-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch10-evidence-06-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch10-evidence-06-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch10-evidence-06-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>Leafเป็นnodeปลายทางที่ไม่splitต่อ คืนclassdistributionหรือค่าทำนายคงที่. Leafcounts[3,1]ให้Pclass1=.25และmajorityclass0; ไม่ใช่ความน่าจะเป็นที่calibratedแน่นอนบนข้อมูลใหม่.</p><h3>4. Tree Mental Model</h3>
+<p>Tree แบ่ง feature space เป็น regions</p>
+<pre><code class="language-text">R² feature space
+     ↓ split x₁ &lt;= t
+left region | right region
+     ↓ split again
+smaller regions
+     ↓
+leaf prediction
+</code></pre>
+<p>ใน classification แต่ละ leaf มักทำนาย majority class หรือ class probabilities จาก label distribution ใน leaf</p>
+<h3>11. Greedy Learning</h3>
+<p>Decision Tree แบบมาตรฐานสร้างแบบ greedy:</p>
+<ol>
+<li>หา best split ที่ node ปัจจุบัน</li>
+<li>แบ่ง data</li>
+<li>recurse ซ้าย/ขวา</li>
+<li>หยุดตาม stopping rules</li>
+</ol>
+<p>greedy ไม่รับประกัน global optimal tree</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch10-objective-07" class="objective-proof"><summary>อธิบาย max_depth / min_samples_split / min_samples_leaf</summary><p>อธิบาย max_depth / min_samples_split / min_samples_leaf: ใช้กรณีในหัวข้อ Stopping Rules เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch10-evidence-07"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch10-evidence-07-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch10-evidence-07-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch10-evidence-07-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch10-evidence-07-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch10-evidence-07-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch10-evidence-07-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch10-evidence-07-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch10-evidence-07-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>max_depthจำกัดจำนวนการsplitตามทางroot→leaf; นิยามrootdepth0ให้stumpdepth1. เพิ่มdepthเพิ่มcapacityแต่ไม่รับประกันvalidationดีขึ้น; testsต้องตรวจจริงว่าnodesไม่เกินเงื่อนไข.</p><h3>12. Stopping Rules</h3>
+<p>สำคัญ:</p>
+<ul>
+<li><code>max_depth</code></li>
+<li><code>min_samples_split</code></li>
+<li><code>min_samples_leaf</code></li>
+<li>minimum impurity decrease</li>
+<li>pure node</li>
+</ul>
+<p>ถ้าไม่ constrain tree สามารถ memorize training data ได้ง่าย</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch10-objective-08" class="objective-proof"><summary>อธิบาย pruning concept</summary><p>อธิบาย pruning concept: ใช้กรณีในหัวข้อ Pruning เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch10-evidence-08"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch10-evidence-08-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch10-evidence-08-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch10-evidence-08-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch10-evidence-08-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch10-evidence-08-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch10-evidence-08-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch10-evidence-08-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch10-evidence-08-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>ประเมินdepth/minleaf/pruningจากvalidationที่ไม่ใช้fit และตรวจduplicates/groupsleakage. เก็บtrain/validationlearningcurvesกับleafsizes; ไม่รายงานtrain100%แทนความสามารถgeneralize.</p><h3>14. Pruning</h3>
+<p>สองแนวคิด:</p>
+<h4>Pre-pruning</h4>
+<p>หยุดก่อน tree โตมาก:</p>
+<ul>
+<li>max_depth</li>
+<li>min_samples_leaf</li>
+<li>min_samples_split</li>
+</ul>
+<h4>Post-pruning</h4>
+<p>ปลูก tree ก่อนแล้วตัด branches ที่ไม่คุ้ม complexity</p>
+<p>scikit-learn รองรับ cost-complexity pruning ผ่าน <code>ccp_alpha</code></p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch10-objective-09" class="objective-proof"><summary>อธิบาย why trees usually do not need feature scaling</summary><p>อธิบาย why trees usually do not need feature scaling: ใช้กรณีในหัวข้อ Why Scaling Usually Not Needed เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch10-evidence-09"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch10-evidence-09-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch10-evidence-09-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch10-evidence-09-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch10-evidence-09-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch10-evidence-09-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch10-evidence-09-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch10-evidence-09-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch10-evidence-09-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>Treeเลือกthresholdตามลำดับค่าต่อfeature จึงinvariantต่อstrictlymonotonicpositiveaffinetransformเมื่อadjustthresholdตาม. KNNใช้distanceข้ามfeaturesจึงscaleมีผล; caveatเรื่องtiesและfloating-pointยังต้องตรวจ.</p><h3>16. Why Scaling Usually Not Needed</h3>
+<p>Tree ถาม:</p>
+<pre><code class="language-text">x_j &lt;= threshold
+</code></pre>
+<p>monotonic rescaling เช่น:</p>
+<pre><code class="language-text">meters → centimeters
+</code></pre>
+<p>เปลี่ยน threshold แต่ไม่เปลี่ยน ordering ของ values</p>
+<p>ต่างจาก KNN / linear regularization ที่ scale มีผลโดยตรง</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch10-objective-10" class="objective-proof"><summary>inspect feature importance limitations</summary><p>inspect feature importance limitations: ใช้กรณีในหัวข้อ Feature Importance เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch10-evidence-10"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch10-evidence-10-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch10-evidence-10-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch10-evidence-10-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch10-evidence-10-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch10-evidence-10-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch10-evidence-10-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch10-evidence-10-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch10-evidence-10-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>MDIสะสมweightedimpuritydecreaseจึงเอนหาfeaturesที่มีcandidatevaluesมาก และแบ่งimportanceระหว่างcorrelatedfeaturesไม่เสถียร. เทียบheld-outpermutationimportanceและตรวจleakage ไม่ตีความเป็นcausalimportance.</p><h3>19. Feature Importance</h3>
+<p>Mean Decrease in Impurity (MDI) สรุป impurity decrease ที่ feature สร้าง</p>
+<p>ข้อจำกัด:</p>
+<ul>
+<li>biased ต่อ high-cardinality / many-split features</li>
+<li>correlated features แบ่ง importance กัน</li>
+<li>importance ≠ causality</li>
+</ul>
+<p>ใช้ permutation importance / SHAP ในบท interpretability ต่อไป</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch10-objective-11" class="objective-proof"><summary>compare implementation กับ scikit-learn</summary><p>compare implementation กับ scikit-learn: ใช้กรณีในหัวข้อ scikit-learn เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch10-evidence-11"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch10-evidence-11-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch10-evidence-11-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch10-evidence-11-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch10-evidence-11-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch10-evidence-11-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch10-evidence-11-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch10-evidence-11-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch10-evidence-11-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>สร้าง2Dmeshแล้วpredictด้วยtreeที่fitไว้ครั้งเดียว ระบายclassพร้อมoverlaytrain/validation. แสดงmaxdepth/minleafและunits; รูปboundaryแบบaxis-alignedเป็นผลจากsplitcriterion ไม่ใช่เส้นsmoothที่interpolateเอาเอง.</p><h3>22. scikit-learn</h3>
+<p>ใช้:</p>
+<pre><code class="language-python">DecisionTreeClassifier(
+    criterion=&quot;gini&quot;,
+    max_depth=...,
+    min_samples_leaf=...,
+    random_state=...
+)
+</code></pre>
+<p>สำคัญ: tune complexity บน validation/CV</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch10-objective-12" class="objective-proof"><summary>Overfitting</summary><p>Overfitting: ใช้กรณีในหัวข้อ Overfitting เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch10-evidence-12"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch10-evidence-12-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch10-evidence-12-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch10-evidence-12-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch10-evidence-12-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch10-evidence-12-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch10-evidence-12-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch10-evidence-12-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch10-evidence-12-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>Deep treeสร้างregionsเล็กจนleafอาจมีsampleเดียวจึงจำlabelnoise. ใช้minleaf/depth/pruningและvalidation; trainaccuracy100%อาจเหมาะข้อมูลไร้noiseหรือoverfitก็ได้ ต้องดูheld-out.</p><h3>13. Overfitting</h3>
+<p>deep tree:</p>
+<ul>
+<li>training error ต่ำ</li>
+<li>boundary ซับซ้อน</li>
+<li>variance สูง</li>
+</ul>
+<p>shallow tree:</p>
+<ul>
+<li>bias สูงขึ้น</li>
+<li>variance ลดลง</li>
+</ul>
+<p>นี่คือเหตุผลที่ Random Forest aggregate trees หลายต้น</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details></section><section id="implementation" class="canonical-section"><h2>Implementation และ tests ที่รันบนเครื่องได้</h2><details><summary>10-decision-tree/src/decision_tree.py</summary><pre><code>&quot;&quot;&quot;Educational greedy classification tree implemented from scratch.&quot;&quot;&quot;
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+import numpy as np
+
+
+def gini_impurity(y: np.ndarray) -&gt; float:
+    labels = np.asarray(y).reshape(-1)
+    if labels.size == 0:
+        return 0.0
+    _, counts = np.unique(labels, return_counts=True)
+    probabilities = counts / counts.sum()
+    return float(1.0 - np.sum(probabilities**2))
+
+
+def entropy(y: np.ndarray) -&gt; float:
+    labels = np.asarray(y).reshape(-1)
+    if labels.size == 0:
+        return 0.0
+    _, counts = np.unique(labels, return_counts=True)
+    probabilities = counts / counts.sum()
+    return float(-np.sum(probabilities * np.log2(probabilities)))
+
+
+@dataclass
+class Node:
+    prediction: object
+    probabilities: np.ndarray
+    feature_index: int | None = None
+    threshold: float | None = None
+    left: &quot;Node | None&quot; = None
+    right: &quot;Node | None&quot; = None
+
+    @property
+    def is_leaf(self) -&gt; bool:
+        return self.feature_index is None
+
+
+class DecisionTreeClassifierFromScratch:
+    def __init__(
+        self,
+        *,
+        max_depth: int | None = None,
+        min_samples_split: int = 2,
+        min_samples_leaf: int = 1,
+        criterion: str = &quot;gini&quot;,
+    ) -&gt; None:
+        if max_depth is not None and max_depth &lt; 0:
+            raise ValueError(&quot;max_depth must be &gt;= 0 or None&quot;)
+        if min_samples_split &lt; 2:
+            raise ValueError(&quot;min_samples_split must be &gt;= 2&quot;)
+        if min_samples_leaf &lt; 1:
+            raise ValueError(&quot;min_samples_leaf must be &gt;= 1&quot;)
+        if criterion not in {&quot;gini&quot;, &quot;entropy&quot;}:
+            raise ValueError(&quot;criterion must be &#x27;gini&#x27; or &#x27;entropy&#x27;&quot;)
+
+        self.max_depth = max_depth
+        self.min_samples_split = min_samples_split
+        self.min_samples_leaf = min_samples_leaf
+        self.criterion = criterion
+        self.classes_: np.ndarray | None = None
+        self.root_: Node | None = None
+
+    def _impurity(self, y: np.ndarray) -&gt; float:
+        return gini_impurity(y) if self.criterion == &quot;gini&quot; else entropy(y)
+
+    def _leaf(self, y: np.ndarray) -&gt; Node:
+        assert self.classes_ is not None
+        counts = np.array([np.sum(y == label) for label in self.classes_], dtype=float)
+        probabilities = counts / counts.sum()
+        prediction = self.classes_[int(np.argmax(counts))]
+        return Node(prediction=prediction, probabilities=probabilities)
+
+    def _best_split(
+        self,
+        X: np.ndarray,
+        y: np.ndarray,
+    ) -&gt; tuple[int | None, float | None, float]:
+        n_samples, n_features = X.shape
+        parent_impurity = self._impurity(y)
+
+        best_feature = None
+        best_threshold = None
+        best_gain = 0.0
+
+        for feature in range(n_features):
+            values = np.unique(X[:, feature])
+            if values.size &lt; 2:
+                continue
+
+            thresholds = (values[:-1] + values[1:]) / 2.0
+
+            for threshold in thresholds:
+                left_mask = X[:, feature] &lt;= threshold
+                n_left = int(np.sum(left_mask))
+                n_right = n_samples - n_left
+
+                if (
+                    n_left &lt; self.min_samples_leaf
+                    or n_right &lt; self.min_samples_leaf
+                ):
+                    continue
+
+                left_y = y[left_mask]
+                right_y = y[~left_mask]
+
+                child_impurity = (
+                    (n_left / n_samples) * self._impurity(left_y)
+                    + (n_right / n_samples) * self._impurity(right_y)
+                )
+                gain = parent_impurity - child_impurity
+
+                if gain &gt; best_gain + 1e-15:
+                    best_gain = gain
+                    best_feature = feature
+                    best_threshold = float(threshold)
+
+        return best_feature, best_threshold, best_gain
+
+    def _build(self, X: np.ndarray, y: np.ndarray, depth: int) -&gt; Node:
+        leaf = self._leaf(y)
+
+        pure = np.unique(y).size == 1
+        too_small = y.size &lt; self.min_samples_split
+        too_deep = self.max_depth is not None and depth &gt;= self.max_depth
+
+        if pure or too_small or too_deep:
+            return leaf
+
+        feature, threshold, gain = self._best_split(X, y)
+        if feature is None or threshold is None or gain &lt;= 0.0:
+            return leaf
+
+        left_mask = X[:, feature] &lt;= threshold
+        leaf.feature_index = feature
+        leaf.threshold = threshold
+        leaf.left = self._build(X[left_mask], y[left_mask], depth + 1)
+        leaf.right = self._build(X[~left_mask], y[~left_mask], depth + 1)
+        return leaf
+
+    def fit(
+        self,
+        X: np.ndarray,
+        y: np.ndarray,
+    ) -&gt; &quot;DecisionTreeClassifierFromScratch&quot;:
+        X_array = np.asarray(X, dtype=float)
+        y_array = np.asarray(y).reshape(-1)
+
+        if X_array.ndim != 2 or X_array.shape[0] == 0:
+            raise ValueError(&quot;X must be a non-empty 2D array&quot;)
+        if X_array.shape[0] != y_array.shape[0]:
+            raise ValueError(&quot;X and y sample counts differ&quot;)
+        if not np.all(np.isfinite(X_array)):
+            raise ValueError(&quot;from-scratch tree requires finite numeric X&quot;)
+
+        self.classes_ = np.unique(y_array)
+        self.root_ = self._build(X_array, y_array, depth=0)
+        return self
+
+    def _traverse(self, row: np.ndarray) -&gt; Node:
+        if self.root_ is None:
+            raise RuntimeError(&quot;tree must be fit before prediction&quot;)
+
+        node = self.root_
+        while not node.is_leaf:
+            assert node.feature_index is not None
+            assert node.threshold is not None
+            assert node.left is not None
+            assert node.right is not None
+
+            node = (
+                node.left
+                if row[node.feature_index] &lt;= node.threshold
+                else node.right
+            )
+        return node
+
+    def predict(self, X: np.ndarray) -&gt; np.ndarray:
+        X_array = np.asarray(X, dtype=float)
+        if X_array.ndim != 2:
+            raise ValueError(&quot;X must be 2D&quot;)
+        return np.asarray([self._traverse(row).prediction for row in X_array])
+
+    def predict_proba(self, X: np.ndarray) -&gt; np.ndarray:
+        X_array = np.asarray(X, dtype=float)
+        if X_array.ndim != 2:
+            raise ValueError(&quot;X must be 2D&quot;)
+        return np.vstack([self._traverse(row).probabilities for row in X_array])
+</code></pre></details><details><summary>10-decision-tree/tests/test_decision_tree.py</summary><pre><code>from pathlib import Path
+import importlib.util
+import sys
+
+import numpy as np
+import pytest
+from sklearn.tree import DecisionTreeClassifier
+
+
+MODULE_PATH = Path(__file__).parents[1] / &quot;src&quot; / &quot;decision_tree.py&quot;
+SPEC = importlib.util.spec_from_file_location(&quot;decision_tree_course&quot;, MODULE_PATH)
+assert SPEC and SPEC.loader
+mod = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = mod
+SPEC.loader.exec_module(mod)
+
+
+def test_impurity_values() -&gt; None:
+    pure = np.array([1, 1, 1, 1])
+    mixed = np.array([0, 0, 1, 1])
+
+    assert mod.gini_impurity(pure) == pytest.approx(0.0)
+    assert mod.gini_impurity(mixed) == pytest.approx(0.5)
+    assert mod.entropy(pure) == pytest.approx(0.0)
+    assert mod.entropy(mixed) == pytest.approx(1.0)
+
+
+def test_tree_learns_simple_boundary() -&gt; None:
+    X = np.array([[0.0], [1.0], [2.0], [8.0], [9.0], [10.0]])
+    y = np.array([0, 0, 0, 1, 1, 1])
+
+    tree = mod.DecisionTreeClassifierFromScratch(max_depth=2).fit(X, y)
+
+    np.testing.assert_array_equal(tree.predict(X), y)
+
+
+def test_tree_probability_rows_sum_to_one() -&gt; None:
+    X = np.array([[0.0], [1.0], [2.0], [8.0], [9.0], [10.0]])
+    y = np.array([0, 0, 0, 1, 1, 1])
+
+    tree = mod.DecisionTreeClassifierFromScratch(max_depth=1).fit(X, y)
+    probabilities = tree.predict_proba(X)
+
+    np.testing.assert_allclose(probabilities.sum(axis=1), 1.0)
+
+
+def test_matches_sklearn_on_clear_dataset() -&gt; None:
+    rng = np.random.default_rng(17)
+    X = rng.normal(size=(250, 2))
+    y = ((X[:, 0] &gt; 0.2) &amp; (X[:, 1] &gt; -0.4)).astype(int)
+
+    ours = mod.DecisionTreeClassifierFromScratch(max_depth=3).fit(X, y)
+    sk = DecisionTreeClassifier(
+        max_depth=3,
+        criterion=&quot;gini&quot;,
+        random_state=17,
+    ).fit(X, y)
+
+    agreement = np.mean(ours.predict(X) == sk.predict(X))
+    assert agreement &gt; 0.95
+</code></pre></details></section><section id="glossary" class="canonical-section"><h2>อภิธานศัพท์ — คำไทย ความหมาย และข้อควรตรวจ</h2><dl><dt>tensor</dt><dd>เทนเซอร์: ชุดตัวเลขที่มีแกน เช่น scalar ไม่มีแกน, vector หนึ่งแกน, matrix สองแกน; shape บอกขนาดแต่ละแกน ไม่บอกความหมายของแกนจนกว่าจะระบุ</dd><dt>shape</dt><dd>รูปทรงข้อมูล: (B,T,d) หมายถึง batch × เวลา/ตำแหน่ง × features; ใช้ชื่อแกนกำกับเสมอ การ transpose เปลี่ยนแกนแต่ไม่ใช่แค่เปลี่ยนชื่อ</dd><dt>batch</dt><dd>กลุ่มตัวอย่างที่คำนวณร่วมกันหนึ่งครั้ง; B คือจำนวนตัวอย่าง ไม่ใช่จำนวน features หรือจำนวน optimizer updates</dd><dt>weight w / θ</dt><dd>น้ำหนักหรือพารามิเตอร์ที่โมเดลใช้คำนวณ; แก้ด้วยมือทำ forward ใหม่ ส่วน optimizer ต้องรับ gradient แล้วกด update จึงแก้ state</dd><dt>bias b</dt><dd>ค่าคงที่ที่บวกกับผลเชิงเส้น; regression scalar bias เพิ่ม Δ ทำให้ prediction ทุกจุดเพิ่ม Δ เท่ากัน</dd><dt>prediction ŷ</dt><dd>ค่าที่โมเดลทำนายจาก input และพารามิเตอร์ปัจจุบัน; เครื่องหมายหมวกแยกจาก target y ที่มาจากข้อมูล</dd><dt>residual e</dt><dd>ความคลาดเคลื่อน ในเว็บนี้นิยาม prediction − target; บางตำราใช้เครื่องหมายกลับกัน จึงต้องตรวจนิยามก่อนเทียบสูตร gradient</dd><dt>MSE</dt><dd>mean squared error = ผลรวม residual กำลังสองหารจำนวนรายการที่ระบุ; มีหน่วยเป็น target ยกกำลังสอง และการใช้ sum แทน mean เปลี่ยน scale gradient</dd><dt>loss L / objective J</dt><dd>จำนวนที่ optimizer ต้องการลด; objective อาจรวม data loss และ regularization จึงต้องดูองค์ประกอบและ reduction ให้ตรง implementation</dd><dt>gradient ∇ / ∂</dt><dd>เวกเตอร์ของ partial derivatives บอกอัตราเปลี่ยน loss ต่อพารามิเตอร์แต่ละตัว; ∂ ใช้เมื่อเปลี่ยนตัวหนึ่งโดยตรึงตัวอื่น</dd><dt>chain rule</dt><dd>กฎลูกโซ่: คูณอนุพันธ์ตามเส้นทาง และบวก contribution จากทุกเส้นทางที่มารวมกัน ใช้ย้อนจาก loss ถึง weights</dd><dt>learning rate η</dt><dd>ขนาดตัวคูณ gradient ใน update θnew=θ−ηg; η≥0, ศูนย์หมายถึงไม่มีการขยับพารามิเตอร์ ก้าวใหญ่เกินอาจ diverge</dd><dt>regularization λ</dt><dd>ตัวคูณค่าลงโทษ ต้อง λ≥0 ตามนิยามการลงโทษ; Ridge λΣw² เพิ่ม gradient 2λw โดยบท Regression นี้ไม่ลงโทษ bias</dd><dt>baseline</dt><dd>สถานะอ้างอิงที่ตรึงไว้สำหรับเทียบ; ต้องเก็บ snapshot ไม่อ้าง object ปัจจุบันที่แก้ตามไปด้วย</dd><dt>invariant</dt><dd>คุณสมบัติที่กลไกต้องรักษา เช่น probability รวม1, shape สอดคล้อง, queue ไม่เกิน capacity; ใช้ tests ตรวจได้มากกว่าดูภาพสวย</dd><dt>optimizer state</dt><dd>ความจำของอัลกอริทึม เช่น velocity, moments และ completed updates; คืนเฉพาะ weights ยังไม่เท่ากับเริ่มการฝึกใหม่ทั้งหมด</dd><dt>finite difference</dt><dd>ประมาณ derivative ด้วย [f(x+h)−f(x−h)]/(2h); h&gt;0, ใช้ smooth point และลองหลาย h เพื่อแยก truncation error จาก roundoff</dd><dt>softmax</dt><dd>แปลง logits เป็นความน่าจะเป็นตามแกนที่กำหนด; ลบ max ก่อน exp เพื่อความเสถียร และ fully masked row ต้องมีนโยบายชัดเจน</dd><dt>logit</dt><dd>คะแนนก่อน sigmoid/softmax ไม่ใช่ probability; อาจเป็นจำนวนจริงติดลบหรือเกิน1ได้ จึงห้ามส่งให้ loss ที่คาด probability โดยไม่แปลง</dd><dt>temperature τ / T</dt><dd>ตัวหาร logits ก่อน softmax; ต้องเป็นบวก ค่าเล็กทำ distribution แหลมขึ้น โดยไม่เท่ากับ retrain weights</dd><dt>mask</dt><dd>ตัวกำหนดตำแหน่งที่อ่านหรือคิด loss ได้; causal mask ปิดอนาคต, padding mask ปิดข้อมูลเติม, loss mask เลือก target แต่ละอย่างคนละหน้าที่</dd><dt>Q / K / V</dt><dd>query ใช้ค้นข้อมูล, key ใช้จับคู่ query, value เป็นข้อมูลที่ถูกถัวเฉลี่ย; เป็น learned projections ของ representation ไม่ใช่ป้ายความหมายตายตัว</dd><dt>head</dt><dd>ส่วนของ feature representation ที่ทำ attention แยกกัน แล้ว concat/project กลับ; ต้องตรวจ d_model หารจำนวน heads ลงตัว</dd><dt>ε-neighborhood</dt><dd>เพื่อนบ้านทั้งหมดที่มีระยะไม่เกิน ε รวมจุดตัวเองใน DBSCAN นี้; ε มีหน่วยเดียวกับพิกัด ไม่ใช่จำนวน k ที่ใช้โหวต</dd><dt>core / border / noise</dt><dd>DBSCAN core มีเพื่อนบ้านรวมตัวเองถึง min_samples; border อยู่ใกล้ core แต่เพื่อนบ้านไม่ถึง; noise ไม่ถูกเชื่อมกับ core cluster ใด</dd><dt>bootstrap</dt><dd>สุ่ม observations แบบ replacement ขนาดเท่าเดิมซ้ำหลายครั้งแล้วคำนวณ statistic ใหม่; seed ทำให้ตรวจซ้ำได้ แต่ไม่แก้สมมติฐาน IID ที่ผิด</dd><dt>confidence interval</dt><dd>ช่วงที่สร้างด้วย procedure ที่มี coverage ตามสมมติฐาน; ช่วงหนึ่งที่ได้แล้วไม่ใช่ posterior probability ของ parameter และ sample เล็กยังไม่แน่นอนมาก</dd><dt>validation / test</dt><dd>validation ใช้เลือกโมเดล/ค่าตั้ง ส่วน test ใช้ประเมินหลัง freeze การตัดสินใจ; fit preprocessing/tokenizer จาก test เป็น leakage</dd><dt>leakage</dt><dd>ข้อมูลที่ควรยังไม่รู้ไหลเข้า training/การเลือกโมเดล เช่น future feature หรือเอกสารซ้ำข้าม split ทำให้ metric ดูดีเกินการใช้งานจริง</dd><dt>queue / capacity</dt><dd>queue คือรายการรอ, capacity การให้บริการรวม = workers × service rate ตามแบบจำลอง; เพิ่ม timeout ไม่เพิ่มกำลังประมวลผล</dd><dt>state transition</dt><dd>การเปลี่ยนสถานะเมื่อเกิดเหตุการณ์ที่อนุญาต เช่น queued→active→done; ต้องระบุ guard, side effect และเหตุผลเมื่อ transition ถูกปฏิเสธ</dd><dt>latency / throughput</dt><dd>latency คือเวลาต่อคำขอ, throughput คือปริมาณงานต่อหน่วยเวลา; batching อาจเพิ่ม throughput แต่เพิ่มเวลารอ จึงต้องวัดทั้งคู่</dd><dt>idempotency</dt><dd>ทำคำขอ business operation เดิมซ้ำแล้ว side effect เกิดครั้งเดียวตาม key และ transaction protocol; ไม่ได้รับประกันจากการใช้ UUID ใหม่ทุก attempt</dd><dt>local lab</dt><dd>โปรแกรม Python และ tests ที่ผู้เรียนรันบนเครื่อง; เว็บเก็บเพียงคำยืนยันของผู้เรียน การผ่าน tests ของโค้ดต้นแบบไม่ใช่ผลตรวจโค้ดผู้เรียน</dd></dl></section></article>
+<section id="practice" class="practice-section"><span class="eyebrow">PRACTICE · DEBUG · BUILD</span><h2>พิสูจน์ด้วยการลงมือทำ</h2><div id="web-checks"></div><div class="retry-actions"><button class="secondary-button" id="retry-checks">เริ่มทำโจทย์ในเว็บใหม่</button><button class="text-button" id="undo-retry" hidden>คืนผลก่อนเริ่มใหม่</button></div><div id="exercise-content"><h2>แบบฝึก 20 ข้อ — เฉลยเฉพาะข้อ</h2><p>ทำคำตอบก่อนเปิด hints; โจทย์ปลายเปิดให้ใช้ตัวอย่างคำตอบและหลักฐานราย objective ตรวจงานจริง</p><section id="exercise-1" class="exercise-item"><h3>ข้อ 1</h3><p>Gini impurity สูตรอะไร?</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Gini Impurity: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): Gini=<code>1−Σ_c p_c²</code>. labeldistribution[.75,.25]ให้1−.5625−…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: Gini=<code>1−Σ_c p_c²</code>. labeldistribution[.75,.25]ให้1−.5625−.0625=.375; pureleafให้0. ตรวจcountsnormalize…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>Gini=<code>1−Σ_c p_c²</code>. labeldistribution[.75,.25]ให้1−.5625−.0625=.375; pureleafให้0. ตรวจcountsnormalizeจากnodeนั้น ไม่ใช้classpriorทั้งdataset.</p><p>อ้างอิง: <a href="#chapter-10/section/topic-6">Gini Impurity</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch10-exercise-01"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-2" class="exercise-item"><h3>ข้อ 2</h3><p>entropy สูตรอะไร?</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Entropy: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): Entropy<code>−Σp_c log2 p_c</code>โดยให้0log0=0. balancedb…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: Entropy<code>−Σp_c log2 p_c</code>โดยให้0log0=0. balancedbinaryได้1bit,pureได้0; baseของlogต้อง…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>Entropy<code>−Σp_c log2 p_c</code>โดยให้0log0=0. balancedbinaryได้1bit,pureได้0; baseของlogต้องตรงตอนเทียบgain ไม่ผสมnatsกับbits.</p><p>อ้างอิง: <a href="#chapter-10/section/topic-7">Entropy</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch10-exercise-02"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-3" class="exercise-item"><h3>ข้อ 3</h3><p>information gain คืออะไร?</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Weighted Child Impurity, Information Gain: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): Gain=impurity_parent−Σ_child(n_child/n_parent)*impurity_child. ลูกpureห…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: Gain=impurity_parent−Σ_child(n_child/n_parent)*impurity_child. ลูกpureหนึ่งตัวไม่ได้พอ ต้องถ่วงขนาดทั้งสองลูก; หากweightedchildi…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>Gain=impurity_parent−Σ_child(n_child/n_parent)*impurity_child. ลูกpureหนึ่งตัวไม่ได้พอ ต้องถ่วงขนาดทั้งสองลูก; หากweightedchildimpurityเท่าพ่อgain0และไม่มีประโยชน์ตามobjectiveนี้.</p><p>อ้างอิง: <a href="#chapter-10/section/topic-8">Weighted Child Impurity</a>, <a href="#chapter-10/section/topic-9">Information Gain</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch10-exercise-03"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-4" class="exercise-item"><h3>ข้อ 4</h3><p>leaf คืออะไร?</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Tree Mental Model: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): Leafเป็นnodeปลายทางที่ไม่splitต่อ คืนclassdistributionหรือค่าทำนายคง…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: Leafเป็นnodeปลายทางที่ไม่splitต่อ คืนclassdistributionหรือค่าทำนายคงที่. Leafcounts[3,1]ให้Pclass1=.25และmajorityclass0; ไม…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>Leafเป็นnodeปลายทางที่ไม่splitต่อ คืนclassdistributionหรือค่าทำนายคงที่. Leafcounts[3,1]ให้Pclass1=.25และmajorityclass0; ไม่ใช่ความน่าจะเป็นที่calibratedแน่นอนบนข้อมูลใหม่.</p><p>อ้างอิง: <a href="#chapter-10/section/topic-4">Tree Mental Model</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch10-exercise-04"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-5" class="exercise-item"><h3>ข้อ 5</h3><p>max_depth คุมอะไร?</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Stopping Rules: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): max_depthจำกัดจำนวนการsplitตามทางroot→leaf; นิยามrootdepth0ให้stumpd…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: max_depthจำกัดจำนวนการsplitตามทางroot→leaf; นิยามrootdepth0ให้stumpdepth1. เพิ่มdepthเพิ่มcapacityแต่ไม่รับประกันvalidation…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>max_depthจำกัดจำนวนการsplitตามทางroot→leaf; นิยามrootdepth0ให้stumpdepth1. เพิ่มdepthเพิ่มcapacityแต่ไม่รับประกันvalidationดีขึ้น; testsต้องตรวจจริงว่าnodesไม่เกินเงื่อนไข.</p><p>อ้างอิง: <a href="#chapter-10/section/topic-12">Stopping Rules</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch10-exercise-05"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-6" class="exercise-item"><h3>ข้อ 6</h3><p>คำนวณ Gini ของ labels [0,0,0,1]</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Gini Impurity: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): labels[0,0,0,1]มีp0=.75,p1=.25จึงGini=.375. ถ้าแบ่งเป็น[0,0…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: labels[0,0,0,1]มีp0=.75,p1=.25จึงGini=.375. ถ้าแบ่งเป็น[0,0]กับ[0,1],weightedGini=.25,gain=.125; แสดงการถ่…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>labels[0,0,0,1]มีp0=.75,p1=.25จึงGini=.375. ถ้าแบ่งเป็น[0,0]กับ[0,1],weightedGini=.25,gain=.125; แสดงการถ่วง2/4ต่อchildเพื่อจับสูตรที่ใช้averageผิด.</p><p>อ้างอิง: <a href="#chapter-10/section/topic-6">Gini Impurity</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch10-exercise-06"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-7" class="exercise-item"><h3>ข้อ 7</h3><p>ทำไม tree ไม่ต้อง standardize แบบ KNN?</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Why Scaling Usually Not Needed: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): Treeเลือกthresholdตามลำดับค่าต่อfeature จึงinvariantต่อstrictlymonotonicpositiveaf…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: Treeเลือกthresholdตามลำดับค่าต่อfeature จึงinvariantต่อstrictlymonotonicpositiveaffinetransformเมื่อadjustthresholdตาม. KNNใช้distanceข้ามfeaturesจ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>Treeเลือกthresholdตามลำดับค่าต่อfeature จึงinvariantต่อstrictlymonotonicpositiveaffinetransformเมื่อadjustthresholdตาม. KNNใช้distanceข้ามfeaturesจึงscaleมีผล; caveatเรื่องtiesและfloating-pointยังต้องตรวจ.</p><p>อ้างอิง: <a href="#chapter-10/section/topic-16">Why Scaling Usually Not Needed</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch10-exercise-07"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-8" class="exercise-item"><h3>ข้อ 8</h3><p>deep tree overfit เพราะอะไร?</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Overfitting: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): Deep treeสร้างregionsเล็กจนleafอาจมีsampleเดียวจึงจำlabelnoise. ใช้mi…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: Deep treeสร้างregionsเล็กจนleafอาจมีsampleเดียวจึงจำlabelnoise. ใช้minleaf/depth/pruningและvalidation; trainaccuracy100%อาจเห…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>Deep treeสร้างregionsเล็กจนleafอาจมีsampleเดียวจึงจำlabelnoise. ใช้minleaf/depth/pruningและvalidation; trainaccuracy100%อาจเหมาะข้อมูลไร้noiseหรือoverfitก็ได้ ต้องดูheld-out.</p><p>อ้างอิง: <a href="#chapter-10/section/topic-13">Overfitting</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch10-exercise-08"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-9" class="exercise-item"><h3>ข้อ 9</h3><p>greedy split ไม่ guarantee global optimum เพราะอะไร?</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Greedy Learning: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): Greedyเลือกsplitที่gainดีที่สุดตอนนี้โดยไม่ค้นทุกsubtreecombination.…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: Greedyเลือกsplitที่gainดีที่สุดตอนนี้โดยไม่ค้นทุกsubtreecombination. Splitที่gainน้อยตอนต้นอาจนำไปtreeรวมดีกว่า; จึงไม่พิสู…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>Greedyเลือกsplitที่gainดีที่สุดตอนนี้โดยไม่ค้นทุกsubtreecombination. Splitที่gainน้อยตอนต้นอาจนำไปtreeรวมดีกว่า; จึงไม่พิสูจน์globaloptimumจากการที่แต่ละnodeหาbestlocalได้.</p><p>อ้างอิง: <a href="#chapter-10/section/topic-11">Greedy Learning</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch10-exercise-09"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-10" class="exercise-item"><h3>ข้อ 10</h3><p>MDI feature importance มีข้อจำกัดอะไร?</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Feature Importance: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): MDIสะสมweightedimpuritydecreaseจึงเอนหาfeaturesที่มีcandidatevaluesมาก และแบ่งimp…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: MDIสะสมweightedimpuritydecreaseจึงเอนหาfeaturesที่มีcandidatevaluesมาก และแบ่งimportanceระหว่างcorrelatedfeaturesไม่เสถียร. เทียบheld-outpermutati…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>MDIสะสมweightedimpuritydecreaseจึงเอนหาfeaturesที่มีcandidatevaluesมาก และแบ่งimportanceระหว่างcorrelatedfeaturesไม่เสถียร. เทียบheld-outpermutationimportanceและตรวจleakage ไม่ตีความเป็นcausalimportance.</p><p>อ้างอิง: <a href="#chapter-10/section/topic-19">Feature Importance</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch10-exercise-10"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-11" class="exercise-item"><h3>ข้อ 11</h3><p>เพิ่ม <code>score</code></p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ From Scratch: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): <code>score(X,y)=mean(predict(X)==y)</code>หลังตรวจNเท่ากันและnonem…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: <code>score(X,y)=mean(predict(X)==y)</code>หลังตรวจNเท่ากันและnonempty. Exactlabels[0,1]ได้1,pred[0,0]ได้.5; scor…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p><code>score(X,y)=mean(predict(X)==y)</code>หลังตรวจNเท่ากันและnonempty. Exactlabels[0,1]ได้1,pred[0,0]ได้.5; scoreไม่ควรเรียกfitหรือใช้yในการเลือกbranch.</p><p>อ้างอิง: <a href="#chapter-10/section/topic-21">From Scratch</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch10-exercise-11"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-12" class="exercise-item"><h3>ข้อ 12</h3><p>เพิ่ม node sample count</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Tree Mental Model: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): เก็บn_samplesและclasscountsในnodeตอนfitเพื่อใช้weightedgain/debu…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: เก็บn_samplesและclasscountsในnodeตอนfitเพื่อใช้weightedgain/debug. rootcountต้องเท่าผลรวมchildcountsทุกsplit; testl…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>เก็บn_samplesและclasscountsในnodeตอนfitเพื่อใช้weightedgain/debug. rootcountต้องเท่าผลรวมchildcountsทุกsplit; testleafที่stopเพราะpure/minleafยังมีcountsถูกต้อง.</p><p>อ้างอิง: <a href="#chapter-10/section/topic-4">Tree Mental Model</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch10-exercise-12"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-13" class="exercise-item"><h3>ข้อ 13</h3><p>เพิ่ม <code>min_impurity_decrease</code></p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Information Gain, Stopping Rules: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): เลือกbestvalidsplitแล้วหยุดถ้าgain&lt;min_impurity_decreaseตามinequalityที่ระบุ.…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: เลือกbestvalidsplitแล้วหยุดถ้าgain&lt;min_impurity_decreaseตามinequalityที่ระบุ. Datasetที่bestgain.125กับthreshold.2ต้องไม่split; threshold0…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>เลือกbestvalidsplitแล้วหยุดถ้าgain&lt;min_impurity_decreaseตามinequalityที่ระบุ. Datasetที่bestgain.125กับthreshold.2ต้องไม่split; threshold0ยังต้องป้องกันnonpositivegain/emptychildrenตามcontract.</p><p>อ้างอิง: <a href="#chapter-10/section/topic-9">Information Gain</a>, <a href="#chapter-10/section/topic-12">Stopping Rules</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch10-exercise-13"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-14" class="exercise-item"><h3>ข้อ 14</h3><p>เพิ่ม tree pretty-printer</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Tree Mental Model: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): Pretty-printerเดินtreeแบบpreorder แสดงdepth,feature,threshold,counts,impur…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: Pretty-printerเดินtreeแบบpreorder แสดงdepth,feature,threshold,counts,impurityและleafprediction. Testsmalltreeที่thresholdรู้ด้วยมือและ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>Pretty-printerเดินtreeแบบpreorder แสดงdepth,feature,threshold,counts,impurityและleafprediction. Testsmalltreeที่thresholdรู้ด้วยมือและจัดลำดับleft/rightชัด; อย่าให้printermutatetreestate.</p><p>อ้างอิง: <a href="#chapter-10/section/topic-4">Tree Mental Model</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch10-exercise-14"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-15" class="exercise-item"><h3>ข้อ 15</h3><p>plot decision boundary ของ 2D tree</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ scikit-learn: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): สร้าง2Dmeshแล้วpredictด้วยtreeที่fitไว้ครั้งเดียว ระบายclassพร้อมoverlaytrain/vali…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: สร้าง2Dmeshแล้วpredictด้วยtreeที่fitไว้ครั้งเดียว ระบายclassพร้อมoverlaytrain/validation. แสดงmaxdepth/minleafและunits; รูปboundaryแบบaxis-alignedเป็…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>สร้าง2Dmeshแล้วpredictด้วยtreeที่fitไว้ครั้งเดียว ระบายclassพร้อมoverlaytrain/validation. แสดงmaxdepth/minleafและunits; รูปboundaryแบบaxis-alignedเป็นผลจากsplitcriterion ไม่ใช่เส้นsmoothที่interpolateเอาเอง.</p><p>อ้างอิง: <a href="#chapter-10/section/topic-22">scikit-learn</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch10-exercise-15"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-16" class="exercise-item"><h3>ข้อ 16</h3><p>recursion ไม่หยุด</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Stopping Rules, Debugging: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ตรวจbasecases purelabels,maxdepth,min_samples และต้องมีvalidsplitที่แบ่งsa…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ตรวจbasecases purelabels,maxdepth,min_samples และต้องมีvalidsplitที่แบ่งsamplesจริง. ถ้าthresholdเท่าค่าสุดท้ายทำให้subsetไม่เล็กลง re…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ตรวจbasecases purelabels,maxdepth,min_samples และต้องมีvalidsplitที่แบ่งsamplesจริง. ถ้าthresholdเท่าค่าสุดท้ายทำให้subsetไม่เล็กลง recursionจะวน; testallfeaturesconstantต้องคืนleafทันที.</p><p>อ้างอิง: <a href="#chapter-10/section/topic-12">Stopping Rules</a>, <a href="#chapter-10/section/topic-24">Debugging</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch10-exercise-16"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-17" class="exercise-item"><h3>ข้อ 17</h3><p>split สร้าง empty child</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Candidate Thresholds, Failure Cases: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ตัดcandidateที่n_leftหรือn_rightเป็น0หรือไม่ถึงminleafก่อนค…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ตัดcandidateที่n_leftหรือn_rightเป็น0หรือไม่ถึงminleafก่อนคำนวณgain. เช่นxทุกตัวเท่ากันไม่มีsplitที่valid; …</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ตัดcandidateที่n_leftหรือn_rightเป็น0หรือไม่ถึงminleafก่อนคำนวณgain. เช่นxทุกตัวเท่ากันไม่มีsplitที่valid; อย่าหาร0แล้วเลือกNaNgainเพราะsortbehavior.</p><p>อ้างอิง: <a href="#chapter-10/section/topic-10">Candidate Thresholds</a>, <a href="#chapter-10/section/topic-23">Failure Cases</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch10-exercise-17"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-18" class="exercise-item"><h3>ข้อ 18</h3><p>tree train accuracy 100% แต่ validation ต่ำมาก</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Overfitting, Pruning: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ประเมินdepth/minleaf/pruningจากvalidationที่ไม่ใช้fit และตรวจduplicate…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ประเมินdepth/minleaf/pruningจากvalidationที่ไม่ใช้fit และตรวจduplicates/groupsleakage. เก็บtrain/validationlearningcurvesกับlea…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ประเมินdepth/minleaf/pruningจากvalidationที่ไม่ใช้fit และตรวจduplicates/groupsleakage. เก็บtrain/validationlearningcurvesกับleafsizes; ไม่รายงานtrain100%แทนความสามารถgeneralize.</p><p>อ้างอิง: <a href="#chapter-10/section/topic-13">Overfitting</a>, <a href="#chapter-10/section/topic-14">Pruning</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch10-exercise-18"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-19" class="exercise-item"><h3>ข้อ 19</h3><p>implement regression tree ด้วย variance/MSE reduction</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Weighted Child Impurity, From Scratch: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): Regressionleafคืนmean(y_node),splitลดweightedMSEหรือSSEด้วยreductionเดีย…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: Regressionleafคืนmean(y_node),splitลดweightedMSEหรือSSEด้วยreductionเดียวกัน. y=[1,1,5,5]แยกสองคู่ให้SSE0จากparentSSE16; testcons…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>Regressionleafคืนmean(y_node),splitลดweightedMSEหรือSSEด้วยreductionเดียวกัน. y=[1,1,5,5]แยกสองคู่ให้SSE0จากparentSSE16; testconstanttargetและminleafเพื่อกันoverfittingsampleเดียว.</p><p>อ้างอิง: <a href="#chapter-10/section/topic-8">Weighted Child Impurity</a>, <a href="#chapter-10/section/topic-21">From Scratch</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch10-exercise-19"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-20" class="exercise-item"><h3>ข้อ 20</h3><p>implement cost-complexity pruning แบบ simplified</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Pruning: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): เปรียบเทียบcost <code>R(T)+α|leaves|</code> โดยRใช้trainingriskนิยามเดียวกัน; collapse subtre…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: เปรียบเทียบcost <code>R(T)+α|leaves|</code> โดยRใช้trainingriskนิยามเดียวกัน; collapse subtreeเมื่อcostleaf≤costsubtree. αสูงควรไม่ทำจำนวนleavesเพิ่มตามprunin…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>เปรียบเทียบcost <code>R(T)+α|leaves|</code> โดยRใช้trainingriskนิยามเดียวกัน; collapse subtreeเมื่อcostleaf≤costsubtree. αสูงควรไม่ทำจำนวนleavesเพิ่มตามpruningpath; เลือกαด้วยvalidationและทดสอบpredictionหลังcollapse.</p><p>อ้างอิง: <a href="#chapter-10/section/topic-14">Pruning</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch10-exercise-20"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section></div><div id="local-lab-content"><section id="local-lab"><h2>Local lab: Python 3.12 บน CPU</h2><p>รันจาก repository root; ใช้ Python 3.12 แยก environment สำหรับ framework ตาม requirements ของชุดบท</p><pre><code>python3.12 -m venv .venv-course
+source .venv-course/bin/activate
+python -m pip install -r requirements-batch04.txt pytest
+(cd 10-decision-tree &amp;&amp; python -m pytest tests -q -rs)</code></pre><p>ผลที่คาดหวัง: required tests ผ่านและไม่มี required test ถูก skip; GPU/integrations ที่ยังไม่รันต้องระบุแยก Python 3.15 ที่มากับเครื่องอาจใช้กับ framework wheels เหล่านี้ไม่ได้</p><h2>Mini Project — Tree Complexity Lab</h2>
+<h3>Goal</h3>
+<p>ศึกษาความสัมพันธ์ระหว่าง tree complexity กับ generalization</p>
+<h3>Required</h3>
+<p>ใช้ dataset classification เดียวกัน แล้วทดลอง:</p>
+<pre><code class="language-text">max_depth = 1,2,3,5,8,None
+min_samples_leaf = 1,2,5,10,20
+</code></pre>
+<p>เก็บ:</p>
+<ul>
+<li>train accuracy/F1</li>
+<li>validation accuracy/F1</li>
+<li>number of leaves</li>
+<li>depth</li>
+<li>fit time</li>
+</ul>
+<h3>Experiments</h3>
+<ol>
+<li>scaled vs unscaled features</li>
+<li>add irrelevant noise feature</li>
+<li>inject label noise</li>
+<li>inspect feature importances</li>
+<li>visualize decision boundary เมื่อมี 2 features</li>
+</ol>
+<h3>Report</h3>
+<p>ตอบ:</p>
+<ul>
+<li>depth จุดไหนเริ่ม overfit?</li>
+<li>min_samples_leaf เปลี่ยน boundary อย่างไร?</li>
+<li>scaling มีผลหรือไม่?</li>
+<li>noise feature ได้ importance หรือไม่?</li>
+<li>importance ตีความได้แค่ไหน?</li>
+</ul><h2>Batch 04 Integration Project — Tree Ensemble Benchmark</h2>
+<p>รวม Chapters 10–12:</p>
+<pre><code class="language-text">same tabular classification data
+        ↓
+train / validation / test
+        ↓
+Decision Tree
+Random Forest
+AdaBoost
+Gradient Boosting
+Histogram Gradient Boosting
+        ↓
+same validation metric
+        ↓
+select model
+        ↓
+one final test
+        ↓
+runtime + metrics report
+</code></pre>
+<h3>Goal</h3>
+<p>ตอบคำถามเชิงวิศวกรรม ไม่ใช่แค่ “ตัวไหน score สูงสุด”:</p>
+<ul>
+<li>single tree overfit แค่ไหน?</li>
+<li>forest ลด variance อย่างไร?</li>
+<li>boosting ลด bias อย่างไร?</li>
+<li>histogram boosting เร็วขึ้นเมื่อ data โตหรือไม่?</li>
+<li>model complexity / latency ต่างกันอย่างไร?</li>
+</ul>
+<h3>Run</h3>
+<pre><code class="language-bash">source .venv/bin/activate
+python -m pip install -r requirements-batch04.txt
+
+python integration-project-batch04/src/tree_ensemble_lab.py \
+  --output-dir reports/batch04 \
+  --seed 42
+</code></pre>
+<h3>Core Models</h3>
+<ul>
+<li>DecisionTreeClassifier</li>
+<li>RandomForestClassifier</li>
+<li>AdaBoostClassifier</li>
+<li>GradientBoostingClassifier</li>
+<li>HistGradientBoostingClassifier</li>
+</ul>
+<h3>Selection Protocol</h3>
+<ol>
+<li>generate fixed synthetic data</li>
+<li>stratified train/validation/test</li>
+<li>fit each model on train</li>
+<li>compare validation F1 + ROC-AUC</li>
+<li>select by F1 then ROC-AUC</li>
+<li>evaluate selected model on test once</li>
+<li>report fit/predict time</li>
+</ol>
+<h3>Why no StandardScaler?</h3>
+<p>Tree split models generally depend on order/thresholds rather than Euclidean distance or coefficient scale</p>
+<p>ดังนั้นโปรเจกต์นี้ intentionally ไม่ standardize เพื่อ reinforce ว่า preprocessing ต้องสัมพันธ์กับ model</p>
+<h3>Optional Extension</h3>
+<p>ติดตั้ง:</p>
+<pre><code class="language-bash">python -m pip install -r requirements-batch04-extras.txt
+</code></pre>
+<p>แล้วเพิ่ม:</p>
+<ul>
+<li>XGBoost</li>
+<li>LightGBM</li>
+<li>CatBoost</li>
+</ul>
+<p>แต่ comparison ต้องใช้ package-appropriate preprocessing และ comparable tuning budget</p>
+<h3>Required Extensions</h3>
+<ol>
+<li>repeated seeds</li>
+<li>confidence interval / score distribution</li>
+<li>OOB score ของ Random Forest</li>
+<li>staged validation curve ของ GradientBoosting</li>
+<li>early stopping comparison</li>
+<li>noise-feature experiment</li>
+<li>label-noise experiment</li>
+<li>class-imbalance experiment</li>
+<li>model-size serialization comparison</li>
+<li>optional XGBoost/LightGBM/CatBoost</li>
+</ol>
+<h3>Mastery Questions</h3>
+<ul>
+<li>bagging กับ boosting ต่างกันเชิง error correlation อย่างไร?</li>
+<li>ทำไม forest train trees independent-ish แต่ boosting ไม่ได้?</li>
+<li>max_depth มีบทบาทต่างกันใน forest vs boosting อย่างไร?</li>
+<li>HistGradientBoosting ใช้ histogram เพื่ออะไร?</li>
+<li>XGBoost ใช้ Hessian เพราะอะไร?</li>
+<li>LightGBM leaf-wise เสี่ยงอะไร?</li>
+<li>CatBoost ลด category target leakage อย่างไร?</li>
+</ul></section></div><label class="local-confirm"><input type="checkbox" id="local-lab-confirm"> ฉันรัน local lab และตรวจผลตาม rubric ด้วยตัวเองแล้ว</label><p class="local-note">สถานะนี้เป็นคำยืนยันของผู้เรียน เว็บไม่ได้รันหรือตรวจ Python บนเครื่องแทนคุณ</p></section>
+<section id="mastery-review" class="practice-section"><h2>หลักฐานตามเกณฑ์การเรียนรู้</h2><p>ทุก objective ต้องแสดงหลักฐานอธิบาย ทำนาย คำนวณ อ่าน shape/state debug และประยุกต์ พร้อมกรณีใหม่ ผลรัน source ผู้เรียนจริง และการประเมินซ้ำ เกณฑ์นี้ไม่รับประกันความเข้าใจทุกสถานการณ์ เปิด JavaScript เพื่อดูรายการที่ยังขาดและนำเข้ารายงานผู้ตรวจ</p></section><section class="coverage-section"><h2>แผนที่สิ่งที่เรียน → สิ่งที่ต้องแสดงให้ได้</h2><div id="coverage-table"></div></section><footer><span>ZERO TO ELITE AI ENGINEER · LEARNING STUDIO</span><span>อ่าน · derive · implement · debug · experiment · build</span></footer></div></main><noscript><style>.workbench,.sidebar,.reading-route,.lesson-toc,.mastery-status,#web-checks{display:none}main{margin-left:0}</style>อ่านเนื้อหา HTML ได้ตามปกติ เปิด JavaScript เพื่อใช้ห้องทดลองและตรวจคำตอบ</noscript></body></html>

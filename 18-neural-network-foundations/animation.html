@@ -1,0 +1,1472 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="บทเรียน AI Engineer ภาษาไทย พร้อมคณิตศาสตร์ทีละขั้นและห้องทดลองที่คำนวณจริง"><title>Neural Networks: จาก neuron เดียวสู่ nonlinear function · AI Engineer Studio</title><link rel="stylesheet" href="../visual-lab/assets/styles.css"><link rel="stylesheet" href="../visual-lab/assets/course.css"><script defer src="../visual-lab/assets/lessons.js"></script><script defer src="../visual-lab/assets/chapter-meta.js"></script><script defer src="../visual-lab/assets/course-math.js"></script><script defer src="../visual-lab/assets/course-models.js"></script><script defer src="../visual-lab/assets/course-models-v3.js"></script><script defer src="../visual-lab/assets/course-assessment.js"></script><script defer src="../visual-lab/assets/course-mastery.js"></script><script defer src="../visual-lab/assets/course-catalog.js"></script><script defer src="../visual-lab/assets/book-content.js"></script><script defer src="../visual-lab/assets/course-render.js"></script><script defer src="../visual-lab/assets/course-mastery-panel.js"></script><script defer src="../visual-lab/assets/quality-report.js"></script><script defer src="../visual-lab/assets/course-app.js"></script></head>
+<body data-chapter="18" data-root="../"><a class="skip-link" href="#main">ข้ามไปบทเรียน</a>
+<aside class="sidebar" id="sidebar" aria-label="เลือกบทเรียน"><a class="brand" href="../visual-lab/index.html"><span class="brand-mark">ai</span><span>AI ENGINEER<small>LEARN · DERIVE · BUILD</small></span></a><div class="sidebar-intro">อ่านให้เข้าใจ · คำนวณให้เห็น · เขียนให้เป็น</div><label class="search-box"><input id="search" type="search" placeholder="ค้นหาบท / attention" aria-label="ค้นหาบทเรียน"></label><label class="filter-label" for="phase-filter">เส้นทางการเรียน <span id="nav-count"></span></label><select id="phase-filter"><option value="">ทุก Phase</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option></select><nav id="chapter-list" class="chapter-list" aria-label="รายชื่อบท"></nav><div class="course-progress"><div><span>ผ่านโจทย์ในเว็บ</span><strong id="progress-count">0 / 80</strong></div><progress id="course-progress" max="80" value="0" aria-label="บทที่ผ่านโจทย์"></progress><a id="resume-link" href="#chapter-1">อ่านต่อจากเดิม →</a></div></aside>
+<button class="nav-backdrop" id="nav-backdrop" aria-label="ปิดเมนู" hidden></button>
+<main id="main" tabindex="-1"><header class="topbar"><div><button id="nav-toggle" class="icon-button mobile-menu" aria-label="เปิดเมนูบทเรียน" aria-expanded="false" aria-controls="sidebar">☰</button><span id="breadcrumb"></span></div><span class="local-badge"><i></i> คำนวณในเครื่อง · ไม่มี API</span></header><div class="content">
+<div class="chapter-navigation"><label for="chapter-select" class="sr-only">เลือกบทเรียน</label><select id="chapter-select"></select><div class="chapter-arrows"><button id="prev-chapter" class="icon-button" aria-label="บทก่อนหน้า">←</button><button id="next-chapter" class="icon-button" aria-label="บทถัดไป">→</button></div></div>
+<section class="chapter-hero"><div><p id="chapter-kicker" class="eyebrow"></p><h1 id="chapter-title">Neural Networks: จาก neuron เดียวสู่ nonlinear function</h1><p class="english-title" id="chapter-english"></p></div><span class="hero-symbol">f(x) ↗</span></section>
+<p id="quality-status" class="quality-status"></p><div id="mastery-status" class="mastery-status"></div><div class="reading-route"><a href="#chapter-18/section/overview">01 อ่านบทเรียน</a><a href="#workbench">02 ทดลองสมการ</a><a href="#practice">03 ฝึกและตรวจงาน</a><a href="#mastery-review">04 หลักฐานตามเกณฑ์</a></div>
+<nav id="lesson-toc" class="lesson-toc" aria-label="สารบัญบท"></nav>
+<section id="overview" class="course-overview"><span class="eyebrow">THE LEARNING CONTRACT</span><h2>เรียนบทนี้แล้วต้องทำอะไรได้</h2><p id="chapter-purpose"></p><div id="chapter-objectives"></div><div class="learning-hint">ทำนาย → เปลี่ยนทีละค่า → ตรวจตัวเลข → อธิบายเหตุผล → เขียนด้วย Python เอง</div></section>
+<section class="workbench lab-card" id="workbench" aria-label="ห้องทดลองคำนวณจริง"><div class="card-header"><div><span class="live-dot"></span><span class="eyebrow">COMPUTATION WORKBENCH</span></div><span class="simulation-label">ทุกภาพใช้ผลคำนวณชุดเดียวกัน</span></div><div class="lab-top"><label for="lab-select">เลือกกลไกที่ต้องการทดลอง</label><select id="lab-select"></select><p id="lab-question"></p></div><div class="workbench-grid"><div class="viz-column"><div class="compare-labels"><span>เส้นทึบ: ปัจจุบัน</span><span>เส้นประ: baseline ที่ตรึงไว้</span></div><div id="simulation" class="simulation"></div><div id="metrics" class="metrics"></div><div id="baseline-diff" class="baseline-diff"></div><div class="playback"><div class="playback-buttons"><button class="primary-button" id="update-once">อัปเดตหนึ่งก้าว</button><button class="secondary-button" id="train-many">▶ ฝึก 30 ก้าว</button><button class="icon-button" id="back-state" aria-label="ย้อนประวัติ">↶</button><button class="icon-button" id="forward-state" aria-label="ประวัติถัดไป">↷</button></div></div><div class="lab-secondary-actions"><button id="pin-baseline" class="text-button">ตรึง baseline ปัจจุบัน</button><button id="reset-lab" class="text-button">คืนค่าเริ่มต้น</button><button id="download-state" class="text-button">บันทึกผล JSON</button><span id="history-status"></span></div><p id="simulation-note" class="simulation-note"></p><p class="lab-error" id="lab-error" role="alert" hidden></p></div><div class="controls-column"><h3>เปลี่ยนทีละตัว แล้วสังเกตผล</h3><div id="lab-controls"></div><p class="control-note">แก้ weight ด้วยมือจะคำนวณ forward ใหม่; optimizer เปลี่ยน weights เมื่อกดอัปเดตเท่านั้น</p></div></div>
+<div class="trace-section"><div class="trace-toolbar"><h3>เดินสมการทีละ operation</h3><div><button id="trace-prev" class="icon-button" aria-label="operation ก่อนหน้า">←</button><button id="play-trace" class="secondary-button" aria-pressed="false">▶ เล่น flow</button><button id="trace-next" class="icon-button" aria-label="operation ถัดไป">→</button><span id="stage-counter"></span></div></div><label class="motion-control"><input id="reduce-motion" type="checkbox"> ลดภาพเคลื่อนไหว (หยุดการเล่นที่ค้างอยู่)</label><div id="operation-steps" class="operation-steps"></div><div id="flow-diagram" class="flow-diagram"></div><div id="active-operation" class="active-operation" aria-live="polite"></div><p class="control-note">ตัวเลขบนภาพปัดเศษเพื่อให้อ่านง่าย; บันทึก JSON เพื่อดูค่าที่ใช้คำนวณเต็ม precision</p><details open><summary>ตารางค่าระหว่างทาง — ตรวจด้วยมือได้</summary><div id="result-table"></div></details><div id="tensor-tables" class="tensor-tables"></div><details id="surface-details"><summary>ดู loss surface และเส้นทางของ w₁,b (ตรึง controls อื่น)</summary><div id="surface-chart"></div><p>surface คำนวณ objective ปัจจุบันโดยตรึง degree, penalty, ข้อมูล และ weights อื่น เส้นทางแสดงเฉพาะ snapshots ที่ค่าเหล่านี้ตรงกัน; นอกช่วง w=[−1,5], b=[−2,4] ให้ตรวจค่าจริงใน history</p></details><details><summary>ประวัติการเปลี่ยนค่า</summary><div id="history-table"></div></details></div></section>
+<article id="chapter-article" class="chapter-article"><section id="mechanism-1" class="teaching-section"><span class="section-kicker">CHAPTER 18 · ภาพ → สมการ → โค้ด</span><h2>1. neuron เริ่มจาก affine transformation</h2><h3>โจทย์และเหตุผล</h3><p>z=wx+b เป็นส่วน linear+bias แล้ว activation เพิ่ม nonlinearity ถ้าซ้อนแต่ linear layers ทั้งระบบยังเทียบเท่า affine map เดียว จึงไม่เพิ่มรูปแบบฟังก์ชันอย่างที่คิด</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Define neuron.</p><p>neuronรับx(d),w(d),b scalarคำนวณz=wᵀx+bแล้วa=φ(z); x=[1,2],w=[.5,−1],b=.5ให้z=−1,aReLU=0</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>x: input x,initial=2; w: weight w,initial=0.8; b: bias b,initial=0.5; v: output weight v,initial=1.5; target: target y,initial=3; eta: learning rate,initial=0.05; activation: activation,initial=relu</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>z=wx+b = 2.1; รับ scalar input; batch จริงเป็น matrix multiplication</li><li>relu = 2.1; local derivative กำหนดการไหลของ gradient</li><li>ŷ=vh = 3.1500000000000004; output weight ผสม hidden activation</li><li>L=(ŷ−target)² = 0.022500000000000107; ใช้ squared loss แบบหนึ่งตัวอย่าง ไม่มี mean factor เพิ่ม</li><li>dL/dw=2e · v · activation′(z) · x = [0.3000000000000007, 1.5, 1, 2, 0.9000000000000021]; คูณ derivatives ตามเส้นทาง; เมื่อ node ถูกใช้หลายทางต้องบวก contributions</li><li>w←w−ηg_w; b←b−ηg_b; v←v−ηg_v = [0.7549999999999999, 0.4774999999999999, 1.4685]; เปลี่ยน parameters พร้อมกันโดยใช้ gradients จาก forward เดียวกัน</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="neuron-forward--w-b-v-เปล--ยนฟ-">เปิดการทดลองนี้</a><p class="failure-box">sigmoid/softmaxexpใหญ่overflow ให้stableformula/logitsloss; float32activationอาจoverflowก่อนlossจึงตรวจzของชั้นแรกที่nonfinite; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>neuronรับx(d),w(d),b scalarคำนวณz=wᵀx+bแล้วa=φ(z); x=[1,2],w=[.5,−1],b=.5ให้z=−1,aReLU=0</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-1-equation"><summary>สมการ</summary><ol><li><code>z=wx+b</code> = 2.1<p>รับ scalar input; batch จริงเป็น matrix multiplication</p></li><li><code>relu</code> = 2.1<p>local derivative กำหนดการไหลของ gradient</p></li><li><code>ŷ=vh</code> = 3.1500000000000004<p>output weight ผสม hidden activation</p></li><li><code>L=(ŷ−target)²</code> = 0.022500000000000107<p>ใช้ squared loss แบบหนึ่งตัวอย่าง ไม่มี mean factor เพิ่ม</p></li><li><code>dL/dw=2e · v · activation′(z) · x</code> = [0.3000000000000007, 1.5, 1, 2, 0.9000000000000021]<p>คูณ derivatives ตามเส้นทาง; เมื่อ node ถูกใช้หลายทางต้องบวก contributions</p></li><li><code>w←w−ηg_w; b←b−ηg_b; v←v−ηg_v</code> = [0.7549999999999999, 0.4774999999999999, 1.4685]<p>เปลี่ยน parameters พร้อมกันโดยใช้ gradients จาก forward เดียวกัน</p></li></ol></details><details id="help-mechanism-1-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>z=wx+b</code> = 2.1<p>รับ scalar input; batch จริงเป็น matrix multiplication</p></li><li><code>relu</code> = 2.1<p>local derivative กำหนดการไหลของ gradient</p></li><li><code>ŷ=vh</code> = 3.1500000000000004<p>output weight ผสม hidden activation</p></li><li><code>L=(ŷ−target)²</code> = 0.022500000000000107<p>ใช้ squared loss แบบหนึ่งตัวอย่าง ไม่มี mean factor เพิ่ม</p></li><li><code>dL/dw=2e · v · activation′(z) · x</code> = [0.3000000000000007, 1.5, 1, 2, 0.9000000000000021]<p>คูณ derivatives ตามเส้นทาง; เมื่อ node ถูกใช้หลายทางต้องบวก contributions</p></li><li><code>w←w−ηg_w; b←b−ηg_b; v←v−ηg_v</code> = [0.7549999999999999, 0.4774999999999999, 1.4685]<p>เปลี่ยน parameters พร้อมกันโดยใช้ gradients จาก forward เดียวกัน</p></li></ol></details><details id="help-mechanism-1-code"><summary>โค้ด</summary><p>neuronรับx(d),w(d),b scalarคำนวณz=wᵀx+bแล้วa=φ(z); x=[1,2],w=[.5,−1],b=.5ให้z=−1,aReLU=0</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-1-result"><summary>ผลการทดลอง</summary><ol><li><code>z=wx+b</code> = 2.1<p>รับ scalar input; batch จริงเป็น matrix multiplication</p></li><li><code>relu</code> = 2.1<p>local derivative กำหนดการไหลของ gradient</p></li><li><code>ŷ=vh</code> = 3.1500000000000004<p>output weight ผสม hidden activation</p></li><li><code>L=(ŷ−target)²</code> = 0.022500000000000107<p>ใช้ squared loss แบบหนึ่งตัวอย่าง ไม่มี mean factor เพิ่ม</p></li><li><code>dL/dw=2e · v · activation′(z) · x</code> = [0.3000000000000007, 1.5, 1, 2, 0.9000000000000021]<p>คูณ derivatives ตามเส้นทาง; เมื่อ node ถูกใช้หลายทางต้องบวก contributions</p></li><li><code>w←w−ηg_w; b←b−ηg_b; v←v−ηg_v</code> = [0.7549999999999999, 0.4774999999999999, 1.4685]<p>เปลี่ยน parameters พร้อมกันโดยใช้ gradients จาก forward เดียวกัน</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-1"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-2" class="teaching-section"><span class="section-kicker">CHAPTER 18 · ภาพ → สมการ → โค้ด</span><h2>2. weight ติดลบกับ ReLU ไม่ได้เหมือนลด output ตรง ๆ</h2><h3>โจทย์และเหตุผล</h3><p>ถ้า z หลุดต่ำกว่าศูนย์ h=0 output ของเส้นทางนั้นหยุดส่งสัญญาณ และ local gradient ของ ReLU เป็น 0 การอ่าน preactivation ช่วยหา dead units</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Define linear layer with a small example.</p><p>linear layerทำneuronsหลายตัวพร้อมกัน: X(B,d)W(d,h)+b(h)→Z(B,h); B2,d3,h4ให้output(2,4)และparameters16</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>x: input x,initial=2; w: weight w,initial=-1; b: bias b,initial=0.5; v: output weight v,initial=1.5; target: target y,initial=3; eta: learning rate,initial=0.05; activation: activation,initial=relu</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>z=wx+b = -1.5; รับ scalar input; batch จริงเป็น matrix multiplication</li><li>relu = 0; local derivative กำหนดการไหลของ gradient</li><li>ŷ=vh = 0; output weight ผสม hidden activation</li><li>L=(ŷ−target)² = 9; ใช้ squared loss แบบหนึ่งตัวอย่าง ไม่มี mean factor เพิ่ม</li><li>dL/dw=2e · v · activation′(z) · x = [-6, 1.5, 0, 2, 0]; คูณ derivatives ตามเส้นทาง; เมื่อ node ถูกใช้หลายทางต้องบวก contributions</li><li>w←w−ηg_w; b←b−ηg_b; v←v−ηg_v = [-1, 0.5, 1.5]; เปลี่ยน parameters พร้อมกันโดยใช้ gradients จาก forward เดียวกัน</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="neuron-relu-ป-ด-unit-และ-gradie">เปิดการทดลองนี้</a><p class="failure-box">sigmoid/softmaxexpใหญ่overflow ให้stableformula/logitsloss; float32activationอาจoverflowก่อนlossจึงตรวจzของชั้นแรกที่nonfinite; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>linear layerทำneuronsหลายตัวพร้อมกัน: X(B,d)W(d,h)+b(h)→Z(B,h); B2,d3,h4ให้output(2,4)และparameters16</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-2-equation"><summary>สมการ</summary><ol><li><code>z=wx+b</code> = -1.5<p>รับ scalar input; batch จริงเป็น matrix multiplication</p></li><li><code>relu</code> = 0<p>local derivative กำหนดการไหลของ gradient</p></li><li><code>ŷ=vh</code> = 0<p>output weight ผสม hidden activation</p></li><li><code>L=(ŷ−target)²</code> = 9<p>ใช้ squared loss แบบหนึ่งตัวอย่าง ไม่มี mean factor เพิ่ม</p></li><li><code>dL/dw=2e · v · activation′(z) · x</code> = [-6, 1.5, 0, 2, 0]<p>คูณ derivatives ตามเส้นทาง; เมื่อ node ถูกใช้หลายทางต้องบวก contributions</p></li><li><code>w←w−ηg_w; b←b−ηg_b; v←v−ηg_v</code> = [-1, 0.5, 1.5]<p>เปลี่ยน parameters พร้อมกันโดยใช้ gradients จาก forward เดียวกัน</p></li></ol></details><details id="help-mechanism-2-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>z=wx+b</code> = -1.5<p>รับ scalar input; batch จริงเป็น matrix multiplication</p></li><li><code>relu</code> = 0<p>local derivative กำหนดการไหลของ gradient</p></li><li><code>ŷ=vh</code> = 0<p>output weight ผสม hidden activation</p></li><li><code>L=(ŷ−target)²</code> = 9<p>ใช้ squared loss แบบหนึ่งตัวอย่าง ไม่มี mean factor เพิ่ม</p></li><li><code>dL/dw=2e · v · activation′(z) · x</code> = [-6, 1.5, 0, 2, 0]<p>คูณ derivatives ตามเส้นทาง; เมื่อ node ถูกใช้หลายทางต้องบวก contributions</p></li><li><code>w←w−ηg_w; b←b−ηg_b; v←v−ηg_v</code> = [-1, 0.5, 1.5]<p>เปลี่ยน parameters พร้อมกันโดยใช้ gradients จาก forward เดียวกัน</p></li></ol></details><details id="help-mechanism-2-code"><summary>โค้ด</summary><p>linear layerทำneuronsหลายตัวพร้อมกัน: X(B,d)W(d,h)+b(h)→Z(B,h); B2,d3,h4ให้output(2,4)และparameters16</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-2-result"><summary>ผลการทดลอง</summary><ol><li><code>z=wx+b</code> = -1.5<p>รับ scalar input; batch จริงเป็น matrix multiplication</p></li><li><code>relu</code> = 0<p>local derivative กำหนดการไหลของ gradient</p></li><li><code>ŷ=vh</code> = 0<p>output weight ผสม hidden activation</p></li><li><code>L=(ŷ−target)²</code> = 9<p>ใช้ squared loss แบบหนึ่งตัวอย่าง ไม่มี mean factor เพิ่ม</p></li><li><code>dL/dw=2e · v · activation′(z) · x</code> = [-6, 1.5, 0, 2, 0]<p>คูณ derivatives ตามเส้นทาง; เมื่อ node ถูกใช้หลายทางต้องบวก contributions</p></li><li><code>w←w−ηg_w; b←b−ηg_b; v←v−ηg_v</code> = [-1, 0.5, 1.5]<p>เปลี่ยน parameters พร้อมกันโดยใช้ gradients จาก forward เดียวกัน</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-2"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-3" class="teaching-section"><span class="section-kicker">CHAPTER 18 · ภาพ → สมการ → โค้ด</span><h2>3. ขนาดของ tensors ต้องสอดคล้องทุกชั้น</h2><h3>โจทย์และเหตุผล</h3><p>batch (B,Din) คูณ W (Din,Dout) แล้วบวก bias (Dout,) อ่าน parameter count และ activation memory จาก shape ก่อนขยาย network</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Explain a common limitation involving parameter initialization.</p><p>ตั้งweightsทุกhiddenunitเหมือนกันทำให้gradเหมือนกันและไม่breaksymmetry; ใช้Hevariance2/fan_inสำหรับReLUพร้อมตรวจactivationvariance</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>x: input x,initial=2; w: weight w,initial=0.8; b: bias b,initial=0.5; v: output weight v,initial=1.5; target: target y,initial=3; eta: learning rate,initial=0.05; activation: activation,initial=tanh</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>z=wx+b = 2.1; รับ scalar input; batch จริงเป็น matrix multiplication</li><li>tanh = 0.9704519366134539; local derivative กำหนดการไหลของ gradient</li><li>ŷ=vh = 1.4556779049201807; output weight ผสม hidden activation</li><li>L=(ŷ−target)² = 2.3849307333517227; ใช้ squared loss แบบหนึ่งตัวอย่าง ไม่มี mean factor เพิ่ม</li><li>dL/dw=2e · v · activation′(z) · x = [-3.0886441901596386, 1.5, 0.058223038723196896, 2, -0.5394907508575253]; คูณ derivatives ตามเส้นทาง; เมื่อ node ถูกใช้หลายทางต้องบวก contributions</li><li>w←w−ηg_w; b←b−ηg_b; v←v−ηg_v = [0.8269745375428763, 0.5134872687714381, 1.6498690367925157]; เปลี่ยน parameters พร้อมกันโดยใช้ gradients จาก forward เดียวกัน</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="neuron-tanh-sigmoid-เปล--ยนความ">เปิดการทดลองนี้</a><p class="failure-box">sigmoid/softmaxexpใหญ่overflow ให้stableformula/logitsloss; float32activationอาจoverflowก่อนlossจึงตรวจzของชั้นแรกที่nonfinite; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>ตั้งweightsทุกhiddenunitเหมือนกันทำให้gradเหมือนกันและไม่breaksymmetry; ใช้Hevariance2/fan_inสำหรับReLUพร้อมตรวจactivationvariance</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-3-equation"><summary>สมการ</summary><ol><li><code>z=wx+b</code> = 2.1<p>รับ scalar input; batch จริงเป็น matrix multiplication</p></li><li><code>tanh</code> = 0.9704519366134539<p>local derivative กำหนดการไหลของ gradient</p></li><li><code>ŷ=vh</code> = 1.4556779049201807<p>output weight ผสม hidden activation</p></li><li><code>L=(ŷ−target)²</code> = 2.3849307333517227<p>ใช้ squared loss แบบหนึ่งตัวอย่าง ไม่มี mean factor เพิ่ม</p></li><li><code>dL/dw=2e · v · activation′(z) · x</code> = [-3.0886441901596386, 1.5, 0.058223038723196896, 2, -0.5394907508575253]<p>คูณ derivatives ตามเส้นทาง; เมื่อ node ถูกใช้หลายทางต้องบวก contributions</p></li><li><code>w←w−ηg_w; b←b−ηg_b; v←v−ηg_v</code> = [0.8269745375428763, 0.5134872687714381, 1.6498690367925157]<p>เปลี่ยน parameters พร้อมกันโดยใช้ gradients จาก forward เดียวกัน</p></li></ol></details><details id="help-mechanism-3-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>z=wx+b</code> = 2.1<p>รับ scalar input; batch จริงเป็น matrix multiplication</p></li><li><code>tanh</code> = 0.9704519366134539<p>local derivative กำหนดการไหลของ gradient</p></li><li><code>ŷ=vh</code> = 1.4556779049201807<p>output weight ผสม hidden activation</p></li><li><code>L=(ŷ−target)²</code> = 2.3849307333517227<p>ใช้ squared loss แบบหนึ่งตัวอย่าง ไม่มี mean factor เพิ่ม</p></li><li><code>dL/dw=2e · v · activation′(z) · x</code> = [-3.0886441901596386, 1.5, 0.058223038723196896, 2, -0.5394907508575253]<p>คูณ derivatives ตามเส้นทาง; เมื่อ node ถูกใช้หลายทางต้องบวก contributions</p></li><li><code>w←w−ηg_w; b←b−ηg_b; v←v−ηg_v</code> = [0.8269745375428763, 0.5134872687714381, 1.6498690367925157]<p>เปลี่ยน parameters พร้อมกันโดยใช้ gradients จาก forward เดียวกัน</p></li></ol></details><details id="help-mechanism-3-code"><summary>โค้ด</summary><p>ตั้งweightsทุกhiddenunitเหมือนกันทำให้gradเหมือนกันและไม่breaksymmetry; ใช้Hevariance2/fan_inสำหรับReLUพร้อมตรวจactivationvariance</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-3-result"><summary>ผลการทดลอง</summary><ol><li><code>z=wx+b</code> = 2.1<p>รับ scalar input; batch จริงเป็น matrix multiplication</p></li><li><code>tanh</code> = 0.9704519366134539<p>local derivative กำหนดการไหลของ gradient</p></li><li><code>ŷ=vh</code> = 1.4556779049201807<p>output weight ผสม hidden activation</p></li><li><code>L=(ŷ−target)²</code> = 2.3849307333517227<p>ใช้ squared loss แบบหนึ่งตัวอย่าง ไม่มี mean factor เพิ่ม</p></li><li><code>dL/dw=2e · v · activation′(z) · x</code> = [-3.0886441901596386, 1.5, 0.058223038723196896, 2, -0.5394907508575253]<p>คูณ derivatives ตามเส้นทาง; เมื่อ node ถูกใช้หลายทางต้องบวก contributions</p></li><li><code>w←w−ηg_w; b←b−ηg_b; v←v−ηg_v</code> = [0.8269745375428763, 0.5134872687714381, 1.6498690367925157]<p>เปลี่ยน parameters พร้อมกันโดยใช้ gradients จาก forward เดียวกัน</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-3"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="reference" class="canonical-section"><h2>เนื้อหาครบทุกหัวข้อ พร้อมแผนที่ objective</h2><nav class="source-toc"><a href="#chapter-18/section/topic-1">1. Why This Matters</a> <a href="#chapter-18/section/topic-2">2. Learning Objectives</a> <a href="#chapter-18/section/topic-3">3. Artificial Neuron</a> <a href="#chapter-18/section/topic-4">4. Weight Meaning</a> <a href="#chapter-18/section/topic-5">5. Bias</a> <a href="#chapter-18/section/topic-6">6. Perceptron</a> <a href="#chapter-18/section/topic-7">7. Perceptron Limitation</a> <a href="#chapter-18/section/topic-8">8. Dense / Linear Layer</a> <a href="#chapter-18/section/topic-9">9. Parameter Count</a> <a href="#chapter-18/section/topic-10">10. Why Nonlinearity?</a> <a href="#chapter-18/section/topic-11">11. ReLU</a> <a href="#chapter-18/section/topic-12">12. Sigmoid</a> <a href="#chapter-18/section/topic-13">13. Tanh</a> <a href="#chapter-18/section/topic-14">14. Softmax Preview</a> <a href="#chapter-18/section/topic-15">15. Hidden Layer</a> <a href="#chapter-18/section/topic-16">16. Forward Pass</a> <a href="#chapter-18/section/topic-17">17. Loss</a> <a href="#chapter-18/section/topic-18">18. Computational Graph</a> <a href="#chapter-18/section/topic-19">19. Initialization</a> <a href="#chapter-18/section/topic-20">20. Batch Dimension</a> <a href="#chapter-18/section/topic-21">21. Feature / Hidden / Output Dimensions</a> <a href="#chapter-18/section/topic-22">22. Classification Output</a> <a href="#chapter-18/section/topic-23">23. Regression Output</a> <a href="#chapter-18/section/topic-24">24. Universal Approximation — Caution</a> <a href="#chapter-18/section/topic-25">25. From Scratch</a> <a href="#chapter-18/section/topic-26">26. Training Perceptron vs Training MLP</a> <a href="#chapter-18/section/topic-27">27. Common Mistakes</a> <a href="#chapter-18/section/topic-28">28. Exercises / Project</a> <a href="#chapter-18/section/topic-29">29. Checklist</a> <a href="#chapter-18/section/topic-30">30. What&#x27;s Next</a> </nav><section id="topic-1" class="source-topic"><span id="source-18-neural-network-foundations-canonical-chapter-18-neural-network-foundations" class="legacy-anchor"></span><span id="source-18-neural-network-foundations-canonical-1-why-this-matters" class="legacy-anchor"></span><h3>1. Why This Matters</h3>
+<p>Neural Network ดูซับซ้อนเพราะมี layers จำนวนมาก แต่แก่นพื้นฐานคือ:</p>
+<pre><code class="language-text">linear transformation
+→ nonlinearity
+→ linear transformation
+→ nonlinearity
+→ ...
+</code></pre>
+<p>บทนี้ยังไม่ทำ backpropagation เต็มรูปแบบ</p>
+<p>เป้าหมายคือให้คุณเข้าใจ <strong>forward pass</strong> ทุกบรรทัดก่อน Chapter 19</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>1. Why This Matters</h3>
+<p>Neural Network ดูซับซ้อนเพราะมี layers จำนวนมาก แต่แก่นพื้นฐานคือ:</p>
+<pre><code class="language-text">linear transformation
+→ nonlinearity
+→ linear transformation
+→ nonlinearity
+→ ...
+</code></pre>
+<p>บทนี้ยังไม่ทำ backpropagation เต็มรูปแบบ</p>
+<p>เป้าหมายคือให้คุณเข้าใจ <strong>forward pass</strong> ทุกบรรทัดก่อน Chapter 19</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-1-equation"><summary>สมการ</summary><h3>1. Why This Matters</h3>
+<p>Neural Network ดูซับซ้อนเพราะมี layers จำนวนมาก แต่แก่นพื้นฐานคือ:</p>
+<pre><code class="language-text">linear transformation
+→ nonlinearity
+→ linear transformation
+→ nonlinearity
+→ ...
+</code></pre>
+<p>บทนี้ยังไม่ทำ backpropagation เต็มรูปแบบ</p>
+<p>เป้าหมายคือให้คุณเข้าใจ <strong>forward pass</strong> ทุกบรรทัดก่อน Chapter 19</p></details><details id="help-topic-1-visual"><summary>ภาพและ shape</summary><h3>1. Why This Matters</h3>
+<p>Neural Network ดูซับซ้อนเพราะมี layers จำนวนมาก แต่แก่นพื้นฐานคือ:</p>
+<pre><code class="language-text">linear transformation
+→ nonlinearity
+→ linear transformation
+→ nonlinearity
+→ ...
+</code></pre>
+<p>บทนี้ยังไม่ทำ backpropagation เต็มรูปแบบ</p>
+<p>เป้าหมายคือให้คุณเข้าใจ <strong>forward pass</strong> ทุกบรรทัดก่อน Chapter 19</p></details><details id="help-topic-1-code"><summary>โค้ด</summary><h3>1. Why This Matters</h3>
+<p>Neural Network ดูซับซ้อนเพราะมี layers จำนวนมาก แต่แก่นพื้นฐานคือ:</p>
+<pre><code class="language-text">linear transformation
+→ nonlinearity
+→ linear transformation
+→ nonlinearity
+→ ...
+</code></pre>
+<p>บทนี้ยังไม่ทำ backpropagation เต็มรูปแบบ</p>
+<p>เป้าหมายคือให้คุณเข้าใจ <strong>forward pass</strong> ทุกบรรทัดก่อน Chapter 19</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-1-result"><summary>ผลการทดลอง</summary><h3>1. Why This Matters</h3>
+<p>Neural Network ดูซับซ้อนเพราะมี layers จำนวนมาก แต่แก่นพื้นฐานคือ:</p>
+<pre><code class="language-text">linear transformation
+→ nonlinearity
+→ linear transformation
+→ nonlinearity
+→ ...
+</code></pre>
+<p>บทนี้ยังไม่ทำ backpropagation เต็มรูปแบบ</p>
+<p>เป้าหมายคือให้คุณเข้าใจ <strong>forward pass</strong> ทุกบรรทัดก่อน Chapter 19</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-1"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-2" class="source-topic"><span id="source-18-neural-network-foundations-canonical-2-learning-objectives" class="legacy-anchor"></span><h3>2. Learning Objectives</h3>
+<p>เมื่อจบบทนี้คุณควร:</p>
+<ul>
+<li>อธิบาย neuron</li>
+<li>implement perceptron</li>
+<li>อธิบาย weights / bias</li>
+<li>ใช้ matrix form ของ dense layer</li>
+<li>implement Linear layer</li>
+<li>implement ReLU / Sigmoid / Tanh</li>
+<li>อธิบาย why nonlinear activation is necessary</li>
+<li>implement MLP forward pass</li>
+<li>calculate MSE / binary cross-entropy</li>
+<li>trace tensor/array shapes</li>
+<li>understand parameter count</li>
+<li>explain computational graph concept</li>
+<li>understand initialization basics</li>
+<li>explain why XOR breaks single linear separator</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>2. Learning Objectives</h3>
+<p>เมื่อจบบทนี้คุณควร:</p>
+<ul>
+<li>อธิบาย neuron</li>
+<li>implement perceptron</li>
+<li>อธิบาย weights / bias</li>
+<li>ใช้ matrix form ของ dense layer</li>
+<li>implement Linear layer</li>
+<li>implement ReLU / Sigmoid / Tanh</li>
+<li>อธิบาย why nonlinear activation is necessary</li>
+<li>implement MLP forward pass</li>
+<li>calculate MSE / binary cross-entropy</li>
+<li>trace tensor/array shapes</li>
+<li>understand parameter count</li>
+<li>explain computational graph concept</li>
+<li>understand initialization basics</li>
+<li>explain why XOR breaks single linear separator</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-2-equation"><summary>สมการ</summary><h3>2. Learning Objectives</h3>
+<p>เมื่อจบบทนี้คุณควร:</p>
+<ul>
+<li>อธิบาย neuron</li>
+<li>implement perceptron</li>
+<li>อธิบาย weights / bias</li>
+<li>ใช้ matrix form ของ dense layer</li>
+<li>implement Linear layer</li>
+<li>implement ReLU / Sigmoid / Tanh</li>
+<li>อธิบาย why nonlinear activation is necessary</li>
+<li>implement MLP forward pass</li>
+<li>calculate MSE / binary cross-entropy</li>
+<li>trace tensor/array shapes</li>
+<li>understand parameter count</li>
+<li>explain computational graph concept</li>
+<li>understand initialization basics</li>
+<li>explain why XOR breaks single linear separator</li>
+</ul></details><details id="help-topic-2-visual"><summary>ภาพและ shape</summary><h3>2. Learning Objectives</h3>
+<p>เมื่อจบบทนี้คุณควร:</p>
+<ul>
+<li>อธิบาย neuron</li>
+<li>implement perceptron</li>
+<li>อธิบาย weights / bias</li>
+<li>ใช้ matrix form ของ dense layer</li>
+<li>implement Linear layer</li>
+<li>implement ReLU / Sigmoid / Tanh</li>
+<li>อธิบาย why nonlinear activation is necessary</li>
+<li>implement MLP forward pass</li>
+<li>calculate MSE / binary cross-entropy</li>
+<li>trace tensor/array shapes</li>
+<li>understand parameter count</li>
+<li>explain computational graph concept</li>
+<li>understand initialization basics</li>
+<li>explain why XOR breaks single linear separator</li>
+</ul></details><details id="help-topic-2-code"><summary>โค้ด</summary><h3>2. Learning Objectives</h3>
+<p>เมื่อจบบทนี้คุณควร:</p>
+<ul>
+<li>อธิบาย neuron</li>
+<li>implement perceptron</li>
+<li>อธิบาย weights / bias</li>
+<li>ใช้ matrix form ของ dense layer</li>
+<li>implement Linear layer</li>
+<li>implement ReLU / Sigmoid / Tanh</li>
+<li>อธิบาย why nonlinear activation is necessary</li>
+<li>implement MLP forward pass</li>
+<li>calculate MSE / binary cross-entropy</li>
+<li>trace tensor/array shapes</li>
+<li>understand parameter count</li>
+<li>explain computational graph concept</li>
+<li>understand initialization basics</li>
+<li>explain why XOR breaks single linear separator</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-2-result"><summary>ผลการทดลอง</summary><h3>2. Learning Objectives</h3>
+<p>เมื่อจบบทนี้คุณควร:</p>
+<ul>
+<li>อธิบาย neuron</li>
+<li>implement perceptron</li>
+<li>อธิบาย weights / bias</li>
+<li>ใช้ matrix form ของ dense layer</li>
+<li>implement Linear layer</li>
+<li>implement ReLU / Sigmoid / Tanh</li>
+<li>อธิบาย why nonlinear activation is necessary</li>
+<li>implement MLP forward pass</li>
+<li>calculate MSE / binary cross-entropy</li>
+<li>trace tensor/array shapes</li>
+<li>understand parameter count</li>
+<li>explain computational graph concept</li>
+<li>understand initialization basics</li>
+<li>explain why XOR breaks single linear separator</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-2"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-3" class="source-topic"><span id="source-18-neural-network-foundations-canonical-3-artificial-neuron" class="legacy-anchor"></span><h3>3. Artificial Neuron</h3>
+<p>input:</p>
+<pre><code class="language-text">x = [x1, x2, ..., xd]
+</code></pre>
+<p>weights:</p>
+<pre><code class="language-text">w = [w1, w2, ..., wd]
+</code></pre>
+<p>pre-activation:</p>
+<pre><code class="language-text">z = wᵀx + b
+</code></pre>
+<p>activation:</p>
+<pre><code class="language-text">a = φ(z)
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>neuronรับx(d),w(d),b scalarคำนวณz=wᵀx+bแล้วa=φ(z); x=[1,2],w=[.5,−1],b=.5ให้z=−1,aReLU=0</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>neuronรับx(d),w(d),b scalarคำนวณz=wᵀx+bแล้วa=φ(z); x=[1,2],w=[.5,−1],b=.5ให้z=−1,aReLU=0</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-3-equation"><summary>สมการ</summary><p>neuronรับx(d),w(d),b scalarคำนวณz=wᵀx+bแล้วa=φ(z); x=[1,2],w=[.5,−1],b=.5ให้z=−1,aReLU=0</p></details><details id="help-topic-3-visual"><summary>ภาพและ shape</summary><p>neuronรับx(d),w(d),b scalarคำนวณz=wᵀx+bแล้วa=φ(z); x=[1,2],w=[.5,−1],b=.5ให้z=−1,aReLU=0</p></details><details id="help-topic-3-code"><summary>โค้ด</summary><p>neuronรับx(d),w(d),b scalarคำนวณz=wᵀx+bแล้วa=φ(z); x=[1,2],w=[.5,−1],b=.5ให้z=−1,aReLU=0</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-3-result"><summary>ผลการทดลอง</summary><p>neuronรับx(d),w(d),b scalarคำนวณz=wᵀx+bแล้วa=φ(z); x=[1,2],w=[.5,−1],b=.5ให้z=−1,aReLU=0</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-3"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-4" class="source-topic"><span id="source-18-neural-network-foundations-canonical-4-weight-meaning" class="legacy-anchor"></span><h3>4. Weight Meaning</h3>
+<p>weight บอก sensitivity/direction ของ input ใน linear combination</p>
+<p>แต่:
+- learned weight ไม่เท่ากับ causality
+- scale ของ features มีผลต่อ magnitude
+- deep network weights ต้องตีความร่วมกับ layers อื่น</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>neuronเป็นหนึ่งoutput ส่วนlinearlayerรวมหลายneuronที่shareinput; weightorientationต้องประกาศ NumPy(d,h)ต่างจากtorchLinear(h,d)</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-4-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>neuronเป็นหนึ่งoutput ส่วนlinearlayerรวมหลายneuronที่shareinput; weightorientationต้องประกาศ NumPy(d,h)ต่างจากtorchLinear(h,d)</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-4-equation"><summary>สมการ</summary><p>neuronเป็นหนึ่งoutput ส่วนlinearlayerรวมหลายneuronที่shareinput; weightorientationต้องประกาศ NumPy(d,h)ต่างจากtorchLinear(h,d)</p></details><details id="help-topic-4-visual"><summary>ภาพและ shape</summary><p>neuronเป็นหนึ่งoutput ส่วนlinearlayerรวมหลายneuronที่shareinput; weightorientationต้องประกาศ NumPy(d,h)ต่างจากtorchLinear(h,d)</p></details><details id="help-topic-4-code"><summary>โค้ด</summary><p>neuronเป็นหนึ่งoutput ส่วนlinearlayerรวมหลายneuronที่shareinput; weightorientationต้องประกาศ NumPy(d,h)ต่างจากtorchLinear(h,d)</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-4-result"><summary>ผลการทดลอง</summary><p>neuronเป็นหนึ่งoutput ส่วนlinearlayerรวมหลายneuronที่shareinput; weightorientationต้องประกาศ NumPy(d,h)ต่างจากtorchLinear(h,d)</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-4"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-5" class="source-topic"><span id="source-18-neural-network-foundations-canonical-5-bias" class="legacy-anchor"></span><h3>5. Bias</h3>
+<p>bias ทำให้ boundary/activation shift ออกจาก origin</p>
+<p>ถ้าไม่มี bias:</p>
+<pre><code class="language-text">z = wᵀx
+</code></pre>
+<p>hyperplane ต้องผ่าน origin</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>neuronเป็นหนึ่งoutput ส่วนlinearlayerรวมหลายneuronที่shareinput; weightorientationต้องประกาศ NumPy(d,h)ต่างจากtorchLinear(h,d)</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-5-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>neuronเป็นหนึ่งoutput ส่วนlinearlayerรวมหลายneuronที่shareinput; weightorientationต้องประกาศ NumPy(d,h)ต่างจากtorchLinear(h,d)</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-5-equation"><summary>สมการ</summary><p>neuronเป็นหนึ่งoutput ส่วนlinearlayerรวมหลายneuronที่shareinput; weightorientationต้องประกาศ NumPy(d,h)ต่างจากtorchLinear(h,d)</p></details><details id="help-topic-5-visual"><summary>ภาพและ shape</summary><p>neuronเป็นหนึ่งoutput ส่วนlinearlayerรวมหลายneuronที่shareinput; weightorientationต้องประกาศ NumPy(d,h)ต่างจากtorchLinear(h,d)</p></details><details id="help-topic-5-code"><summary>โค้ด</summary><p>neuronเป็นหนึ่งoutput ส่วนlinearlayerรวมหลายneuronที่shareinput; weightorientationต้องประกาศ NumPy(d,h)ต่างจากtorchLinear(h,d)</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-5-result"><summary>ผลการทดลอง</summary><p>neuronเป็นหนึ่งoutput ส่วนlinearlayerรวมหลายneuronที่shareinput; weightorientationต้องประกาศ NumPy(d,h)ต่างจากtorchLinear(h,d)</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-5"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-6" class="source-topic"><span id="source-18-neural-network-foundations-canonical-6-perceptron" class="legacy-anchor"></span><h3>6. Perceptron</h3>
+<p>classic binary perceptron:</p>
+<pre><code class="language-text">ŷ = sign(wᵀx+b)
+</code></pre>
+<p>ถ้าทายผิด:</p>
+<pre><code class="language-text">w ← w + η y x
+b ← b + η y
+</code></pre>
+<p>โดย y ∈ {-1,+1}</p>
+<p>perceptron converge เมื่อ data linearly separable ภายใต้ assumptions ที่เหมาะสม</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-6-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>6. Perceptron</h3>
+<p>classic binary perceptron:</p>
+<pre><code class="language-text">ŷ = sign(wᵀx+b)
+</code></pre>
+<p>ถ้าทายผิด:</p>
+<pre><code class="language-text">w ← w + η y x
+b ← b + η y
+</code></pre>
+<p>โดย y ∈ {-1,+1}</p>
+<p>perceptron converge เมื่อ data linearly separable ภายใต้ assumptions ที่เหมาะสม</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-6-equation"><summary>สมการ</summary><h3>6. Perceptron</h3>
+<p>classic binary perceptron:</p>
+<pre><code class="language-text">ŷ = sign(wᵀx+b)
+</code></pre>
+<p>ถ้าทายผิด:</p>
+<pre><code class="language-text">w ← w + η y x
+b ← b + η y
+</code></pre>
+<p>โดย y ∈ {-1,+1}</p>
+<p>perceptron converge เมื่อ data linearly separable ภายใต้ assumptions ที่เหมาะสม</p></details><details id="help-topic-6-visual"><summary>ภาพและ shape</summary><h3>6. Perceptron</h3>
+<p>classic binary perceptron:</p>
+<pre><code class="language-text">ŷ = sign(wᵀx+b)
+</code></pre>
+<p>ถ้าทายผิด:</p>
+<pre><code class="language-text">w ← w + η y x
+b ← b + η y
+</code></pre>
+<p>โดย y ∈ {-1,+1}</p>
+<p>perceptron converge เมื่อ data linearly separable ภายใต้ assumptions ที่เหมาะสม</p></details><details id="help-topic-6-code"><summary>โค้ด</summary><h3>6. Perceptron</h3>
+<p>classic binary perceptron:</p>
+<pre><code class="language-text">ŷ = sign(wᵀx+b)
+</code></pre>
+<p>ถ้าทายผิด:</p>
+<pre><code class="language-text">w ← w + η y x
+b ← b + η y
+</code></pre>
+<p>โดย y ∈ {-1,+1}</p>
+<p>perceptron converge เมื่อ data linearly separable ภายใต้ assumptions ที่เหมาะสม</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-6-result"><summary>ผลการทดลอง</summary><h3>6. Perceptron</h3>
+<p>classic binary perceptron:</p>
+<pre><code class="language-text">ŷ = sign(wᵀx+b)
+</code></pre>
+<p>ถ้าทายผิด:</p>
+<pre><code class="language-text">w ← w + η y x
+b ← b + η y
+</code></pre>
+<p>โดย y ∈ {-1,+1}</p>
+<p>perceptron converge เมื่อ data linearly separable ภายใต้ assumptions ที่เหมาะสม</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-6"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-7" class="source-topic"><span id="source-18-neural-network-foundations-canonical-7-perceptron-limitation" class="legacy-anchor"></span><h3>7. Perceptron Limitation</h3>
+<p>XOR:</p>
+<pre><code class="language-text">0 0 → 0
+0 1 → 1
+1 0 → 1
+1 1 → 0
+</code></pre>
+<p>ไม่สามารถแยกด้วยเส้นตรงเส้นเดียว</p>
+<p>นี่เป็นเหตุผลหนึ่งที่ต้องมี hidden layers + nonlinear activations</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-7-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>7. Perceptron Limitation</h3>
+<p>XOR:</p>
+<pre><code class="language-text">0 0 → 0
+0 1 → 1
+1 0 → 1
+1 1 → 0
+</code></pre>
+<p>ไม่สามารถแยกด้วยเส้นตรงเส้นเดียว</p>
+<p>นี่เป็นเหตุผลหนึ่งที่ต้องมี hidden layers + nonlinear activations</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-7-equation"><summary>สมการ</summary><h3>7. Perceptron Limitation</h3>
+<p>XOR:</p>
+<pre><code class="language-text">0 0 → 0
+0 1 → 1
+1 0 → 1
+1 1 → 0
+</code></pre>
+<p>ไม่สามารถแยกด้วยเส้นตรงเส้นเดียว</p>
+<p>นี่เป็นเหตุผลหนึ่งที่ต้องมี hidden layers + nonlinear activations</p></details><details id="help-topic-7-visual"><summary>ภาพและ shape</summary><h3>7. Perceptron Limitation</h3>
+<p>XOR:</p>
+<pre><code class="language-text">0 0 → 0
+0 1 → 1
+1 0 → 1
+1 1 → 0
+</code></pre>
+<p>ไม่สามารถแยกด้วยเส้นตรงเส้นเดียว</p>
+<p>นี่เป็นเหตุผลหนึ่งที่ต้องมี hidden layers + nonlinear activations</p></details><details id="help-topic-7-code"><summary>โค้ด</summary><h3>7. Perceptron Limitation</h3>
+<p>XOR:</p>
+<pre><code class="language-text">0 0 → 0
+0 1 → 1
+1 0 → 1
+1 1 → 0
+</code></pre>
+<p>ไม่สามารถแยกด้วยเส้นตรงเส้นเดียว</p>
+<p>นี่เป็นเหตุผลหนึ่งที่ต้องมี hidden layers + nonlinear activations</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-7-result"><summary>ผลการทดลอง</summary><h3>7. Perceptron Limitation</h3>
+<p>XOR:</p>
+<pre><code class="language-text">0 0 → 0
+0 1 → 1
+1 0 → 1
+1 1 → 0
+</code></pre>
+<p>ไม่สามารถแยกด้วยเส้นตรงเส้นเดียว</p>
+<p>นี่เป็นเหตุผลหนึ่งที่ต้องมี hidden layers + nonlinear activations</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-7"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-8" class="source-topic"><span id="source-18-neural-network-foundations-canonical-8-dense-linear-layer" class="legacy-anchor"></span><h3>8. Dense / Linear Layer</h3>
+<p>batch input:</p>
+<pre><code class="language-text">X ∈ R^(N × Din)
+</code></pre>
+<p>weights:</p>
+<pre><code class="language-text">W ∈ R^(Din × Dout)
+</code></pre>
+<p>bias:</p>
+<pre><code class="language-text">b ∈ R^(Dout)
+</code></pre>
+<p>output:</p>
+<pre><code class="language-text">Z = XW + b
+</code></pre>
+<p>shape:</p>
+<pre><code class="language-text">(N × Din)(Din × Dout)
+→
+N × Dout
+</code></pre>
+<p>bias ใช้ broadcasting across batch</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>linear layerทำneuronsหลายตัวพร้อมกัน: X(B,d)W(d,h)+b(h)→Z(B,h); B2,d3,h4ให้output(2,4)และparameters16</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-8-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>linear layerทำneuronsหลายตัวพร้อมกัน: X(B,d)W(d,h)+b(h)→Z(B,h); B2,d3,h4ให้output(2,4)และparameters16</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-8-equation"><summary>สมการ</summary><p>linear layerทำneuronsหลายตัวพร้อมกัน: X(B,d)W(d,h)+b(h)→Z(B,h); B2,d3,h4ให้output(2,4)และparameters16</p></details><details id="help-topic-8-visual"><summary>ภาพและ shape</summary><p>linear layerทำneuronsหลายตัวพร้อมกัน: X(B,d)W(d,h)+b(h)→Z(B,h); B2,d3,h4ให้output(2,4)และparameters16</p></details><details id="help-topic-8-code"><summary>โค้ด</summary><p>linear layerทำneuronsหลายตัวพร้อมกัน: X(B,d)W(d,h)+b(h)→Z(B,h); B2,d3,h4ให้output(2,4)และparameters16</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-8-result"><summary>ผลการทดลอง</summary><p>linear layerทำneuronsหลายตัวพร้อมกัน: X(B,d)W(d,h)+b(h)→Z(B,h); B2,d3,h4ให้output(2,4)และparameters16</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-8"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-9" class="source-topic"><span id="source-18-neural-network-foundations-canonical-9-parameter-count" class="legacy-anchor"></span><h3>9. Parameter Count</h3>
+<p>dense layer:</p>
+<pre><code class="language-text">Din × Dout weights
++
+Dout biases
+</code></pre>
+<p>total:</p>
+<pre><code class="language-text">Din*Dout + Dout
+</code></pre>
+<p>ตัวอย่าง 100→64:</p>
+<pre><code class="language-text">100*64 + 64 = 6464 parameters
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>denseforward O(Bdh) และactivationO(Bh),weightsO(dh); backwardต้องเก็บintermediatesเพิ่ม; วัดB,d,hและpeakmemoryด้วยdtypeเดียว</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-9-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>denseforward O(Bdh) และactivationO(Bh),weightsO(dh); backwardต้องเก็บintermediatesเพิ่ม; วัดB,d,hและpeakmemoryด้วยdtypeเดียว</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-9-equation"><summary>สมการ</summary><p>denseforward O(Bdh) และactivationO(Bh),weightsO(dh); backwardต้องเก็บintermediatesเพิ่ม; วัดB,d,hและpeakmemoryด้วยdtypeเดียว</p></details><details id="help-topic-9-visual"><summary>ภาพและ shape</summary><p>denseforward O(Bdh) และactivationO(Bh),weightsO(dh); backwardต้องเก็บintermediatesเพิ่ม; วัดB,d,hและpeakmemoryด้วยdtypeเดียว</p></details><details id="help-topic-9-code"><summary>โค้ด</summary><p>denseforward O(Bdh) และactivationO(Bh),weightsO(dh); backwardต้องเก็บintermediatesเพิ่ม; วัดB,d,hและpeakmemoryด้วยdtypeเดียว</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-9-result"><summary>ผลการทดลอง</summary><p>denseforward O(Bdh) และactivationO(Bh),weightsO(dh); backwardต้องเก็บintermediatesเพิ่ม; วัดB,d,hและpeakmemoryด้วยdtypeเดียว</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-9"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-10" class="source-topic"><span id="source-18-neural-network-foundations-canonical-10-why-nonlinearity" class="legacy-anchor"></span><h3>10. Why Nonlinearity?</h3>
+<p>ถ้า stack linear layers:</p>
+<pre><code class="language-text">XW1W2W3
+</code></pre>
+<p>ทั้งหมดรวมเป็น matrix เดียวได้:</p>
+<pre><code class="language-text">XW_equivalent
+</code></pre>
+<p>ดังนั้น deep stack ที่ไม่มี nonlinear activation ยังคงเป็น linear transformation</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>activationเป็นnonlinearfunctionเช่นReLUmax(0,z); ถ้าทุกชั้นlinearเท่านั้นW₁W₂รวมเป็นlinearเดียว ไม่เพิ่มnonlinearcapacity</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-10-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>activationเป็นnonlinearfunctionเช่นReLUmax(0,z); ถ้าทุกชั้นlinearเท่านั้นW₁W₂รวมเป็นlinearเดียว ไม่เพิ่มnonlinearcapacity</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-10-equation"><summary>สมการ</summary><p>activationเป็นnonlinearfunctionเช่นReLUmax(0,z); ถ้าทุกชั้นlinearเท่านั้นW₁W₂รวมเป็นlinearเดียว ไม่เพิ่มnonlinearcapacity</p></details><details id="help-topic-10-visual"><summary>ภาพและ shape</summary><p>activationเป็นnonlinearfunctionเช่นReLUmax(0,z); ถ้าทุกชั้นlinearเท่านั้นW₁W₂รวมเป็นlinearเดียว ไม่เพิ่มnonlinearcapacity</p></details><details id="help-topic-10-code"><summary>โค้ด</summary><p>activationเป็นnonlinearfunctionเช่นReLUmax(0,z); ถ้าทุกชั้นlinearเท่านั้นW₁W₂รวมเป็นlinearเดียว ไม่เพิ่มnonlinearcapacity</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-10-result"><summary>ผลการทดลอง</summary><p>activationเป็นnonlinearfunctionเช่นReLUmax(0,z); ถ้าทุกชั้นlinearเท่านั้นW₁W₂รวมเป็นlinearเดียว ไม่เพิ่มnonlinearcapacity</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-10"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-11" class="source-topic"><span id="source-18-neural-network-foundations-canonical-11-relu" class="legacy-anchor"></span><h3>11. ReLU</h3>
+<pre><code class="language-text">ReLU(x)=max(0,x)
+</code></pre>
+<p>ข้อดี:
+- simple
+- cheap
+- non-saturating positive side</p>
+<p>ข้อเสีย:
+- negative side gradient 0 ใน backprop
+- dead neurons เป็นไปได้</p>
+<p>gradient จะเรียน Chapter 19</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p><code>relu=np.maximum(z,0); sigmoid=np.where(z&gt;=0,1/(1+np.exp(-np.abs(z))),np.exp(-np.abs(z))/(1+np.exp(-np.abs(z))))</code>; z=[−1,0,1]ให้ReLU[0,0,1]</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-11-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p><code>relu=np.maximum(z,0); sigmoid=np.where(z&gt;=0,1/(1+np.exp(-np.abs(z))),np.exp(-np.abs(z))/(1+np.exp(-np.abs(z))))</code>; z=[−1,0,1]ให้ReLU[0,0,1]</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-11-equation"><summary>สมการ</summary><p><code>relu=np.maximum(z,0); sigmoid=np.where(z&gt;=0,1/(1+np.exp(-np.abs(z))),np.exp(-np.abs(z))/(1+np.exp(-np.abs(z))))</code>; z=[−1,0,1]ให้ReLU[0,0,1]</p></details><details id="help-topic-11-visual"><summary>ภาพและ shape</summary><p><code>relu=np.maximum(z,0); sigmoid=np.where(z&gt;=0,1/(1+np.exp(-np.abs(z))),np.exp(-np.abs(z))/(1+np.exp(-np.abs(z))))</code>; z=[−1,0,1]ให้ReLU[0,0,1]</p></details><details id="help-topic-11-code"><summary>โค้ด</summary><p><code>relu=np.maximum(z,0); sigmoid=np.where(z&gt;=0,1/(1+np.exp(-np.abs(z))),np.exp(-np.abs(z))/(1+np.exp(-np.abs(z))))</code>; z=[−1,0,1]ให้ReLU[0,0,1]</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-11-result"><summary>ผลการทดลอง</summary><p><code>relu=np.maximum(z,0); sigmoid=np.where(z&gt;=0,1/(1+np.exp(-np.abs(z))),np.exp(-np.abs(z))/(1+np.exp(-np.abs(z))))</code>; z=[−1,0,1]ให้ReLU[0,0,1]</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-11"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-12" class="source-topic"><span id="source-18-neural-network-foundations-canonical-12-sigmoid" class="legacy-anchor"></span><h3>12. Sigmoid</h3>
+<pre><code class="language-text">σ(x)=1/(1+e^-x)
+</code></pre>
+<p>range:</p>
+<pre><code class="language-text">(0,1)
+</code></pre>
+<p>เหมาะกับ binary output probability parameterization</p>
+<p>hidden layers ปัจจุบันมักใช้ activation อื่นมากกว่า sigmoid เพราะ saturation/optimization</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p><code>relu=np.maximum(z,0); sigmoid=np.where(z&gt;=0,1/(1+np.exp(-np.abs(z))),np.exp(-np.abs(z))/(1+np.exp(-np.abs(z))))</code>; z=[−1,0,1]ให้ReLU[0,0,1]</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-12-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p><code>relu=np.maximum(z,0); sigmoid=np.where(z&gt;=0,1/(1+np.exp(-np.abs(z))),np.exp(-np.abs(z))/(1+np.exp(-np.abs(z))))</code>; z=[−1,0,1]ให้ReLU[0,0,1]</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-12-equation"><summary>สมการ</summary><p><code>relu=np.maximum(z,0); sigmoid=np.where(z&gt;=0,1/(1+np.exp(-np.abs(z))),np.exp(-np.abs(z))/(1+np.exp(-np.abs(z))))</code>; z=[−1,0,1]ให้ReLU[0,0,1]</p></details><details id="help-topic-12-visual"><summary>ภาพและ shape</summary><p><code>relu=np.maximum(z,0); sigmoid=np.where(z&gt;=0,1/(1+np.exp(-np.abs(z))),np.exp(-np.abs(z))/(1+np.exp(-np.abs(z))))</code>; z=[−1,0,1]ให้ReLU[0,0,1]</p></details><details id="help-topic-12-code"><summary>โค้ด</summary><p><code>relu=np.maximum(z,0); sigmoid=np.where(z&gt;=0,1/(1+np.exp(-np.abs(z))),np.exp(-np.abs(z))/(1+np.exp(-np.abs(z))))</code>; z=[−1,0,1]ให้ReLU[0,0,1]</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-12-result"><summary>ผลการทดลอง</summary><p><code>relu=np.maximum(z,0); sigmoid=np.where(z&gt;=0,1/(1+np.exp(-np.abs(z))),np.exp(-np.abs(z))/(1+np.exp(-np.abs(z))))</code>; z=[−1,0,1]ให้ReLU[0,0,1]</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-12"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-13" class="source-topic"><span id="source-18-neural-network-foundations-canonical-13-tanh" class="legacy-anchor"></span><h3>13. Tanh</h3>
+<pre><code class="language-text">tanh(x)
+</code></pre>
+<p>range:</p>
+<pre><code class="language-text">(-1,1)
+</code></pre>
+<p>zero-centered กว่า sigmoid แต่ยัง saturate</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p><code>relu=np.maximum(z,0); sigmoid=np.where(z&gt;=0,1/(1+np.exp(-np.abs(z))),np.exp(-np.abs(z))/(1+np.exp(-np.abs(z))))</code>; z=[−1,0,1]ให้ReLU[0,0,1]</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-13-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p><code>relu=np.maximum(z,0); sigmoid=np.where(z&gt;=0,1/(1+np.exp(-np.abs(z))),np.exp(-np.abs(z))/(1+np.exp(-np.abs(z))))</code>; z=[−1,0,1]ให้ReLU[0,0,1]</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-13-equation"><summary>สมการ</summary><p><code>relu=np.maximum(z,0); sigmoid=np.where(z&gt;=0,1/(1+np.exp(-np.abs(z))),np.exp(-np.abs(z))/(1+np.exp(-np.abs(z))))</code>; z=[−1,0,1]ให้ReLU[0,0,1]</p></details><details id="help-topic-13-visual"><summary>ภาพและ shape</summary><p><code>relu=np.maximum(z,0); sigmoid=np.where(z&gt;=0,1/(1+np.exp(-np.abs(z))),np.exp(-np.abs(z))/(1+np.exp(-np.abs(z))))</code>; z=[−1,0,1]ให้ReLU[0,0,1]</p></details><details id="help-topic-13-code"><summary>โค้ด</summary><p><code>relu=np.maximum(z,0); sigmoid=np.where(z&gt;=0,1/(1+np.exp(-np.abs(z))),np.exp(-np.abs(z))/(1+np.exp(-np.abs(z))))</code>; z=[−1,0,1]ให้ReLU[0,0,1]</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-13-result"><summary>ผลการทดลอง</summary><p><code>relu=np.maximum(z,0); sigmoid=np.where(z&gt;=0,1/(1+np.exp(-np.abs(z))),np.exp(-np.abs(z))/(1+np.exp(-np.abs(z))))</code>; z=[−1,0,1]ให้ReLU[0,0,1]</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-13"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-14" class="source-topic"><span id="source-18-neural-network-foundations-canonical-14-softmax-preview" class="legacy-anchor"></span><h3>14. Softmax Preview</h3>
+<p>multiclass logits:</p>
+<pre><code class="language-text">z1,...,zK
+</code></pre>
+<p>softmax:</p>
+<pre><code class="language-text">p_k = exp(z_k)/Σ_j exp(z_j)
+</code></pre>
+<p>ต้องใช้ stable version:</p>
+<pre><code class="language-text">z ← z - max(z)
+</code></pre>
+<p>รายละเอียด cross-entropy/backprop จะเรียนต่อ</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-14-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>14. Softmax Preview</h3>
+<p>multiclass logits:</p>
+<pre><code class="language-text">z1,...,zK
+</code></pre>
+<p>softmax:</p>
+<pre><code class="language-text">p_k = exp(z_k)/Σ_j exp(z_j)
+</code></pre>
+<p>ต้องใช้ stable version:</p>
+<pre><code class="language-text">z ← z - max(z)
+</code></pre>
+<p>รายละเอียด cross-entropy/backprop จะเรียนต่อ</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-14-equation"><summary>สมการ</summary><h3>14. Softmax Preview</h3>
+<p>multiclass logits:</p>
+<pre><code class="language-text">z1,...,zK
+</code></pre>
+<p>softmax:</p>
+<pre><code class="language-text">p_k = exp(z_k)/Σ_j exp(z_j)
+</code></pre>
+<p>ต้องใช้ stable version:</p>
+<pre><code class="language-text">z ← z - max(z)
+</code></pre>
+<p>รายละเอียด cross-entropy/backprop จะเรียนต่อ</p></details><details id="help-topic-14-visual"><summary>ภาพและ shape</summary><h3>14. Softmax Preview</h3>
+<p>multiclass logits:</p>
+<pre><code class="language-text">z1,...,zK
+</code></pre>
+<p>softmax:</p>
+<pre><code class="language-text">p_k = exp(z_k)/Σ_j exp(z_j)
+</code></pre>
+<p>ต้องใช้ stable version:</p>
+<pre><code class="language-text">z ← z - max(z)
+</code></pre>
+<p>รายละเอียด cross-entropy/backprop จะเรียนต่อ</p></details><details id="help-topic-14-code"><summary>โค้ด</summary><h3>14. Softmax Preview</h3>
+<p>multiclass logits:</p>
+<pre><code class="language-text">z1,...,zK
+</code></pre>
+<p>softmax:</p>
+<pre><code class="language-text">p_k = exp(z_k)/Σ_j exp(z_j)
+</code></pre>
+<p>ต้องใช้ stable version:</p>
+<pre><code class="language-text">z ← z - max(z)
+</code></pre>
+<p>รายละเอียด cross-entropy/backprop จะเรียนต่อ</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-14-result"><summary>ผลการทดลอง</summary><h3>14. Softmax Preview</h3>
+<p>multiclass logits:</p>
+<pre><code class="language-text">z1,...,zK
+</code></pre>
+<p>softmax:</p>
+<pre><code class="language-text">p_k = exp(z_k)/Σ_j exp(z_j)
+</code></pre>
+<p>ต้องใช้ stable version:</p>
+<pre><code class="language-text">z ← z - max(z)
+</code></pre>
+<p>รายละเอียด cross-entropy/backprop จะเรียนต่อ</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-14"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-15" class="source-topic"><span id="source-18-neural-network-foundations-canonical-15-hidden-layer" class="legacy-anchor"></span><h3>15. Hidden Layer</h3>
+<p>MLP 1 hidden layer:</p>
+<pre><code class="language-text">X
+↓ Linear(Din,H)
+Z1
+↓ ReLU
+A1
+↓ Linear(H,Dout)
+Z2
+</code></pre>
+<p>classification อาจตามด้วย sigmoid/softmax ตาม task</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-15-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>15. Hidden Layer</h3>
+<p>MLP 1 hidden layer:</p>
+<pre><code class="language-text">X
+↓ Linear(Din,H)
+Z1
+↓ ReLU
+A1
+↓ Linear(H,Dout)
+Z2
+</code></pre>
+<p>classification อาจตามด้วย sigmoid/softmax ตาม task</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-15-equation"><summary>สมการ</summary><h3>15. Hidden Layer</h3>
+<p>MLP 1 hidden layer:</p>
+<pre><code class="language-text">X
+↓ Linear(Din,H)
+Z1
+↓ ReLU
+A1
+↓ Linear(H,Dout)
+Z2
+</code></pre>
+<p>classification อาจตามด้วย sigmoid/softmax ตาม task</p></details><details id="help-topic-15-visual"><summary>ภาพและ shape</summary><h3>15. Hidden Layer</h3>
+<p>MLP 1 hidden layer:</p>
+<pre><code class="language-text">X
+↓ Linear(Din,H)
+Z1
+↓ ReLU
+A1
+↓ Linear(H,Dout)
+Z2
+</code></pre>
+<p>classification อาจตามด้วย sigmoid/softmax ตาม task</p></details><details id="help-topic-15-code"><summary>โค้ด</summary><h3>15. Hidden Layer</h3>
+<p>MLP 1 hidden layer:</p>
+<pre><code class="language-text">X
+↓ Linear(Din,H)
+Z1
+↓ ReLU
+A1
+↓ Linear(H,Dout)
+Z2
+</code></pre>
+<p>classification อาจตามด้วย sigmoid/softmax ตาม task</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-15-result"><summary>ผลการทดลอง</summary><h3>15. Hidden Layer</h3>
+<p>MLP 1 hidden layer:</p>
+<pre><code class="language-text">X
+↓ Linear(Din,H)
+Z1
+↓ ReLU
+A1
+↓ Linear(H,Dout)
+Z2
+</code></pre>
+<p>classification อาจตามด้วย sigmoid/softmax ตาม task</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-15"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-16" class="source-topic"><span id="source-18-neural-network-foundations-canonical-16-forward-pass" class="legacy-anchor"></span><h3>16. Forward Pass</h3>
+<p>forward pass = คำนวณจาก input ไป output</p>
+<p>ไม่มี parameter update ในขั้นนี้</p>
+<pre><code class="language-text">input
+→ layer 1
+→ activation
+→ layer 2
+→ logits/output
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>forwardpassคือคำนวณactivationตามdependencyจากinputถึงlossโดยใช้weightsปัจจุบัน ไม่มีoptimizerupdateระหว่างอ่านผล</p><p>เปลี่ยนwทำให้z,a,lossเปลี่ยนทันที; จะแก้weightsจากgradientต้องbackwardและstepแยกจากforwardให้ชัด</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-16-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>forwardpassคือคำนวณactivationตามdependencyจากinputถึงlossโดยใช้weightsปัจจุบัน ไม่มีoptimizerupdateระหว่างอ่านผล</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-16-equation"><summary>สมการ</summary><p>forwardpassคือคำนวณactivationตามdependencyจากinputถึงlossโดยใช้weightsปัจจุบัน ไม่มีoptimizerupdateระหว่างอ่านผล</p></details><details id="help-topic-16-visual"><summary>ภาพและ shape</summary><p>forwardpassคือคำนวณactivationตามdependencyจากinputถึงlossโดยใช้weightsปัจจุบัน ไม่มีoptimizerupdateระหว่างอ่านผล</p></details><details id="help-topic-16-code"><summary>โค้ด</summary><p>forwardpassคือคำนวณactivationตามdependencyจากinputถึงlossโดยใช้weightsปัจจุบัน ไม่มีoptimizerupdateระหว่างอ่านผล</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-16-result"><summary>ผลการทดลอง</summary><p>forwardpassคือคำนวณactivationตามdependencyจากinputถึงlossโดยใช้weightsปัจจุบัน ไม่มีoptimizerupdateระหว่างอ่านผล</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-16"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-17" class="source-topic"><span id="source-18-neural-network-foundations-canonical-17-loss" class="legacy-anchor"></span><span id="source-18-neural-network-foundations-canonical-mse" class="legacy-anchor"></span><span id="source-18-neural-network-foundations-canonical-binary-cross-entropy" class="legacy-anchor"></span><h3>17. Loss</h3>
+<p>loss แปลง prediction quality เป็น scalar objective</p>
+<h4>MSE</h4>
+<pre><code class="language-text">MSE = mean((y-ŷ)^2)
+</code></pre>
+<h4>Binary Cross-Entropy</h4>
+<pre><code class="language-text">BCE =
+-mean(
+ y log(p)
+ +(1-y)log(1-p)
+)
+</code></pre>
+<p>บท 19 จะถามว่า loss เปลี่ยนอย่างไรเมื่อ weight แต่ละตัวเปลี่ยน</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>sigmoid/softmaxexpใหญ่overflow ให้stableformula/logitsloss; float32activationอาจoverflowก่อนlossจึงตรวจzของชั้นแรกที่nonfinite</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-17-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>sigmoid/softmaxexpใหญ่overflow ให้stableformula/logitsloss; float32activationอาจoverflowก่อนlossจึงตรวจzของชั้นแรกที่nonfinite</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-17-equation"><summary>สมการ</summary><p>sigmoid/softmaxexpใหญ่overflow ให้stableformula/logitsloss; float32activationอาจoverflowก่อนlossจึงตรวจzของชั้นแรกที่nonfinite</p></details><details id="help-topic-17-visual"><summary>ภาพและ shape</summary><p>sigmoid/softmaxexpใหญ่overflow ให้stableformula/logitsloss; float32activationอาจoverflowก่อนlossจึงตรวจzของชั้นแรกที่nonfinite</p></details><details id="help-topic-17-code"><summary>โค้ด</summary><p>sigmoid/softmaxexpใหญ่overflow ให้stableformula/logitsloss; float32activationอาจoverflowก่อนlossจึงตรวจzของชั้นแรกที่nonfinite</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-17-result"><summary>ผลการทดลอง</summary><p>sigmoid/softmaxexpใหญ่overflow ให้stableformula/logitsloss; float32activationอาจoverflowก่อนlossจึงตรวจzของชั้นแรกที่nonfinite</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-17"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-18" class="source-topic"><span id="source-18-neural-network-foundations-canonical-18-computational-graph" class="legacy-anchor"></span><h3>18. Computational Graph</h3>
+<p>สมการ:</p>
+<pre><code class="language-text">z = x*w + b
+a = ReLU(z)
+L = (a-y)^2
+</code></pre>
+<p>มองเป็น graph:</p>
+<pre><code class="language-text">x ─┐
+   × → + → ReLU → loss
+w ─┘   ↑
+       b
+</code></pre>
+<p>แต่ละ node:
+- receives values
+- computes output
+- later can propagate derivatives backward</p>
+<p>บทนี้ trace values<br />
+บท 19 trace gradients</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-18-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>18. Computational Graph</h3>
+<p>สมการ:</p>
+<pre><code class="language-text">z = x*w + b
+a = ReLU(z)
+L = (a-y)^2
+</code></pre>
+<p>มองเป็น graph:</p>
+<pre><code class="language-text">x ─┐
+   × → + → ReLU → loss
+w ─┘   ↑
+       b
+</code></pre>
+<p>แต่ละ node:
+- receives values
+- computes output
+- later can propagate derivatives backward</p>
+<p>บทนี้ trace values<br />
+บท 19 trace gradients</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-18-equation"><summary>สมการ</summary><h3>18. Computational Graph</h3>
+<p>สมการ:</p>
+<pre><code class="language-text">z = x*w + b
+a = ReLU(z)
+L = (a-y)^2
+</code></pre>
+<p>มองเป็น graph:</p>
+<pre><code class="language-text">x ─┐
+   × → + → ReLU → loss
+w ─┘   ↑
+       b
+</code></pre>
+<p>แต่ละ node:
+- receives values
+- computes output
+- later can propagate derivatives backward</p>
+<p>บทนี้ trace values<br />
+บท 19 trace gradients</p></details><details id="help-topic-18-visual"><summary>ภาพและ shape</summary><h3>18. Computational Graph</h3>
+<p>สมการ:</p>
+<pre><code class="language-text">z = x*w + b
+a = ReLU(z)
+L = (a-y)^2
+</code></pre>
+<p>มองเป็น graph:</p>
+<pre><code class="language-text">x ─┐
+   × → + → ReLU → loss
+w ─┘   ↑
+       b
+</code></pre>
+<p>แต่ละ node:
+- receives values
+- computes output
+- later can propagate derivatives backward</p>
+<p>บทนี้ trace values<br />
+บท 19 trace gradients</p></details><details id="help-topic-18-code"><summary>โค้ด</summary><h3>18. Computational Graph</h3>
+<p>สมการ:</p>
+<pre><code class="language-text">z = x*w + b
+a = ReLU(z)
+L = (a-y)^2
+</code></pre>
+<p>มองเป็น graph:</p>
+<pre><code class="language-text">x ─┐
+   × → + → ReLU → loss
+w ─┘   ↑
+       b
+</code></pre>
+<p>แต่ละ node:
+- receives values
+- computes output
+- later can propagate derivatives backward</p>
+<p>บทนี้ trace values<br />
+บท 19 trace gradients</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-18-result"><summary>ผลการทดลอง</summary><h3>18. Computational Graph</h3>
+<p>สมการ:</p>
+<pre><code class="language-text">z = x*w + b
+a = ReLU(z)
+L = (a-y)^2
+</code></pre>
+<p>มองเป็น graph:</p>
+<pre><code class="language-text">x ─┐
+   × → + → ReLU → loss
+w ─┘   ↑
+       b
+</code></pre>
+<p>แต่ละ node:
+- receives values
+- computes output
+- later can propagate derivatives backward</p>
+<p>บทนี้ trace values<br />
+บท 19 trace gradients</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-18"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-19" class="source-topic"><span id="source-18-neural-network-foundations-canonical-19-initialization" class="legacy-anchor"></span><h3>19. Initialization</h3>
+<p>ถ้า weights ทุกตัวเริ่มเหมือนกันใน hidden layer:
+- neurons อาจเรียนเหมือนกัน
+- symmetry ไม่ถูก break</p>
+<p>จึง random initialize</p>
+<p>แต่ scale สำคัญ:
+- ใหญ่เกิน → activations explode/saturate
+- เล็กเกิน → signal shrink</p>
+<p>Xavier/He initialization จะเรียนลึกขึ้นใน Deep Learning chapters</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>ตั้งweightsทุกhiddenunitเหมือนกันทำให้gradเหมือนกันและไม่breaksymmetry; ใช้Hevariance2/fan_inสำหรับReLUพร้อมตรวจactivationvariance</p><p>เปลี่ยนเฉพาะzero→HeinitializationบนMLPเดิม; recordlossและunitoutputsหลังทุกupdate; symmetriczeroอาจเรียนbiasได้แต่hiddenunitsยังเหมือนกัน</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-19-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>ตั้งweightsทุกhiddenunitเหมือนกันทำให้gradเหมือนกันและไม่breaksymmetry; ใช้Hevariance2/fan_inสำหรับReLUพร้อมตรวจactivationvariance</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-19-equation"><summary>สมการ</summary><p>ตั้งweightsทุกhiddenunitเหมือนกันทำให้gradเหมือนกันและไม่breaksymmetry; ใช้Hevariance2/fan_inสำหรับReLUพร้อมตรวจactivationvariance</p></details><details id="help-topic-19-visual"><summary>ภาพและ shape</summary><p>ตั้งweightsทุกhiddenunitเหมือนกันทำให้gradเหมือนกันและไม่breaksymmetry; ใช้Hevariance2/fan_inสำหรับReLUพร้อมตรวจactivationvariance</p></details><details id="help-topic-19-code"><summary>โค้ด</summary><p>ตั้งweightsทุกhiddenunitเหมือนกันทำให้gradเหมือนกันและไม่breaksymmetry; ใช้Hevariance2/fan_inสำหรับReLUพร้อมตรวจactivationvariance</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-19-result"><summary>ผลการทดลอง</summary><p>ตั้งweightsทุกhiddenunitเหมือนกันทำให้gradเหมือนกันและไม่breaksymmetry; ใช้Hevariance2/fan_inสำหรับReLUพร้อมตรวจactivationvariance</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-19"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-20" class="source-topic"><span id="source-18-neural-network-foundations-canonical-20-batch-dimension" class="legacy-anchor"></span><h3>20. Batch Dimension</h3>
+<p>อย่าเขียน code ที่เข้าใจแค่ sample เดียว</p>
+<p>single sample:</p>
+<pre><code class="language-text">(Din,)
+</code></pre>
+<p>batch:</p>
+<pre><code class="language-text">(N,Din)
+</code></pre>
+<p>deep learning frameworksใช้ batch เป็นหลัก</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>batchใหญ่ใช้matrixhardwareคุ้มแต่memoryเพิ่มและgradientnoiseลด; batch1SGDต่างจากfullbatchแม้จำนวนepochเท่ากัน ให้เทียบจำนวนupdatesด้วย</p><p>seed7 สร้างXOR4จุด; trainMLP2→4→1และlinearmodelด้วยbatch4/2 คงinit/data; reportloss/accuracy/updatesจริงและactivationdeadfraction</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-20-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>batchใหญ่ใช้matrixhardwareคุ้มแต่memoryเพิ่มและgradientnoiseลด; batch1SGDต่างจากfullbatchแม้จำนวนepochเท่ากัน ให้เทียบจำนวนupdatesด้วย</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-20-equation"><summary>สมการ</summary><p>batchใหญ่ใช้matrixhardwareคุ้มแต่memoryเพิ่มและgradientnoiseลด; batch1SGDต่างจากfullbatchแม้จำนวนepochเท่ากัน ให้เทียบจำนวนupdatesด้วย</p></details><details id="help-topic-20-visual"><summary>ภาพและ shape</summary><p>batchใหญ่ใช้matrixhardwareคุ้มแต่memoryเพิ่มและgradientnoiseลด; batch1SGDต่างจากfullbatchแม้จำนวนepochเท่ากัน ให้เทียบจำนวนupdatesด้วย</p></details><details id="help-topic-20-code"><summary>โค้ด</summary><p>batchใหญ่ใช้matrixhardwareคุ้มแต่memoryเพิ่มและgradientnoiseลด; batch1SGDต่างจากfullbatchแม้จำนวนepochเท่ากัน ให้เทียบจำนวนupdatesด้วย</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-20-result"><summary>ผลการทดลอง</summary><p>batchใหญ่ใช้matrixhardwareคุ้มแต่memoryเพิ่มและgradientnoiseลด; batch1SGDต่างจากfullbatchแม้จำนวนepochเท่ากัน ให้เทียบจำนวนupdatesด้วย</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-20"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-21" class="source-topic"><span id="source-18-neural-network-foundations-canonical-21-feature-hidden-output-dimensions" class="legacy-anchor"></span><h3>21. Feature / Hidden / Output Dimensions</h3>
+<p>ตัวอย่าง:</p>
+<pre><code class="language-text">Input:  (32, 10)
+W1:     (10, 64)
+A1:     (32, 64)
+W2:     (64, 1)
+Output: (32, 1)
+</code></pre>
+<p>shape tracing เป็น skill debugging สำคัญมาก</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>X(B,d)@W(h,d)ผิดถ้าไม่transpose; target(B,)ลบprediction(B,1)จะกลาย(B,B); assertprediction.shape==target.shapeก่อนMSE</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-21-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>X(B,d)@W(h,d)ผิดถ้าไม่transpose; target(B,)ลบprediction(B,1)จะกลาย(B,B); assertprediction.shape==target.shapeก่อนMSE</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-21-equation"><summary>สมการ</summary><p>X(B,d)@W(h,d)ผิดถ้าไม่transpose; target(B,)ลบprediction(B,1)จะกลาย(B,B); assertprediction.shape==target.shapeก่อนMSE</p></details><details id="help-topic-21-visual"><summary>ภาพและ shape</summary><p>X(B,d)@W(h,d)ผิดถ้าไม่transpose; target(B,)ลบprediction(B,1)จะกลาย(B,B); assertprediction.shape==target.shapeก่อนMSE</p></details><details id="help-topic-21-code"><summary>โค้ด</summary><p>X(B,d)@W(h,d)ผิดถ้าไม่transpose; target(B,)ลบprediction(B,1)จะกลาย(B,B); assertprediction.shape==target.shapeก่อนMSE</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-21-result"><summary>ผลการทดลอง</summary><p>X(B,d)@W(h,d)ผิดถ้าไม่transpose; target(B,)ลบprediction(B,1)จะกลาย(B,B); assertprediction.shape==target.shapeก่อนMSE</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-21"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-22" class="source-topic"><span id="source-18-neural-network-foundations-canonical-22-classification-output" class="legacy-anchor"></span><h3>22. Classification Output</h3>
+<p>binary:
+- one logit
+- sigmoid
+- threshold</p>
+<p>multiclass:
+- K logits
+- softmax
+- argmax</p>
+<p>แต่ production loss APIs บาง frameworkรวม stable sigmoid/softmax กับ cross-entropy ภายใน จึงห้าม double-apply โดยไม่อ่าน docs</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-22-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>22. Classification Output</h3>
+<p>binary:
+- one logit
+- sigmoid
+- threshold</p>
+<p>multiclass:
+- K logits
+- softmax
+- argmax</p>
+<p>แต่ production loss APIs บาง frameworkรวม stable sigmoid/softmax กับ cross-entropy ภายใน จึงห้าม double-apply โดยไม่อ่าน docs</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-22-equation"><summary>สมการ</summary><h3>22. Classification Output</h3>
+<p>binary:
+- one logit
+- sigmoid
+- threshold</p>
+<p>multiclass:
+- K logits
+- softmax
+- argmax</p>
+<p>แต่ production loss APIs บาง frameworkรวม stable sigmoid/softmax กับ cross-entropy ภายใน จึงห้าม double-apply โดยไม่อ่าน docs</p></details><details id="help-topic-22-visual"><summary>ภาพและ shape</summary><h3>22. Classification Output</h3>
+<p>binary:
+- one logit
+- sigmoid
+- threshold</p>
+<p>multiclass:
+- K logits
+- softmax
+- argmax</p>
+<p>แต่ production loss APIs บาง frameworkรวม stable sigmoid/softmax กับ cross-entropy ภายใน จึงห้าม double-apply โดยไม่อ่าน docs</p></details><details id="help-topic-22-code"><summary>โค้ด</summary><h3>22. Classification Output</h3>
+<p>binary:
+- one logit
+- sigmoid
+- threshold</p>
+<p>multiclass:
+- K logits
+- softmax
+- argmax</p>
+<p>แต่ production loss APIs บาง frameworkรวม stable sigmoid/softmax กับ cross-entropy ภายใน จึงห้าม double-apply โดยไม่อ่าน docs</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-22-result"><summary>ผลการทดลอง</summary><h3>22. Classification Output</h3>
+<p>binary:
+- one logit
+- sigmoid
+- threshold</p>
+<p>multiclass:
+- K logits
+- softmax
+- argmax</p>
+<p>แต่ production loss APIs บาง frameworkรวม stable sigmoid/softmax กับ cross-entropy ภายใน จึงห้าม double-apply โดยไม่อ่าน docs</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-22"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-23" class="source-topic"><span id="source-18-neural-network-foundations-canonical-23-regression-output" class="legacy-anchor"></span><h3>23. Regression Output</h3>
+<p>มักใช้ linear output:</p>
+<pre><code class="language-text">ŷ = Z_last
+</code></pre>
+<p>ไม่จำเป็นต้อง activation ถ้า target unrestricted real value</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-23-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>23. Regression Output</h3>
+<p>มักใช้ linear output:</p>
+<pre><code class="language-text">ŷ = Z_last
+</code></pre>
+<p>ไม่จำเป็นต้อง activation ถ้า target unrestricted real value</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-23-equation"><summary>สมการ</summary><h3>23. Regression Output</h3>
+<p>มักใช้ linear output:</p>
+<pre><code class="language-text">ŷ = Z_last
+</code></pre>
+<p>ไม่จำเป็นต้อง activation ถ้า target unrestricted real value</p></details><details id="help-topic-23-visual"><summary>ภาพและ shape</summary><h3>23. Regression Output</h3>
+<p>มักใช้ linear output:</p>
+<pre><code class="language-text">ŷ = Z_last
+</code></pre>
+<p>ไม่จำเป็นต้อง activation ถ้า target unrestricted real value</p></details><details id="help-topic-23-code"><summary>โค้ด</summary><h3>23. Regression Output</h3>
+<p>มักใช้ linear output:</p>
+<pre><code class="language-text">ŷ = Z_last
+</code></pre>
+<p>ไม่จำเป็นต้อง activation ถ้า target unrestricted real value</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-23-result"><summary>ผลการทดลอง</summary><h3>23. Regression Output</h3>
+<p>มักใช้ linear output:</p>
+<pre><code class="language-text">ŷ = Z_last
+</code></pre>
+<p>ไม่จำเป็นต้อง activation ถ้า target unrestricted real value</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-23"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-24" class="source-topic"><span id="source-18-neural-network-foundations-canonical-24-universal-approximation-caution" class="legacy-anchor"></span><h3>24. Universal Approximation — Caution</h3>
+<p>MLP ที่มี hidden layerและ nonlinear activationสามารถ approximate functions กว้างมากภายใต้ conditions</p>
+<p>แต่ theorem ไม่ได้แปลว่า:
+- train ง่าย
+- data น้อยก็พอ
+- generalize ดี
+- architecture ไหนก็เหมาะ</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>บันทึกarchitecture/init/activation/lossreduction/seed/split; monitoractivation/gradnorm; ทดลองHeลดdeadReLUเทียบlargevarianceโดยวัดก่อนและหลังฝึกจริง</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-24-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>บันทึกarchitecture/init/activation/lossreduction/seed/split; monitoractivation/gradnorm; ทดลองHeลดdeadReLUเทียบlargevarianceโดยวัดก่อนและหลังฝึกจริง</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-24-equation"><summary>สมการ</summary><p>บันทึกarchitecture/init/activation/lossreduction/seed/split; monitoractivation/gradnorm; ทดลองHeลดdeadReLUเทียบlargevarianceโดยวัดก่อนและหลังฝึกจริง</p></details><details id="help-topic-24-visual"><summary>ภาพและ shape</summary><p>บันทึกarchitecture/init/activation/lossreduction/seed/split; monitoractivation/gradnorm; ทดลองHeลดdeadReLUเทียบlargevarianceโดยวัดก่อนและหลังฝึกจริง</p></details><details id="help-topic-24-code"><summary>โค้ด</summary><p>บันทึกarchitecture/init/activation/lossreduction/seed/split; monitoractivation/gradnorm; ทดลองHeลดdeadReLUเทียบlargevarianceโดยวัดก่อนและหลังฝึกจริง</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-24-result"><summary>ผลการทดลอง</summary><p>บันทึกarchitecture/init/activation/lossreduction/seed/split; monitoractivation/gradnorm; ทดลองHeลดdeadReLUเทียบlargevarianceโดยวัดก่อนและหลังฝึกจริง</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-24"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-25" class="source-topic"><span id="source-18-neural-network-foundations-canonical-25-from-scratch" class="legacy-anchor"></span><h3>25. From Scratch</h3>
+<p>ดู src/neural_foundations.py</p>
+<p>มี:
+- PerceptronClassifier
+- Linear
+- relu
+- sigmoid
+- tanh
+- softmax
+- mse_loss
+- binary_cross_entropy
+- TinyMLP forward pass</p>
+<p>ไม่มี backprop intentionally</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p><code>z=np.dot([1,2],[.5,-1])+.5; a=max(0,z)</code> ได้−1,0; เปลี่ยนbเป็น2ได้z=.5,a=.5; เชื่อมผลก่อน/หลังที่neuronlab</p><p>assertz−1,a0และinputshapeเท่ากับw; bias2ให้a.5; numericfinitecheckและmismatchedwlengthต้องraiseแทนbroadcastผิด</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-25-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p><code>z=np.dot([1,2],[.5,-1])+.5; a=max(0,z)</code> ได้−1,0; เปลี่ยนbเป็น2ได้z=.5,a=.5; เชื่อมผลก่อน/หลังที่neuronlab</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-25-equation"><summary>สมการ</summary><p><code>z=np.dot([1,2],[.5,-1])+.5; a=max(0,z)</code> ได้−1,0; เปลี่ยนbเป็น2ได้z=.5,a=.5; เชื่อมผลก่อน/หลังที่neuronlab</p></details><details id="help-topic-25-visual"><summary>ภาพและ shape</summary><p><code>z=np.dot([1,2],[.5,-1])+.5; a=max(0,z)</code> ได้−1,0; เปลี่ยนbเป็น2ได้z=.5,a=.5; เชื่อมผลก่อน/หลังที่neuronlab</p></details><details id="help-topic-25-code"><summary>โค้ด</summary><p><code>z=np.dot([1,2],[.5,-1])+.5; a=max(0,z)</code> ได้−1,0; เปลี่ยนbเป็น2ได้z=.5,a=.5; เชื่อมผลก่อน/หลังที่neuronlab</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-25-result"><summary>ผลการทดลอง</summary><p><code>z=np.dot([1,2],[.5,-1])+.5; a=max(0,z)</code> ได้−1,0; เปลี่ยนbเป็น2ได้z=.5,a=.5; เชื่อมผลก่อน/หลังที่neuronlab</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-25"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-26" class="source-topic"><span id="source-18-neural-network-foundations-canonical-26-training-perceptron-vs-training-mlp" class="legacy-anchor"></span><h3>26. Training Perceptron vs Training MLP</h3>
+<p>Perceptron:
+- update rule directlyจาก misclassification</p>
+<p>MLP:
+- parameters หลาย layers
+- ต้องใช้ chain rule/backprop
+- optimizer update</p>
+<p>นั่นคือ Chapters 19–20</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>splitก่อนnormalization; trainmodeใช้dropout,evalmodeปิดdropout; validationไม่updateweights; testครั้งท้ายหลังเลือกarchitecture</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-26-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>splitก่อนnormalization; trainmodeใช้dropout,evalmodeปิดdropout; validationไม่updateweights; testครั้งท้ายหลังเลือกarchitecture</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-26-equation"><summary>สมการ</summary><p>splitก่อนnormalization; trainmodeใช้dropout,evalmodeปิดdropout; validationไม่updateweights; testครั้งท้ายหลังเลือกarchitecture</p></details><details id="help-topic-26-visual"><summary>ภาพและ shape</summary><p>splitก่อนnormalization; trainmodeใช้dropout,evalmodeปิดdropout; validationไม่updateweights; testครั้งท้ายหลังเลือกarchitecture</p></details><details id="help-topic-26-code"><summary>โค้ด</summary><p>splitก่อนnormalization; trainmodeใช้dropout,evalmodeปิดdropout; validationไม่updateweights; testครั้งท้ายหลังเลือกarchitecture</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-26-result"><summary>ผลการทดลอง</summary><p>splitก่อนnormalization; trainmodeใช้dropout,evalmodeปิดdropout; validationไม่updateweights; testครั้งท้ายหลังเลือกarchitecture</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-26"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-27" class="source-topic"><span id="source-18-neural-network-foundations-canonical-27-common-mistakes" class="legacy-anchor"></span><h3>27. Common Mistakes</h3>
+<ol>
+<li>matrix shapes ไม่ตรง</li>
+<li>bias shape ผิด</li>
+<li>stack linear layersโดยไม่มี activationแล้วคิดว่า nonlinear</li>
+<li>sigmoid overflow</li>
+<li>softmax overflow</li>
+<li>BCE log(0)</li>
+<li>output activation ไม่ตรง task</li>
+<li>double sigmoid/softmax กับ combined loss API</li>
+<li>parameter countผิดเพราะลืม bias</li>
+<li>คิด forward pass = training</li>
+</ol><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-27-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>27. Common Mistakes</h3>
+<ol>
+<li>matrix shapes ไม่ตรง</li>
+<li>bias shape ผิด</li>
+<li>stack linear layersโดยไม่มี activationแล้วคิดว่า nonlinear</li>
+<li>sigmoid overflow</li>
+<li>softmax overflow</li>
+<li>BCE log(0)</li>
+<li>output activation ไม่ตรง task</li>
+<li>double sigmoid/softmax กับ combined loss API</li>
+<li>parameter countผิดเพราะลืม bias</li>
+<li>คิด forward pass = training</li>
+</ol><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-27-equation"><summary>สมการ</summary><h3>27. Common Mistakes</h3>
+<ol>
+<li>matrix shapes ไม่ตรง</li>
+<li>bias shape ผิด</li>
+<li>stack linear layersโดยไม่มี activationแล้วคิดว่า nonlinear</li>
+<li>sigmoid overflow</li>
+<li>softmax overflow</li>
+<li>BCE log(0)</li>
+<li>output activation ไม่ตรง task</li>
+<li>double sigmoid/softmax กับ combined loss API</li>
+<li>parameter countผิดเพราะลืม bias</li>
+<li>คิด forward pass = training</li>
+</ol></details><details id="help-topic-27-visual"><summary>ภาพและ shape</summary><h3>27. Common Mistakes</h3>
+<ol>
+<li>matrix shapes ไม่ตรง</li>
+<li>bias shape ผิด</li>
+<li>stack linear layersโดยไม่มี activationแล้วคิดว่า nonlinear</li>
+<li>sigmoid overflow</li>
+<li>softmax overflow</li>
+<li>BCE log(0)</li>
+<li>output activation ไม่ตรง task</li>
+<li>double sigmoid/softmax กับ combined loss API</li>
+<li>parameter countผิดเพราะลืม bias</li>
+<li>คิด forward pass = training</li>
+</ol></details><details id="help-topic-27-code"><summary>โค้ด</summary><h3>27. Common Mistakes</h3>
+<ol>
+<li>matrix shapes ไม่ตรง</li>
+<li>bias shape ผิด</li>
+<li>stack linear layersโดยไม่มี activationแล้วคิดว่า nonlinear</li>
+<li>sigmoid overflow</li>
+<li>softmax overflow</li>
+<li>BCE log(0)</li>
+<li>output activation ไม่ตรง task</li>
+<li>double sigmoid/softmax กับ combined loss API</li>
+<li>parameter countผิดเพราะลืม bias</li>
+<li>คิด forward pass = training</li>
+</ol><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-27-result"><summary>ผลการทดลอง</summary><h3>27. Common Mistakes</h3>
+<ol>
+<li>matrix shapes ไม่ตรง</li>
+<li>bias shape ผิด</li>
+<li>stack linear layersโดยไม่มี activationแล้วคิดว่า nonlinear</li>
+<li>sigmoid overflow</li>
+<li>softmax overflow</li>
+<li>BCE log(0)</li>
+<li>output activation ไม่ตรง task</li>
+<li>double sigmoid/softmax กับ combined loss API</li>
+<li>parameter countผิดเพราะลืม bias</li>
+<li>คิด forward pass = training</li>
+</ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-27"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-28" class="source-topic"><span id="source-18-neural-network-foundations-canonical-28-exercises-project" class="legacy-anchor"></span><h3>28. Exercises / Project</h3>
+<ul>
+<li><a href="../18-neural-network-foundations/exercises/README.md">Exercises</a></li>
+<li><a href="../18-neural-network-foundations/solutions/README.md">Solutions</a></li>
+<li><a href="../18-neural-network-foundations/mini-project/README.md">Mini Project</a></li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-28-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>28. Exercises / Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-28-equation"><summary>สมการ</summary><h3>28. Exercises / Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-28-visual"><summary>ภาพและ shape</summary><h3>28. Exercises / Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-28-code"><summary>โค้ด</summary><h3>28. Exercises / Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-28-result"><summary>ผลการทดลอง</summary><h3>28. Exercises / Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-28"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-29" class="source-topic"><span id="source-18-neural-network-foundations-canonical-29-checklist" class="legacy-anchor"></span><h3>29. Checklist</h3>
+<ul>
+<li>[ ] neuron</li>
+<li>[ ] perceptron</li>
+<li>[ ] dense layer</li>
+<li>[ ] matrix shapes</li>
+<li>[ ] ReLU/Sigmoid/Tanh</li>
+<li>[ ] softmax stability</li>
+<li>[ ] MLP forward</li>
+<li>[ ] loss</li>
+<li>[ ] parameter count</li>
+<li>[ ] computational graph</li>
+<li>[ ] initialization intuition</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-29-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>29. Checklist</h3>
+<ul>
+<li>[ ] neuron</li>
+<li>[ ] perceptron</li>
+<li>[ ] dense layer</li>
+<li>[ ] matrix shapes</li>
+<li>[ ] ReLU/Sigmoid/Tanh</li>
+<li>[ ] softmax stability</li>
+<li>[ ] MLP forward</li>
+<li>[ ] loss</li>
+<li>[ ] parameter count</li>
+<li>[ ] computational graph</li>
+<li>[ ] initialization intuition</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-29-equation"><summary>สมการ</summary><h3>29. Checklist</h3>
+<ul>
+<li>[ ] neuron</li>
+<li>[ ] perceptron</li>
+<li>[ ] dense layer</li>
+<li>[ ] matrix shapes</li>
+<li>[ ] ReLU/Sigmoid/Tanh</li>
+<li>[ ] softmax stability</li>
+<li>[ ] MLP forward</li>
+<li>[ ] loss</li>
+<li>[ ] parameter count</li>
+<li>[ ] computational graph</li>
+<li>[ ] initialization intuition</li>
+</ul></details><details id="help-topic-29-visual"><summary>ภาพและ shape</summary><h3>29. Checklist</h3>
+<ul>
+<li>[ ] neuron</li>
+<li>[ ] perceptron</li>
+<li>[ ] dense layer</li>
+<li>[ ] matrix shapes</li>
+<li>[ ] ReLU/Sigmoid/Tanh</li>
+<li>[ ] softmax stability</li>
+<li>[ ] MLP forward</li>
+<li>[ ] loss</li>
+<li>[ ] parameter count</li>
+<li>[ ] computational graph</li>
+<li>[ ] initialization intuition</li>
+</ul></details><details id="help-topic-29-code"><summary>โค้ด</summary><h3>29. Checklist</h3>
+<ul>
+<li>[ ] neuron</li>
+<li>[ ] perceptron</li>
+<li>[ ] dense layer</li>
+<li>[ ] matrix shapes</li>
+<li>[ ] ReLU/Sigmoid/Tanh</li>
+<li>[ ] softmax stability</li>
+<li>[ ] MLP forward</li>
+<li>[ ] loss</li>
+<li>[ ] parameter count</li>
+<li>[ ] computational graph</li>
+<li>[ ] initialization intuition</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-29-result"><summary>ผลการทดลอง</summary><h3>29. Checklist</h3>
+<ul>
+<li>[ ] neuron</li>
+<li>[ ] perceptron</li>
+<li>[ ] dense layer</li>
+<li>[ ] matrix shapes</li>
+<li>[ ] ReLU/Sigmoid/Tanh</li>
+<li>[ ] softmax stability</li>
+<li>[ ] MLP forward</li>
+<li>[ ] loss</li>
+<li>[ ] parameter count</li>
+<li>[ ] computational graph</li>
+<li>[ ] initialization intuition</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-29"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-30" class="source-topic"><span id="source-18-neural-network-foundations-canonical-30-whats-next" class="legacy-anchor"></span><span id="source-18-neural-network-foundations-canonical-18-neural-network-foundations-neural-network-foundations" class="legacy-anchor"></span><h3>30. What's Next</h3>
+<p>Chapter 19 — Backpropagation จะ derive chain rule ผ่าน computational graph แล้วสร้าง tiny autodiff/backprop engine</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-30-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>30. What's Next</h3>
+<p>Chapter 19 — Backpropagation จะ derive chain rule ผ่าน computational graph แล้วสร้าง tiny autodiff/backprop engine</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-30-equation"><summary>สมการ</summary><h3>30. What's Next</h3>
+<p>Chapter 19 — Backpropagation จะ derive chain rule ผ่าน computational graph แล้วสร้าง tiny autodiff/backprop engine</p></details><details id="help-topic-30-visual"><summary>ภาพและ shape</summary><h3>30. What's Next</h3>
+<p>Chapter 19 — Backpropagation จะ derive chain rule ผ่าน computational graph แล้วสร้าง tiny autodiff/backprop engine</p></details><details id="help-topic-30-code"><summary>โค้ด</summary><h3>30. What's Next</h3>
+<p>Chapter 19 — Backpropagation จะ derive chain rule ผ่าน computational graph แล้วสร้าง tiny autodiff/backprop engine</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-30-result"><summary>ผลการทดลอง</summary><h3>30. What's Next</h3>
+<p>Chapter 19 — Backpropagation จะ derive chain rule ผ่าน computational graph แล้วสร้าง tiny autodiff/backprop engine</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-30"> อ่านหัวข้อนี้แล้ว</label></section><details><summary>รายละเอียดเพิ่มเติมและข้อกำหนดของ local lab</summary><h3>18-neural-network-foundations — Neural Network Foundations</h3>
+<p><strong>Prerequisites:</strong> Complete 17-time-series; be able to trace array/tensor shapes, separate train/validation/test data, and explain the core objective of the current chapter.</p>
+<p><strong>Mental model:</strong> Treat Neural Network Foundations as a pipeline: input representation → central mechanism → objective/state update → observable output. At every boundary, state shape/state, allowed information flow, and the invariant that should remain true.</p>
+<p><strong>Code walkthrough:</strong> Read public API first, then input checks, state/shape transformations, numerical core, returned values and tests. Connect each important code block to the equation or algorithm in the chapter README.</p>
+<p><strong>Visualization / inspection:</strong> Use a tiny case. Inspect intermediate values, distributions, norms, scores, states or trajectories appropriate to Neural Network Foundations; do not rely only on the final metric.</p>
+<p><strong>Experiment:</strong> Run a baseline, one controlled parameter change, one edge case and one repeated seeded comparison. Record seed, environment, data version, configuration and metric.</p>
+<p><strong>Limitations:</strong> List at least one assumption, one data-related limitation, one numerical/optimization limitation and one scaling limitation for Neural Network Foundations.</p>
+<p><strong>Analysis workflow:</strong> Check inputs → preprocessing → shapes/state → finite numerical values → objective/update → evaluation protocol. The earliest unexpected state is more informative than a downstream metric.</p>
+<p><strong>Performance:</strong> Identify the dominant time and memory terms and measure them on the local learning run before attempting optimization.</p>
+<p><strong>Production perspective:</strong> Define input validation, artifact/configuration versioning, quality and resource measurements, staged release criteria and a way to return to the previous known-good artifact.</p>
+<p><strong>Research perspective:</strong> State a falsifiable hypothesis, baseline, one-factor change, metric, repeated-run plan when stochastic, and how negative results will be recorded.</p>
+<p><strong>Interview questions:</strong>
+1. Explain Neural Network Foundations from first principles without naming a library API.
+2. Trace one input through the central mechanism and give the important intermediate shapes/state.
+3. Name the strongest assumption and a case where it fails.
+4. State the dominant compute/memory cost.
+5. Describe how you would validate a new implementation against a trusted baseline.</p>
+<p><strong>Summary / exit condition:</strong> You may move on when you can explain, derive or trace, implement, test, analyze, measure and evaluate Neural Network Foundations, and when the chapter mini-project plus twenty total exercises are complete.</p></details></section><section id="objective-evidence" class="canonical-section"><h2>พิสูจน์ความสามารถทีละ objective</h2><p>ทำกรณีใหม่ก่อนเปิด reference แล้วบันทึกงานด้านล่าง ให้ผู้ตรวจใช้ rubric ตรวจคำอธิบาย ผลคำนวณ โค้ด และข้อจำกัด บันทึกเก็บในเบราว์เซอร์เครื่องนี้ กดส่งออกเพื่อสำรองหรือส่งให้ผู้ตรวจ เว็บไม่ได้รันโค้ดหรือตัดสินผลงานแทนผู้ตรวจ</p><button type="button" class="secondary-button" data-export-evidence>ส่งออกหลักฐานบทนี้เป็น JSON</button><p role="status" id="evidence-export-status"></p><details id="ch18-objective-01" class="objective-proof"><summary>อธิบาย neuron</summary><p>อธิบาย neuron: ใช้กรณีในหัวข้อ Artificial Neuron เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch18-evidence-01"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch18-evidence-01-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch18-evidence-01-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch18-evidence-01-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch18-evidence-01-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch18-evidence-01-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch18-evidence-01-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch18-evidence-01-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch18-evidence-01-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>neuronรับx(d),w(d),b scalarคำนวณz=wᵀx+bแล้วa=φ(z); x=[1,2],w=[.5,−1],b=.5ให้z=−1,aReLU=0</p><h3>3. Artificial Neuron</h3>
+<p>input:</p>
+<pre><code class="language-text">x = [x1, x2, ..., xd]
+</code></pre>
+<p>weights:</p>
+<pre><code class="language-text">w = [w1, w2, ..., wd]
+</code></pre>
+<p>pre-activation:</p>
+<pre><code class="language-text">z = wᵀx + b
+</code></pre>
+<p>activation:</p>
+<pre><code class="language-text">a = φ(z)
+</code></pre></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch18-objective-02" class="objective-proof"><summary>implement perceptron</summary><p>implement perceptron: ใช้กรณีในหัวข้อ Perceptron เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch18-evidence-02"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch18-evidence-02-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch18-evidence-02-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch18-evidence-02-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch18-evidence-02-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch18-evidence-02-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch18-evidence-02-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch18-evidence-02-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch18-evidence-02-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>6. Perceptron</h3>
+<p>classic binary perceptron:</p>
+<pre><code class="language-text">ŷ = sign(wᵀx+b)
+</code></pre>
+<p>ถ้าทายผิด:</p>
+<pre><code class="language-text">w ← w + η y x
+b ← b + η y
+</code></pre>
+<p>โดย y ∈ {-1,+1}</p>
+<p>perceptron converge เมื่อ data linearly separable ภายใต้ assumptions ที่เหมาะสม</p><h3>6. Perceptron</h3>
+<p>classic binary perceptron:</p>
+<pre><code class="language-text">ŷ = sign(wᵀx+b)
+</code></pre>
+<p>ถ้าทายผิด:</p>
+<pre><code class="language-text">w ← w + η y x
+b ← b + η y
+</code></pre>
+<p>โดย y ∈ {-1,+1}</p>
+<p>perceptron converge เมื่อ data linearly separable ภายใต้ assumptions ที่เหมาะสม</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch18-objective-03" class="objective-proof"><summary>อธิบาย weights / bias</summary><p>อธิบาย weights / bias: ใช้กรณีในหัวข้อ Weight Meaning, Bias เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch18-evidence-03"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch18-evidence-03-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch18-evidence-03-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch18-evidence-03-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch18-evidence-03-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch18-evidence-03-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch18-evidence-03-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch18-evidence-03-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch18-evidence-03-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>neuronเป็นหนึ่งoutput ส่วนlinearlayerรวมหลายneuronที่shareinput; weightorientationต้องประกาศ NumPy(d,h)ต่างจากtorchLinear(h,d)</p><h3>4. Weight Meaning</h3>
+<p>weight บอก sensitivity/direction ของ input ใน linear combination</p>
+<p>แต่:
+- learned weight ไม่เท่ากับ causality
+- scale ของ features มีผลต่อ magnitude
+- deep network weights ต้องตีความร่วมกับ layers อื่น</p>
+<h3>5. Bias</h3>
+<p>bias ทำให้ boundary/activation shift ออกจาก origin</p>
+<p>ถ้าไม่มี bias:</p>
+<pre><code class="language-text">z = wᵀx
+</code></pre>
+<p>hyperplane ต้องผ่าน origin</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch18-objective-04" class="objective-proof"><summary>ใช้ matrix form ของ dense layer</summary><p>ใช้ matrix form ของ dense layer: ใช้กรณีในหัวข้อ Dense / Linear Layer เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch18-evidence-04"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch18-evidence-04-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch18-evidence-04-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch18-evidence-04-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch18-evidence-04-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch18-evidence-04-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch18-evidence-04-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch18-evidence-04-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch18-evidence-04-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>linear layerทำneuronsหลายตัวพร้อมกัน: X(B,d)W(d,h)+b(h)→Z(B,h); B2,d3,h4ให้output(2,4)และparameters16</p><h3>8. Dense / Linear Layer</h3>
+<p>batch input:</p>
+<pre><code class="language-text">X ∈ R^(N × Din)
+</code></pre>
+<p>weights:</p>
+<pre><code class="language-text">W ∈ R^(Din × Dout)
+</code></pre>
+<p>bias:</p>
+<pre><code class="language-text">b ∈ R^(Dout)
+</code></pre>
+<p>output:</p>
+<pre><code class="language-text">Z = XW + b
+</code></pre>
+<p>shape:</p>
+<pre><code class="language-text">(N × Din)(Din × Dout)
+→
+N × Dout
+</code></pre>
+<p>bias ใช้ broadcasting across batch</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch18-objective-05" class="objective-proof"><summary>implement Linear layer</summary><p>implement Linear layer: ใช้กรณีในหัวข้อ From Scratch เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch18-evidence-05"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch18-evidence-05-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch18-evidence-05-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch18-evidence-05-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch18-evidence-05-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch18-evidence-05-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch18-evidence-05-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch18-evidence-05-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch18-evidence-05-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p><code>z=np.dot([1,2],[.5,-1])+.5; a=max(0,z)</code> ได้−1,0; เปลี่ยนbเป็น2ได้z=.5,a=.5; เชื่อมผลก่อน/หลังที่neuronlab</p><h3>25. From Scratch</h3>
+<p>ดู src/neural_foundations.py</p>
+<p>มี:
+- PerceptronClassifier
+- Linear
+- relu
+- sigmoid
+- tanh
+- softmax
+- mse_loss
+- binary_cross_entropy
+- TinyMLP forward pass</p>
+<p>ไม่มี backprop intentionally</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch18-objective-06" class="objective-proof"><summary>implement ReLU / Sigmoid / Tanh</summary><p>implement ReLU / Sigmoid / Tanh: ใช้กรณีในหัวข้อ ReLU, Sigmoid, Tanh เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch18-evidence-06"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch18-evidence-06-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch18-evidence-06-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch18-evidence-06-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch18-evidence-06-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch18-evidence-06-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch18-evidence-06-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch18-evidence-06-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch18-evidence-06-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p><code>relu=np.maximum(z,0); sigmoid=np.where(z&gt;=0,1/(1+np.exp(-np.abs(z))),np.exp(-np.abs(z))/(1+np.exp(-np.abs(z))))</code>; z=[−1,0,1]ให้ReLU[0,0,1]</p><h3>11. ReLU</h3>
+<pre><code class="language-text">ReLU(x)=max(0,x)
+</code></pre>
+<p>ข้อดี:
+- simple
+- cheap
+- non-saturating positive side</p>
+<p>ข้อเสีย:
+- negative side gradient 0 ใน backprop
+- dead neurons เป็นไปได้</p>
+<p>gradient จะเรียน Chapter 19</p>
+<h3>12. Sigmoid</h3>
+<pre><code class="language-text">σ(x)=1/(1+e^-x)
+</code></pre>
+<p>range:</p>
+<pre><code class="language-text">(0,1)
+</code></pre>
+<p>เหมาะกับ binary output probability parameterization</p>
+<p>hidden layers ปัจจุบันมักใช้ activation อื่นมากกว่า sigmoid เพราะ saturation/optimization</p>
+<h3>13. Tanh</h3>
+<pre><code class="language-text">tanh(x)
+</code></pre>
+<p>range:</p>
+<pre><code class="language-text">(-1,1)
+</code></pre>
+<p>zero-centered กว่า sigmoid แต่ยัง saturate</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch18-objective-07" class="objective-proof"><summary>อธิบาย why nonlinear activation is necessary</summary><p>อธิบาย why nonlinear activation is necessary: ใช้กรณีในหัวข้อ Why Nonlinearity? เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch18-evidence-07"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch18-evidence-07-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch18-evidence-07-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch18-evidence-07-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch18-evidence-07-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch18-evidence-07-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch18-evidence-07-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch18-evidence-07-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch18-evidence-07-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>activationเป็นnonlinearfunctionเช่นReLUmax(0,z); ถ้าทุกชั้นlinearเท่านั้นW₁W₂รวมเป็นlinearเดียว ไม่เพิ่มnonlinearcapacity</p><h3>10. Why Nonlinearity?</h3>
+<p>ถ้า stack linear layers:</p>
+<pre><code class="language-text">XW1W2W3
+</code></pre>
+<p>ทั้งหมดรวมเป็น matrix เดียวได้:</p>
+<pre><code class="language-text">XW_equivalent
+</code></pre>
+<p>ดังนั้น deep stack ที่ไม่มี nonlinear activation ยังคงเป็น linear transformation</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch18-objective-08" class="objective-proof"><summary>implement MLP forward pass</summary><p>implement MLP forward pass: ใช้กรณีในหัวข้อ Forward Pass เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch18-evidence-08"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch18-evidence-08-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch18-evidence-08-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch18-evidence-08-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch18-evidence-08-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch18-evidence-08-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch18-evidence-08-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch18-evidence-08-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch18-evidence-08-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>forwardpassคือคำนวณactivationตามdependencyจากinputถึงlossโดยใช้weightsปัจจุบัน ไม่มีoptimizerupdateระหว่างอ่านผล</p><h3>16. Forward Pass</h3>
+<p>forward pass = คำนวณจาก input ไป output</p>
+<p>ไม่มี parameter update ในขั้นนี้</p>
+<pre><code class="language-text">input
+→ layer 1
+→ activation
+→ layer 2
+→ logits/output
+</code></pre></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch18-objective-09" class="objective-proof"><summary>calculate MSE / binary cross-entropy</summary><p>calculate MSE / binary cross-entropy: ใช้กรณีในหัวข้อ Loss เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch18-evidence-09"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch18-evidence-09-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch18-evidence-09-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch18-evidence-09-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch18-evidence-09-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch18-evidence-09-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch18-evidence-09-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch18-evidence-09-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch18-evidence-09-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>sigmoid/softmaxexpใหญ่overflow ให้stableformula/logitsloss; float32activationอาจoverflowก่อนlossจึงตรวจzของชั้นแรกที่nonfinite</p><h3>17. Loss</h3>
+<p>loss แปลง prediction quality เป็น scalar objective</p>
+<h4>MSE</h4>
+<pre><code class="language-text">MSE = mean((y-ŷ)^2)
+</code></pre>
+<h4>Binary Cross-Entropy</h4>
+<pre><code class="language-text">BCE =
+-mean(
+ y log(p)
+ +(1-y)log(1-p)
+)
+</code></pre>
+<p>บท 19 จะถามว่า loss เปลี่ยนอย่างไรเมื่อ weight แต่ละตัวเปลี่ยน</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch18-objective-10" class="objective-proof"><summary>trace tensor/array shapes</summary><p>trace tensor/array shapes: ใช้กรณีในหัวข้อ Batch Dimension, Feature / Hidden / Output Dimensions เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch18-evidence-10"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch18-evidence-10-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch18-evidence-10-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch18-evidence-10-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch18-evidence-10-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch18-evidence-10-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch18-evidence-10-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch18-evidence-10-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch18-evidence-10-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>batchใหญ่ใช้matrixhardwareคุ้มแต่memoryเพิ่มและgradientnoiseลด; batch1SGDต่างจากfullbatchแม้จำนวนepochเท่ากัน ให้เทียบจำนวนupdatesด้วย</p><h3>20. Batch Dimension</h3>
+<p>อย่าเขียน code ที่เข้าใจแค่ sample เดียว</p>
+<p>single sample:</p>
+<pre><code class="language-text">(Din,)
+</code></pre>
+<p>batch:</p>
+<pre><code class="language-text">(N,Din)
+</code></pre>
+<p>deep learning frameworksใช้ batch เป็นหลัก</p>
+<h3>21. Feature / Hidden / Output Dimensions</h3>
+<p>ตัวอย่าง:</p>
+<pre><code class="language-text">Input:  (32, 10)
+W1:     (10, 64)
+A1:     (32, 64)
+W2:     (64, 1)
+Output: (32, 1)
+</code></pre>
+<p>shape tracing เป็น skill debugging สำคัญมาก</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch18-objective-11" class="objective-proof"><summary>understand parameter count</summary><p>understand parameter count: ใช้กรณีในหัวข้อ Parameter Count เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch18-evidence-11"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch18-evidence-11-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch18-evidence-11-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch18-evidence-11-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch18-evidence-11-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch18-evidence-11-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch18-evidence-11-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch18-evidence-11-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch18-evidence-11-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>denseforward O(Bdh) และactivationO(Bh),weightsO(dh); backwardต้องเก็บintermediatesเพิ่ม; วัดB,d,hและpeakmemoryด้วยdtypeเดียว</p><h3>9. Parameter Count</h3>
+<p>dense layer:</p>
+<pre><code class="language-text">Din × Dout weights
++
+Dout biases
+</code></pre>
+<p>total:</p>
+<pre><code class="language-text">Din*Dout + Dout
+</code></pre>
+<p>ตัวอย่าง 100→64:</p>
+<pre><code class="language-text">100*64 + 64 = 6464 parameters
+</code></pre></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch18-objective-12" class="objective-proof"><summary>explain computational graph concept</summary><p>explain computational graph concept: ใช้กรณีในหัวข้อ Computational Graph เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch18-evidence-12"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch18-evidence-12-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch18-evidence-12-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch18-evidence-12-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch18-evidence-12-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch18-evidence-12-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch18-evidence-12-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch18-evidence-12-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch18-evidence-12-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>18. Computational Graph</h3>
+<p>สมการ:</p>
+<pre><code class="language-text">z = x*w + b
+a = ReLU(z)
+L = (a-y)^2
+</code></pre>
+<p>มองเป็น graph:</p>
+<pre><code class="language-text">x ─┐
+   × → + → ReLU → loss
+w ─┘   ↑
+       b
+</code></pre>
+<p>แต่ละ node:
+- receives values
+- computes output
+- later can propagate derivatives backward</p>
+<p>บทนี้ trace values<br />
+บท 19 trace gradients</p><h3>18. Computational Graph</h3>
+<p>สมการ:</p>
+<pre><code class="language-text">z = x*w + b
+a = ReLU(z)
+L = (a-y)^2
+</code></pre>
+<p>มองเป็น graph:</p>
+<pre><code class="language-text">x ─┐
+   × → + → ReLU → loss
+w ─┘   ↑
+       b
+</code></pre>
+<p>แต่ละ node:
+- receives values
+- computes output
+- later can propagate derivatives backward</p>
+<p>บทนี้ trace values<br />
+บท 19 trace gradients</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch18-objective-13" class="objective-proof"><summary>understand initialization basics</summary><p>understand initialization basics: ใช้กรณีในหัวข้อ Initialization เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch18-evidence-13"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch18-evidence-13-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch18-evidence-13-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch18-evidence-13-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch18-evidence-13-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch18-evidence-13-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch18-evidence-13-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch18-evidence-13-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch18-evidence-13-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>ตั้งweightsทุกhiddenunitเหมือนกันทำให้gradเหมือนกันและไม่breaksymmetry; ใช้Hevariance2/fan_inสำหรับReLUพร้อมตรวจactivationvariance</p><h3>19. Initialization</h3>
+<p>ถ้า weights ทุกตัวเริ่มเหมือนกันใน hidden layer:
+- neurons อาจเรียนเหมือนกัน
+- symmetry ไม่ถูก break</p>
+<p>จึง random initialize</p>
+<p>แต่ scale สำคัญ:
+- ใหญ่เกิน → activations explode/saturate
+- เล็กเกิน → signal shrink</p>
+<p>Xavier/He initialization จะเรียนลึกขึ้นใน Deep Learning chapters</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch18-objective-14" class="objective-proof"><summary>explain why XOR breaks single linear separator</summary><p>explain why XOR breaks single linear separator: ใช้กรณีในหัวข้อ Perceptron Limitation เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch18-evidence-14"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch18-evidence-14-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch18-evidence-14-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch18-evidence-14-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch18-evidence-14-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch18-evidence-14-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch18-evidence-14-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch18-evidence-14-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch18-evidence-14-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>7. Perceptron Limitation</h3>
+<p>XOR:</p>
+<pre><code class="language-text">0 0 → 0
+0 1 → 1
+1 0 → 1
+1 1 → 0
+</code></pre>
+<p>ไม่สามารถแยกด้วยเส้นตรงเส้นเดียว</p>
+<p>นี่เป็นเหตุผลหนึ่งที่ต้องมี hidden layers + nonlinear activations</p><h3>7. Perceptron Limitation</h3>
+<p>XOR:</p>
+<pre><code class="language-text">0 0 → 0
+0 1 → 1
+1 0 → 1
+1 1 → 0
+</code></pre>
+<p>ไม่สามารถแยกด้วยเส้นตรงเส้นเดียว</p>
+<p>นี่เป็นเหตุผลหนึ่งที่ต้องมี hidden layers + nonlinear activations</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch18-objective-15" class="objective-proof"><summary>Training Perceptron vs Training MLP</summary><p>Training Perceptron vs Training MLP: ใช้กรณีในหัวข้อ Training Perceptron vs Training MLP เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch18-evidence-15"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch18-evidence-15-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch18-evidence-15-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch18-evidence-15-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch18-evidence-15-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch18-evidence-15-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch18-evidence-15-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch18-evidence-15-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch18-evidence-15-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>splitก่อนnormalization; trainmodeใช้dropout,evalmodeปิดdropout; validationไม่updateweights; testครั้งท้ายหลังเลือกarchitecture</p><h3>26. Training Perceptron vs Training MLP</h3>
+<p>Perceptron:
+- update rule directlyจาก misclassification</p>
+<p>MLP:
+- parameters หลาย layers
+- ต้องใช้ chain rule/backprop
+- optimizer update</p>
+<p>นั่นคือ Chapters 19–20</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch18-objective-16" class="objective-proof"><summary>Universal Approximation — Caution</summary><p>Universal Approximation — Caution: ใช้กรณีในหัวข้อ Universal Approximation — Caution เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch18-evidence-16"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch18-evidence-16-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch18-evidence-16-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch18-evidence-16-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch18-evidence-16-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch18-evidence-16-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch18-evidence-16-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch18-evidence-16-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch18-evidence-16-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>บันทึกarchitecture/init/activation/lossreduction/seed/split; monitoractivation/gradnorm; ทดลองHeลดdeadReLUเทียบlargevarianceโดยวัดก่อนและหลังฝึกจริง</p><h3>24. Universal Approximation — Caution</h3>
+<p>MLP ที่มี hidden layerและ nonlinear activationสามารถ approximate functions กว้างมากภายใต้ conditions</p>
+<p>แต่ theorem ไม่ได้แปลว่า:
+- train ง่าย
+- data น้อยก็พอ
+- generalize ดี
+- architecture ไหนก็เหมาะ</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details></section><section id="implementation" class="canonical-section"><h2>Implementation และ tests ที่รันบนเครื่องได้</h2><details><summary>18-neural-network-foundations/src/neural_foundations.py</summary><pre><code>&quot;&quot;&quot;Neural-network forward primitives before backpropagation.&quot;&quot;&quot;
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+import numpy as np
+
+
+def sigmoid(x: np.ndarray) -&gt; np.ndarray:
+    values = np.asarray(x, dtype=float)
+    output = np.empty_like(values)
+    positive = values &gt;= 0
+    output[positive] = 1.0 / (1.0 + np.exp(-values[positive]))
+    exp_values = np.exp(values[~positive])
+    output[~positive] = exp_values / (1.0 + exp_values)
+    return output
+
+
+def relu(x: np.ndarray) -&gt; np.ndarray:
+    return np.maximum(np.asarray(x, dtype=float), 0.0)
+
+
+def tanh(x: np.ndarray) -&gt; np.ndarray:
+    return np.tanh(np.asarray(x, dtype=float))
+
+
+def softmax(x: np.ndarray, axis: int = -1) -&gt; np.ndarray:
+    values = np.asarray(x, dtype=float)
+    shifted = values - np.max(values, axis=axis, keepdims=True)
+    exp_values = np.exp(shifted)
+    return exp_values / np.sum(exp_values, axis=axis, keepdims=True)
+
+
+def mse_loss(y_true: np.ndarray, y_pred: np.ndarray) -&gt; float:
+    y = np.asarray(y_true, dtype=float)
+    p = np.asarray(y_pred, dtype=float)
+    if y.shape != p.shape or y.size == 0:
+        raise ValueError(&quot;equal non-empty shapes required&quot;)
+    return float(np.mean((y - p) ** 2))
+
+
+def binary_cross_entropy(
+    y_true: np.ndarray,
+    probability: np.ndarray,
+    eps: float = 1e-12,
+) -&gt; float:
+    y = np.asarray(y_true, dtype=float)
+    p = np.asarray(probability, dtype=float)
+    if y.shape != p.shape or y.size == 0:
+        raise ValueError(&quot;equal non-empty shapes required&quot;)
+    if not np.all(np.isin(y, [0.0, 1.0])):
+        raise ValueError(&quot;targets must be 0/1&quot;)
+    clipped = np.clip(p, eps, 1.0 - eps)
+    return float(
+        -np.mean(
+            y * np.log(clipped)
+            + (1.0 - y) * np.log(1.0 - clipped)
+        )
+    )
+
+
+@dataclass
+class Linear:
+    in_features: int
+    out_features: int
+    seed: int = 42
+
+    def __post_init__(self) -&gt; None:
+        if self.in_features &lt;= 0 or self.out_features &lt;= 0:
+            raise ValueError(&quot;feature counts must be positive&quot;)
+        rng = np.random.default_rng(self.seed)
+        scale = np.sqrt(2.0 / self.in_features)
+        self.weight = rng.normal(
+            0.0,
+            scale,
+            size=(self.in_features, self.out_features),
+        )
+        self.bias = np.zeros(self.out_features, dtype=float)
+
+    def __call__(self, X: np.ndarray) -&gt; np.ndarray:
+        array = np.asarray(X, dtype=float)
+        if array.ndim != 2 or array.shape[1] != self.in_features:
+            raise ValueError(&quot;input shape mismatch&quot;)
+        return array @ self.weight + self.bias
+
+    @property
+    def parameter_count(self) -&gt; int:
+        return self.in_features * self.out_features + self.out_features
+
+
+class PerceptronClassifier:
+    def __init__(
+        self,
+        *,
+        learning_rate: float = 1.0,
+        epochs: int = 50,
+    ) -&gt; None:
+        if learning_rate &lt;= 0 or epochs &lt;= 0:
+            raise ValueError(&quot;learning_rate and epochs must be positive&quot;)
+        self.learning_rate = learning_rate
+        self.epochs = epochs
+        self.coef_: np.ndarray | None = None
+        self.intercept_: float | None = None
+        self.classes_: np.ndarray | None = None
+
+    def fit(self, X: np.ndarray, y: np.ndarray) -&gt; &quot;PerceptronClassifier&quot;:
+        array = np.asarray(X, dtype=float)
+        labels = np.asarray(y).reshape(-1)
+
+        if array.ndim != 2 or array.shape[0] != labels.shape[0]:
+            raise ValueError(&quot;invalid X/y shapes&quot;)
+
+        classes = np.unique(labels)
+        if classes.size != 2:
+            raise ValueError(&quot;binary classes required&quot;)
+
+        signed = np.where(labels == classes[0], -1.0, 1.0)
+        w = np.zeros(array.shape[1], dtype=float)
+        b = 0.0
+
+        for _ in range(self.epochs):
+            mistakes = 0
+            for row, target in zip(array, signed):
+                if target * (float(row @ w) + b) &lt;= 0.0:
+                    w += self.learning_rate * target * row
+                    b += self.learning_rate * target
+                    mistakes += 1
+            if mistakes == 0:
+                break
+
+        self.coef_ = w
+        self.intercept_ = b
+        self.classes_ = classes
+        return self
+
+    def predict(self, X: np.ndarray) -&gt; np.ndarray:
+        if (
+            self.coef_ is None
+            or self.intercept_ is None
+            or self.classes_ is None
+        ):
+            raise RuntimeError(&quot;fit before predict&quot;)
+
+        array = np.asarray(X, dtype=float)
+        score = array @ self.coef_ + self.intercept_
+        signed = np.where(score &gt;= 0.0, 1.0, -1.0)
+        return np.where(signed &lt; 0, self.classes_[0], self.classes_[1])
+
+
+class TinyMLP:
+    def __init__(
+        self,
+        in_features: int,
+        hidden_features: int,
+        out_features: int,
+        *,
+        seed: int = 42,
+    ) -&gt; None:
+        self.layer1 = Linear(in_features, hidden_features, seed=seed)
+        self.layer2 = Linear(hidden_features, out_features, seed=seed + 1)
+
+    def forward(self, X: np.ndarray) -&gt; np.ndarray:
+        hidden = relu(self.layer1(X))
+        return self.layer2(hidden)
+
+    @property
+    def parameter_count(self) -&gt; int:
+        return self.layer1.parameter_count + self.layer2.parameter_count
+</code></pre></details><details><summary>18-neural-network-foundations/tests/test_neural_foundations.py</summary><pre><code>from pathlib import Path
+import importlib.util
+import sys
+
+import numpy as np
+
+
+MODULE_PATH = Path(__file__).parents[1] / &quot;src&quot; / &quot;neural_foundations.py&quot;
+SPEC = importlib.util.spec_from_file_location(&quot;neural_foundations_course&quot;, MODULE_PATH)
+assert SPEC and SPEC.loader
+mod = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = mod
+SPEC.loader.exec_module(mod)
+
+
+def test_activations_are_numerically_stable() -&gt; None:
+    values = np.array([-1000.0, 0.0, 1000.0])
+    sig = mod.sigmoid(values)
+    assert np.all(np.isfinite(sig))
+    assert sig[0] &lt; 1e-10
+    assert sig[1] == 0.5
+    assert sig[2] &gt; 1.0 - 1e-10
+
+    probs = mod.softmax(np.array([[1000.0, 1001.0, 1002.0]]), axis=1)
+    np.testing.assert_allclose(probs.sum(axis=1), 1.0)
+
+
+def test_linear_shape_and_parameter_count() -&gt; None:
+    layer = mod.Linear(3, 4, seed=1)
+    X = np.ones((5, 3))
+    output = layer(X)
+
+    assert output.shape == (5, 4)
+    assert layer.parameter_count == 3 * 4 + 4
+
+
+def test_perceptron_learns_and_gate() -&gt; None:
+    X = np.array([[0, 0], [0, 1], [1, 0], [1, 1]], dtype=float)
+    y = np.array([0, 0, 0, 1])
+
+    model = mod.PerceptronClassifier(epochs=50).fit(X, y)
+    np.testing.assert_array_equal(model.predict(X), y)
+
+
+def test_mlp_forward_shape_and_count() -&gt; None:
+    model = mod.TinyMLP(10, 8, 3, seed=7)
+    X = np.ones((32, 10))
+    output = model.forward(X)
+
+    assert output.shape == (32, 3)
+    assert model.parameter_count == (10 * 8 + 8) + (8 * 3 + 3)
+
+
+def test_losses_prefer_better_predictions() -&gt; None:
+    y = np.array([0.0, 1.0])
+    assert mod.binary_cross_entropy(y, np.array([0.1, 0.9])) &lt; mod.binary_cross_entropy(
+        y,
+        np.array([0.9, 0.1]),
+    )
+
+    target = np.array([1.0, 2.0])
+    assert mod.mse_loss(target, target) == 0.0
+</code></pre></details></section><section id="glossary" class="canonical-section"><h2>อภิธานศัพท์ — คำไทย ความหมาย และข้อควรตรวจ</h2><dl><dt>tensor</dt><dd>เทนเซอร์: ชุดตัวเลขที่มีแกน เช่น scalar ไม่มีแกน, vector หนึ่งแกน, matrix สองแกน; shape บอกขนาดแต่ละแกน ไม่บอกความหมายของแกนจนกว่าจะระบุ</dd><dt>shape</dt><dd>รูปทรงข้อมูล: (B,T,d) หมายถึง batch × เวลา/ตำแหน่ง × features; ใช้ชื่อแกนกำกับเสมอ การ transpose เปลี่ยนแกนแต่ไม่ใช่แค่เปลี่ยนชื่อ</dd><dt>batch</dt><dd>กลุ่มตัวอย่างที่คำนวณร่วมกันหนึ่งครั้ง; B คือจำนวนตัวอย่าง ไม่ใช่จำนวน features หรือจำนวน optimizer updates</dd><dt>weight w / θ</dt><dd>น้ำหนักหรือพารามิเตอร์ที่โมเดลใช้คำนวณ; แก้ด้วยมือทำ forward ใหม่ ส่วน optimizer ต้องรับ gradient แล้วกด update จึงแก้ state</dd><dt>bias b</dt><dd>ค่าคงที่ที่บวกกับผลเชิงเส้น; regression scalar bias เพิ่ม Δ ทำให้ prediction ทุกจุดเพิ่ม Δ เท่ากัน</dd><dt>prediction ŷ</dt><dd>ค่าที่โมเดลทำนายจาก input และพารามิเตอร์ปัจจุบัน; เครื่องหมายหมวกแยกจาก target y ที่มาจากข้อมูล</dd><dt>residual e</dt><dd>ความคลาดเคลื่อน ในเว็บนี้นิยาม prediction − target; บางตำราใช้เครื่องหมายกลับกัน จึงต้องตรวจนิยามก่อนเทียบสูตร gradient</dd><dt>MSE</dt><dd>mean squared error = ผลรวม residual กำลังสองหารจำนวนรายการที่ระบุ; มีหน่วยเป็น target ยกกำลังสอง และการใช้ sum แทน mean เปลี่ยน scale gradient</dd><dt>loss L / objective J</dt><dd>จำนวนที่ optimizer ต้องการลด; objective อาจรวม data loss และ regularization จึงต้องดูองค์ประกอบและ reduction ให้ตรง implementation</dd><dt>gradient ∇ / ∂</dt><dd>เวกเตอร์ของ partial derivatives บอกอัตราเปลี่ยน loss ต่อพารามิเตอร์แต่ละตัว; ∂ ใช้เมื่อเปลี่ยนตัวหนึ่งโดยตรึงตัวอื่น</dd><dt>chain rule</dt><dd>กฎลูกโซ่: คูณอนุพันธ์ตามเส้นทาง และบวก contribution จากทุกเส้นทางที่มารวมกัน ใช้ย้อนจาก loss ถึง weights</dd><dt>learning rate η</dt><dd>ขนาดตัวคูณ gradient ใน update θnew=θ−ηg; η≥0, ศูนย์หมายถึงไม่มีการขยับพารามิเตอร์ ก้าวใหญ่เกินอาจ diverge</dd><dt>regularization λ</dt><dd>ตัวคูณค่าลงโทษ ต้อง λ≥0 ตามนิยามการลงโทษ; Ridge λΣw² เพิ่ม gradient 2λw โดยบท Regression นี้ไม่ลงโทษ bias</dd><dt>baseline</dt><dd>สถานะอ้างอิงที่ตรึงไว้สำหรับเทียบ; ต้องเก็บ snapshot ไม่อ้าง object ปัจจุบันที่แก้ตามไปด้วย</dd><dt>invariant</dt><dd>คุณสมบัติที่กลไกต้องรักษา เช่น probability รวม1, shape สอดคล้อง, queue ไม่เกิน capacity; ใช้ tests ตรวจได้มากกว่าดูภาพสวย</dd><dt>optimizer state</dt><dd>ความจำของอัลกอริทึม เช่น velocity, moments และ completed updates; คืนเฉพาะ weights ยังไม่เท่ากับเริ่มการฝึกใหม่ทั้งหมด</dd><dt>finite difference</dt><dd>ประมาณ derivative ด้วย [f(x+h)−f(x−h)]/(2h); h&gt;0, ใช้ smooth point และลองหลาย h เพื่อแยก truncation error จาก roundoff</dd><dt>softmax</dt><dd>แปลง logits เป็นความน่าจะเป็นตามแกนที่กำหนด; ลบ max ก่อน exp เพื่อความเสถียร และ fully masked row ต้องมีนโยบายชัดเจน</dd><dt>logit</dt><dd>คะแนนก่อน sigmoid/softmax ไม่ใช่ probability; อาจเป็นจำนวนจริงติดลบหรือเกิน1ได้ จึงห้ามส่งให้ loss ที่คาด probability โดยไม่แปลง</dd><dt>temperature τ / T</dt><dd>ตัวหาร logits ก่อน softmax; ต้องเป็นบวก ค่าเล็กทำ distribution แหลมขึ้น โดยไม่เท่ากับ retrain weights</dd><dt>mask</dt><dd>ตัวกำหนดตำแหน่งที่อ่านหรือคิด loss ได้; causal mask ปิดอนาคต, padding mask ปิดข้อมูลเติม, loss mask เลือก target แต่ละอย่างคนละหน้าที่</dd><dt>Q / K / V</dt><dd>query ใช้ค้นข้อมูล, key ใช้จับคู่ query, value เป็นข้อมูลที่ถูกถัวเฉลี่ย; เป็น learned projections ของ representation ไม่ใช่ป้ายความหมายตายตัว</dd><dt>head</dt><dd>ส่วนของ feature representation ที่ทำ attention แยกกัน แล้ว concat/project กลับ; ต้องตรวจ d_model หารจำนวน heads ลงตัว</dd><dt>ε-neighborhood</dt><dd>เพื่อนบ้านทั้งหมดที่มีระยะไม่เกิน ε รวมจุดตัวเองใน DBSCAN นี้; ε มีหน่วยเดียวกับพิกัด ไม่ใช่จำนวน k ที่ใช้โหวต</dd><dt>core / border / noise</dt><dd>DBSCAN core มีเพื่อนบ้านรวมตัวเองถึง min_samples; border อยู่ใกล้ core แต่เพื่อนบ้านไม่ถึง; noise ไม่ถูกเชื่อมกับ core cluster ใด</dd><dt>bootstrap</dt><dd>สุ่ม observations แบบ replacement ขนาดเท่าเดิมซ้ำหลายครั้งแล้วคำนวณ statistic ใหม่; seed ทำให้ตรวจซ้ำได้ แต่ไม่แก้สมมติฐาน IID ที่ผิด</dd><dt>confidence interval</dt><dd>ช่วงที่สร้างด้วย procedure ที่มี coverage ตามสมมติฐาน; ช่วงหนึ่งที่ได้แล้วไม่ใช่ posterior probability ของ parameter และ sample เล็กยังไม่แน่นอนมาก</dd><dt>validation / test</dt><dd>validation ใช้เลือกโมเดล/ค่าตั้ง ส่วน test ใช้ประเมินหลัง freeze การตัดสินใจ; fit preprocessing/tokenizer จาก test เป็น leakage</dd><dt>leakage</dt><dd>ข้อมูลที่ควรยังไม่รู้ไหลเข้า training/การเลือกโมเดล เช่น future feature หรือเอกสารซ้ำข้าม split ทำให้ metric ดูดีเกินการใช้งานจริง</dd><dt>queue / capacity</dt><dd>queue คือรายการรอ, capacity การให้บริการรวม = workers × service rate ตามแบบจำลอง; เพิ่ม timeout ไม่เพิ่มกำลังประมวลผล</dd><dt>state transition</dt><dd>การเปลี่ยนสถานะเมื่อเกิดเหตุการณ์ที่อนุญาต เช่น queued→active→done; ต้องระบุ guard, side effect และเหตุผลเมื่อ transition ถูกปฏิเสธ</dd><dt>latency / throughput</dt><dd>latency คือเวลาต่อคำขอ, throughput คือปริมาณงานต่อหน่วยเวลา; batching อาจเพิ่ม throughput แต่เพิ่มเวลารอ จึงต้องวัดทั้งคู่</dd><dt>idempotency</dt><dd>ทำคำขอ business operation เดิมซ้ำแล้ว side effect เกิดครั้งเดียวตาม key และ transaction protocol; ไม่ได้รับประกันจากการใช้ UUID ใหม่ทุก attempt</dd><dt>local lab</dt><dd>โปรแกรม Python และ tests ที่ผู้เรียนรันบนเครื่อง; เว็บเก็บเพียงคำยืนยันของผู้เรียน การผ่าน tests ของโค้ดต้นแบบไม่ใช่ผลตรวจโค้ดผู้เรียน</dd></dl></section></article>
+<section id="practice" class="practice-section"><span class="eyebrow">PRACTICE · DEBUG · BUILD</span><h2>พิสูจน์ด้วยการลงมือทำ</h2><div id="web-checks"></div><div class="retry-actions"><button class="secondary-button" id="retry-checks">เริ่มทำโจทย์ในเว็บใหม่</button><button class="text-button" id="undo-retry" hidden>คืนผลก่อนเริ่มใหม่</button></div><div id="exercise-content"><h2>แบบฝึก 20 ข้อ — เฉลยเฉพาะข้อ</h2><p>ทำคำตอบก่อนเปิด hints; โจทย์ปลายเปิดให้ใช้ตัวอย่างคำตอบและหลักฐานราย objective ตรวจงานจริง</p><section id="exercise-1" class="exercise-item"><h3>ข้อ 1</h3><p>Define neuron.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Artificial Neuron: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): neuronรับx(d),w(d),b scalarคำนวณz=w…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: neuronรับx(d),w(d),b scalarคำนวณz=wᵀx+bแล้วa=φ(z); x=[1,2],w=[.…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>neuronรับx(d),w(d),b scalarคำนวณz=wᵀx+bแล้วa=φ(z); x=[1,2],w=[.5,−1],b=.5ให้z=−1,aReLU=0</p><p>อ้างอิง: <a href="#chapter-18/section/topic-3">Artificial Neuron</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch18-exercise-01"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-2" class="exercise-item"><h3>ข้อ 2</h3><p>Define linear layer with a small example.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Dense / Linear Layer: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): linear layerทำneuronsหลายตัวพร้อมกัน: X(…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: linear layerทำneuronsหลายตัวพร้อมกัน: X(B,d)W(d,h)+b(h)→Z(B,h); B2,d3,h4…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>linear layerทำneuronsหลายตัวพร้อมกัน: X(B,d)W(d,h)+b(h)→Z(B,h); B2,d3,h4ให้output(2,4)และparameters16</p><p>อ้างอิง: <a href="#chapter-18/section/topic-8">Dense / Linear Layer</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch18-exercise-02"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-3" class="exercise-item"><h3>ข้อ 3</h3><p>Explain activation.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Why Nonlinearity?: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): activationเป็นnonlinearfunctionเช่นReLUmax(0,z);…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: activationเป็นnonlinearfunctionเช่นReLUmax(0,z); ถ้าทุกชั้นlinearเท่านั้นW₁W₂รวมเป็นlin…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>activationเป็นnonlinearfunctionเช่นReLUmax(0,z); ถ้าทุกชั้นlinearเท่านั้นW₁W₂รวมเป็นlinearเดียว ไม่เพิ่มnonlinearcapacity</p><p>อ้างอิง: <a href="#chapter-18/section/topic-10">Why Nonlinearity?</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch18-exercise-03"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-4" class="exercise-item"><h3>ข้อ 4</h3><p>Explain forward pass.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Forward Pass: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): forwardpassคือคำนวณactivationตามdependencyจา…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: forwardpassคือคำนวณactivationตามdependencyจากinputถึงlossโดยใช้weightsปัจจุบัน ไ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>forwardpassคือคำนวณactivationตามdependencyจากinputถึงlossโดยใช้weightsปัจจุบัน ไม่มีoptimizerupdateระหว่างอ่านผล</p><p>อ้างอิง: <a href="#chapter-18/section/topic-16">Forward Pass</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch18-exercise-04"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-5" class="exercise-item"><h3>ข้อ 5</h3><p>Compare neuron and linear layer.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Weight Meaning, Bias: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): neuronเป็นหนึ่งoutput ส่วนlinearlayerรวมหลายneuron…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: neuronเป็นหนึ่งoutput ส่วนlinearlayerรวมหลายneuronที่shareinput; weightorientationต้องประก…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>neuronเป็นหนึ่งoutput ส่วนlinearlayerรวมหลายneuronที่shareinput; weightorientationต้องประกาศ NumPy(d,h)ต่างจากtorchLinear(h,d)</p><p>อ้างอิง: <a href="#chapter-18/section/topic-4">Weight Meaning</a>, <a href="#chapter-18/section/topic-5">Bias</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch18-exercise-05"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-6" class="exercise-item"><h3>ข้อ 6</h3><p>Explain how forward pass changes model behavior.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Forward Pass: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): เปลี่ยนwทำให้z,a,lossเปลี่ยนทันที; จะแ…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: เปลี่ยนwทำให้z,a,lossเปลี่ยนทันที; จะแก้weightsจากgradientต้องbackwar…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>เปลี่ยนwทำให้z,a,lossเปลี่ยนทันที; จะแก้weightsจากgradientต้องbackwardและstepแยกจากforwardให้ชัด</p><p>อ้างอิง: <a href="#chapter-18/section/topic-16">Forward Pass</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch18-exercise-06"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-7" class="exercise-item"><h3>ข้อ 7</h3><p>Explain a common limitation involving parameter initialization.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Initialization: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ตั้งweightsทุกhiddenunitเหมือนกันทำให้gradเหมือนกันแ…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ตั้งweightsทุกhiddenunitเหมือนกันทำให้gradเหมือนกันและไม่breaksymmetry; ใช้Hevariance2/fan_in…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ตั้งweightsทุกhiddenunitเหมือนกันทำให้gradเหมือนกันและไม่breaksymmetry; ใช้Hevariance2/fan_inสำหรับReLUพร้อมตรวจactivationvariance</p><p>อ้างอิง: <a href="#chapter-18/section/topic-19">Initialization</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch18-exercise-07"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-8" class="exercise-item"><h3>ข้อ 8</h3><p>Explain the tradeoff introduced by batching.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Batch Dimension: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): batchใหญ่ใช้matrixhardwareคุ้มแต่memoryเพิ่มและgradie…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: batchใหญ่ใช้matrixhardwareคุ้มแต่memoryเพิ่มและgradientnoiseลด; batch1SGDต่างจากfullbatchแม้จำนว…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>batchใหญ่ใช้matrixhardwareคุ้มแต่memoryเพิ่มและgradientnoiseลด; batch1SGDต่างจากfullbatchแม้จำนวนepochเท่ากัน ให้เทียบจำนวนupdatesด้วย</p><p>อ้างอิง: <a href="#chapter-18/section/topic-20">Batch Dimension</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch18-exercise-08"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-9" class="exercise-item"><h3>ข้อ 9</h3><p>Implement a small from-scratch example of neuron.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ From Scratch: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): <code>z=np.dot([1,2],[.5,-1])+.5; a=max(0,z)</code> ไ…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: <code>z=np.dot([1,2],[.5,-1])+.5; a=max(0,z)</code> ได้−1,0; เปลี่ยนbเป็น2ได้z=.5,a=.5;…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p><code>z=np.dot([1,2],[.5,-1])+.5; a=max(0,z)</code> ได้−1,0; เปลี่ยนbเป็น2ได้z=.5,a=.5; เชื่อมผลก่อน/หลังที่neuronlab</p><p>อ้างอิง: <a href="#chapter-18/section/topic-25">From Scratch</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch18-exercise-09"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-10" class="exercise-item"><h3>ข้อ 10</h3><p>Add deterministic tests for Exercise 9.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ From Scratch: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): assertz−1,a0และinputshapeเท่ากับw; bias2ให้a…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: assertz−1,a0และinputshapeเท่ากับw; bias2ให้a.5; numericfinitecheckและmismatched…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>assertz−1,a0และinputshapeเท่ากับw; bias2ให้a.5; numericfinitecheckและmismatchedwlengthต้องraiseแทนbroadcastผิด</p><p>อ้างอิง: <a href="#chapter-18/section/topic-25">From Scratch</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch18-exercise-10"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-11" class="exercise-item"><h3>ข้อ 11</h3><p>Implement the main computation behind activation.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ ReLU, Sigmoid, Tanh: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): `relu=np.maximum(z,0); sigmoid=np.where(z&gt;=0,1/(1+np.ex…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: `relu=np.maximum(z,0); sigmoid=np.where(z&gt;=0,1/(1+np.exp(-np.abs(z))),np.exp(-np.abs(z))/(1+np.exp(-…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p><code>relu=np.maximum(z,0); sigmoid=np.where(z&gt;=0,1/(1+np.exp(-np.abs(z))),np.exp(-np.abs(z))/(1+np.exp(-np.abs(z))))</code>; z=[−1,0,1]ให้ReLU[0,0,1]</p><p>อ้างอิง: <a href="#chapter-18/section/topic-11">ReLU</a>, <a href="#chapter-18/section/topic-12">Sigmoid</a>, <a href="#chapter-18/section/topic-13">Tanh</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch18-exercise-11"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-12" class="exercise-item"><h3>ข้อ 12</h3><p>Run a small seeded experiment using linear layer, forward pass, and batching.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Forward Pass, Batch Dimension: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): seed7 สร้างXOR4จุด; trainMLP2→4→1และlinearmodelด้วย…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: seed7 สร้างXOR4จุด; trainMLP2→4→1และlinearmodelด้วยbatch4/2 คงinit/data; reportloss/accuracy…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>seed7 สร้างXOR4จุด; trainMLP2→4→1และlinearmodelด้วยbatch4/2 คงinit/data; reportloss/accuracy/updatesจริงและactivationdeadfraction</p><p>อ้างอิง: <a href="#chapter-18/section/topic-16">Forward Pass</a>, <a href="#chapter-18/section/topic-20">Batch Dimension</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch18-exercise-12"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-13" class="exercise-item"><h3>ข้อ 13</h3><p>Explain a common shape or data mismatch for this topic.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Feature / Hidden / Output Dimensions: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): X(B,d)@W(h,d)ผิดถ้าไม่transpose; target(B,)ลบp…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: X(B,d)@W(h,d)ผิดถ้าไม่transpose; target(B,)ลบprediction(B,1)จะกลาย(B,B); assertpred…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>X(B,d)@W(h,d)ผิดถ้าไม่transpose; target(B,)ลบprediction(B,1)จะกลาย(B,B); assertprediction.shape==target.shapeก่อนMSE</p><p>อ้างอิง: <a href="#chapter-18/section/topic-21">Feature / Hidden / Output Dimensions</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch18-exercise-13"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-14" class="exercise-item"><h3>ข้อ 14</h3><p>Explain one numerical-stability concern.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Loss: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): sigmoid/softmaxexpใหญ่overflow ให้stableformula/lo…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: sigmoid/softmaxexpใหญ่overflow ให้stableformula/logitsloss; float32activationอาจoverflowก่…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>sigmoid/softmaxexpใหญ่overflow ให้stableformula/logitsloss; float32activationอาจoverflowก่อนlossจึงตรวจzของชั้นแรกที่nonfinite</p><p>อ้างอิง: <a href="#chapter-18/section/topic-17">Loss</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch18-exercise-14"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-15" class="exercise-item"><h3>ข้อ 15</h3><p>Explain the correct train, validation, and test workflow.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Training Perceptron vs Training MLP: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): splitก่อนnormalization; trainmodeใช้dropout,evalmo…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: splitก่อนnormalization; trainmodeใช้dropout,evalmodeปิดdropout; validationไม่updateweights…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>splitก่อนnormalization; trainmodeใช้dropout,evalmodeปิดdropout; validationไม่updateweights; testครั้งท้ายหลังเลือกarchitecture</p><p>อ้างอิง: <a href="#chapter-18/section/topic-26">Training Perceptron vs Training MLP</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch18-exercise-15"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-16" class="exercise-item"><h3>ข้อ 16</h3><p>Measure runtime and memory of the main computation.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Parameter Count: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): denseforward O(Bdh) และactivationO(Bh),weightsO(d…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: denseforward O(Bdh) และactivationO(Bh),weightsO(dh); backwardต้องเก็บintermediatesเพิ่ม; …</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>denseforward O(Bdh) และactivationO(Bh),weightsO(dh); backwardต้องเก็บintermediatesเพิ่ม; วัดB,d,hและpeakmemoryด้วยdtypeเดียว</p><p>อ้างอิง: <a href="#chapter-18/section/topic-9">Parameter Count</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch18-exercise-16"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-17" class="exercise-item"><h3>ข้อ 17</h3><p>Derive the main input-to-output algorithm for Neural Network Foundations.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Forward Pass: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): X→Z₁=XW₁+b₁→A₁=ReLUZ₁→Z₂=A₁W₂+b₂→loss→b…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: X→Z₁=XW₁+b₁→A₁=ReLUZ₁→Z₂=A₁W₂+b₂→loss→backprop→update; ระบุshapesทุกลูก…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>X→Z₁=XW₁+b₁→A₁=ReLUZ₁→Z₂=A₁W₂+b₂→loss→backprop→update; ระบุshapesทุกลูกศรและแยกinferenceจากtraining</p><p>อ้างอิง: <a href="#chapter-18/section/topic-16">Forward Pass</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch18-exercise-17"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-18" class="exercise-item"><h3>ข้อ 18</h3><p>Compare a scratch implementation with a trusted library on identical data.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ From Scratch: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): copyNumPyW.Tเข้าtorch.nn.Linear.weight,bเหมือนกัน,dt…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: copyNumPyW.Tเข้าtorch.nn.Linear.weight,bเหมือนกัน,dtypefloat64 แล้วassertforwardallclose; ไม่เพ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>copyNumPyW.Tเข้าtorch.nn.Linear.weight,bเหมือนกัน,dtypefloat64 แล้วassertforwardallclose; ไม่เพียงseedเดียวเพราะinitalgorithmต่างกัน</p><p>อ้างอิง: <a href="#chapter-18/section/topic-25">From Scratch</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch18-exercise-18"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-19" class="exercise-item"><h3>ข้อ 19</h3><p>Compare a baseline with a controlled change involving parameter initialization.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Initialization: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): เปลี่ยนเฉพาะzero→HeinitializationบนMLPเดิม; recordloss…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: เปลี่ยนเฉพาะzero→HeinitializationบนMLPเดิม; recordlossและunitoutputsหลังทุกupdate; symmetriczeroอา…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>เปลี่ยนเฉพาะzero→HeinitializationบนMLPเดิม; recordlossและunitoutputsหลังทุกupdate; symmetriczeroอาจเรียนbiasได้แต่hiddenunitsยังเหมือนกัน</p><p>อ้างอิง: <a href="#chapter-18/section/topic-19">Initialization</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch18-exercise-19"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-20" class="exercise-item"><h3>ข้อ 20</h3><p>Summarize validation, reproducibility, monitoring, and one open research question.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Universal Approximation — Caution: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): บันทึกarchitecture/init/activation/lossreduction/seed/split…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: บันทึกarchitecture/init/activation/lossreduction/seed/split; monitoractivation/gradnorm; ทดลองHeลดdeadReLU…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>บันทึกarchitecture/init/activation/lossreduction/seed/split; monitoractivation/gradnorm; ทดลองHeลดdeadReLUเทียบlargevarianceโดยวัดก่อนและหลังฝึกจริง</p><p>อ้างอิง: <a href="#chapter-18/section/topic-24">Universal Approximation — Caution</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch18-exercise-20"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section></div><div id="local-lab-content"><section id="local-lab"><h2>Local lab: Python 3.12 บน CPU</h2><p>รันจาก repository root; ใช้ Python 3.12 แยก environment สำหรับ framework ตาม requirements ของชุดบท</p><pre><code>python3.12 -m venv .venv-course
+source .venv-course/bin/activate
+python -m pip install -r requirements-batch06.txt pytest
+(cd 18-neural-network-foundations &amp;&amp; python -m pytest tests -q -rs)</code></pre><p>ผลที่คาดหวัง: required tests ผ่านและไม่มี required test ถูก skip; GPU/integrations ที่ยังไม่รันต้องระบุแยก Python 3.15 ที่มากับเครื่องอาจใช้กับ framework wheels เหล่านี้ไม่ได้</p><h2>Mini Project — Neural Forward-Pass Inspector</h2>
+<p>Build a CLI that accepts architecture such as:</p>
+<pre><code class="language-text">10 → 32 → 16 → 4
+</code></pre>
+<p>and reports:
+- every weight shape
+- every bias shape
+- activation shape
+- parameter count per layer
+- total parameters
+- min/max/mean/std of activations
+- output logits
+- optional sigmoid/softmax probabilities</p>
+<p>Required experiments:
+1. zero input
+2. random normal input
+3. huge magnitude input
+4. different initialization scales
+5. network with no nonlinear activations</p>
+<p>Explain why linear-only deep networks collapse to one linear map.</p><h2>Batch 06 Integration Project — Anomaly-Aware Forecasting &amp; Neural Baseline Lab</h2>
+<p>รวม Chapters 16–18:</p>
+<pre><code class="language-text">time series
+   ↓
+chronological split
+   ↓
+causal anomaly features
+   ↓
+IsolationForest fit on TRAIN only
+   ↓
+lag-window supervised dataset
+   ↓
+Seasonal Naive
+Linear Autoregression
+MLPRegressor
+   ↓
+validation RMSE
+   ↓
+model selection
+   ↓
+final future test
+</code></pre>
+<h3>Goal</h3>
+<p>แยก 3 งานให้ชัด:</p>
+<ol>
+<li><strong>Detection</strong> — จุดไหนดูผิดปกติ?</li>
+<li><strong>Forecasting</strong> — ค่าถัดไปควรเป็นเท่าไร?</li>
+<li><strong>Neural Representation</strong> — MLP ใช้ lag window อย่างไร?</li>
+</ol>
+<p>Anomaly detector ไม่ได้ลบข้อมูลโดยอัตโนมัติ; project เพียงรายงาน scores/flags และวัดว่ามี anomalies กระจายตรงไหน</p>
+<h3>Run</h3>
+<pre><code class="language-bash">source .venv/bin/activate
+python -m pip install -r requirements-batch06.txt
+
+python integration-project-batch06/src/forecasting_neural_lab.py   --output-dir reports/batch06   --seed 42
+</code></pre>
+<h3>Models</h3>
+<ul>
+<li>seasonal naive baseline</li>
+<li>linear autoregression on lag features</li>
+<li>MLPRegressor on lag features</li>
+</ul>
+<h3>Leakage Rules</h3>
+<ul>
+<li>chronological split only</li>
+<li>anomaly detector fit on training timeline only</li>
+<li>lag row at time t uses values before t only</li>
+<li>StandardScaler lives inside the MLP Pipeline</li>
+<li>validation selects model</li>
+<li>final test is evaluated once</li>
+</ul>
+<h3>Required Extensions</h3>
+<ol>
+<li>add statsmodels ARIMA candidate</li>
+<li>optional Prophet candidate</li>
+<li>rolling-origin evaluation</li>
+<li>multi-step recursive forecast</li>
+<li>contextual anomaly detector using hour/day features</li>
+<li>compare anomaly-removal vs robust training carefully</li>
+<li>add prediction intervals</li>
+<li>MLP hidden-layer sweep</li>
+<li>anomaly-aware loss weighting</li>
+<li>regime-shift scenario</li>
+</ol>
+<h3>Mastery Questions</h3>
+<ul>
+<li>ทำไม anomaly detector fit full timeline จึง leak?</li>
+<li>ทำไม anomaly ไม่ควรถูกลบอัตโนมัติ?</li>
+<li>one-step lag evaluation ต่างจาก recursive multi-step อย่างไร?</li>
+<li>MLP training ใช้ backprop แม้ Chapter 18 ยังไม่ derive อย่างไร?</li>
+<li>validation/test chronology สำคัญอย่างไร?</li>
+</ul></section></div><label class="local-confirm"><input type="checkbox" id="local-lab-confirm"> ฉันรัน local lab และตรวจผลตาม rubric ด้วยตัวเองแล้ว</label><p class="local-note">สถานะนี้เป็นคำยืนยันของผู้เรียน เว็บไม่ได้รันหรือตรวจ Python บนเครื่องแทนคุณ</p></section>
+<section id="mastery-review" class="practice-section"><h2>หลักฐานตามเกณฑ์การเรียนรู้</h2><p>ทุก objective ต้องแสดงหลักฐานอธิบาย ทำนาย คำนวณ อ่าน shape/state debug และประยุกต์ พร้อมกรณีใหม่ ผลรัน source ผู้เรียนจริง และการประเมินซ้ำ เกณฑ์นี้ไม่รับประกันความเข้าใจทุกสถานการณ์ เปิด JavaScript เพื่อดูรายการที่ยังขาดและนำเข้ารายงานผู้ตรวจ</p></section><section class="coverage-section"><h2>แผนที่สิ่งที่เรียน → สิ่งที่ต้องแสดงให้ได้</h2><div id="coverage-table"></div></section><footer><span>ZERO TO ELITE AI ENGINEER · LEARNING STUDIO</span><span>อ่าน · derive · implement · debug · experiment · build</span></footer></div></main><noscript><style>.workbench,.sidebar,.reading-route,.lesson-toc,.mastery-status,#web-checks{display:none}main{margin-left:0}</style>อ่านเนื้อหา HTML ได้ตามปกติ เปิด JavaScript เพื่อใช้ห้องทดลองและตรวจคำตอบ</noscript></body></html>

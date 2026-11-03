@@ -1,5 +1,11 @@
 # Chapter 04 — Data Fundamentals
 
+## Interactive Animation Lab
+
+[เปิดภาพจำลองของบทนี้](animation.html) · [เลือกจากทั้ง 80 บท](../visual-lab/index.html)
+
+ดู flow ทีละขั้น → ทดลองเปลี่ยนค่า → อ่านสมการและโค้ด → ตอบคำถามเช็กความเข้าใจ แล้วกลับมาทำแบบฝึกหัดในบทนี้
+
 ## 1. Why This Matters
 
 โมเดลที่ดีไม่สามารถชดเชย dataset ที่ผิดโจทย์ รั่วข้อมูล หรือมี preprocessing ไม่สอดคล้องกันได้

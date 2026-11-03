@@ -1,0 +1,1538 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="บทเรียน AI Engineer ภาษาไทย พร้อมคณิตศาสตร์ทีละขั้นและห้องทดลองที่คำนวณจริง"><title>Detection/Segmentation: ตำแหน่งถูกต้องกว้างแค่ไหน · AI Engineer Studio</title><link rel="stylesheet" href="../visual-lab/assets/styles.css"><link rel="stylesheet" href="../visual-lab/assets/course.css"><script defer src="../visual-lab/assets/lessons.js"></script><script defer src="../visual-lab/assets/chapter-meta.js"></script><script defer src="../visual-lab/assets/course-math.js"></script><script defer src="../visual-lab/assets/course-models.js"></script><script defer src="../visual-lab/assets/course-models-v3.js"></script><script defer src="../visual-lab/assets/course-assessment.js"></script><script defer src="../visual-lab/assets/course-mastery.js"></script><script defer src="../visual-lab/assets/course-catalog.js"></script><script defer src="../visual-lab/assets/book-content.js"></script><script defer src="../visual-lab/assets/course-render.js"></script><script defer src="../visual-lab/assets/course-mastery-panel.js"></script><script defer src="../visual-lab/assets/quality-report.js"></script><script defer src="../visual-lab/assets/course-app.js"></script></head>
+<body data-chapter="44" data-root="../"><a class="skip-link" href="#main">ข้ามไปบทเรียน</a>
+<aside class="sidebar" id="sidebar" aria-label="เลือกบทเรียน"><a class="brand" href="../visual-lab/index.html"><span class="brand-mark">ai</span><span>AI ENGINEER<small>LEARN · DERIVE · BUILD</small></span></a><div class="sidebar-intro">อ่านให้เข้าใจ · คำนวณให้เห็น · เขียนให้เป็น</div><label class="search-box"><input id="search" type="search" placeholder="ค้นหาบท / attention" aria-label="ค้นหาบทเรียน"></label><label class="filter-label" for="phase-filter">เส้นทางการเรียน <span id="nav-count"></span></label><select id="phase-filter"><option value="">ทุก Phase</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option></select><nav id="chapter-list" class="chapter-list" aria-label="รายชื่อบท"></nav><div class="course-progress"><div><span>ผ่านโจทย์ในเว็บ</span><strong id="progress-count">0 / 80</strong></div><progress id="course-progress" max="80" value="0" aria-label="บทที่ผ่านโจทย์"></progress><a id="resume-link" href="#chapter-1">อ่านต่อจากเดิม →</a></div></aside>
+<button class="nav-backdrop" id="nav-backdrop" aria-label="ปิดเมนู" hidden></button>
+<main id="main" tabindex="-1"><header class="topbar"><div><button id="nav-toggle" class="icon-button mobile-menu" aria-label="เปิดเมนูบทเรียน" aria-expanded="false" aria-controls="sidebar">☰</button><span id="breadcrumb"></span></div><span class="local-badge"><i></i> คำนวณในเครื่อง · ไม่มี API</span></header><div class="content">
+<div class="chapter-navigation"><label for="chapter-select" class="sr-only">เลือกบทเรียน</label><select id="chapter-select"></select><div class="chapter-arrows"><button id="prev-chapter" class="icon-button" aria-label="บทก่อนหน้า">←</button><button id="next-chapter" class="icon-button" aria-label="บทถัดไป">→</button></div></div>
+<section class="chapter-hero"><div><p id="chapter-kicker" class="eyebrow"></p><h1 id="chapter-title">Detection/Segmentation: ตำแหน่งถูกต้องกว้างแค่ไหน</h1><p class="english-title" id="chapter-english"></p></div><span class="hero-symbol">f(x) ↗</span></section>
+<p id="quality-status" class="quality-status"></p><div id="mastery-status" class="mastery-status"></div><div class="reading-route"><a href="#chapter-44/section/overview">01 อ่านบทเรียน</a><a href="#workbench">02 ทดลองสมการ</a><a href="#practice">03 ฝึกและตรวจงาน</a><a href="#mastery-review">04 หลักฐานตามเกณฑ์</a></div>
+<nav id="lesson-toc" class="lesson-toc" aria-label="สารบัญบท"></nav>
+<section id="overview" class="course-overview"><span class="eyebrow">THE LEARNING CONTRACT</span><h2>เรียนบทนี้แล้วต้องทำอะไรได้</h2><p id="chapter-purpose"></p><div id="chapter-objectives"></div><div class="learning-hint">ทำนาย → เปลี่ยนทีละค่า → ตรวจตัวเลข → อธิบายเหตุผล → เขียนด้วย Python เอง</div></section>
+<section class="workbench lab-card" id="workbench" aria-label="ห้องทดลองคำนวณจริง"><div class="card-header"><div><span class="live-dot"></span><span class="eyebrow">COMPUTATION WORKBENCH</span></div><span class="simulation-label">ทุกภาพใช้ผลคำนวณชุดเดียวกัน</span></div><div class="lab-top"><label for="lab-select">เลือกกลไกที่ต้องการทดลอง</label><select id="lab-select"></select><p id="lab-question"></p></div><div class="workbench-grid"><div class="viz-column"><div class="compare-labels"><span>เส้นทึบ: ปัจจุบัน</span><span>เส้นประ: baseline ที่ตรึงไว้</span></div><div id="simulation" class="simulation"></div><div id="metrics" class="metrics"></div><div id="baseline-diff" class="baseline-diff"></div><div class="playback"><div class="playback-buttons"><button class="primary-button" id="update-once">อัปเดตหนึ่งก้าว</button><button class="secondary-button" id="train-many">▶ ฝึก 30 ก้าว</button><button class="icon-button" id="back-state" aria-label="ย้อนประวัติ">↶</button><button class="icon-button" id="forward-state" aria-label="ประวัติถัดไป">↷</button></div></div><div class="lab-secondary-actions"><button id="pin-baseline" class="text-button">ตรึง baseline ปัจจุบัน</button><button id="reset-lab" class="text-button">คืนค่าเริ่มต้น</button><button id="download-state" class="text-button">บันทึกผล JSON</button><span id="history-status"></span></div><p id="simulation-note" class="simulation-note"></p><p class="lab-error" id="lab-error" role="alert" hidden></p></div><div class="controls-column"><h3>เปลี่ยนทีละตัว แล้วสังเกตผล</h3><div id="lab-controls"></div><p class="control-note">แก้ weight ด้วยมือจะคำนวณ forward ใหม่; optimizer เปลี่ยน weights เมื่อกดอัปเดตเท่านั้น</p></div></div>
+<div class="trace-section"><div class="trace-toolbar"><h3>เดินสมการทีละ operation</h3><div><button id="trace-prev" class="icon-button" aria-label="operation ก่อนหน้า">←</button><button id="play-trace" class="secondary-button" aria-pressed="false">▶ เล่น flow</button><button id="trace-next" class="icon-button" aria-label="operation ถัดไป">→</button><span id="stage-counter"></span></div></div><label class="motion-control"><input id="reduce-motion" type="checkbox"> ลดภาพเคลื่อนไหว (หยุดการเล่นที่ค้างอยู่)</label><div id="operation-steps" class="operation-steps"></div><div id="flow-diagram" class="flow-diagram"></div><div id="active-operation" class="active-operation" aria-live="polite"></div><p class="control-note">ตัวเลขบนภาพปัดเศษเพื่อให้อ่านง่าย; บันทึก JSON เพื่อดูค่าที่ใช้คำนวณเต็ม precision</p><details open><summary>ตารางค่าระหว่างทาง — ตรวจด้วยมือได้</summary><div id="result-table"></div></details><div id="tensor-tables" class="tensor-tables"></div><details id="surface-details"><summary>ดู loss surface และเส้นทางของ w₁,b (ตรึง controls อื่น)</summary><div id="surface-chart"></div><p>surface คำนวณ objective ปัจจุบันโดยตรึง degree, penalty, ข้อมูล และ weights อื่น เส้นทางแสดงเฉพาะ snapshots ที่ค่าเหล่านี้ตรงกัน; นอกช่วง w=[−1,5], b=[−2,4] ให้ตรวจค่าจริงใน history</p></details><details><summary>ประวัติการเปลี่ยนค่า</summary><div id="history-table"></div></details></div></section>
+<article id="chapter-article" class="chapter-article"><section id="mechanism-1" class="teaching-section"><span class="section-kicker">CHAPTER 44 · ภาพ → สมการ → โค้ด</span><h2>1. box coordinates ต้องใช้ convention เดียวกัน</h2><h3>โจทย์และเหตุผล</h3><p>ภาพใช้ [x1,y1,x2,y2] แบบ continuous area ก่อนหาส่วนทับต้อง clamp ความกว้าง/สูงอย่างน้อยศูนย์ ไม่เช่นนั้นกล่องไม่ทับอาจให้ area ผิด</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Calculate IoU by hand for overlapping boxes.</p><p>A[0,0,2,2],B[1,1,3,3]intersection1,area4+4,union7ให้IoU1/7≈.142857; disjoint0และidentical1</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>dx: prediction x offset,initial=0.5; dy: prediction y offset,initial=0.2; nms: NMS IoU threshold,initial=0.5; confidence: confidence threshold,initial=0.5</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = [[0.5, 0.2, 2.5, 2.2], [0.2, 0.1, 2.2, 2.1], [3, 0, 5, 2]]; กำหนดความหมายและหน่วยของ input ก่อนทดลอง</li><li>IoU=intersection/union; NMS suppress overlap with higher score = [0, 2]; NMS 比 prediction boxes กันเอง; evaluation IoU เปรียบเทียบกับ truth เป็นคนละขั้น</li><li>normal / boundary / comparison = [0, 2]; ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="detection-ขย-บ-box-แล-วว-ด-iou">เปิดการทดลองนี้</a><p class="failure-box">cropsofimageเดียวข้ามsplitหรือเลือกscore/IoUthresholdจากtestทำleak; splitbyimage/patientและreportobject-size-slices; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>A[0,0,2,2],B[1,1,3,3]intersection1,area4+4,union7ให้IoU1/7≈.142857; disjoint0และidentical1</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-1-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = [[0.5, 0.2, 2.5, 2.2], [0.2, 0.1, 2.2, 2.1], [3, 0, 5, 2]]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>IoU=intersection/union; NMS suppress overlap with higher score</code> = [0, 2]<p>NMS 比 prediction boxes กันเอง; evaluation IoU เปรียบเทียบกับ truth เป็นคนละขั้น</p></li><li><code>normal / boundary / comparison</code> = [0, 2]<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-1-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>shape / range</code> = [[0.5, 0.2, 2.5, 2.2], [0.2, 0.1, 2.2, 2.1], [3, 0, 5, 2]]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>IoU=intersection/union; NMS suppress overlap with higher score</code> = [0, 2]<p>NMS 比 prediction boxes กันเอง; evaluation IoU เปรียบเทียบกับ truth เป็นคนละขั้น</p></li><li><code>normal / boundary / comparison</code> = [0, 2]<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-1-code"><summary>โค้ด</summary><p>A[0,0,2,2],B[1,1,3,3]intersection1,area4+4,union7ให้IoU1/7≈.142857; disjoint0และidentical1</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-1-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = [[0.5, 0.2, 2.5, 2.2], [0.2, 0.1, 2.2, 2.1], [3, 0, 5, 2]]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>IoU=intersection/union; NMS suppress overlap with higher score</code> = [0, 2]<p>NMS 比 prediction boxes กันเอง; evaluation IoU เปรียบเทียบกับ truth เป็นคนละขั้น</p></li><li><code>normal / boundary / comparison</code> = [0, 2]<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-1"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-2" class="teaching-section"><span class="section-kicker">CHAPTER 44 · ภาพ → สมการ → โค้ด</span><h2>2. NMS กับ evaluation คนละ comparison</h2><h3>โจทย์และเหตุผล</h3><p>NMS เทียบ predicted boxes กันเองและคงตัวที่ score สูงกว่า ส่วน IoU evaluation เทียบ prediction กับ ground truth threshold confidence ใช้กรอง score ก่อนจึงไม่ใช่ NMS IoU threshold</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Implement class-aware NMS.</p><p>sortscoredesc,tieoriginalID; เลือกboxแรกแล้วsuppressIoU&gt;thresholdเฉพาะsameclass; classต่างกันoverlap1ก็ยังเก็บ</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>dx: prediction x offset,initial=0.5; dy: prediction y offset,initial=0.2; nms: NMS IoU threshold,initial=0.3; confidence: confidence threshold,initial=0.5</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = [[0.5, 0.2, 2.5, 2.2], [0.2, 0.1, 2.2, 2.1], [3, 0, 5, 2]]; กำหนดความหมายและหน่วยของ input ก่อนทดลอง</li><li>IoU=intersection/union; NMS suppress overlap with higher score = [0, 2]; NMS 比 prediction boxes กันเอง; evaluation IoU เปรียบเทียบกับ truth เป็นคนละขั้น</li><li>normal / boundary / comparison = [0, 2]; ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="detection-nms-threshold-ก-บ-confid">เปิดการทดลองนี้</a><p class="failure-box">cropsofimageเดียวข้ามsplitหรือเลือกscore/IoUthresholdจากtestทำleak; splitbyimage/patientและreportobject-size-slices; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>sortscoredesc,tieoriginalID; เลือกboxแรกแล้วsuppressIoU&gt;thresholdเฉพาะsameclass; classต่างกันoverlap1ก็ยังเก็บ</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-2-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = [[0.5, 0.2, 2.5, 2.2], [0.2, 0.1, 2.2, 2.1], [3, 0, 5, 2]]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>IoU=intersection/union; NMS suppress overlap with higher score</code> = [0, 2]<p>NMS 比 prediction boxes กันเอง; evaluation IoU เปรียบเทียบกับ truth เป็นคนละขั้น</p></li><li><code>normal / boundary / comparison</code> = [0, 2]<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-2-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>shape / range</code> = [[0.5, 0.2, 2.5, 2.2], [0.2, 0.1, 2.2, 2.1], [3, 0, 5, 2]]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>IoU=intersection/union; NMS suppress overlap with higher score</code> = [0, 2]<p>NMS 比 prediction boxes กันเอง; evaluation IoU เปรียบเทียบกับ truth เป็นคนละขั้น</p></li><li><code>normal / boundary / comparison</code> = [0, 2]<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-2-code"><summary>โค้ด</summary><p>sortscoredesc,tieoriginalID; เลือกboxแรกแล้วsuppressIoU&gt;thresholdเฉพาะsameclass; classต่างกันoverlap1ก็ยังเก็บ</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-2-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = [[0.5, 0.2, 2.5, 2.2], [0.2, 0.1, 2.2, 2.1], [3, 0, 5, 2]]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>IoU=intersection/union; NMS suppress overlap with higher score</code> = [0, 2]<p>NMS 比 prediction boxes กันเอง; evaluation IoU เปรียบเทียบกับ truth เป็นคนละขั้น</p></li><li><code>normal / boundary / comparison</code> = [0, 2]<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-2"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-3" class="teaching-section"><span class="section-kicker">CHAPTER 44 · ภาพ → สมการ → โค้ด</span><h2>3. segmentation ละเอียดถึง pixel</h2><h3>โจทย์และเหตุผล</h3><p>semantic, instance และ panoptic มีหน่วยคำตอบต่างกัน Dice/IoU ใช้กับ masks ได้แต่ต้องตรวจ empty mask conventions class imbalance และ matching protocol ก่อนเทียบ AP/IoU</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Implement binary mask IoU/Dice.</p><p>masksA={pixels1,2},B={2,3}ได้intersection1,union3,IoU1/3,Dice2/(2+2)=.5; bothemptypolicyต้องระบุ</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>position: output position index,initial=0; kernelWeight: kernel top-right weight,initial=1; pixel: input center pixel,initial=1; bias: convolution bias,initial=0; stride: stride,initial=1; padding: zero padding,initial=0</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>Hout=floor((5+2p−3)/stride)+1; index∈[0,8] = [3, 3, 0, 0, 0]; ไม่วน index กลับ; row=floor(index/Hout),col=index mod Hout หลังตรวจขอบเขต</li><li>patch[a,b]=Xpad[0+a,0+b] = [[0, 0, 1], [0, 0, 1], [0, 0, 1]]; คูณ stride ก่อนเลือกจุดเริ่ม แล้วอ่าน 3×3; padding เป็นศูนย์ที่ขอบ</li><li>products[a,b]=patch[a,b]·K[a,b] = [[0, 0, 1], [0, 0, 1], [0, 0, 1]]; kernel ไม่ถูกพลิกสำหรับ cross-correlation; weight เดียวใช้ซ้ำทุกตำแหน่ง</li><li>Y[0,0]=Σproducts+0 = 3; รวม product ทั้ง9ช่องก่อนบวก bias หนึ่งครั้ง ไม่ใช่บวกทุกช่อง</li><li>Y[row,col] ← selected output = [[3, 3, 0], [3, 3, 0], [3, 3, 0]]; เดินทุก valid output position ด้วยกฎเดียวกัน; tensor output ใช้ค่าคำนวณชุดเดียวกับกราฟ</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="convolution-spatial-feature-maps-สำห">เปิดการทดลองนี้</a><p class="failure-box">cropsofimageเดียวข้ามsplitหรือเลือกscore/IoUthresholdจากtestทำleak; splitbyimage/patientและreportobject-size-slices; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>masksA={pixels1,2},B={2,3}ได้intersection1,union3,IoU1/3,Dice2/(2+2)=.5; bothemptypolicyต้องระบุ</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-3-equation"><summary>สมการ</summary><ol><li><code>Hout=floor((5+2p−3)/stride)+1; index∈[0,8]</code> = [3, 3, 0, 0, 0]<p>ไม่วน index กลับ; row=floor(index/Hout),col=index mod Hout หลังตรวจขอบเขต</p></li><li><code>patch[a,b]=Xpad[0+a,0+b]</code> = [[0, 0, 1], [0, 0, 1], [0, 0, 1]]<p>คูณ stride ก่อนเลือกจุดเริ่ม แล้วอ่าน 3×3; padding เป็นศูนย์ที่ขอบ</p></li><li><code>products[a,b]=patch[a,b]·K[a,b]</code> = [[0, 0, 1], [0, 0, 1], [0, 0, 1]]<p>kernel ไม่ถูกพลิกสำหรับ cross-correlation; weight เดียวใช้ซ้ำทุกตำแหน่ง</p></li><li><code>Y[0,0]=Σproducts+0</code> = 3<p>รวม product ทั้ง9ช่องก่อนบวก bias หนึ่งครั้ง ไม่ใช่บวกทุกช่อง</p></li><li><code>Y[row,col] ← selected output</code> = [[3, 3, 0], [3, 3, 0], [3, 3, 0]]<p>เดินทุก valid output position ด้วยกฎเดียวกัน; tensor output ใช้ค่าคำนวณชุดเดียวกับกราฟ</p></li></ol></details><details id="help-mechanism-3-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>Hout=floor((5+2p−3)/stride)+1; index∈[0,8]</code> = [3, 3, 0, 0, 0]<p>ไม่วน index กลับ; row=floor(index/Hout),col=index mod Hout หลังตรวจขอบเขต</p></li><li><code>patch[a,b]=Xpad[0+a,0+b]</code> = [[0, 0, 1], [0, 0, 1], [0, 0, 1]]<p>คูณ stride ก่อนเลือกจุดเริ่ม แล้วอ่าน 3×3; padding เป็นศูนย์ที่ขอบ</p></li><li><code>products[a,b]=patch[a,b]·K[a,b]</code> = [[0, 0, 1], [0, 0, 1], [0, 0, 1]]<p>kernel ไม่ถูกพลิกสำหรับ cross-correlation; weight เดียวใช้ซ้ำทุกตำแหน่ง</p></li><li><code>Y[0,0]=Σproducts+0</code> = 3<p>รวม product ทั้ง9ช่องก่อนบวก bias หนึ่งครั้ง ไม่ใช่บวกทุกช่อง</p></li><li><code>Y[row,col] ← selected output</code> = [[3, 3, 0], [3, 3, 0], [3, 3, 0]]<p>เดินทุก valid output position ด้วยกฎเดียวกัน; tensor output ใช้ค่าคำนวณชุดเดียวกับกราฟ</p></li></ol></details><details id="help-mechanism-3-code"><summary>โค้ด</summary><p>masksA={pixels1,2},B={2,3}ได้intersection1,union3,IoU1/3,Dice2/(2+2)=.5; bothemptypolicyต้องระบุ</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-3-result"><summary>ผลการทดลอง</summary><ol><li><code>Hout=floor((5+2p−3)/stride)+1; index∈[0,8]</code> = [3, 3, 0, 0, 0]<p>ไม่วน index กลับ; row=floor(index/Hout),col=index mod Hout หลังตรวจขอบเขต</p></li><li><code>patch[a,b]=Xpad[0+a,0+b]</code> = [[0, 0, 1], [0, 0, 1], [0, 0, 1]]<p>คูณ stride ก่อนเลือกจุดเริ่ม แล้วอ่าน 3×3; padding เป็นศูนย์ที่ขอบ</p></li><li><code>products[a,b]=patch[a,b]·K[a,b]</code> = [[0, 0, 1], [0, 0, 1], [0, 0, 1]]<p>kernel ไม่ถูกพลิกสำหรับ cross-correlation; weight เดียวใช้ซ้ำทุกตำแหน่ง</p></li><li><code>Y[0,0]=Σproducts+0</code> = 3<p>รวม product ทั้ง9ช่องก่อนบวก bias หนึ่งครั้ง ไม่ใช่บวกทุกช่อง</p></li><li><code>Y[row,col] ← selected output</code> = [[3, 3, 0], [3, 3, 0], [3, 3, 0]]<p>เดินทุก valid output position ด้วยกฎเดียวกัน; tensor output ใช้ค่าคำนวณชุดเดียวกับกราฟ</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-3"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="reference" class="canonical-section"><h2>เนื้อหาครบทุกหัวข้อ พร้อมแผนที่ objective</h2><nav class="source-toc"><a href="#chapter-44/section/topic-1">1. Beyond Classification</a> <a href="#chapter-44/section/topic-2">2. Learning Objectives</a> <a href="#chapter-44/section/topic-3">3. Bounding Boxes</a> <a href="#chapter-44/section/topic-4">4. Box Area</a> <a href="#chapter-44/section/topic-5">5. Intersection over Union</a> <a href="#chapter-44/section/topic-6">6. Pairwise IoU</a> <a href="#chapter-44/section/topic-7">7. Non-Maximum Suppression</a> <a href="#chapter-44/section/topic-8">8. NMS Threshold</a> <a href="#chapter-44/section/topic-9">9. Class-Aware NMS</a> <a href="#chapter-44/section/topic-10">10. Confidence Threshold</a> <a href="#chapter-44/section/topic-11">11. Anchors</a> <a href="#chapter-44/section/topic-12">12. Anchor-Free Detection</a> <a href="#chapter-44/section/topic-13">13. Two-Stage Detectors</a> <a href="#chapter-44/section/topic-14">14. Region Proposal Network</a> <a href="#chapter-44/section/topic-15">15. ROI Align</a> <a href="#chapter-44/section/topic-16">16. One-Stage Detectors</a> <a href="#chapter-44/section/topic-17">17. YOLO Concept</a> <a href="#chapter-44/section/topic-18">18. Focal Loss</a> <a href="#chapter-44/section/topic-19">19. Box Regression Loss</a> <a href="#chapter-44/section/topic-20">20. Detection Matching</a> <a href="#chapter-44/section/topic-21">21. Precision / Recall in Detection</a> <a href="#chapter-44/section/topic-22">22. Average Precision</a> <a href="#chapter-44/section/topic-23">23. Semantic Segmentation</a> <a href="#chapter-44/section/topic-24">24. Instance Segmentation</a> <a href="#chapter-44/section/topic-25">25. Panoptic Segmentation</a> <a href="#chapter-44/section/topic-26">26. Pixel Cross-Entropy</a> <a href="#chapter-44/section/topic-27">27. Mask IoU</a> <a href="#chapter-44/section/topic-28">28. Dice Coefficient</a> <a href="#chapter-44/section/topic-29">29. U-Net</a> <a href="#chapter-44/section/topic-30">30. Mask R-CNN</a> <a href="#chapter-44/section/topic-31">31. Multi-Scale Features</a> <a href="#chapter-44/section/topic-32">32. Data Augmentation</a> <a href="#chapter-44/section/topic-33">33. From Scratch</a> <a href="#chapter-44/section/topic-34">34. Common Mistakes</a> <a href="#chapter-44/section/topic-35">35. Exercises / Mini Project</a> <a href="#chapter-44/section/topic-36">36. Checklist</a> <a href="#chapter-44/section/topic-37">37. What&#x27;s Next</a> </nav><section id="topic-1" class="source-topic"><span id="source-44-object-detection-segmentation-canonical-chapter-44-object-detection-segmentation" class="legacy-anchor"></span><span id="source-44-object-detection-segmentation-canonical-1-beyond-classification" class="legacy-anchor"></span><h3>1. Beyond Classification</h3>
+<p>Image classification predicts one/few labels for an entire image.</p>
+<p>Detection predicts:
+- class
+- bounding box
+- confidence</p>
+<p>Segmentation predicts labels at pixel level.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>1. Beyond Classification</h3>
+<p>Image classification predicts one/few labels for an entire image.</p>
+<p>Detection predicts:
+- class
+- bounding box
+- confidence</p>
+<p>Segmentation predicts labels at pixel level.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-1-equation"><summary>สมการ</summary><h3>1. Beyond Classification</h3>
+<p>Image classification predicts one/few labels for an entire image.</p>
+<p>Detection predicts:
+- class
+- bounding box
+- confidence</p>
+<p>Segmentation predicts labels at pixel level.</p></details><details id="help-topic-1-visual"><summary>ภาพและ shape</summary><h3>1. Beyond Classification</h3>
+<p>Image classification predicts one/few labels for an entire image.</p>
+<p>Detection predicts:
+- class
+- bounding box
+- confidence</p>
+<p>Segmentation predicts labels at pixel level.</p></details><details id="help-topic-1-code"><summary>โค้ด</summary><h3>1. Beyond Classification</h3>
+<p>Image classification predicts one/few labels for an entire image.</p>
+<p>Detection predicts:
+- class
+- bounding box
+- confidence</p>
+<p>Segmentation predicts labels at pixel level.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-1-result"><summary>ผลการทดลอง</summary><h3>1. Beyond Classification</h3>
+<p>Image classification predicts one/few labels for an entire image.</p>
+<p>Detection predicts:
+- class
+- bounding box
+- confidence</p>
+<p>Segmentation predicts labels at pixel level.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-1"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-2" class="source-topic"><span id="source-44-object-detection-segmentation-canonical-2-learning-objectives" class="legacy-anchor"></span><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>convert bounding-box formats</li>
+<li>calculate box area and IoU</li>
+<li>implement pairwise IoU</li>
+<li>implement Non-Maximum Suppression</li>
+<li>explain confidence thresholds</li>
+<li>explain anchor-based vs anchor-free detection</li>
+<li>compare two-stage vs one-stage detectors</li>
+<li>explain R-CNN / Faster R-CNN / YOLO concepts</li>
+<li>distinguish semantic, instance and panoptic segmentation</li>
+<li>compute mask IoU and Dice score</li>
+<li>explain U-Net</li>
+<li>explain Mask R-CNN</li>
+<li>understand mAP conceptually</li>
+<li>build a tiny segmentation model in PyTorch</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>convert bounding-box formats</li>
+<li>calculate box area and IoU</li>
+<li>implement pairwise IoU</li>
+<li>implement Non-Maximum Suppression</li>
+<li>explain confidence thresholds</li>
+<li>explain anchor-based vs anchor-free detection</li>
+<li>compare two-stage vs one-stage detectors</li>
+<li>explain R-CNN / Faster R-CNN / YOLO concepts</li>
+<li>distinguish semantic, instance and panoptic segmentation</li>
+<li>compute mask IoU and Dice score</li>
+<li>explain U-Net</li>
+<li>explain Mask R-CNN</li>
+<li>understand mAP conceptually</li>
+<li>build a tiny segmentation model in PyTorch</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-2-equation"><summary>สมการ</summary><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>convert bounding-box formats</li>
+<li>calculate box area and IoU</li>
+<li>implement pairwise IoU</li>
+<li>implement Non-Maximum Suppression</li>
+<li>explain confidence thresholds</li>
+<li>explain anchor-based vs anchor-free detection</li>
+<li>compare two-stage vs one-stage detectors</li>
+<li>explain R-CNN / Faster R-CNN / YOLO concepts</li>
+<li>distinguish semantic, instance and panoptic segmentation</li>
+<li>compute mask IoU and Dice score</li>
+<li>explain U-Net</li>
+<li>explain Mask R-CNN</li>
+<li>understand mAP conceptually</li>
+<li>build a tiny segmentation model in PyTorch</li>
+</ul></details><details id="help-topic-2-visual"><summary>ภาพและ shape</summary><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>convert bounding-box formats</li>
+<li>calculate box area and IoU</li>
+<li>implement pairwise IoU</li>
+<li>implement Non-Maximum Suppression</li>
+<li>explain confidence thresholds</li>
+<li>explain anchor-based vs anchor-free detection</li>
+<li>compare two-stage vs one-stage detectors</li>
+<li>explain R-CNN / Faster R-CNN / YOLO concepts</li>
+<li>distinguish semantic, instance and panoptic segmentation</li>
+<li>compute mask IoU and Dice score</li>
+<li>explain U-Net</li>
+<li>explain Mask R-CNN</li>
+<li>understand mAP conceptually</li>
+<li>build a tiny segmentation model in PyTorch</li>
+</ul></details><details id="help-topic-2-code"><summary>โค้ด</summary><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>convert bounding-box formats</li>
+<li>calculate box area and IoU</li>
+<li>implement pairwise IoU</li>
+<li>implement Non-Maximum Suppression</li>
+<li>explain confidence thresholds</li>
+<li>explain anchor-based vs anchor-free detection</li>
+<li>compare two-stage vs one-stage detectors</li>
+<li>explain R-CNN / Faster R-CNN / YOLO concepts</li>
+<li>distinguish semantic, instance and panoptic segmentation</li>
+<li>compute mask IoU and Dice score</li>
+<li>explain U-Net</li>
+<li>explain Mask R-CNN</li>
+<li>understand mAP conceptually</li>
+<li>build a tiny segmentation model in PyTorch</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-2-result"><summary>ผลการทดลอง</summary><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>convert bounding-box formats</li>
+<li>calculate box area and IoU</li>
+<li>implement pairwise IoU</li>
+<li>implement Non-Maximum Suppression</li>
+<li>explain confidence thresholds</li>
+<li>explain anchor-based vs anchor-free detection</li>
+<li>compare two-stage vs one-stage detectors</li>
+<li>explain R-CNN / Faster R-CNN / YOLO concepts</li>
+<li>distinguish semantic, instance and panoptic segmentation</li>
+<li>compute mask IoU and Dice score</li>
+<li>explain U-Net</li>
+<li>explain Mask R-CNN</li>
+<li>understand mAP conceptually</li>
+<li>build a tiny segmentation model in PyTorch</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-2"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-3" class="source-topic"><span id="source-44-object-detection-segmentation-canonical-3-bounding-boxes" class="legacy-anchor"></span><span id="source-44-object-detection-segmentation-canonical-xyxy" class="legacy-anchor"></span><span id="source-44-object-detection-segmentation-canonical-xywh" class="legacy-anchor"></span><span id="source-44-object-detection-segmentation-canonical-cxcywh" class="legacy-anchor"></span><h3>3. Bounding Boxes</h3>
+<p>Common formats:</p>
+<h4>xyxy</h4>
+<pre><code class="language-text">(x1, y1, x2, y2)
+</code></pre>
+<p>top-left and bottom-right corners.</p>
+<h4>xywh</h4>
+<pre><code class="language-text">(x, y, width, height)
+</code></pre>
+<h4>cxcywh</h4>
+<pre><code class="language-text">(center_x, center_y, width, height)
+</code></pre>
+<p>Never mix formats silently.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>xyxy[1,2,5,8]→xywh[1,2,4,6]→cxcywh[3,5,4,6]; continuouscoordinatesไม่มี+1pixelเว้นประกาศinclusiveintegerpolicy</p><p>recordboxes(N,4),scores(N,),classes(N,),IoUmatrix(N,M),matchedIDsและprecision/recall; segmentationlogits(B,1,H,W)ตรงmask</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>xyxy[1,2,5,8]→xywh[1,2,4,6]→cxcywh[3,5,4,6]; continuouscoordinatesไม่มี+1pixelเว้นประกาศinclusiveintegerpolicy</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-3-equation"><summary>สมการ</summary><p>xyxy[1,2,5,8]→xywh[1,2,4,6]→cxcywh[3,5,4,6]; continuouscoordinatesไม่มี+1pixelเว้นประกาศinclusiveintegerpolicy</p></details><details id="help-topic-3-visual"><summary>ภาพและ shape</summary><p>xyxy[1,2,5,8]→xywh[1,2,4,6]→cxcywh[3,5,4,6]; continuouscoordinatesไม่มี+1pixelเว้นประกาศinclusiveintegerpolicy</p></details><details id="help-topic-3-code"><summary>โค้ด</summary><p>xyxy[1,2,5,8]→xywh[1,2,4,6]→cxcywh[3,5,4,6]; continuouscoordinatesไม่มี+1pixelเว้นประกาศinclusiveintegerpolicy</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-3-result"><summary>ผลการทดลอง</summary><p>xyxy[1,2,5,8]→xywh[1,2,4,6]→cxcywh[3,5,4,6]; continuouscoordinatesไม่มี+1pixelเว้นประกาศinclusiveintegerpolicy</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-3"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-4" class="source-topic"><span id="source-44-object-detection-segmentation-canonical-4-box-area" class="legacy-anchor"></span><h3>4. Box Area</h3>
+<p>For xyxy:</p>
+<pre><code class="language-text">width = max(0, x2-x1)
+height = max(0, y2-y1)
+
+area = width * height
+</code></pre><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-4-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>4. Box Area</h3>
+<p>For xyxy:</p>
+<pre><code class="language-text">width = max(0, x2-x1)
+height = max(0, y2-y1)
+
+area = width * height
+</code></pre><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-4-equation"><summary>สมการ</summary><h3>4. Box Area</h3>
+<p>For xyxy:</p>
+<pre><code class="language-text">width = max(0, x2-x1)
+height = max(0, y2-y1)
+
+area = width * height
+</code></pre></details><details id="help-topic-4-visual"><summary>ภาพและ shape</summary><h3>4. Box Area</h3>
+<p>For xyxy:</p>
+<pre><code class="language-text">width = max(0, x2-x1)
+height = max(0, y2-y1)
+
+area = width * height
+</code></pre></details><details id="help-topic-4-code"><summary>โค้ด</summary><h3>4. Box Area</h3>
+<p>For xyxy:</p>
+<pre><code class="language-text">width = max(0, x2-x1)
+height = max(0, y2-y1)
+
+area = width * height
+</code></pre><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-4-result"><summary>ผลการทดลอง</summary><h3>4. Box Area</h3>
+<p>For xyxy:</p>
+<pre><code class="language-text">width = max(0, x2-x1)
+height = max(0, y2-y1)
+
+area = width * height
+</code></pre><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-4"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-5" class="source-topic"><span id="source-44-object-detection-segmentation-canonical-5-intersection-over-union" class="legacy-anchor"></span><h3>5. Intersection over Union</h3>
+<pre><code class="language-text">IoU =
+intersection area
+/
+union area
+</code></pre>
+<p>Range:</p>
+<pre><code class="language-text">0 &lt;= IoU &lt;= 1
+</code></pre>
+<p>Higher means stronger spatial overlap.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>A[0,0,2,2],B[1,1,3,3]intersection1,area4+4,union7ให้IoU1/7≈.142857; disjoint0และidentical1</p><p>tinyboxesข้อ2IoU1/7; score.9/.8sameclass,NMSthreshold.1เก็บเพียงแรก แต่threshold.2เก็บทั้งสอง ต้องไม่NMSข้ามclass</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-5-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>A[0,0,2,2],B[1,1,3,3]intersection1,area4+4,union7ให้IoU1/7≈.142857; disjoint0และidentical1</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-5-equation"><summary>สมการ</summary><p>A[0,0,2,2],B[1,1,3,3]intersection1,area4+4,union7ให้IoU1/7≈.142857; disjoint0และidentical1</p></details><details id="help-topic-5-visual"><summary>ภาพและ shape</summary><p>A[0,0,2,2],B[1,1,3,3]intersection1,area4+4,union7ให้IoU1/7≈.142857; disjoint0และidentical1</p></details><details id="help-topic-5-code"><summary>โค้ด</summary><p>A[0,0,2,2],B[1,1,3,3]intersection1,area4+4,union7ให้IoU1/7≈.142857; disjoint0และidentical1</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-5-result"><summary>ผลการทดลอง</summary><p>A[0,0,2,2],B[1,1,3,3]intersection1,area4+4,union7ให้IoU1/7≈.142857; disjoint0และidentical1</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-5"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-6" class="source-topic"><span id="source-44-object-detection-segmentation-canonical-6-pairwise-iou" class="legacy-anchor"></span><h3>6. Pairwise IoU</h3>
+<p>For:</p>
+<pre><code class="language-text">N predicted boxes
+M reference boxes
+</code></pre>
+<p>pairwise IoU matrix:</p>
+<pre><code class="language-text">(N,M)
+</code></pre>
+<p>This is used in matching/evaluation/NMS-related logic.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>broadcastboxesA(N,1,4),B(1,M,4),intersectionw/hclip≥0→IoU(N,M); zeroareaboxต้องrejectหรือdefine0ไม่NaN</p><p>pairwiseIoUO(NM),naiveNMSO(N²),maskmetricsO(HW); detectorbackbonecostแยกจากpostprocessingและpeakmemoryของIoUmatrix</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-6-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>broadcastboxesA(N,1,4),B(1,M,4),intersectionw/hclip≥0→IoU(N,M); zeroareaboxต้องrejectหรือdefine0ไม่NaN</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-6-equation"><summary>สมการ</summary><p>broadcastboxesA(N,1,4),B(1,M,4),intersectionw/hclip≥0→IoU(N,M); zeroareaboxต้องrejectหรือdefine0ไม่NaN</p></details><details id="help-topic-6-visual"><summary>ภาพและ shape</summary><p>broadcastboxesA(N,1,4),B(1,M,4),intersectionw/hclip≥0→IoU(N,M); zeroareaboxต้องrejectหรือdefine0ไม่NaN</p></details><details id="help-topic-6-code"><summary>โค้ด</summary><p>broadcastboxesA(N,1,4),B(1,M,4),intersectionw/hclip≥0→IoU(N,M); zeroareaboxต้องrejectหรือdefine0ไม่NaN</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-6-result"><summary>ผลการทดลอง</summary><p>broadcastboxesA(N,1,4),B(1,M,4),intersectionw/hclip≥0→IoU(N,M); zeroareaboxต้องrejectหรือdefine0ไม่NaN</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-6"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-7" class="source-topic"><span id="source-44-object-detection-segmentation-canonical-7-non-maximum-suppression" class="legacy-anchor"></span><h3>7. Non-Maximum Suppression</h3>
+<p>Goal:
+- many highly overlapping predictions → keep best representative</p>
+<p>Algorithm:</p>
+<ol>
+<li>sort by score descending</li>
+<li>keep highest-score box</li>
+<li>remove lower-score boxes whose IoU with kept box exceeds threshold</li>
+<li>repeat</li>
+</ol>
+<p>Torchvision's current NMS follows this core interpretation for xyxy boxes.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>tinyboxesข้อ2IoU1/7; score.9/.8sameclass,NMSthreshold.1เก็บเพียงแรก แต่threshold.2เก็บทั้งสอง ต้องไม่NMSข้ามclass</p><p>pairwiseIoUO(NM),naiveNMSO(N²),maskmetricsO(HW); detectorbackbonecostแยกจากpostprocessingและpeakmemoryของIoUmatrix</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-7-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>tinyboxesข้อ2IoU1/7; score.9/.8sameclass,NMSthreshold.1เก็บเพียงแรก แต่threshold.2เก็บทั้งสอง ต้องไม่NMSข้ามclass</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-7-equation"><summary>สมการ</summary><p>tinyboxesข้อ2IoU1/7; score.9/.8sameclass,NMSthreshold.1เก็บเพียงแรก แต่threshold.2เก็บทั้งสอง ต้องไม่NMSข้ามclass</p></details><details id="help-topic-7-visual"><summary>ภาพและ shape</summary><p>tinyboxesข้อ2IoU1/7; score.9/.8sameclass,NMSthreshold.1เก็บเพียงแรก แต่threshold.2เก็บทั้งสอง ต้องไม่NMSข้ามclass</p></details><details id="help-topic-7-code"><summary>โค้ด</summary><p>tinyboxesข้อ2IoU1/7; score.9/.8sameclass,NMSthreshold.1เก็บเพียงแรก แต่threshold.2เก็บทั้งสอง ต้องไม่NMSข้ามclass</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-7-result"><summary>ผลการทดลอง</summary><p>tinyboxesข้อ2IoU1/7; score.9/.8sameclass,NMSthreshold.1เก็บเพียงแรก แต่threshold.2เก็บทั้งสอง ต้องไม่NMSข้ามclass</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-7"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-8" class="source-topic"><span id="source-44-object-detection-segmentation-canonical-8-nms-threshold" class="legacy-anchor"></span><h3>8. NMS Threshold</h3>
+<p>Low threshold:
+- aggressive suppression</p>
+<p>High threshold:
+- more overlapping boxes survive</p>
+<p>Threshold choice affects duplicate detections vs missed crowded objects.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>thresholdสูงsuppressน้อยจึงpredictionsมากขึ้น แต่อาจfalsepositivesเพิ่ม; reportprecision/recallไม่เลือกจากtestset</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-8-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>thresholdสูงsuppressน้อยจึงpredictionsมากขึ้น แต่อาจfalsepositivesเพิ่ม; reportprecision/recallไม่เลือกจากtestset</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-8-equation"><summary>สมการ</summary><p>thresholdสูงsuppressน้อยจึงpredictionsมากขึ้น แต่อาจfalsepositivesเพิ่ม; reportprecision/recallไม่เลือกจากtestset</p></details><details id="help-topic-8-visual"><summary>ภาพและ shape</summary><p>thresholdสูงsuppressน้อยจึงpredictionsมากขึ้น แต่อาจfalsepositivesเพิ่ม; reportprecision/recallไม่เลือกจากtestset</p></details><details id="help-topic-8-code"><summary>โค้ด</summary><p>thresholdสูงsuppressน้อยจึงpredictionsมากขึ้น แต่อาจfalsepositivesเพิ่ม; reportprecision/recallไม่เลือกจากtestset</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-8-result"><summary>ผลการทดลอง</summary><p>thresholdสูงsuppressน้อยจึงpredictionsมากขึ้น แต่อาจfalsepositivesเพิ่ม; reportprecision/recallไม่เลือกจากtestset</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-8"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-9" class="source-topic"><span id="source-44-object-detection-segmentation-canonical-9-class-aware-nms" class="legacy-anchor"></span><h3>9. Class-Aware NMS</h3>
+<p>Normally boxes from different classes should not suppress each other.</p>
+<p>Perform NMS:
+- separately per class
+or
+- use class offsets/batched implementation</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>sortscoredesc,tieoriginalID; เลือกboxแรกแล้วsuppressIoU&gt;thresholdเฉพาะsameclass; classต่างกันoverlap1ก็ยังเก็บ</p><p>identicalboxesIoU1,symmetryIoU(A,B)=IoU(B,A),bounds[0,1]; class-awareNMSเก็บsameboxdifferentclassและduplicateGTmatchไม่เกิดสองTP</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-9-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>sortscoredesc,tieoriginalID; เลือกboxแรกแล้วsuppressIoU&gt;thresholdเฉพาะsameclass; classต่างกันoverlap1ก็ยังเก็บ</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-9-equation"><summary>สมการ</summary><p>sortscoredesc,tieoriginalID; เลือกboxแรกแล้วsuppressIoU&gt;thresholdเฉพาะsameclass; classต่างกันoverlap1ก็ยังเก็บ</p></details><details id="help-topic-9-visual"><summary>ภาพและ shape</summary><p>sortscoredesc,tieoriginalID; เลือกboxแรกแล้วsuppressIoU&gt;thresholdเฉพาะsameclass; classต่างกันoverlap1ก็ยังเก็บ</p></details><details id="help-topic-9-code"><summary>โค้ด</summary><p>sortscoredesc,tieoriginalID; เลือกboxแรกแล้วsuppressIoU&gt;thresholdเฉพาะsameclass; classต่างกันoverlap1ก็ยังเก็บ</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-9-result"><summary>ผลการทดลอง</summary><p>sortscoredesc,tieoriginalID; เลือกboxแรกแล้วsuppressIoU&gt;thresholdเฉพาะsameclass; classต่างกันoverlap1ก็ยังเก็บ</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-9"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-10" class="source-topic"><span id="source-44-object-detection-segmentation-canonical-10-confidence-threshold" class="legacy-anchor"></span><h3>10. Confidence Threshold</h3>
+<p>Before/after NMS, discard low-confidence detections.</p>
+<p>Trade-off:
+- high threshold → precision up, recall down
+- low threshold → recall up, false positives up</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>เปรียบNMSthreshold.3/.7โดยpredictions/splitเดียว; reportTP/FP/FN,Recallและlatencyก่อนเลือกvalidationthreshold</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-10-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>เปรียบNMSthreshold.3/.7โดยpredictions/splitเดียว; reportTP/FP/FN,Recallและlatencyก่อนเลือกvalidationthreshold</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-10-equation"><summary>สมการ</summary><p>เปรียบNMSthreshold.3/.7โดยpredictions/splitเดียว; reportTP/FP/FN,Recallและlatencyก่อนเลือกvalidationthreshold</p></details><details id="help-topic-10-visual"><summary>ภาพและ shape</summary><p>เปรียบNMSthreshold.3/.7โดยpredictions/splitเดียว; reportTP/FP/FN,Recallและlatencyก่อนเลือกvalidationthreshold</p></details><details id="help-topic-10-code"><summary>โค้ด</summary><p>เปรียบNMSthreshold.3/.7โดยpredictions/splitเดียว; reportTP/FP/FN,Recallและlatencyก่อนเลือกvalidationthreshold</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-10-result"><summary>ผลการทดลอง</summary><p>เปรียบNMSthreshold.3/.7โดยpredictions/splitเดียว; reportTP/FP/FN,Recallและlatencyก่อนเลือกvalidationthreshold</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-10"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-11" class="source-topic"><span id="source-44-object-detection-segmentation-canonical-11-anchors" class="legacy-anchor"></span><h3>11. Anchors</h3>
+<p>Anchor-based detector starts with predefined boxes at locations/scales/aspect ratios.</p>
+<p>Network predicts:
+- objectness/class
+- box offsets relative to anchors</p>
+<p>Examples historically include Faster R-CNN and many YOLO/SSD variants.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-11-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>11. Anchors</h3>
+<p>Anchor-based detector starts with predefined boxes at locations/scales/aspect ratios.</p>
+<p>Network predicts:
+- objectness/class
+- box offsets relative to anchors</p>
+<p>Examples historically include Faster R-CNN and many YOLO/SSD variants.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-11-equation"><summary>สมการ</summary><h3>11. Anchors</h3>
+<p>Anchor-based detector starts with predefined boxes at locations/scales/aspect ratios.</p>
+<p>Network predicts:
+- objectness/class
+- box offsets relative to anchors</p>
+<p>Examples historically include Faster R-CNN and many YOLO/SSD variants.</p></details><details id="help-topic-11-visual"><summary>ภาพและ shape</summary><h3>11. Anchors</h3>
+<p>Anchor-based detector starts with predefined boxes at locations/scales/aspect ratios.</p>
+<p>Network predicts:
+- objectness/class
+- box offsets relative to anchors</p>
+<p>Examples historically include Faster R-CNN and many YOLO/SSD variants.</p></details><details id="help-topic-11-code"><summary>โค้ด</summary><h3>11. Anchors</h3>
+<p>Anchor-based detector starts with predefined boxes at locations/scales/aspect ratios.</p>
+<p>Network predicts:
+- objectness/class
+- box offsets relative to anchors</p>
+<p>Examples historically include Faster R-CNN and many YOLO/SSD variants.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-11-result"><summary>ผลการทดลอง</summary><h3>11. Anchors</h3>
+<p>Anchor-based detector starts with predefined boxes at locations/scales/aspect ratios.</p>
+<p>Network predicts:
+- objectness/class
+- box offsets relative to anchors</p>
+<p>Examples historically include Faster R-CNN and many YOLO/SSD variants.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-11"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-12" class="source-topic"><span id="source-44-object-detection-segmentation-canonical-12-anchor-free-detection" class="legacy-anchor"></span><h3>12. Anchor-Free Detection</h3>
+<p>Anchor-free designs predict objects without fixed anchor boxes.</p>
+<p>May predict:
+- centers
+- corners
+- distances to boundaries
+- heatmaps</p>
+<p>This removes anchor-design hyperparameters.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-12-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>12. Anchor-Free Detection</h3>
+<p>Anchor-free designs predict objects without fixed anchor boxes.</p>
+<p>May predict:
+- centers
+- corners
+- distances to boundaries
+- heatmaps</p>
+<p>This removes anchor-design hyperparameters.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-12-equation"><summary>สมการ</summary><h3>12. Anchor-Free Detection</h3>
+<p>Anchor-free designs predict objects without fixed anchor boxes.</p>
+<p>May predict:
+- centers
+- corners
+- distances to boundaries
+- heatmaps</p>
+<p>This removes anchor-design hyperparameters.</p></details><details id="help-topic-12-visual"><summary>ภาพและ shape</summary><h3>12. Anchor-Free Detection</h3>
+<p>Anchor-free designs predict objects without fixed anchor boxes.</p>
+<p>May predict:
+- centers
+- corners
+- distances to boundaries
+- heatmaps</p>
+<p>This removes anchor-design hyperparameters.</p></details><details id="help-topic-12-code"><summary>โค้ด</summary><h3>12. Anchor-Free Detection</h3>
+<p>Anchor-free designs predict objects without fixed anchor boxes.</p>
+<p>May predict:
+- centers
+- corners
+- distances to boundaries
+- heatmaps</p>
+<p>This removes anchor-design hyperparameters.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-12-result"><summary>ผลการทดลอง</summary><h3>12. Anchor-Free Detection</h3>
+<p>Anchor-free designs predict objects without fixed anchor boxes.</p>
+<p>May predict:
+- centers
+- corners
+- distances to boundaries
+- heatmaps</p>
+<p>This removes anchor-design hyperparameters.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-12"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-13" class="source-topic"><span id="source-44-object-detection-segmentation-canonical-13-two-stage-detectors" class="legacy-anchor"></span><h3>13. Two-Stage Detectors</h3>
+<p>Typical pipeline:</p>
+<pre><code class="language-text">image
+↓
+backbone
+↓
+region proposals
+↓
+ROI features
+↓
+classification + box regression
+</code></pre>
+<p>Faster R-CNN is a canonical example.</p>
+<p>Pros:
+- strong localization/accuracy</p>
+<p>Cons:
+- often heavier/slower</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-13-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>13. Two-Stage Detectors</h3>
+<p>Typical pipeline:</p>
+<pre><code class="language-text">image
+↓
+backbone
+↓
+region proposals
+↓
+ROI features
+↓
+classification + box regression
+</code></pre>
+<p>Faster R-CNN is a canonical example.</p>
+<p>Pros:
+- strong localization/accuracy</p>
+<p>Cons:
+- often heavier/slower</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-13-equation"><summary>สมการ</summary><h3>13. Two-Stage Detectors</h3>
+<p>Typical pipeline:</p>
+<pre><code class="language-text">image
+↓
+backbone
+↓
+region proposals
+↓
+ROI features
+↓
+classification + box regression
+</code></pre>
+<p>Faster R-CNN is a canonical example.</p>
+<p>Pros:
+- strong localization/accuracy</p>
+<p>Cons:
+- often heavier/slower</p></details><details id="help-topic-13-visual"><summary>ภาพและ shape</summary><h3>13. Two-Stage Detectors</h3>
+<p>Typical pipeline:</p>
+<pre><code class="language-text">image
+↓
+backbone
+↓
+region proposals
+↓
+ROI features
+↓
+classification + box regression
+</code></pre>
+<p>Faster R-CNN is a canonical example.</p>
+<p>Pros:
+- strong localization/accuracy</p>
+<p>Cons:
+- often heavier/slower</p></details><details id="help-topic-13-code"><summary>โค้ด</summary><h3>13. Two-Stage Detectors</h3>
+<p>Typical pipeline:</p>
+<pre><code class="language-text">image
+↓
+backbone
+↓
+region proposals
+↓
+ROI features
+↓
+classification + box regression
+</code></pre>
+<p>Faster R-CNN is a canonical example.</p>
+<p>Pros:
+- strong localization/accuracy</p>
+<p>Cons:
+- often heavier/slower</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-13-result"><summary>ผลการทดลอง</summary><h3>13. Two-Stage Detectors</h3>
+<p>Typical pipeline:</p>
+<pre><code class="language-text">image
+↓
+backbone
+↓
+region proposals
+↓
+ROI features
+↓
+classification + box regression
+</code></pre>
+<p>Faster R-CNN is a canonical example.</p>
+<p>Pros:
+- strong localization/accuracy</p>
+<p>Cons:
+- often heavier/slower</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-13"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-14" class="source-topic"><span id="source-44-object-detection-segmentation-canonical-14-region-proposal-network" class="legacy-anchor"></span><h3>14. Region Proposal Network</h3>
+<p>RPN predicts:
+- objectness
+- candidate boxes</p>
+<p>These proposals are then processed by the second stage.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-14-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>14. Region Proposal Network</h3>
+<p>RPN predicts:
+- objectness
+- candidate boxes</p>
+<p>These proposals are then processed by the second stage.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-14-equation"><summary>สมการ</summary><h3>14. Region Proposal Network</h3>
+<p>RPN predicts:
+- objectness
+- candidate boxes</p>
+<p>These proposals are then processed by the second stage.</p></details><details id="help-topic-14-visual"><summary>ภาพและ shape</summary><h3>14. Region Proposal Network</h3>
+<p>RPN predicts:
+- objectness
+- candidate boxes</p>
+<p>These proposals are then processed by the second stage.</p></details><details id="help-topic-14-code"><summary>โค้ด</summary><h3>14. Region Proposal Network</h3>
+<p>RPN predicts:
+- objectness
+- candidate boxes</p>
+<p>These proposals are then processed by the second stage.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-14-result"><summary>ผลการทดลอง</summary><h3>14. Region Proposal Network</h3>
+<p>RPN predicts:
+- objectness
+- candidate boxes</p>
+<p>These proposals are then processed by the second stage.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-14"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-15" class="source-topic"><span id="source-44-object-detection-segmentation-canonical-15-roi-align" class="legacy-anchor"></span><h3>15. ROI Align</h3>
+<p>Feature maps are sampled/aligned for each proposed region into a fixed-size tensor.</p>
+<p>Mask R-CNN uses ROI Align to improve spatial alignment compared with quantized ROI pooling.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-15-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>15. ROI Align</h3>
+<p>Feature maps are sampled/aligned for each proposed region into a fixed-size tensor.</p>
+<p>Mask R-CNN uses ROI Align to improve spatial alignment compared with quantized ROI pooling.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-15-equation"><summary>สมการ</summary><h3>15. ROI Align</h3>
+<p>Feature maps are sampled/aligned for each proposed region into a fixed-size tensor.</p>
+<p>Mask R-CNN uses ROI Align to improve spatial alignment compared with quantized ROI pooling.</p></details><details id="help-topic-15-visual"><summary>ภาพและ shape</summary><h3>15. ROI Align</h3>
+<p>Feature maps are sampled/aligned for each proposed region into a fixed-size tensor.</p>
+<p>Mask R-CNN uses ROI Align to improve spatial alignment compared with quantized ROI pooling.</p></details><details id="help-topic-15-code"><summary>โค้ด</summary><h3>15. ROI Align</h3>
+<p>Feature maps are sampled/aligned for each proposed region into a fixed-size tensor.</p>
+<p>Mask R-CNN uses ROI Align to improve spatial alignment compared with quantized ROI pooling.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-15-result"><summary>ผลการทดลอง</summary><h3>15. ROI Align</h3>
+<p>Feature maps are sampled/aligned for each proposed region into a fixed-size tensor.</p>
+<p>Mask R-CNN uses ROI Align to improve spatial alignment compared with quantized ROI pooling.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-15"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-16" class="source-topic"><span id="source-44-object-detection-segmentation-canonical-16-one-stage-detectors" class="legacy-anchor"></span><h3>16. One-Stage Detectors</h3>
+<p>Directly predict detections over feature maps.</p>
+<p>Examples:
+- YOLO families
+- SSD
+- RetinaNet-style approaches</p>
+<p>Pros:
+- efficient
+- low latency</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-16-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>16. One-Stage Detectors</h3>
+<p>Directly predict detections over feature maps.</p>
+<p>Examples:
+- YOLO families
+- SSD
+- RetinaNet-style approaches</p>
+<p>Pros:
+- efficient
+- low latency</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-16-equation"><summary>สมการ</summary><h3>16. One-Stage Detectors</h3>
+<p>Directly predict detections over feature maps.</p>
+<p>Examples:
+- YOLO families
+- SSD
+- RetinaNet-style approaches</p>
+<p>Pros:
+- efficient
+- low latency</p></details><details id="help-topic-16-visual"><summary>ภาพและ shape</summary><h3>16. One-Stage Detectors</h3>
+<p>Directly predict detections over feature maps.</p>
+<p>Examples:
+- YOLO families
+- SSD
+- RetinaNet-style approaches</p>
+<p>Pros:
+- efficient
+- low latency</p></details><details id="help-topic-16-code"><summary>โค้ด</summary><h3>16. One-Stage Detectors</h3>
+<p>Directly predict detections over feature maps.</p>
+<p>Examples:
+- YOLO families
+- SSD
+- RetinaNet-style approaches</p>
+<p>Pros:
+- efficient
+- low latency</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-16-result"><summary>ผลการทดลอง</summary><h3>16. One-Stage Detectors</h3>
+<p>Directly predict detections over feature maps.</p>
+<p>Examples:
+- YOLO families
+- SSD
+- RetinaNet-style approaches</p>
+<p>Pros:
+- efficient
+- low latency</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-16"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-17" class="source-topic"><span id="source-44-object-detection-segmentation-canonical-17-yolo-concept" class="legacy-anchor"></span><h3>17. YOLO Concept</h3>
+<p>General pattern:</p>
+<pre><code class="language-text">image
+↓
+backbone
+↓
+multi-scale features
+↓
+dense detection heads
+↓
+boxes + class/objectness scores
+↓
+post-processing
+</code></pre>
+<p>Exact architecture/loss differs strongly across YOLO generations.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-17-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>17. YOLO Concept</h3>
+<p>General pattern:</p>
+<pre><code class="language-text">image
+↓
+backbone
+↓
+multi-scale features
+↓
+dense detection heads
+↓
+boxes + class/objectness scores
+↓
+post-processing
+</code></pre>
+<p>Exact architecture/loss differs strongly across YOLO generations.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-17-equation"><summary>สมการ</summary><h3>17. YOLO Concept</h3>
+<p>General pattern:</p>
+<pre><code class="language-text">image
+↓
+backbone
+↓
+multi-scale features
+↓
+dense detection heads
+↓
+boxes + class/objectness scores
+↓
+post-processing
+</code></pre>
+<p>Exact architecture/loss differs strongly across YOLO generations.</p></details><details id="help-topic-17-visual"><summary>ภาพและ shape</summary><h3>17. YOLO Concept</h3>
+<p>General pattern:</p>
+<pre><code class="language-text">image
+↓
+backbone
+↓
+multi-scale features
+↓
+dense detection heads
+↓
+boxes + class/objectness scores
+↓
+post-processing
+</code></pre>
+<p>Exact architecture/loss differs strongly across YOLO generations.</p></details><details id="help-topic-17-code"><summary>โค้ด</summary><h3>17. YOLO Concept</h3>
+<p>General pattern:</p>
+<pre><code class="language-text">image
+↓
+backbone
+↓
+multi-scale features
+↓
+dense detection heads
+↓
+boxes + class/objectness scores
+↓
+post-processing
+</code></pre>
+<p>Exact architecture/loss differs strongly across YOLO generations.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-17-result"><summary>ผลการทดลอง</summary><h3>17. YOLO Concept</h3>
+<p>General pattern:</p>
+<pre><code class="language-text">image
+↓
+backbone
+↓
+multi-scale features
+↓
+dense detection heads
+↓
+boxes + class/objectness scores
+↓
+post-processing
+</code></pre>
+<p>Exact architecture/loss differs strongly across YOLO generations.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-17"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-18" class="source-topic"><span id="source-44-object-detection-segmentation-canonical-18-focal-loss" class="legacy-anchor"></span><h3>18. Focal Loss</h3>
+<p>Dense detectors have many easy negatives.</p>
+<p>Focal loss downweights easy examples.</p>
+<p>Binary form:</p>
+<pre><code class="language-text">FL(p_t)
+=
+-alpha_t
+(1-p_t)^gamma
+log(p_t)
+</code></pre><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-18-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>18. Focal Loss</h3>
+<p>Dense detectors have many easy negatives.</p>
+<p>Focal loss downweights easy examples.</p>
+<p>Binary form:</p>
+<pre><code class="language-text">FL(p_t)
+=
+-alpha_t
+(1-p_t)^gamma
+log(p_t)
+</code></pre><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-18-equation"><summary>สมการ</summary><h3>18. Focal Loss</h3>
+<p>Dense detectors have many easy negatives.</p>
+<p>Focal loss downweights easy examples.</p>
+<p>Binary form:</p>
+<pre><code class="language-text">FL(p_t)
+=
+-alpha_t
+(1-p_t)^gamma
+log(p_t)
+</code></pre></details><details id="help-topic-18-visual"><summary>ภาพและ shape</summary><h3>18. Focal Loss</h3>
+<p>Dense detectors have many easy negatives.</p>
+<p>Focal loss downweights easy examples.</p>
+<p>Binary form:</p>
+<pre><code class="language-text">FL(p_t)
+=
+-alpha_t
+(1-p_t)^gamma
+log(p_t)
+</code></pre></details><details id="help-topic-18-code"><summary>โค้ด</summary><h3>18. Focal Loss</h3>
+<p>Dense detectors have many easy negatives.</p>
+<p>Focal loss downweights easy examples.</p>
+<p>Binary form:</p>
+<pre><code class="language-text">FL(p_t)
+=
+-alpha_t
+(1-p_t)^gamma
+log(p_t)
+</code></pre><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-18-result"><summary>ผลการทดลอง</summary><h3>18. Focal Loss</h3>
+<p>Dense detectors have many easy negatives.</p>
+<p>Focal loss downweights easy examples.</p>
+<p>Binary form:</p>
+<pre><code class="language-text">FL(p_t)
+=
+-alpha_t
+(1-p_t)^gamma
+log(p_t)
+</code></pre><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-18"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-19" class="source-topic"><span id="source-44-object-detection-segmentation-canonical-19-box-regression-loss" class="legacy-anchor"></span><h3>19. Box Regression Loss</h3>
+<p>Possible choices:
+- L1 / Smooth L1
+- IoU loss
+- GIoU
+- DIoU
+- CIoU</p>
+<p>IoU-family losses incorporate geometry directly.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-19-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>19. Box Regression Loss</h3>
+<p>Possible choices:
+- L1 / Smooth L1
+- IoU loss
+- GIoU
+- DIoU
+- CIoU</p>
+<p>IoU-family losses incorporate geometry directly.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-19-equation"><summary>สมการ</summary><h3>19. Box Regression Loss</h3>
+<p>Possible choices:
+- L1 / Smooth L1
+- IoU loss
+- GIoU
+- DIoU
+- CIoU</p>
+<p>IoU-family losses incorporate geometry directly.</p></details><details id="help-topic-19-visual"><summary>ภาพและ shape</summary><h3>19. Box Regression Loss</h3>
+<p>Possible choices:
+- L1 / Smooth L1
+- IoU loss
+- GIoU
+- DIoU
+- CIoU</p>
+<p>IoU-family losses incorporate geometry directly.</p></details><details id="help-topic-19-code"><summary>โค้ด</summary><h3>19. Box Regression Loss</h3>
+<p>Possible choices:
+- L1 / Smooth L1
+- IoU loss
+- GIoU
+- DIoU
+- CIoU</p>
+<p>IoU-family losses incorporate geometry directly.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-19-result"><summary>ผลการทดลอง</summary><h3>19. Box Regression Loss</h3>
+<p>Possible choices:
+- L1 / Smooth L1
+- IoU loss
+- GIoU
+- DIoU
+- CIoU</p>
+<p>IoU-family losses incorporate geometry directly.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-19"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-20" class="source-topic"><span id="source-44-object-detection-segmentation-canonical-20-detection-matching" class="legacy-anchor"></span><h3>20. Detection Matching</h3>
+<p>Evaluation/training may match prediction to ground truth using:
+- IoU threshold
+- assignment rules
+- Hungarian matching in set-prediction models</p>
+<p>Do not assume all detectors use the same assignment.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>score-descpredictionจับGTsameclassIoUสูงสุดที่ยังunmatchedและ≥threshold; GTหนึ่งตัวรับTPได้ครั้งเดียว,duplicatepredictionเป็นFP</p><p>recordboxes(N,4),scores(N,),classes(N,),IoUmatrix(N,M),matchedIDsและprecision/recall; segmentationlogits(B,1,H,W)ตรงmask</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-20-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>score-descpredictionจับGTsameclassIoUสูงสุดที่ยังunmatchedและ≥threshold; GTหนึ่งตัวรับTPได้ครั้งเดียว,duplicatepredictionเป็นFP</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-20-equation"><summary>สมการ</summary><p>score-descpredictionจับGTsameclassIoUสูงสุดที่ยังunmatchedและ≥threshold; GTหนึ่งตัวรับTPได้ครั้งเดียว,duplicatepredictionเป็นFP</p></details><details id="help-topic-20-visual"><summary>ภาพและ shape</summary><p>score-descpredictionจับGTsameclassIoUสูงสุดที่ยังunmatchedและ≥threshold; GTหนึ่งตัวรับTPได้ครั้งเดียว,duplicatepredictionเป็นFP</p></details><details id="help-topic-20-code"><summary>โค้ด</summary><p>score-descpredictionจับGTsameclassIoUสูงสุดที่ยังunmatchedและ≥threshold; GTหนึ่งตัวรับTPได้ครั้งเดียว,duplicatepredictionเป็นFP</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-20-result"><summary>ผลการทดลอง</summary><p>score-descpredictionจับGTsameclassIoUสูงสุดที่ยังunmatchedและ≥threshold; GTหนึ่งตัวรับTPได้ครั้งเดียว,duplicatepredictionเป็นFP</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-20"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-21" class="source-topic"><span id="source-44-object-detection-segmentation-canonical-21-precision-recall-in-detection" class="legacy-anchor"></span><h3>21. Precision / Recall in Detection</h3>
+<p>Prediction is true positive when:
+- correct class
+- sufficient IoU
+- matched to an unmatched ground-truth object</p>
+<p>Duplicates around same object become false positives.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>TP2,FP1,FN2ให้precision2/3,recall.5; ต้องระบุIoUthresholdและscorethresholdก่อนนับ ไม่เอาค่าIoUmeanแทนAP</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-21-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>TP2,FP1,FN2ให้precision2/3,recall.5; ต้องระบุIoUthresholdและscorethresholdก่อนนับ ไม่เอาค่าIoUmeanแทนAP</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-21-equation"><summary>สมการ</summary><p>TP2,FP1,FN2ให้precision2/3,recall.5; ต้องระบุIoUthresholdและscorethresholdก่อนนับ ไม่เอาค่าIoUmeanแทนAP</p></details><details id="help-topic-21-visual"><summary>ภาพและ shape</summary><p>TP2,FP1,FN2ให้precision2/3,recall.5; ต้องระบุIoUthresholdและscorethresholdก่อนนับ ไม่เอาค่าIoUmeanแทนAP</p></details><details id="help-topic-21-code"><summary>โค้ด</summary><p>TP2,FP1,FN2ให้precision2/3,recall.5; ต้องระบุIoUthresholdและscorethresholdก่อนนับ ไม่เอาค่าIoUmeanแทนAP</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-21-result"><summary>ผลการทดลอง</summary><p>TP2,FP1,FN2ให้precision2/3,recall.5; ต้องระบุIoUthresholdและscorethresholdก่อนนับ ไม่เอาค่าIoUmeanแทนAP</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-21"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-22" class="source-topic"><span id="source-44-object-detection-segmentation-canonical-22-average-precision" class="legacy-anchor"></span><h3>22. Average Precision</h3>
+<p>AP summarizes precision-recall behavior over confidence thresholds.</p>
+<p>mAP averages AP across:
+- classes
+- sometimes multiple IoU thresholds</p>
+<p>Always state the exact evaluation protocol.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-22-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>22. Average Precision</h3>
+<p>AP summarizes precision-recall behavior over confidence thresholds.</p>
+<p>mAP averages AP across:
+- classes
+- sometimes multiple IoU thresholds</p>
+<p>Always state the exact evaluation protocol.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-22-equation"><summary>สมการ</summary><h3>22. Average Precision</h3>
+<p>AP summarizes precision-recall behavior over confidence thresholds.</p>
+<p>mAP averages AP across:
+- classes
+- sometimes multiple IoU thresholds</p>
+<p>Always state the exact evaluation protocol.</p></details><details id="help-topic-22-visual"><summary>ภาพและ shape</summary><h3>22. Average Precision</h3>
+<p>AP summarizes precision-recall behavior over confidence thresholds.</p>
+<p>mAP averages AP across:
+- classes
+- sometimes multiple IoU thresholds</p>
+<p>Always state the exact evaluation protocol.</p></details><details id="help-topic-22-code"><summary>โค้ด</summary><h3>22. Average Precision</h3>
+<p>AP summarizes precision-recall behavior over confidence thresholds.</p>
+<p>mAP averages AP across:
+- classes
+- sometimes multiple IoU thresholds</p>
+<p>Always state the exact evaluation protocol.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-22-result"><summary>ผลการทดลอง</summary><h3>22. Average Precision</h3>
+<p>AP summarizes precision-recall behavior over confidence thresholds.</p>
+<p>mAP averages AP across:
+- classes
+- sometimes multiple IoU thresholds</p>
+<p>Always state the exact evaluation protocol.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-22"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-23" class="source-topic"><span id="source-44-object-detection-segmentation-canonical-23-semantic-segmentation" class="legacy-anchor"></span><h3>23. Semantic Segmentation</h3>
+<p>Every pixel gets a semantic class:</p>
+<pre><code class="language-text">road
+sky
+person
+car
+...
+</code></pre>
+<p>Two persons share the same "person" semantic label.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>semanticlabelsให้classต่อpixelเช่นcar1ทุกคัน; instancelabelsให้IDแยกแต่ละคันแม้classเดียว; panopticรวมclassและinstance</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-23-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>semanticlabelsให้classต่อpixelเช่นcar1ทุกคัน; instancelabelsให้IDแยกแต่ละคันแม้classเดียว; panopticรวมclassและinstance</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-23-equation"><summary>สมการ</summary><p>semanticlabelsให้classต่อpixelเช่นcar1ทุกคัน; instancelabelsให้IDแยกแต่ละคันแม้classเดียว; panopticรวมclassและinstance</p></details><details id="help-topic-23-visual"><summary>ภาพและ shape</summary><p>semanticlabelsให้classต่อpixelเช่นcar1ทุกคัน; instancelabelsให้IDแยกแต่ละคันแม้classเดียว; panopticรวมclassและinstance</p></details><details id="help-topic-23-code"><summary>โค้ด</summary><p>semanticlabelsให้classต่อpixelเช่นcar1ทุกคัน; instancelabelsให้IDแยกแต่ละคันแม้classเดียว; panopticรวมclassและinstance</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-23-result"><summary>ผลการทดลอง</summary><p>semanticlabelsให้classต่อpixelเช่นcar1ทุกคัน; instancelabelsให้IDแยกแต่ละคันแม้classเดียว; panopticรวมclassและinstance</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-23"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-24" class="source-topic"><span id="source-44-object-detection-segmentation-canonical-24-instance-segmentation" class="legacy-anchor"></span><h3>24. Instance Segmentation</h3>
+<p>Distinguish individual object instances.</p>
+<pre><code class="language-text">person #1
+person #2
+</code></pre>
+<p>Each instance has its own mask.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>semanticlabelsให้classต่อpixelเช่นcar1ทุกคัน; instancelabelsให้IDแยกแต่ละคันแม้classเดียว; panopticรวมclassและinstance</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-24-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>semanticlabelsให้classต่อpixelเช่นcar1ทุกคัน; instancelabelsให้IDแยกแต่ละคันแม้classเดียว; panopticรวมclassและinstance</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-24-equation"><summary>สมการ</summary><p>semanticlabelsให้classต่อpixelเช่นcar1ทุกคัน; instancelabelsให้IDแยกแต่ละคันแม้classเดียว; panopticรวมclassและinstance</p></details><details id="help-topic-24-visual"><summary>ภาพและ shape</summary><p>semanticlabelsให้classต่อpixelเช่นcar1ทุกคัน; instancelabelsให้IDแยกแต่ละคันแม้classเดียว; panopticรวมclassและinstance</p></details><details id="help-topic-24-code"><summary>โค้ด</summary><p>semanticlabelsให้classต่อpixelเช่นcar1ทุกคัน; instancelabelsให้IDแยกแต่ละคันแม้classเดียว; panopticรวมclassและinstance</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-24-result"><summary>ผลการทดลอง</summary><p>semanticlabelsให้classต่อpixelเช่นcar1ทุกคัน; instancelabelsให้IDแยกแต่ละคันแม้classเดียว; panopticรวมclassและinstance</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-24"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-25" class="source-topic"><span id="source-44-object-detection-segmentation-canonical-25-panoptic-segmentation" class="legacy-anchor"></span><h3>25. Panoptic Segmentation</h3>
+<p>Combines:
+- semantic "stuff"
+- individual "thing" instances</p>
+<p>into a unified scene representation.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>semanticlabelsให้classต่อpixelเช่นcar1ทุกคัน; instancelabelsให้IDแยกแต่ละคันแม้classเดียว; panopticรวมclassและinstance</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-25-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>semanticlabelsให้classต่อpixelเช่นcar1ทุกคัน; instancelabelsให้IDแยกแต่ละคันแม้classเดียว; panopticรวมclassและinstance</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-25-equation"><summary>สมการ</summary><p>semanticlabelsให้classต่อpixelเช่นcar1ทุกคัน; instancelabelsให้IDแยกแต่ละคันแม้classเดียว; panopticรวมclassและinstance</p></details><details id="help-topic-25-visual"><summary>ภาพและ shape</summary><p>semanticlabelsให้classต่อpixelเช่นcar1ทุกคัน; instancelabelsให้IDแยกแต่ละคันแม้classเดียว; panopticรวมclassและinstance</p></details><details id="help-topic-25-code"><summary>โค้ด</summary><p>semanticlabelsให้classต่อpixelเช่นcar1ทุกคัน; instancelabelsให้IDแยกแต่ละคันแม้classเดียว; panopticรวมclassและinstance</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-25-result"><summary>ผลการทดลอง</summary><p>semanticlabelsให้classต่อpixelเช่นcar1ทุกคัน; instancelabelsให้IDแยกแต่ละคันแม้classเดียว; panopticรวมclassและinstance</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-25"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-26" class="source-topic"><span id="source-44-object-detection-segmentation-canonical-26-pixel-cross-entropy" class="legacy-anchor"></span><h3>26. Pixel Cross-Entropy</h3>
+<p>For C classes:</p>
+<pre><code class="language-text">logits:
+(B,C,H,W)
+
+target:
+(B,H,W)
+</code></pre>
+<p>Cross-entropy classifies every pixel.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>เปลี่ยนBCE→BCE+DicelossคงUNet/data/initbudget; reportsmallobjectDiceกับfalsepositiveareaหลายseed ไม่เทียบlossscaleตรงๆ</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-26-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>เปลี่ยนBCE→BCE+DicelossคงUNet/data/initbudget; reportsmallobjectDiceกับfalsepositiveareaหลายseed ไม่เทียบlossscaleตรงๆ</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-26-equation"><summary>สมการ</summary><p>เปลี่ยนBCE→BCE+DicelossคงUNet/data/initbudget; reportsmallobjectDiceกับfalsepositiveareaหลายseed ไม่เทียบlossscaleตรงๆ</p></details><details id="help-topic-26-visual"><summary>ภาพและ shape</summary><p>เปลี่ยนBCE→BCE+DicelossคงUNet/data/initbudget; reportsmallobjectDiceกับfalsepositiveareaหลายseed ไม่เทียบlossscaleตรงๆ</p></details><details id="help-topic-26-code"><summary>โค้ด</summary><p>เปลี่ยนBCE→BCE+DicelossคงUNet/data/initbudget; reportsmallobjectDiceกับfalsepositiveareaหลายseed ไม่เทียบlossscaleตรงๆ</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-26-result"><summary>ผลการทดลอง</summary><p>เปลี่ยนBCE→BCE+DicelossคงUNet/data/initbudget; reportsmallobjectDiceกับfalsepositiveareaหลายseed ไม่เทียบlossscaleตรงๆ</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-26"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-27" class="source-topic"><span id="source-44-object-detection-segmentation-canonical-27-mask-iou" class="legacy-anchor"></span><h3>27. Mask IoU</h3>
+<p>For binary masks:</p>
+<pre><code class="language-text">IoU =
+|prediction ∩ target|
+/
+|prediction ∪ target|
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>masksA={pixels1,2},B={2,3}ได้intersection1,union3,IoU1/3,Dice2/(2+2)=.5; bothemptypolicyต้องระบุ</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-27-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>masksA={pixels1,2},B={2,3}ได้intersection1,union3,IoU1/3,Dice2/(2+2)=.5; bothemptypolicyต้องระบุ</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-27-equation"><summary>สมการ</summary><p>masksA={pixels1,2},B={2,3}ได้intersection1,union3,IoU1/3,Dice2/(2+2)=.5; bothemptypolicyต้องระบุ</p></details><details id="help-topic-27-visual"><summary>ภาพและ shape</summary><p>masksA={pixels1,2},B={2,3}ได้intersection1,union3,IoU1/3,Dice2/(2+2)=.5; bothemptypolicyต้องระบุ</p></details><details id="help-topic-27-code"><summary>โค้ด</summary><p>masksA={pixels1,2},B={2,3}ได้intersection1,union3,IoU1/3,Dice2/(2+2)=.5; bothemptypolicyต้องระบุ</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-27-result"><summary>ผลการทดลอง</summary><p>masksA={pixels1,2},B={2,3}ได้intersection1,union3,IoU1/3,Dice2/(2+2)=.5; bothemptypolicyต้องระบุ</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-27"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-28" class="source-topic"><span id="source-44-object-detection-segmentation-canonical-28-dice-coefficient" class="legacy-anchor"></span><h3>28. Dice Coefficient</h3>
+<pre><code class="language-text">Dice =
+2|A∩B|
+/
+(|A|+|B|)
+</code></pre>
+<p>Related to F1 for binary segmentation.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>masksA={pixels1,2},B={2,3}ได้intersection1,union3,IoU1/3,Dice2/(2+2)=.5; bothemptypolicyต้องระบุ</p><p>เปลี่ยนBCE→BCE+DicelossคงUNet/data/initbudget; reportsmallobjectDiceกับfalsepositiveareaหลายseed ไม่เทียบlossscaleตรงๆ</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-28-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>masksA={pixels1,2},B={2,3}ได้intersection1,union3,IoU1/3,Dice2/(2+2)=.5; bothemptypolicyต้องระบุ</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-28-equation"><summary>สมการ</summary><p>masksA={pixels1,2},B={2,3}ได้intersection1,union3,IoU1/3,Dice2/(2+2)=.5; bothemptypolicyต้องระบุ</p></details><details id="help-topic-28-visual"><summary>ภาพและ shape</summary><p>masksA={pixels1,2},B={2,3}ได้intersection1,union3,IoU1/3,Dice2/(2+2)=.5; bothemptypolicyต้องระบุ</p></details><details id="help-topic-28-code"><summary>โค้ด</summary><p>masksA={pixels1,2},B={2,3}ได้intersection1,union3,IoU1/3,Dice2/(2+2)=.5; bothemptypolicyต้องระบุ</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-28-result"><summary>ผลการทดลอง</summary><p>masksA={pixels1,2},B={2,3}ได้intersection1,union3,IoU1/3,Dice2/(2+2)=.5; bothemptypolicyต้องระบุ</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-28"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-29" class="source-topic"><span id="source-44-object-detection-segmentation-canonical-29-u-net" class="legacy-anchor"></span><h3>29. U-Net</h3>
+<pre><code class="language-text">input
+↓
+encoder/downsample
+↓
+bottleneck
+↓
+decoder/upsample
+↑ skip connections from encoder
+↓
+pixel logits
+</code></pre>
+<p>Skip connections restore fine spatial details.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>seed7syntheticcircles/rectangles,image32²; splitก่อนaugmentation,trainUNetBCElogitsแล้วmeasurepixelIoU/Diceกับempty-maskbaselineและtestholdoutshapes</p><p>ทดลอง“Diceadditionเพิ่มsmallshapeIoU≥.03เทียบBCE”; holdoutsize-shift,fixedtrainingbudget,reportCIและlatency/memory</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-29-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>seed7syntheticcircles/rectangles,image32²; splitก่อนaugmentation,trainUNetBCElogitsแล้วmeasurepixelIoU/Diceกับempty-maskbaselineและtestholdoutshapes</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-29-equation"><summary>สมการ</summary><p>seed7syntheticcircles/rectangles,image32²; splitก่อนaugmentation,trainUNetBCElogitsแล้วmeasurepixelIoU/Diceกับempty-maskbaselineและtestholdoutshapes</p></details><details id="help-topic-29-visual"><summary>ภาพและ shape</summary><p>seed7syntheticcircles/rectangles,image32²; splitก่อนaugmentation,trainUNetBCElogitsแล้วmeasurepixelIoU/Diceกับempty-maskbaselineและtestholdoutshapes</p></details><details id="help-topic-29-code"><summary>โค้ด</summary><p>seed7syntheticcircles/rectangles,image32²; splitก่อนaugmentation,trainUNetBCElogitsแล้วmeasurepixelIoU/Diceกับempty-maskbaselineและtestholdoutshapes</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-29-result"><summary>ผลการทดลอง</summary><p>seed7syntheticcircles/rectangles,image32²; splitก่อนaugmentation,trainUNetBCElogitsแล้วmeasurepixelIoU/Diceกับempty-maskbaselineและtestholdoutshapes</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-29"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-30" class="source-topic"><span id="source-44-object-detection-segmentation-canonical-30-mask-r-cnn" class="legacy-anchor"></span><h3>30. Mask R-CNN</h3>
+<p>Extends Faster R-CNN with a per-instance mask head.</p>
+<p>Pipeline:
+- RPN
+- ROI Align
+- class/box heads
+- mask head</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-30-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>30. Mask R-CNN</h3>
+<p>Extends Faster R-CNN with a per-instance mask head.</p>
+<p>Pipeline:
+- RPN
+- ROI Align
+- class/box heads
+- mask head</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-30-equation"><summary>สมการ</summary><h3>30. Mask R-CNN</h3>
+<p>Extends Faster R-CNN with a per-instance mask head.</p>
+<p>Pipeline:
+- RPN
+- ROI Align
+- class/box heads
+- mask head</p></details><details id="help-topic-30-visual"><summary>ภาพและ shape</summary><h3>30. Mask R-CNN</h3>
+<p>Extends Faster R-CNN with a per-instance mask head.</p>
+<p>Pipeline:
+- RPN
+- ROI Align
+- class/box heads
+- mask head</p></details><details id="help-topic-30-code"><summary>โค้ด</summary><h3>30. Mask R-CNN</h3>
+<p>Extends Faster R-CNN with a per-instance mask head.</p>
+<p>Pipeline:
+- RPN
+- ROI Align
+- class/box heads
+- mask head</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-30-result"><summary>ผลการทดลอง</summary><h3>30. Mask R-CNN</h3>
+<p>Extends Faster R-CNN with a per-instance mask head.</p>
+<p>Pipeline:
+- RPN
+- ROI Align
+- class/box heads
+- mask head</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-30"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-31" class="source-topic"><span id="source-44-object-detection-segmentation-canonical-31-multi-scale-features" class="legacy-anchor"></span><h3>31. Multi-Scale Features</h3>
+<p>Objects appear at different sizes.</p>
+<p>Feature Pyramid Networks combine:
+- deep semantic features
+- higher-resolution features</p>
+<p>to support multi-scale detection.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-31-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>31. Multi-Scale Features</h3>
+<p>Objects appear at different sizes.</p>
+<p>Feature Pyramid Networks combine:
+- deep semantic features
+- higher-resolution features</p>
+<p>to support multi-scale detection.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-31-equation"><summary>สมการ</summary><h3>31. Multi-Scale Features</h3>
+<p>Objects appear at different sizes.</p>
+<p>Feature Pyramid Networks combine:
+- deep semantic features
+- higher-resolution features</p>
+<p>to support multi-scale detection.</p></details><details id="help-topic-31-visual"><summary>ภาพและ shape</summary><h3>31. Multi-Scale Features</h3>
+<p>Objects appear at different sizes.</p>
+<p>Feature Pyramid Networks combine:
+- deep semantic features
+- higher-resolution features</p>
+<p>to support multi-scale detection.</p></details><details id="help-topic-31-code"><summary>โค้ด</summary><h3>31. Multi-Scale Features</h3>
+<p>Objects appear at different sizes.</p>
+<p>Feature Pyramid Networks combine:
+- deep semantic features
+- higher-resolution features</p>
+<p>to support multi-scale detection.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-31-result"><summary>ผลการทดลอง</summary><h3>31. Multi-Scale Features</h3>
+<p>Objects appear at different sizes.</p>
+<p>Feature Pyramid Networks combine:
+- deep semantic features
+- higher-resolution features</p>
+<p>to support multi-scale detection.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-31"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-32" class="source-topic"><span id="source-44-object-detection-segmentation-canonical-32-data-augmentation" class="legacy-anchor"></span><h3>32. Data Augmentation</h3>
+<p>Detection/segmentation transforms must update labels consistently.</p>
+<p>If image is flipped:
+- boxes must flip
+- masks must flip</p>
+<p>A geometry transform applied only to image silently corrupts supervision.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>manifestเก็บcoordinateconvention/resize-letterboxtransform/classIDs/score-NMS-IoUthreshold/split/hash/seed/checkpoint/metricversion</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-32-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>manifestเก็บcoordinateconvention/resize-letterboxtransform/classIDs/score-NMS-IoUthreshold/split/hash/seed/checkpoint/metricversion</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-32-equation"><summary>สมการ</summary><p>manifestเก็บcoordinateconvention/resize-letterboxtransform/classIDs/score-NMS-IoUthreshold/split/hash/seed/checkpoint/metricversion</p></details><details id="help-topic-32-visual"><summary>ภาพและ shape</summary><p>manifestเก็บcoordinateconvention/resize-letterboxtransform/classIDs/score-NMS-IoUthreshold/split/hash/seed/checkpoint/metricversion</p></details><details id="help-topic-32-code"><summary>โค้ด</summary><p>manifestเก็บcoordinateconvention/resize-letterboxtransform/classIDs/score-NMS-IoUthreshold/split/hash/seed/checkpoint/metricversion</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-32-result"><summary>ผลการทดลอง</summary><p>manifestเก็บcoordinateconvention/resize-letterboxtransform/classIDs/score-NMS-IoUthreshold/split/hash/seed/checkpoint/metricversion</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-32"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-33" class="source-topic"><span id="source-44-object-detection-segmentation-canonical-33-from-scratch" class="legacy-anchor"></span><h3>33. From Scratch</h3>
+<p>src/detection_segmentation_numpy.py includes:</p>
+<ul>
+<li>box_area</li>
+<li>box_iou</li>
+<li>pairwise_iou</li>
+<li>nms</li>
+<li>mask_iou</li>
+<li>dice_score</li>
+</ul><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>NumPyboxIoU/NMSเทียบtorchvisionเมื่อoptionalbinaryเข้ากันได้; coreIoUoraclemanualต้องผ่านเสมอและtiepolicyอาจทำindicesต่าง</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-33-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>NumPyboxIoU/NMSเทียบtorchvisionเมื่อoptionalbinaryเข้ากันได้; coreIoUoraclemanualต้องผ่านเสมอและtiepolicyอาจทำindicesต่าง</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-33-equation"><summary>สมการ</summary><p>NumPyboxIoU/NMSเทียบtorchvisionเมื่อoptionalbinaryเข้ากันได้; coreIoUoraclemanualต้องผ่านเสมอและtiepolicyอาจทำindicesต่าง</p></details><details id="help-topic-33-visual"><summary>ภาพและ shape</summary><p>NumPyboxIoU/NMSเทียบtorchvisionเมื่อoptionalbinaryเข้ากันได้; coreIoUoraclemanualต้องผ่านเสมอและtiepolicyอาจทำindicesต่าง</p></details><details id="help-topic-33-code"><summary>โค้ด</summary><p>NumPyboxIoU/NMSเทียบtorchvisionเมื่อoptionalbinaryเข้ากันได้; coreIoUoraclemanualต้องผ่านเสมอและtiepolicyอาจทำindicesต่าง</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-33-result"><summary>ผลการทดลอง</summary><p>NumPyboxIoU/NMSเทียบtorchvisionเมื่อoptionalbinaryเข้ากันได้; coreIoUoraclemanualต้องผ่านเสมอและtiepolicyอาจทำindicesต่าง</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-33"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-34" class="source-topic"><span id="source-44-object-detection-segmentation-canonical-34-common-mistakes" class="legacy-anchor"></span><h3>34. Common Mistakes</h3>
+<ol>
+<li>xyxy vs xywh confusion</li>
+<li>invalid negative-width boxes</li>
+<li>IoU division by zero</li>
+<li>class-agnostic NMS unintentionally</li>
+<li>suppressing boxes at wrong threshold direction</li>
+<li>evaluation duplicates counted as multiple true positives</li>
+<li>applying augmentations without transforming boxes/masks</li>
+<li>resizing masks with inappropriate interpolation</li>
+<li>evaluating mAP without stating IoU protocol</li>
+<li>thresholding segmentation logits before training loss</li>
+</ol><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>cropsofimageเดียวข้ามsplitหรือเลือกscore/IoUthresholdจากtestทำleak; splitbyimage/patientและreportobject-size-slices</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-34-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>cropsofimageเดียวข้ามsplitหรือเลือกscore/IoUthresholdจากtestทำleak; splitbyimage/patientและreportobject-size-slices</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-34-equation"><summary>สมการ</summary><p>cropsofimageเดียวข้ามsplitหรือเลือกscore/IoUthresholdจากtestทำleak; splitbyimage/patientและreportobject-size-slices</p></details><details id="help-topic-34-visual"><summary>ภาพและ shape</summary><p>cropsofimageเดียวข้ามsplitหรือเลือกscore/IoUthresholdจากtestทำleak; splitbyimage/patientและreportobject-size-slices</p></details><details id="help-topic-34-code"><summary>โค้ด</summary><p>cropsofimageเดียวข้ามsplitหรือเลือกscore/IoUthresholdจากtestทำleak; splitbyimage/patientและreportobject-size-slices</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-34-result"><summary>ผลการทดลอง</summary><p>cropsofimageเดียวข้ามsplitหรือเลือกscore/IoUthresholdจากtestทำleak; splitbyimage/patientและreportobject-size-slices</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-34"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-35" class="source-topic"><span id="source-44-object-detection-segmentation-canonical-35-exercises-mini-project" class="legacy-anchor"></span><h3>35. Exercises / Mini Project</h3>
+<ul>
+<li><a href="../44-object-detection-segmentation/exercises/README.md">Exercises</a></li>
+<li><a href="../44-object-detection-segmentation/solutions/README.md">Solutions</a></li>
+<li><a href="../44-object-detection-segmentation/mini-project/README.md">Mini Project</a></li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-35-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>35. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-35-equation"><summary>สมการ</summary><h3>35. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-35-visual"><summary>ภาพและ shape</summary><h3>35. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-35-code"><summary>โค้ด</summary><h3>35. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-35-result"><summary>ผลการทดลอง</summary><h3>35. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-35"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-36" class="source-topic"><span id="source-44-object-detection-segmentation-canonical-36-checklist" class="legacy-anchor"></span><h3>36. Checklist</h3>
+<ul>
+<li>[ ] box formats</li>
+<li>[ ] IoU</li>
+<li>[ ] NMS</li>
+<li>[ ] anchors / anchor-free</li>
+<li>[ ] one-stage / two-stage</li>
+<li>[ ] Faster R-CNN</li>
+<li>[ ] YOLO concepts</li>
+<li>[ ] semantic / instance / panoptic segmentation</li>
+<li>[ ] U-Net</li>
+<li>[ ] Mask R-CNN</li>
+<li>[ ] AP / mAP</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-36-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>36. Checklist</h3>
+<ul>
+<li>[ ] box formats</li>
+<li>[ ] IoU</li>
+<li>[ ] NMS</li>
+<li>[ ] anchors / anchor-free</li>
+<li>[ ] one-stage / two-stage</li>
+<li>[ ] Faster R-CNN</li>
+<li>[ ] YOLO concepts</li>
+<li>[ ] semantic / instance / panoptic segmentation</li>
+<li>[ ] U-Net</li>
+<li>[ ] Mask R-CNN</li>
+<li>[ ] AP / mAP</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-36-equation"><summary>สมการ</summary><h3>36. Checklist</h3>
+<ul>
+<li>[ ] box formats</li>
+<li>[ ] IoU</li>
+<li>[ ] NMS</li>
+<li>[ ] anchors / anchor-free</li>
+<li>[ ] one-stage / two-stage</li>
+<li>[ ] Faster R-CNN</li>
+<li>[ ] YOLO concepts</li>
+<li>[ ] semantic / instance / panoptic segmentation</li>
+<li>[ ] U-Net</li>
+<li>[ ] Mask R-CNN</li>
+<li>[ ] AP / mAP</li>
+</ul></details><details id="help-topic-36-visual"><summary>ภาพและ shape</summary><h3>36. Checklist</h3>
+<ul>
+<li>[ ] box formats</li>
+<li>[ ] IoU</li>
+<li>[ ] NMS</li>
+<li>[ ] anchors / anchor-free</li>
+<li>[ ] one-stage / two-stage</li>
+<li>[ ] Faster R-CNN</li>
+<li>[ ] YOLO concepts</li>
+<li>[ ] semantic / instance / panoptic segmentation</li>
+<li>[ ] U-Net</li>
+<li>[ ] Mask R-CNN</li>
+<li>[ ] AP / mAP</li>
+</ul></details><details id="help-topic-36-code"><summary>โค้ด</summary><h3>36. Checklist</h3>
+<ul>
+<li>[ ] box formats</li>
+<li>[ ] IoU</li>
+<li>[ ] NMS</li>
+<li>[ ] anchors / anchor-free</li>
+<li>[ ] one-stage / two-stage</li>
+<li>[ ] Faster R-CNN</li>
+<li>[ ] YOLO concepts</li>
+<li>[ ] semantic / instance / panoptic segmentation</li>
+<li>[ ] U-Net</li>
+<li>[ ] Mask R-CNN</li>
+<li>[ ] AP / mAP</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-36-result"><summary>ผลการทดลอง</summary><h3>36. Checklist</h3>
+<ul>
+<li>[ ] box formats</li>
+<li>[ ] IoU</li>
+<li>[ ] NMS</li>
+<li>[ ] anchors / anchor-free</li>
+<li>[ ] one-stage / two-stage</li>
+<li>[ ] Faster R-CNN</li>
+<li>[ ] YOLO concepts</li>
+<li>[ ] semantic / instance / panoptic segmentation</li>
+<li>[ ] U-Net</li>
+<li>[ ] Mask R-CNN</li>
+<li>[ ] AP / mAP</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-36"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-37" class="source-topic"><span id="source-44-object-detection-segmentation-canonical-37-whats-next" class="legacy-anchor"></span><span id="source-44-object-detection-segmentation-canonical-44-object-detection-segmentation-object-detection-and-segmentation" class="legacy-anchor"></span><h3>37. What's Next</h3>
+<p>Chapter 45 studies embedding retrieval systems and vector databases: exact search, ANN, IVF, HNSW and product quantization.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-37-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>37. What's Next</h3>
+<p>Chapter 45 studies embedding retrieval systems and vector databases: exact search, ANN, IVF, HNSW and product quantization.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-37-equation"><summary>สมการ</summary><h3>37. What's Next</h3>
+<p>Chapter 45 studies embedding retrieval systems and vector databases: exact search, ANN, IVF, HNSW and product quantization.</p></details><details id="help-topic-37-visual"><summary>ภาพและ shape</summary><h3>37. What's Next</h3>
+<p>Chapter 45 studies embedding retrieval systems and vector databases: exact search, ANN, IVF, HNSW and product quantization.</p></details><details id="help-topic-37-code"><summary>โค้ด</summary><h3>37. What's Next</h3>
+<p>Chapter 45 studies embedding retrieval systems and vector databases: exact search, ANN, IVF, HNSW and product quantization.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-37-result"><summary>ผลการทดลอง</summary><h3>37. What's Next</h3>
+<p>Chapter 45 studies embedding retrieval systems and vector databases: exact search, ANN, IVF, HNSW and product quantization.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-37"> อ่านหัวข้อนี้แล้ว</label></section><details><summary>รายละเอียดเพิ่มเติมและข้อกำหนดของ local lab</summary><h3>44-object-detection-segmentation — Object Detection and Segmentation</h3>
+<p><strong>Prerequisites:</strong> Complete 43-recommender-systems; be able to trace array/tensor shapes, separate train/validation/test data, and explain the core objective of the current chapter.</p>
+<p><strong>Mental model:</strong> Treat Object Detection and Segmentation as a pipeline: input representation → central mechanism → objective/state update → observable output. At every boundary, state shape/state, allowed information flow, and the invariant that should remain true.</p>
+<p><strong>Code walkthrough:</strong> Read public API first, then input checks, state/shape transformations, numerical core, returned values and tests. Connect each important code block to the equation or algorithm in the chapter README.</p>
+<p><strong>Visualization / inspection:</strong> Use a tiny case. Inspect intermediate values, distributions, norms, scores, states or trajectories appropriate to Object Detection and Segmentation; do not rely only on the final metric.</p>
+<p><strong>Experiment:</strong> Run a baseline, one controlled parameter change, one edge case and one repeated seeded comparison. Record seed, environment, data version, configuration and metric.</p>
+<p><strong>Limitations:</strong> List at least one assumption, one data-related limitation, one numerical/optimization limitation and one scaling limitation for Object Detection and Segmentation.</p>
+<p><strong>Analysis workflow:</strong> Check inputs → preprocessing → shapes/state → finite numerical values → objective/update → evaluation protocol. The earliest unexpected state is more informative than a downstream metric.</p>
+<p><strong>Performance:</strong> Identify the dominant time and memory terms and measure them on the local learning run before attempting optimization.</p>
+<p><strong>Production perspective:</strong> Define input validation, artifact/configuration versioning, quality and resource measurements, staged release criteria and a way to return to the previous known-good artifact.</p>
+<p><strong>Research perspective:</strong> State a falsifiable hypothesis, baseline, one-factor change, metric, repeated-run plan when stochastic, and how negative results will be recorded.</p>
+<p><strong>Interview questions:</strong>
+1. Explain Object Detection and Segmentation from first principles without naming a library API.
+2. Trace one input through the central mechanism and give the important intermediate shapes/state.
+3. Name the strongest assumption and a case where it fails.
+4. State the dominant compute/memory cost.
+5. Describe how you would validate a new implementation against a trusted baseline.</p>
+<p><strong>Summary / exit condition:</strong> You may move on when you can explain, derive or trace, implement, test, analyze, measure and evaluate Object Detection and Segmentation, and when the chapter mini-project plus twenty total exercises are complete.</p></details></section><section id="objective-evidence" class="canonical-section"><h2>พิสูจน์ความสามารถทีละ objective</h2><p>ทำกรณีใหม่ก่อนเปิด reference แล้วบันทึกงานด้านล่าง ให้ผู้ตรวจใช้ rubric ตรวจคำอธิบาย ผลคำนวณ โค้ด และข้อจำกัด บันทึกเก็บในเบราว์เซอร์เครื่องนี้ กดส่งออกเพื่อสำรองหรือส่งให้ผู้ตรวจ เว็บไม่ได้รันโค้ดหรือตัดสินผลงานแทนผู้ตรวจ</p><button type="button" class="secondary-button" data-export-evidence>ส่งออกหลักฐานบทนี้เป็น JSON</button><p role="status" id="evidence-export-status"></p><details id="ch44-objective-01" class="objective-proof"><summary>convert bounding-box formats</summary><p>convert bounding-box formats: ใช้กรณีในหัวข้อ Bounding Boxes เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch44-evidence-01"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch44-evidence-01-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch44-evidence-01-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch44-evidence-01-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch44-evidence-01-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch44-evidence-01-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch44-evidence-01-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch44-evidence-01-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch44-evidence-01-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>xyxy[1,2,5,8]→xywh[1,2,4,6]→cxcywh[3,5,4,6]; continuouscoordinatesไม่มี+1pixelเว้นประกาศinclusiveintegerpolicy</p><h3>3. Bounding Boxes</h3>
+<p>Common formats:</p>
+<h4>xyxy</h4>
+<pre><code class="language-text">(x1, y1, x2, y2)
+</code></pre>
+<p>top-left and bottom-right corners.</p>
+<h4>xywh</h4>
+<pre><code class="language-text">(x, y, width, height)
+</code></pre>
+<h4>cxcywh</h4>
+<pre><code class="language-text">(center_x, center_y, width, height)
+</code></pre>
+<p>Never mix formats silently.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch44-objective-02" class="objective-proof"><summary>calculate box area and IoU</summary><p>calculate box area and IoU: ใช้กรณีในหัวข้อ Box Area, Intersection over Union เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch44-evidence-02"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch44-evidence-02-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch44-evidence-02-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch44-evidence-02-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch44-evidence-02-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch44-evidence-02-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch44-evidence-02-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch44-evidence-02-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch44-evidence-02-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>A[0,0,2,2],B[1,1,3,3]intersection1,area4+4,union7ให้IoU1/7≈.142857; disjoint0และidentical1</p><h3>4. Box Area</h3>
+<p>For xyxy:</p>
+<pre><code class="language-text">width = max(0, x2-x1)
+height = max(0, y2-y1)
+
+area = width * height
+</code></pre>
+<h3>5. Intersection over Union</h3>
+<pre><code class="language-text">IoU =
+intersection area
+/
+union area
+</code></pre>
+<p>Range:</p>
+<pre><code class="language-text">0 &lt;= IoU &lt;= 1
+</code></pre>
+<p>Higher means stronger spatial overlap.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch44-objective-03" class="objective-proof"><summary>implement pairwise IoU</summary><p>implement pairwise IoU: ใช้กรณีในหัวข้อ Pairwise IoU เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch44-evidence-03"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch44-evidence-03-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch44-evidence-03-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch44-evidence-03-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch44-evidence-03-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch44-evidence-03-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch44-evidence-03-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch44-evidence-03-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch44-evidence-03-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>broadcastboxesA(N,1,4),B(1,M,4),intersectionw/hclip≥0→IoU(N,M); zeroareaboxต้องrejectหรือdefine0ไม่NaN</p><h3>6. Pairwise IoU</h3>
+<p>For:</p>
+<pre><code class="language-text">N predicted boxes
+M reference boxes
+</code></pre>
+<p>pairwise IoU matrix:</p>
+<pre><code class="language-text">(N,M)
+</code></pre>
+<p>This is used in matching/evaluation/NMS-related logic.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch44-objective-04" class="objective-proof"><summary>implement Non-Maximum Suppression</summary><p>implement Non-Maximum Suppression: ใช้กรณีในหัวข้อ Non-Maximum Suppression, NMS Threshold, Class-Aware NMS เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch44-evidence-04"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch44-evidence-04-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch44-evidence-04-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch44-evidence-04-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch44-evidence-04-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch44-evidence-04-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch44-evidence-04-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch44-evidence-04-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch44-evidence-04-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>sortscoredesc,tieoriginalID; เลือกboxแรกแล้วsuppressIoU&gt;thresholdเฉพาะsameclass; classต่างกันoverlap1ก็ยังเก็บ</p><h3>7. Non-Maximum Suppression</h3>
+<p>Goal:
+- many highly overlapping predictions → keep best representative</p>
+<p>Algorithm:</p>
+<ol>
+<li>sort by score descending</li>
+<li>keep highest-score box</li>
+<li>remove lower-score boxes whose IoU with kept box exceeds threshold</li>
+<li>repeat</li>
+</ol>
+<p>Torchvision's current NMS follows this core interpretation for xyxy boxes.</p>
+<h3>8. NMS Threshold</h3>
+<p>Low threshold:
+- aggressive suppression</p>
+<p>High threshold:
+- more overlapping boxes survive</p>
+<p>Threshold choice affects duplicate detections vs missed crowded objects.</p>
+<h3>9. Class-Aware NMS</h3>
+<p>Normally boxes from different classes should not suppress each other.</p>
+<p>Perform NMS:
+- separately per class
+or
+- use class offsets/batched implementation</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch44-objective-05" class="objective-proof"><summary>explain confidence thresholds</summary><p>explain confidence thresholds: ใช้กรณีในหัวข้อ Confidence Threshold เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch44-evidence-05"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch44-evidence-05-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch44-evidence-05-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch44-evidence-05-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch44-evidence-05-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch44-evidence-05-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch44-evidence-05-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch44-evidence-05-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch44-evidence-05-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>เปรียบNMSthreshold.3/.7โดยpredictions/splitเดียว; reportTP/FP/FN,Recallและlatencyก่อนเลือกvalidationthreshold</p><h3>10. Confidence Threshold</h3>
+<p>Before/after NMS, discard low-confidence detections.</p>
+<p>Trade-off:
+- high threshold → precision up, recall down
+- low threshold → recall up, false positives up</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch44-objective-06" class="objective-proof"><summary>explain anchor-based vs anchor-free detection</summary><p>explain anchor-based vs anchor-free detection: ใช้กรณีในหัวข้อ Anchors, Anchor-Free Detection เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch44-evidence-06"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch44-evidence-06-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch44-evidence-06-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch44-evidence-06-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch44-evidence-06-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch44-evidence-06-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch44-evidence-06-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch44-evidence-06-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch44-evidence-06-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>11. Anchors</h3>
+<p>Anchor-based detector starts with predefined boxes at locations/scales/aspect ratios.</p>
+<p>Network predicts:
+- objectness/class
+- box offsets relative to anchors</p>
+<p>Examples historically include Faster R-CNN and many YOLO/SSD variants.</p>
+<h3>12. Anchor-Free Detection</h3>
+<p>Anchor-free designs predict objects without fixed anchor boxes.</p>
+<p>May predict:
+- centers
+- corners
+- distances to boundaries
+- heatmaps</p>
+<p>This removes anchor-design hyperparameters.</p><h3>11. Anchors</h3>
+<p>Anchor-based detector starts with predefined boxes at locations/scales/aspect ratios.</p>
+<p>Network predicts:
+- objectness/class
+- box offsets relative to anchors</p>
+<p>Examples historically include Faster R-CNN and many YOLO/SSD variants.</p>
+<h3>12. Anchor-Free Detection</h3>
+<p>Anchor-free designs predict objects without fixed anchor boxes.</p>
+<p>May predict:
+- centers
+- corners
+- distances to boundaries
+- heatmaps</p>
+<p>This removes anchor-design hyperparameters.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch44-objective-07" class="objective-proof"><summary>compare two-stage vs one-stage detectors</summary><p>compare two-stage vs one-stage detectors: ใช้กรณีในหัวข้อ Two-Stage Detectors, One-Stage Detectors เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch44-evidence-07"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch44-evidence-07-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch44-evidence-07-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch44-evidence-07-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch44-evidence-07-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch44-evidence-07-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch44-evidence-07-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch44-evidence-07-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch44-evidence-07-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>13. Two-Stage Detectors</h3>
+<p>Typical pipeline:</p>
+<pre><code class="language-text">image
+↓
+backbone
+↓
+region proposals
+↓
+ROI features
+↓
+classification + box regression
+</code></pre>
+<p>Faster R-CNN is a canonical example.</p>
+<p>Pros:
+- strong localization/accuracy</p>
+<p>Cons:
+- often heavier/slower</p>
+<h3>16. One-Stage Detectors</h3>
+<p>Directly predict detections over feature maps.</p>
+<p>Examples:
+- YOLO families
+- SSD
+- RetinaNet-style approaches</p>
+<p>Pros:
+- efficient
+- low latency</p><h3>13. Two-Stage Detectors</h3>
+<p>Typical pipeline:</p>
+<pre><code class="language-text">image
+↓
+backbone
+↓
+region proposals
+↓
+ROI features
+↓
+classification + box regression
+</code></pre>
+<p>Faster R-CNN is a canonical example.</p>
+<p>Pros:
+- strong localization/accuracy</p>
+<p>Cons:
+- often heavier/slower</p>
+<h3>16. One-Stage Detectors</h3>
+<p>Directly predict detections over feature maps.</p>
+<p>Examples:
+- YOLO families
+- SSD
+- RetinaNet-style approaches</p>
+<p>Pros:
+- efficient
+- low latency</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch44-objective-08" class="objective-proof"><summary>explain R-CNN / Faster R-CNN / YOLO concepts</summary><p>explain R-CNN / Faster R-CNN / YOLO concepts: ใช้กรณีในหัวข้อ Region Proposal Network, ROI Align, YOLO Concept เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch44-evidence-08"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch44-evidence-08-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch44-evidence-08-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch44-evidence-08-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch44-evidence-08-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch44-evidence-08-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch44-evidence-08-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch44-evidence-08-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch44-evidence-08-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>14. Region Proposal Network</h3>
+<p>RPN predicts:
+- objectness
+- candidate boxes</p>
+<p>These proposals are then processed by the second stage.</p>
+<h3>15. ROI Align</h3>
+<p>Feature maps are sampled/aligned for each proposed region into a fixed-size tensor.</p>
+<p>Mask R-CNN uses ROI Align to improve spatial alignment compared with quantized ROI pooling.</p>
+<h3>17. YOLO Concept</h3>
+<p>General pattern:</p>
+<pre><code class="language-text">image
+↓
+backbone
+↓
+multi-scale features
+↓
+dense detection heads
+↓
+boxes + class/objectness scores
+↓
+post-processing
+</code></pre>
+<p>Exact architecture/loss differs strongly across YOLO generations.</p><h3>14. Region Proposal Network</h3>
+<p>RPN predicts:
+- objectness
+- candidate boxes</p>
+<p>These proposals are then processed by the second stage.</p>
+<h3>15. ROI Align</h3>
+<p>Feature maps are sampled/aligned for each proposed region into a fixed-size tensor.</p>
+<p>Mask R-CNN uses ROI Align to improve spatial alignment compared with quantized ROI pooling.</p>
+<h3>17. YOLO Concept</h3>
+<p>General pattern:</p>
+<pre><code class="language-text">image
+↓
+backbone
+↓
+multi-scale features
+↓
+dense detection heads
+↓
+boxes + class/objectness scores
+↓
+post-processing
+</code></pre>
+<p>Exact architecture/loss differs strongly across YOLO generations.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch44-objective-09" class="objective-proof"><summary>distinguish semantic, instance and panoptic segmentation</summary><p>distinguish semantic, instance and panoptic segmentation: ใช้กรณีในหัวข้อ Semantic Segmentation, Instance Segmentation, Panoptic Segmentation เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch44-evidence-09"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch44-evidence-09-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch44-evidence-09-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch44-evidence-09-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch44-evidence-09-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch44-evidence-09-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch44-evidence-09-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch44-evidence-09-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch44-evidence-09-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>semanticlabelsให้classต่อpixelเช่นcar1ทุกคัน; instancelabelsให้IDแยกแต่ละคันแม้classเดียว; panopticรวมclassและinstance</p><h3>23. Semantic Segmentation</h3>
+<p>Every pixel gets a semantic class:</p>
+<pre><code class="language-text">road
+sky
+person
+car
+...
+</code></pre>
+<p>Two persons share the same "person" semantic label.</p>
+<h3>24. Instance Segmentation</h3>
+<p>Distinguish individual object instances.</p>
+<pre><code class="language-text">person #1
+person #2
+</code></pre>
+<p>Each instance has its own mask.</p>
+<h3>25. Panoptic Segmentation</h3>
+<p>Combines:
+- semantic "stuff"
+- individual "thing" instances</p>
+<p>into a unified scene representation.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch44-objective-10" class="objective-proof"><summary>compute mask IoU and Dice score</summary><p>compute mask IoU and Dice score: ใช้กรณีในหัวข้อ Mask IoU, Dice Coefficient เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch44-evidence-10"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch44-evidence-10-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch44-evidence-10-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch44-evidence-10-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch44-evidence-10-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch44-evidence-10-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch44-evidence-10-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch44-evidence-10-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch44-evidence-10-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>masksA={pixels1,2},B={2,3}ได้intersection1,union3,IoU1/3,Dice2/(2+2)=.5; bothemptypolicyต้องระบุ</p><h3>27. Mask IoU</h3>
+<p>For binary masks:</p>
+<pre><code class="language-text">IoU =
+|prediction ∩ target|
+/
+|prediction ∪ target|
+</code></pre>
+<h3>28. Dice Coefficient</h3>
+<pre><code class="language-text">Dice =
+2|A∩B|
+/
+(|A|+|B|)
+</code></pre>
+<p>Related to F1 for binary segmentation.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch44-objective-11" class="objective-proof"><summary>explain U-Net</summary><p>explain U-Net: ใช้กรณีในหัวข้อ U-Net เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch44-evidence-11"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch44-evidence-11-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch44-evidence-11-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch44-evidence-11-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch44-evidence-11-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch44-evidence-11-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch44-evidence-11-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch44-evidence-11-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch44-evidence-11-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>seed7syntheticcircles/rectangles,image32²; splitก่อนaugmentation,trainUNetBCElogitsแล้วmeasurepixelIoU/Diceกับempty-maskbaselineและtestholdoutshapes</p><h3>29. U-Net</h3>
+<pre><code class="language-text">input
+↓
+encoder/downsample
+↓
+bottleneck
+↓
+decoder/upsample
+↑ skip connections from encoder
+↓
+pixel logits
+</code></pre>
+<p>Skip connections restore fine spatial details.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch44-objective-12" class="objective-proof"><summary>explain Mask R-CNN</summary><p>explain Mask R-CNN: ใช้กรณีในหัวข้อ Mask R-CNN เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch44-evidence-12"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch44-evidence-12-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch44-evidence-12-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch44-evidence-12-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch44-evidence-12-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch44-evidence-12-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch44-evidence-12-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch44-evidence-12-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch44-evidence-12-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>30. Mask R-CNN</h3>
+<p>Extends Faster R-CNN with a per-instance mask head.</p>
+<p>Pipeline:
+- RPN
+- ROI Align
+- class/box heads
+- mask head</p><h3>30. Mask R-CNN</h3>
+<p>Extends Faster R-CNN with a per-instance mask head.</p>
+<p>Pipeline:
+- RPN
+- ROI Align
+- class/box heads
+- mask head</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch44-objective-13" class="objective-proof"><summary>understand mAP conceptually</summary><p>understand mAP conceptually: ใช้กรณีในหัวข้อ Detection Matching, Precision / Recall in Detection, Average Precision เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch44-evidence-13"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch44-evidence-13-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch44-evidence-13-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch44-evidence-13-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch44-evidence-13-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch44-evidence-13-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch44-evidence-13-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch44-evidence-13-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch44-evidence-13-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>score-descpredictionจับGTsameclassIoUสูงสุดที่ยังunmatchedและ≥threshold; GTหนึ่งตัวรับTPได้ครั้งเดียว,duplicatepredictionเป็นFP</p><h3>20. Detection Matching</h3>
+<p>Evaluation/training may match prediction to ground truth using:
+- IoU threshold
+- assignment rules
+- Hungarian matching in set-prediction models</p>
+<p>Do not assume all detectors use the same assignment.</p>
+<h3>21. Precision / Recall in Detection</h3>
+<p>Prediction is true positive when:
+- correct class
+- sufficient IoU
+- matched to an unmatched ground-truth object</p>
+<p>Duplicates around same object become false positives.</p>
+<h3>22. Average Precision</h3>
+<p>AP summarizes precision-recall behavior over confidence thresholds.</p>
+<p>mAP averages AP across:
+- classes
+- sometimes multiple IoU thresholds</p>
+<p>Always state the exact evaluation protocol.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch44-objective-14" class="objective-proof"><summary>build a tiny segmentation model in PyTorch</summary><p>build a tiny segmentation model in PyTorch: ใช้กรณีในหัวข้อ Pixel Cross-Entropy, From Scratch เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch44-evidence-14"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch44-evidence-14-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch44-evidence-14-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch44-evidence-14-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch44-evidence-14-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch44-evidence-14-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch44-evidence-14-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch44-evidence-14-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch44-evidence-14-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>NumPyboxIoU/NMSเทียบtorchvisionเมื่อoptionalbinaryเข้ากันได้; coreIoUoraclemanualต้องผ่านเสมอและtiepolicyอาจทำindicesต่าง</p><h3>26. Pixel Cross-Entropy</h3>
+<p>For C classes:</p>
+<pre><code class="language-text">logits:
+(B,C,H,W)
+
+target:
+(B,H,W)
+</code></pre>
+<p>Cross-entropy classifies every pixel.</p>
+<h3>33. From Scratch</h3>
+<p>src/detection_segmentation_numpy.py includes:</p>
+<ul>
+<li>box_area</li>
+<li>box_iou</li>
+<li>pairwise_iou</li>
+<li>nms</li>
+<li>mask_iou</li>
+<li>dice_score</li>
+</ul></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch44-objective-15" class="objective-proof"><summary>Common Mistakes</summary><p>Common Mistakes: ใช้กรณีในหัวข้อ Common Mistakes เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch44-evidence-15"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch44-evidence-15-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch44-evidence-15-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch44-evidence-15-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch44-evidence-15-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch44-evidence-15-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch44-evidence-15-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch44-evidence-15-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch44-evidence-15-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>cropsofimageเดียวข้ามsplitหรือเลือกscore/IoUthresholdจากtestทำleak; splitbyimage/patientและreportobject-size-slices</p><h3>34. Common Mistakes</h3>
+<ol>
+<li>xyxy vs xywh confusion</li>
+<li>invalid negative-width boxes</li>
+<li>IoU division by zero</li>
+<li>class-agnostic NMS unintentionally</li>
+<li>suppressing boxes at wrong threshold direction</li>
+<li>evaluation duplicates counted as multiple true positives</li>
+<li>applying augmentations without transforming boxes/masks</li>
+<li>resizing masks with inappropriate interpolation</li>
+<li>evaluating mAP without stating IoU protocol</li>
+<li>thresholding segmentation logits before training loss</li>
+</ol></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch44-objective-16" class="objective-proof"><summary>Data Augmentation</summary><p>Data Augmentation: ใช้กรณีในหัวข้อ Data Augmentation เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch44-evidence-16"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch44-evidence-16-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch44-evidence-16-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch44-evidence-16-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch44-evidence-16-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch44-evidence-16-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch44-evidence-16-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch44-evidence-16-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch44-evidence-16-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>manifestเก็บcoordinateconvention/resize-letterboxtransform/classIDs/score-NMS-IoUthreshold/split/hash/seed/checkpoint/metricversion</p><h3>32. Data Augmentation</h3>
+<p>Detection/segmentation transforms must update labels consistently.</p>
+<p>If image is flipped:
+- boxes must flip
+- masks must flip</p>
+<p>A geometry transform applied only to image silently corrupts supervision.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details></section><section id="implementation" class="canonical-section"><h2>Implementation และ tests ที่รันบนเครื่องได้</h2><details><summary>44-object-detection-segmentation/src/detection_segmentation_numpy.py</summary><pre><code>&quot;&quot;&quot;Bounding-box and segmentation metrics implemented with NumPy.&quot;&quot;&quot;
+
+from __future__ import annotations
+
+import numpy as np
+
+
+def box_area(boxes: np.ndarray) -&gt; np.ndarray:
+    values = np.asarray(boxes, dtype=float)
+    if values.ndim != 2 or values.shape[1] != 4:
+        raise ValueError(&quot;boxes must have shape (N,4) in xyxy format&quot;)
+
+    width = np.maximum(0.0, values[:, 2] - values[:, 0])
+    height = np.maximum(0.0, values[:, 3] - values[:, 1])
+    return width * height
+
+
+def pairwise_iou(
+    boxes1: np.ndarray,
+    boxes2: np.ndarray,
+) -&gt; np.ndarray:
+    a = np.asarray(boxes1, dtype=float)
+    b = np.asarray(boxes2, dtype=float)
+
+    if a.ndim != 2 or b.ndim != 2:
+        raise ValueError(&quot;boxes must be matrices&quot;)
+    if a.shape[1:] != (4,) or b.shape[1:] != (4,):
+        raise ValueError(&quot;boxes must have shape (N,4)/(M,4)&quot;)
+
+    area_a = box_area(a)
+    area_b = box_area(b)
+
+    top_left = np.maximum(
+        a[:, None, :2],
+        b[None, :, :2],
+    )
+    bottom_right = np.minimum(
+        a[:, None, 2:],
+        b[None, :, 2:],
+    )
+
+    size = np.maximum(0.0, bottom_right - top_left)
+    intersection = size[..., 0] * size[..., 1]
+
+    union = (
+        area_a[:, None]
+        + area_b[None, :]
+        - intersection
+    )
+
+    return np.divide(
+        intersection,
+        union,
+        out=np.zeros_like(intersection),
+        where=union &gt; 0,
+    )
+
+
+def box_iou(
+    box1: np.ndarray,
+    box2: np.ndarray,
+) -&gt; float:
+    return float(
+        pairwise_iou(
+            np.asarray(box1, dtype=float).reshape(1, 4),
+            np.asarray(box2, dtype=float).reshape(1, 4),
+        )[0, 0]
+    )
+
+
+def nms(
+    boxes: np.ndarray,
+    scores: np.ndarray,
+    iou_threshold: float,
+) -&gt; list[int]:
+    values = np.asarray(boxes, dtype=float)
+    confidence = np.asarray(scores, dtype=float).reshape(-1)
+
+    if values.shape != (len(confidence), 4):
+        raise ValueError(&quot;box/score shape mismatch&quot;)
+    if not 0.0 &lt;= iou_threshold &lt;= 1.0:
+        raise ValueError(&quot;iou_threshold must lie in [0,1]&quot;)
+
+    order = np.argsort(-confidence, kind=&quot;stable&quot;)
+    keep: list[int] = []
+
+    while len(order) &gt; 0:
+        current = int(order[0])
+        keep.append(current)
+
+        if len(order) == 1:
+            break
+
+        remaining = order[1:]
+        overlaps = pairwise_iou(
+            values[current : current + 1],
+            values[remaining],
+        )[0]
+
+        order = remaining[overlaps &lt;= iou_threshold]
+
+    return keep
+
+
+def mask_iou(
+    prediction: np.ndarray,
+    target: np.ndarray,
+) -&gt; float:
+    pred = np.asarray(prediction, dtype=bool)
+    truth = np.asarray(target, dtype=bool)
+
+    if pred.shape != truth.shape:
+        raise ValueError(&quot;mask shapes must match&quot;)
+
+    intersection = np.logical_and(pred, truth).sum()
+    union = np.logical_or(pred, truth).sum()
+
+    if union == 0:
+        return 1.0
+    return float(intersection / union)
+
+
+def dice_score(
+    prediction: np.ndarray,
+    target: np.ndarray,
+) -&gt; float:
+    pred = np.asarray(prediction, dtype=bool)
+    truth = np.asarray(target, dtype=bool)
+
+    if pred.shape != truth.shape:
+        raise ValueError(&quot;mask shapes must match&quot;)
+
+    intersection = np.logical_and(pred, truth).sum()
+    denominator = pred.sum() + truth.sum()
+
+    if denominator == 0:
+        return 1.0
+    return float(2.0 * intersection / denominator)
+</code></pre></details><details><summary>44-object-detection-segmentation/tests/test_detection_segmentation_numpy.py</summary><pre><code>from pathlib import Path
+import importlib.util
+
+import numpy as np
+
+
+MODULE_PATH = Path(__file__).parents[1] / &quot;src&quot; / &quot;detection_segmentation_numpy.py&quot;
+SPEC = importlib.util.spec_from_file_location(&quot;detection_numpy_course&quot;, MODULE_PATH)
+assert SPEC and SPEC.loader
+mod = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(mod)
+
+
+def test_box_iou_identical_is_one() -&gt; None:
+    box = np.array([0.0, 0.0, 2.0, 2.0])
+    np.testing.assert_allclose(mod.box_iou(box, box), 1.0)
+
+
+def test_pairwise_iou_shape() -&gt; None:
+    a = np.array([[0, 0, 2, 2], [2, 2, 4, 4]], dtype=float)
+    b = np.array([[0, 0, 1, 1]], dtype=float)
+
+    matrix = mod.pairwise_iou(a, b)
+    assert matrix.shape == (2, 1)
+    assert matrix[0, 0] &gt; matrix[1, 0]
+
+
+def test_nms_keeps_high_score_and_far_box() -&gt; None:
+    boxes = np.array(
+        [
+            [0, 0, 2, 2],
+            [0.1, 0.1, 2.1, 2.1],
+            [5, 5, 7, 7],
+        ],
+        dtype=float,
+    )
+    scores = np.array([0.9, 0.8, 0.7])
+
+    keep = mod.nms(boxes, scores, 0.5)
+
+    assert keep == [0, 2]
+
+
+def test_mask_metrics() -&gt; None:
+    prediction = np.array([[1, 1], [0, 0]], dtype=bool)
+    target = np.array([[1, 0], [1, 0]], dtype=bool)
+
+    np.testing.assert_allclose(mod.mask_iou(prediction, target), 1 / 3)
+    np.testing.assert_allclose(mod.dice_score(prediction, target), 0.5)
+</code></pre></details></section><section id="glossary" class="canonical-section"><h2>อภิธานศัพท์ — คำไทย ความหมาย และข้อควรตรวจ</h2><dl><dt>tensor</dt><dd>เทนเซอร์: ชุดตัวเลขที่มีแกน เช่น scalar ไม่มีแกน, vector หนึ่งแกน, matrix สองแกน; shape บอกขนาดแต่ละแกน ไม่บอกความหมายของแกนจนกว่าจะระบุ</dd><dt>shape</dt><dd>รูปทรงข้อมูล: (B,T,d) หมายถึง batch × เวลา/ตำแหน่ง × features; ใช้ชื่อแกนกำกับเสมอ การ transpose เปลี่ยนแกนแต่ไม่ใช่แค่เปลี่ยนชื่อ</dd><dt>batch</dt><dd>กลุ่มตัวอย่างที่คำนวณร่วมกันหนึ่งครั้ง; B คือจำนวนตัวอย่าง ไม่ใช่จำนวน features หรือจำนวน optimizer updates</dd><dt>weight w / θ</dt><dd>น้ำหนักหรือพารามิเตอร์ที่โมเดลใช้คำนวณ; แก้ด้วยมือทำ forward ใหม่ ส่วน optimizer ต้องรับ gradient แล้วกด update จึงแก้ state</dd><dt>bias b</dt><dd>ค่าคงที่ที่บวกกับผลเชิงเส้น; regression scalar bias เพิ่ม Δ ทำให้ prediction ทุกจุดเพิ่ม Δ เท่ากัน</dd><dt>prediction ŷ</dt><dd>ค่าที่โมเดลทำนายจาก input และพารามิเตอร์ปัจจุบัน; เครื่องหมายหมวกแยกจาก target y ที่มาจากข้อมูล</dd><dt>residual e</dt><dd>ความคลาดเคลื่อน ในเว็บนี้นิยาม prediction − target; บางตำราใช้เครื่องหมายกลับกัน จึงต้องตรวจนิยามก่อนเทียบสูตร gradient</dd><dt>MSE</dt><dd>mean squared error = ผลรวม residual กำลังสองหารจำนวนรายการที่ระบุ; มีหน่วยเป็น target ยกกำลังสอง และการใช้ sum แทน mean เปลี่ยน scale gradient</dd><dt>loss L / objective J</dt><dd>จำนวนที่ optimizer ต้องการลด; objective อาจรวม data loss และ regularization จึงต้องดูองค์ประกอบและ reduction ให้ตรง implementation</dd><dt>gradient ∇ / ∂</dt><dd>เวกเตอร์ของ partial derivatives บอกอัตราเปลี่ยน loss ต่อพารามิเตอร์แต่ละตัว; ∂ ใช้เมื่อเปลี่ยนตัวหนึ่งโดยตรึงตัวอื่น</dd><dt>chain rule</dt><dd>กฎลูกโซ่: คูณอนุพันธ์ตามเส้นทาง และบวก contribution จากทุกเส้นทางที่มารวมกัน ใช้ย้อนจาก loss ถึง weights</dd><dt>learning rate η</dt><dd>ขนาดตัวคูณ gradient ใน update θnew=θ−ηg; η≥0, ศูนย์หมายถึงไม่มีการขยับพารามิเตอร์ ก้าวใหญ่เกินอาจ diverge</dd><dt>regularization λ</dt><dd>ตัวคูณค่าลงโทษ ต้อง λ≥0 ตามนิยามการลงโทษ; Ridge λΣw² เพิ่ม gradient 2λw โดยบท Regression นี้ไม่ลงโทษ bias</dd><dt>baseline</dt><dd>สถานะอ้างอิงที่ตรึงไว้สำหรับเทียบ; ต้องเก็บ snapshot ไม่อ้าง object ปัจจุบันที่แก้ตามไปด้วย</dd><dt>invariant</dt><dd>คุณสมบัติที่กลไกต้องรักษา เช่น probability รวม1, shape สอดคล้อง, queue ไม่เกิน capacity; ใช้ tests ตรวจได้มากกว่าดูภาพสวย</dd><dt>optimizer state</dt><dd>ความจำของอัลกอริทึม เช่น velocity, moments และ completed updates; คืนเฉพาะ weights ยังไม่เท่ากับเริ่มการฝึกใหม่ทั้งหมด</dd><dt>finite difference</dt><dd>ประมาณ derivative ด้วย [f(x+h)−f(x−h)]/(2h); h&gt;0, ใช้ smooth point และลองหลาย h เพื่อแยก truncation error จาก roundoff</dd><dt>softmax</dt><dd>แปลง logits เป็นความน่าจะเป็นตามแกนที่กำหนด; ลบ max ก่อน exp เพื่อความเสถียร และ fully masked row ต้องมีนโยบายชัดเจน</dd><dt>logit</dt><dd>คะแนนก่อน sigmoid/softmax ไม่ใช่ probability; อาจเป็นจำนวนจริงติดลบหรือเกิน1ได้ จึงห้ามส่งให้ loss ที่คาด probability โดยไม่แปลง</dd><dt>temperature τ / T</dt><dd>ตัวหาร logits ก่อน softmax; ต้องเป็นบวก ค่าเล็กทำ distribution แหลมขึ้น โดยไม่เท่ากับ retrain weights</dd><dt>mask</dt><dd>ตัวกำหนดตำแหน่งที่อ่านหรือคิด loss ได้; causal mask ปิดอนาคต, padding mask ปิดข้อมูลเติม, loss mask เลือก target แต่ละอย่างคนละหน้าที่</dd><dt>Q / K / V</dt><dd>query ใช้ค้นข้อมูล, key ใช้จับคู่ query, value เป็นข้อมูลที่ถูกถัวเฉลี่ย; เป็น learned projections ของ representation ไม่ใช่ป้ายความหมายตายตัว</dd><dt>head</dt><dd>ส่วนของ feature representation ที่ทำ attention แยกกัน แล้ว concat/project กลับ; ต้องตรวจ d_model หารจำนวน heads ลงตัว</dd><dt>ε-neighborhood</dt><dd>เพื่อนบ้านทั้งหมดที่มีระยะไม่เกิน ε รวมจุดตัวเองใน DBSCAN นี้; ε มีหน่วยเดียวกับพิกัด ไม่ใช่จำนวน k ที่ใช้โหวต</dd><dt>core / border / noise</dt><dd>DBSCAN core มีเพื่อนบ้านรวมตัวเองถึง min_samples; border อยู่ใกล้ core แต่เพื่อนบ้านไม่ถึง; noise ไม่ถูกเชื่อมกับ core cluster ใด</dd><dt>bootstrap</dt><dd>สุ่ม observations แบบ replacement ขนาดเท่าเดิมซ้ำหลายครั้งแล้วคำนวณ statistic ใหม่; seed ทำให้ตรวจซ้ำได้ แต่ไม่แก้สมมติฐาน IID ที่ผิด</dd><dt>confidence interval</dt><dd>ช่วงที่สร้างด้วย procedure ที่มี coverage ตามสมมติฐาน; ช่วงหนึ่งที่ได้แล้วไม่ใช่ posterior probability ของ parameter และ sample เล็กยังไม่แน่นอนมาก</dd><dt>validation / test</dt><dd>validation ใช้เลือกโมเดล/ค่าตั้ง ส่วน test ใช้ประเมินหลัง freeze การตัดสินใจ; fit preprocessing/tokenizer จาก test เป็น leakage</dd><dt>leakage</dt><dd>ข้อมูลที่ควรยังไม่รู้ไหลเข้า training/การเลือกโมเดล เช่น future feature หรือเอกสารซ้ำข้าม split ทำให้ metric ดูดีเกินการใช้งานจริง</dd><dt>queue / capacity</dt><dd>queue คือรายการรอ, capacity การให้บริการรวม = workers × service rate ตามแบบจำลอง; เพิ่ม timeout ไม่เพิ่มกำลังประมวลผล</dd><dt>state transition</dt><dd>การเปลี่ยนสถานะเมื่อเกิดเหตุการณ์ที่อนุญาต เช่น queued→active→done; ต้องระบุ guard, side effect และเหตุผลเมื่อ transition ถูกปฏิเสธ</dd><dt>latency / throughput</dt><dd>latency คือเวลาต่อคำขอ, throughput คือปริมาณงานต่อหน่วยเวลา; batching อาจเพิ่ม throughput แต่เพิ่มเวลารอ จึงต้องวัดทั้งคู่</dd><dt>idempotency</dt><dd>ทำคำขอ business operation เดิมซ้ำแล้ว side effect เกิดครั้งเดียวตาม key และ transaction protocol; ไม่ได้รับประกันจากการใช้ UUID ใหม่ทุก attempt</dd><dt>local lab</dt><dd>โปรแกรม Python และ tests ที่ผู้เรียนรันบนเครื่อง; เว็บเก็บเพียงคำยืนยันของผู้เรียน การผ่าน tests ของโค้ดต้นแบบไม่ใช่ผลตรวจโค้ดผู้เรียน</dd></dl></section></article>
+<section id="practice" class="practice-section"><span class="eyebrow">PRACTICE · DEBUG · BUILD</span><h2>พิสูจน์ด้วยการลงมือทำ</h2><div id="web-checks"></div><div class="retry-actions"><button class="secondary-button" id="retry-checks">เริ่มทำโจทย์ในเว็บใหม่</button><button class="text-button" id="undo-retry" hidden>คืนผลก่อนเริ่มใหม่</button></div><div id="exercise-content"><h2>แบบฝึก 20 ข้อ — เฉลยเฉพาะข้อ</h2><p>ทำคำตอบก่อนเปิด hints; โจทย์ปลายเปิดให้ใช้ตัวอย่างคำตอบและหลักฐานราย objective ตรวจงานจริง</p><section id="exercise-1" class="exercise-item"><h3>ข้อ 1</h3><p>Convert xyxy ↔ xywh ↔ cxcywh.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Bounding Boxes: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): xyxy[1,2,5,8]→xywh[1,2,4,6]→cxcywh[3,5,4,6];…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: xyxy[1,2,5,8]→xywh[1,2,4,6]→cxcywh[3,5,4,6]; continuouscoordinatesไม่มี+1pixelเ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>xyxy[1,2,5,8]→xywh[1,2,4,6]→cxcywh[3,5,4,6]; continuouscoordinatesไม่มี+1pixelเว้นประกาศinclusiveintegerpolicy</p><p>อ้างอิง: <a href="#chapter-44/section/topic-3">Bounding Boxes</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch44-exercise-01"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-2" class="exercise-item"><h3>ข้อ 2</h3><p>Calculate IoU by hand for overlapping boxes.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Intersection over Union: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): A[0,0,2,2],B[1,1,3,3]intersection1,a…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: A[0,0,2,2],B[1,1,3,3]intersection1,area4+4,union7ให้IoU1/7≈.1428…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>A[0,0,2,2],B[1,1,3,3]intersection1,area4+4,union7ให้IoU1/7≈.142857; disjoint0และidentical1</p><p>อ้างอิง: <a href="#chapter-44/section/topic-5">Intersection over Union</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch44-exercise-02"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-3" class="exercise-item"><h3>ข้อ 3</h3><p>Build a pairwise IoU matrix.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Pairwise IoU: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): broadcastboxesA(N,1,4),B(1,M,4),intersec…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: broadcastboxesA(N,1,4),B(1,M,4),intersectionw/hclip≥0→IoU(N,M); zeroareab…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>broadcastboxesA(N,1,4),B(1,M,4),intersectionw/hclip≥0→IoU(N,M); zeroareaboxต้องrejectหรือdefine0ไม่NaN</p><p>อ้างอิง: <a href="#chapter-44/section/topic-6">Pairwise IoU</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch44-exercise-03"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-4" class="exercise-item"><h3>ข้อ 4</h3><p>Implement class-aware NMS.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Class-Aware NMS: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): sortscoredesc,tieoriginalID; เลือกboxแรกแล้ว…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: sortscoredesc,tieoriginalID; เลือกboxแรกแล้วsuppressIoU&gt;thresholdเฉพาะsameclass…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>sortscoredesc,tieoriginalID; เลือกboxแรกแล้วsuppressIoU&gt;thresholdเฉพาะsameclass; classต่างกันoverlap1ก็ยังเก็บ</p><p>อ้างอิง: <a href="#chapter-44/section/topic-9">Class-Aware NMS</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch44-exercise-04"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-5" class="exercise-item"><h3>ข้อ 5</h3><p>Sweep NMS thresholds.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ NMS Threshold: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): thresholdสูงsuppressน้อยจึงpredictionsมากขึ้น…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: thresholdสูงsuppressน้อยจึงpredictionsมากขึ้น แต่อาจfalsepositivesเพิ่ม; reportpr…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>thresholdสูงsuppressน้อยจึงpredictionsมากขึ้น แต่อาจfalsepositivesเพิ่ม; reportprecision/recallไม่เลือกจากtestset</p><p>อ้างอิง: <a href="#chapter-44/section/topic-8">NMS Threshold</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch44-exercise-05"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-6" class="exercise-item"><h3>ข้อ 6</h3><p>Match predictions to ground truth greedily.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Detection Matching: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): score-descpredictionจับGTsameclassIoUสูงสุดที่ยังu…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: score-descpredictionจับGTsameclassIoUสูงสุดที่ยังunmatchedและ≥threshold; GTหนึ่งตัวรับTPได้…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>score-descpredictionจับGTsameclassIoUสูงสุดที่ยังunmatchedและ≥threshold; GTหนึ่งตัวรับTPได้ครั้งเดียว,duplicatepredictionเป็นFP</p><p>อ้างอิง: <a href="#chapter-44/section/topic-20">Detection Matching</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch44-exercise-06"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-7" class="exercise-item"><h3>ข้อ 7</h3><p>Compute precision/recall at one IoU threshold.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Precision / Recall in Detection: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): TP2,FP1,FN2ให้precision2/3,recall.5; ต้อง…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: TP2,FP1,FN2ให้precision2/3,recall.5; ต้องระบุIoUthresholdและscorethreshold…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>TP2,FP1,FN2ให้precision2/3,recall.5; ต้องระบุIoUthresholdและscorethresholdก่อนนับ ไม่เอาค่าIoUmeanแทนAP</p><p>อ้างอิง: <a href="#chapter-44/section/topic-21">Precision / Recall in Detection</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch44-exercise-07"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-8" class="exercise-item"><h3>ข้อ 8</h3><p>Implement binary mask IoU/Dice.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Mask IoU, Dice Coefficient: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): masksA={pixels1,2},B={2,3}ได้intersect…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: masksA={pixels1,2},B={2,3}ได้intersection1,union3,IoU1/3,Dice2/(2+2)=…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>masksA={pixels1,2},B={2,3}ได้intersection1,union3,IoU1/3,Dice2/(2+2)=.5; bothemptypolicyต้องระบุ</p><p>อ้างอิง: <a href="#chapter-44/section/topic-27">Mask IoU</a>, <a href="#chapter-44/section/topic-28">Dice Coefficient</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch44-exercise-08"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-9" class="exercise-item"><h3>ข้อ 9</h3><p>Train a tiny U-Net on synthetic shapes.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ U-Net: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): seed7syntheticcircles/rectangles,image32²; splitก่อนaugment…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: seed7syntheticcircles/rectangles,image32²; splitก่อนaugmentation,trainUNetBCElogitsแล้วmeasurepixelIoU/Dic…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>seed7syntheticcircles/rectangles,image32²; splitก่อนaugmentation,trainUNetBCElogitsแล้วmeasurepixelIoU/Diceกับempty-maskbaselineและtestholdoutshapes</p><p>อ้างอิง: <a href="#chapter-44/section/topic-29">U-Net</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch44-exercise-09"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-10" class="exercise-item"><h3>ข้อ 10</h3><p>Compare semantic vs instance segmentation labels.</p>
+<p>Challenge:
+- implement focal loss
+- implement a tiny anchor-free center/box detector</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Semantic Segmentation, Instance Segmentation, Panoptic Segmentation: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): semanticlabelsให้classต่อpixelเช่นcar1ทุกคัน; i…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: semanticlabelsให้classต่อpixelเช่นcar1ทุกคัน; instancelabelsให้IDแยกแต่ละคันแม้class…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>semanticlabelsให้classต่อpixelเช่นcar1ทุกคัน; instancelabelsให้IDแยกแต่ละคันแม้classเดียว; panopticรวมclassและinstance</p><p>อ้างอิง: <a href="#chapter-44/section/topic-23">Semantic Segmentation</a>, <a href="#chapter-44/section/topic-24">Instance Segmentation</a>, <a href="#chapter-44/section/topic-25">Panoptic Segmentation</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch44-exercise-10"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-11" class="exercise-item"><h3>ข้อ 11</h3><p>Reproduce one central calculation from Detection/Segmentation using a tiny hand-checkable input.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Intersection over Union, Non-Maximum Suppression: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): tinyboxesข้อ2IoU1/7; score.9/.8sameclass,NMSt…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: tinyboxesข้อ2IoU1/7; score.9/.8sameclass,NMSthreshold.1เก็บเพียงแรก แต่threshold.…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>tinyboxesข้อ2IoU1/7; score.9/.8sameclass,NMSthreshold.1เก็บเพียงแรก แต่threshold.2เก็บทั้งสอง ต้องไม่NMSข้ามclass</p><p>อ้างอิง: <a href="#chapter-44/section/topic-5">Intersection over Union</a>, <a href="#chapter-44/section/topic-7">Non-Maximum Suppression</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch44-exercise-11"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-12" class="exercise-item"><h3>ข้อ 12</h3><p>Write a deterministic test that verifies the most important invariant in Detection/Segmentation.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Intersection over Union, Class-Aware NMS: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): identicalboxesIoU1,symmetryIoU(A,B)=IoU(B,A),bounds…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: identicalboxesIoU1,symmetryIoU(A,B)=IoU(B,A),bounds[0,1]; class-awareNMSเก็บsameboxdifferent…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>identicalboxesIoU1,symmetryIoU(A,B)=IoU(B,A),bounds[0,1]; class-awareNMSเก็บsameboxdifferentclassและduplicateGTmatchไม่เกิดสองTP</p><p>อ้างอิง: <a href="#chapter-44/section/topic-5">Intersection over Union</a>, <a href="#chapter-44/section/topic-9">Class-Aware NMS</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch44-exercise-12"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-13" class="exercise-item"><h3>ข้อ 13</h3><p>Compare two meaningful configurations while keeping data and seed fixed.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Confidence Threshold: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): เปรียบNMSthreshold.3/.7โดยpredictions/split…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: เปรียบNMSthreshold.3/.7โดยpredictions/splitเดียว; reportTP/FP/FN,Recallและlate…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>เปรียบNMSthreshold.3/.7โดยpredictions/splitเดียว; reportTP/FP/FN,Recallและlatencyก่อนเลือกvalidationthreshold</p><p>อ้างอิง: <a href="#chapter-44/section/topic-10">Confidence Threshold</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch44-exercise-13"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-14" class="exercise-item"><h3>ข้อ 14</h3><p>Record intermediate shapes, ranges, and one quality metric for a tiny end-to-end run.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Bounding Boxes, Detection Matching: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): recordboxes(N,4),scores(N,),classes(N,),IoUmatri…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: recordboxes(N,4),scores(N,),classes(N,),IoUmatrix(N,M),matchedIDsและprecision/recall; …</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>recordboxes(N,4),scores(N,),classes(N,),IoUmatrix(N,M),matchedIDsและprecision/recall; segmentationlogits(B,1,H,W)ตรงmask</p><p>อ้างอิง: <a href="#chapter-44/section/topic-3">Bounding Boxes</a>, <a href="#chapter-44/section/topic-20">Detection Matching</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch44-exercise-14"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-15" class="exercise-item"><h3>ข้อ 15</h3><p>Explain one evaluation mistake that could make a Detection/Segmentation result look better than it really is.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Common Mistakes: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): cropsofimageเดียวข้ามsplitหรือเลือกscore/IoUth…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: cropsofimageเดียวข้ามsplitหรือเลือกscore/IoUthresholdจากtestทำleak; splitbyimage/p…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>cropsofimageเดียวข้ามsplitหรือเลือกscore/IoUthresholdจากtestทำleak; splitbyimage/patientและreportobject-size-slices</p><p>อ้างอิง: <a href="#chapter-44/section/topic-34">Common Mistakes</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch44-exercise-15"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-16" class="exercise-item"><h3>ข้อ 16</h3><p>State the dominant time and memory complexity for the main operation in Detection/Segmentation.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Pairwise IoU, Non-Maximum Suppression: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): pairwiseIoUO(NM),naiveNMSO(N²),maskmetricsO(H…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: pairwiseIoUO(NM),naiveNMSO(N²),maskmetricsO(HW); detectorbackbonecostแยกจากpostpro…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>pairwiseIoUO(NM),naiveNMSO(N²),maskmetricsO(HW); detectorbackbonecostแยกจากpostprocessingและpeakmemoryของIoUmatrix</p><p>อ้างอิง: <a href="#chapter-44/section/topic-6">Pairwise IoU</a>, <a href="#chapter-44/section/topic-7">Non-Maximum Suppression</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch44-exercise-16"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-17" class="exercise-item"><h3>ข้อ 17</h3><p>Compare a from-scratch result with a trusted implementation using identical inputs and settings.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ From Scratch: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): NumPyboxIoU/NMSเทียบtorchvisionเมื่อoptionalbina…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: NumPyboxIoU/NMSเทียบtorchvisionเมื่อoptionalbinaryเข้ากันได้; coreIoUoraclemanualต้องผ่…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>NumPyboxIoU/NMSเทียบtorchvisionเมื่อoptionalbinaryเข้ากันได้; coreIoUoraclemanualต้องผ่านเสมอและtiepolicyอาจทำindicesต่าง</p><p>อ้างอิง: <a href="#chapter-44/section/topic-33">From Scratch</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch44-exercise-17"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-18" class="exercise-item"><h3>ข้อ 18</h3><p>Run a one-factor ablation and report the measured change over repeated runs when randomness matters.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Pixel Cross-Entropy, Dice Coefficient: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): เปลี่ยนBCE→BCE+DicelossคงUNet/data/initbudget; …</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: เปลี่ยนBCE→BCE+DicelossคงUNet/data/initbudget; reportsmallobjectDiceกับfalsepositive…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>เปลี่ยนBCE→BCE+DicelossคงUNet/data/initbudget; reportsmallobjectDiceกับfalsepositiveareaหลายseed ไม่เทียบlossscaleตรงๆ</p><p>อ้างอิง: <a href="#chapter-44/section/topic-26">Pixel Cross-Entropy</a>, <a href="#chapter-44/section/topic-28">Dice Coefficient</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch44-exercise-18"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-19" class="exercise-item"><h3>ข้อ 19</h3><p>Design a small reproducibility record containing seed, code version, data version, configuration, and metric.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Data Augmentation: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): manifestเก็บcoordinateconvention/resize-letterboxtra…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: manifestเก็บcoordinateconvention/resize-letterboxtransform/classIDs/score-NMS-IoUthreshold/spl…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>manifestเก็บcoordinateconvention/resize-letterboxtransform/classIDs/score-NMS-IoUthreshold/split/hash/seed/checkpoint/metricversion</p><p>อ้างอิง: <a href="#chapter-44/section/topic-32">Data Augmentation</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch44-exercise-19"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-20" class="exercise-item"><h3>ข้อ 20</h3><p>Propose one falsifiable research question for Detection/Segmentation and specify the baseline, changed factor, and acceptance metric.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ U-Net: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ทดลอง“Diceadditionเพิ่มsmallshapeIoU≥.03เทียบ…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ทดลอง“Diceadditionเพิ่มsmallshapeIoU≥.03เทียบBCE”; holdoutsize-shift,fixedtraining…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ทดลอง“Diceadditionเพิ่มsmallshapeIoU≥.03เทียบBCE”; holdoutsize-shift,fixedtrainingbudget,reportCIและlatency/memory</p><p>อ้างอิง: <a href="#chapter-44/section/topic-29">U-Net</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch44-exercise-20"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section></div><div id="local-lab-content"><section id="local-lab"><h2>Local lab: Python 3.12 บน CPU</h2><p>รันจาก repository root; ใช้ Python 3.12 แยก environment สำหรับ framework ตาม requirements ของชุดบท</p><pre><code>python3.12 -m venv .venv-course
+source .venv-course/bin/activate
+python -m pip install -r requirements-batch15.txt pytest
+(cd 44-object-detection-segmentation &amp;&amp; python -m pytest tests -q -rs)</code></pre><p>ผลที่คาดหวัง: required tests ผ่านและไม่มี required test ถูก skip; GPU/integrations ที่ยังไม่รันต้องระบุแยก Python 3.15 ที่มากับเครื่องอาจใช้กับ framework wheels เหล่านี้ไม่ได้</p><h2>Mini Project — Synthetic Shape Vision Lab</h2>
+<p>Generate images containing simple rectangles/circles.</p>
+<p>Build:
+- binary segmentation masks
+- bounding boxes
+- tiny segmentation network
+- IoU/Dice metrics
+- simple detection post-processing</p>
+<p>Extension:
+- predict class + box directly
+- run NMS on multiple candidate boxes
+- compare segmentation-derived bounding boxes with direct box regression</p><h2>Batch 15 Integration Project — Recommendation, Vision &amp; Vector Retrieval Lab</h2>
+<p>Batch 15 contains three experiments.</p>
+<h3>Part A — Two-Tower Recommender</h3>
+<p>Synthetic users/items are generated from hidden preference factors.</p>
+<pre><code class="language-text">user features -&gt; user tower
+                          \
+                           dot-product affinity
+                          /
+item features -&gt; item tower
+</code></pre>
+<p>Training uses sampled pairwise BPR-style loss.</p>
+<p>Tracks:
+- training loss
+- parameter count
+- Recall@10</p>
+<h3>Part B — Tiny U-Net Segmentation</h3>
+<p>Synthetic noisy rectangle images:</p>
+<pre><code class="language-text">image
+↓
+encoder
+↓
+bottleneck
+↓ upsample + skip
+↓
+binary mask logits
+</code></pre>
+<p>Tracks:
+- BCE-with-logits loss
+- parameter count
+- held-out mask IoU</p>
+<h3>Part C — Exact vs IVF Vector Search</h3>
+<p>Synthetic clustered embeddings:</p>
+<pre><code class="language-text">query
+├─ exact cosine top-K
+└─ IVF top-K
+</code></pre>
+<p>Compare:
+- nprobe=1
+- nprobe=4
+- exact top-K</p>
+<p>Track ANN Recall@10.</p>
+<h3>Run</h3>
+<pre><code class="language-bash">python integration-project-batch15/src/recommendation_vision_retrieval_lab.py --mode recommender --steps 80
+python integration-project-batch15/src/recommendation_vision_retrieval_lab.py --mode segmentation --steps 40
+python integration-project-batch15/src/recommendation_vision_retrieval_lab.py --mode vector-search
+</code></pre>
+<h3>Required Extensions</h3>
+<ol>
+<li>temporal recommender split</li>
+<li>two-stage retrieval/ranking</li>
+<li>recommendation cold-start features</li>
+<li>class-aware detection NMS</li>
+<li>synthetic box detector</li>
+<li>multiclass segmentation</li>
+<li>IVF nprobe latency benchmark</li>
+<li>Product Quantization</li>
+<li>metadata-filter over-fetch</li>
+<li>hybrid dense+sparse retrieval</li>
+</ol></section></div><label class="local-confirm"><input type="checkbox" id="local-lab-confirm"> ฉันรัน local lab และตรวจผลตาม rubric ด้วยตัวเองแล้ว</label><p class="local-note">สถานะนี้เป็นคำยืนยันของผู้เรียน เว็บไม่ได้รันหรือตรวจ Python บนเครื่องแทนคุณ</p></section>
+<section id="mastery-review" class="practice-section"><h2>หลักฐานตามเกณฑ์การเรียนรู้</h2><p>ทุก objective ต้องแสดงหลักฐานอธิบาย ทำนาย คำนวณ อ่าน shape/state debug และประยุกต์ พร้อมกรณีใหม่ ผลรัน source ผู้เรียนจริง และการประเมินซ้ำ เกณฑ์นี้ไม่รับประกันความเข้าใจทุกสถานการณ์ เปิด JavaScript เพื่อดูรายการที่ยังขาดและนำเข้ารายงานผู้ตรวจ</p></section><section class="coverage-section"><h2>แผนที่สิ่งที่เรียน → สิ่งที่ต้องแสดงให้ได้</h2><div id="coverage-table"></div></section><footer><span>ZERO TO ELITE AI ENGINEER · LEARNING STUDIO</span><span>อ่าน · derive · implement · debug · experiment · build</span></footer></div></main><noscript><style>.workbench,.sidebar,.reading-route,.lesson-toc,.mastery-status,#web-checks{display:none}main{margin-left:0}</style>อ่านเนื้อหา HTML ได้ตามปกติ เปิด JavaScript เพื่อใช้ห้องทดลองและตรวจคำตอบ</noscript></body></html>

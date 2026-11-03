@@ -1,5 +1,11 @@
 # Chapter 42 — Speech: Audio, STT & TTS
 
+## Interactive Animation Lab
+
+[เปิดภาพจำลองของบทนี้](animation.html) · [เลือกจากทั้ง 80 บท](../visual-lab/index.html)
+
+ดู flow ทีละขั้น → ทดลองเปลี่ยนค่า → อ่านสมการและโค้ด → ตอบคำถามเช็กความเข้าใจ แล้วกลับมาทำแบบฝึกหัดในบทนี้
+
 ## 1. Speech Is a Time-Domain Signal
 
 Raw digital audio is a sequence of sampled amplitudes:

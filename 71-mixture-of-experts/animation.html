@@ -1,0 +1,1162 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="บทเรียน AI Engineer ภาษาไทย พร้อมคณิตศาสตร์ทีละขั้นและห้องทดลองที่คำนวณจริง"><title>Mixture of Experts: router เลือกใครและเกิด imbalance ตรงไหน · AI Engineer Studio</title><link rel="stylesheet" href="../visual-lab/assets/styles.css"><link rel="stylesheet" href="../visual-lab/assets/course.css"><script defer src="../visual-lab/assets/lessons.js"></script><script defer src="../visual-lab/assets/chapter-meta.js"></script><script defer src="../visual-lab/assets/course-math.js"></script><script defer src="../visual-lab/assets/course-models.js"></script><script defer src="../visual-lab/assets/course-models-v3.js"></script><script defer src="../visual-lab/assets/course-assessment.js"></script><script defer src="../visual-lab/assets/course-mastery.js"></script><script defer src="../visual-lab/assets/course-catalog.js"></script><script defer src="../visual-lab/assets/book-content.js"></script><script defer src="../visual-lab/assets/course-render.js"></script><script defer src="../visual-lab/assets/course-mastery-panel.js"></script><script defer src="../visual-lab/assets/quality-report.js"></script><script defer src="../visual-lab/assets/course-app.js"></script></head>
+<body data-chapter="71" data-root="../"><a class="skip-link" href="#main">ข้ามไปบทเรียน</a>
+<aside class="sidebar" id="sidebar" aria-label="เลือกบทเรียน"><a class="brand" href="../visual-lab/index.html"><span class="brand-mark">ai</span><span>AI ENGINEER<small>LEARN · DERIVE · BUILD</small></span></a><div class="sidebar-intro">อ่านให้เข้าใจ · คำนวณให้เห็น · เขียนให้เป็น</div><label class="search-box"><input id="search" type="search" placeholder="ค้นหาบท / attention" aria-label="ค้นหาบทเรียน"></label><label class="filter-label" for="phase-filter">เส้นทางการเรียน <span id="nav-count"></span></label><select id="phase-filter"><option value="">ทุก Phase</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option></select><nav id="chapter-list" class="chapter-list" aria-label="รายชื่อบท"></nav><div class="course-progress"><div><span>ผ่านโจทย์ในเว็บ</span><strong id="progress-count">0 / 80</strong></div><progress id="course-progress" max="80" value="0" aria-label="บทที่ผ่านโจทย์"></progress><a id="resume-link" href="#chapter-1">อ่านต่อจากเดิม →</a></div></aside>
+<button class="nav-backdrop" id="nav-backdrop" aria-label="ปิดเมนู" hidden></button>
+<main id="main" tabindex="-1"><header class="topbar"><div><button id="nav-toggle" class="icon-button mobile-menu" aria-label="เปิดเมนูบทเรียน" aria-expanded="false" aria-controls="sidebar">☰</button><span id="breadcrumb"></span></div><span class="local-badge"><i></i> คำนวณในเครื่อง · ไม่มี API</span></header><div class="content">
+<div class="chapter-navigation"><label for="chapter-select" class="sr-only">เลือกบทเรียน</label><select id="chapter-select"></select><div class="chapter-arrows"><button id="prev-chapter" class="icon-button" aria-label="บทก่อนหน้า">←</button><button id="next-chapter" class="icon-button" aria-label="บทถัดไป">→</button></div></div>
+<section class="chapter-hero"><div><p id="chapter-kicker" class="eyebrow"></p><h1 id="chapter-title">Mixture of Experts: router เลือกใครและเกิด imbalance ตรงไหน</h1><p class="english-title" id="chapter-english"></p></div><span class="hero-symbol">f(x) ↗</span></section>
+<p id="quality-status" class="quality-status"></p><div id="mastery-status" class="mastery-status"></div><div class="reading-route"><a href="#chapter-71/section/overview">01 อ่านบทเรียน</a><a href="#workbench">02 ทดลองสมการ</a><a href="#practice">03 ฝึกและตรวจงาน</a><a href="#mastery-review">04 หลักฐานตามเกณฑ์</a></div>
+<nav id="lesson-toc" class="lesson-toc" aria-label="สารบัญบท"></nav>
+<section id="overview" class="course-overview"><span class="eyebrow">THE LEARNING CONTRACT</span><h2>เรียนบทนี้แล้วต้องทำอะไรได้</h2><p id="chapter-purpose"></p><div id="chapter-objectives"></div><div class="learning-hint">ทำนาย → เปลี่ยนทีละค่า → ตรวจตัวเลข → อธิบายเหตุผล → เขียนด้วย Python เอง</div></section>
+<section class="workbench lab-card" id="workbench" aria-label="ห้องทดลองคำนวณจริง"><div class="card-header"><div><span class="live-dot"></span><span class="eyebrow">COMPUTATION WORKBENCH</span></div><span class="simulation-label">ทุกภาพใช้ผลคำนวณชุดเดียวกัน</span></div><div class="lab-top"><label for="lab-select">เลือกกลไกที่ต้องการทดลอง</label><select id="lab-select"></select><p id="lab-question"></p></div><div class="workbench-grid"><div class="viz-column"><div class="compare-labels"><span>เส้นทึบ: ปัจจุบัน</span><span>เส้นประ: baseline ที่ตรึงไว้</span></div><div id="simulation" class="simulation"></div><div id="metrics" class="metrics"></div><div id="baseline-diff" class="baseline-diff"></div><div class="playback"><div class="playback-buttons"><button class="primary-button" id="update-once">อัปเดตหนึ่งก้าว</button><button class="secondary-button" id="train-many">▶ ฝึก 30 ก้าว</button><button class="icon-button" id="back-state" aria-label="ย้อนประวัติ">↶</button><button class="icon-button" id="forward-state" aria-label="ประวัติถัดไป">↷</button></div></div><div class="lab-secondary-actions"><button id="pin-baseline" class="text-button">ตรึง baseline ปัจจุบัน</button><button id="reset-lab" class="text-button">คืนค่าเริ่มต้น</button><button id="download-state" class="text-button">บันทึกผล JSON</button><span id="history-status"></span></div><p id="simulation-note" class="simulation-note"></p><p class="lab-error" id="lab-error" role="alert" hidden></p></div><div class="controls-column"><h3>เปลี่ยนทีละตัว แล้วสังเกตผล</h3><div id="lab-controls"></div><p class="control-note">แก้ weight ด้วยมือจะคำนวณ forward ใหม่; optimizer เปลี่ยน weights เมื่อกดอัปเดตเท่านั้น</p></div></div>
+<div class="trace-section"><div class="trace-toolbar"><h3>เดินสมการทีละ operation</h3><div><button id="trace-prev" class="icon-button" aria-label="operation ก่อนหน้า">←</button><button id="play-trace" class="secondary-button" aria-pressed="false">▶ เล่น flow</button><button id="trace-next" class="icon-button" aria-label="operation ถัดไป">→</button><span id="stage-counter"></span></div></div><label class="motion-control"><input id="reduce-motion" type="checkbox"> ลดภาพเคลื่อนไหว (หยุดการเล่นที่ค้างอยู่)</label><div id="operation-steps" class="operation-steps"></div><div id="flow-diagram" class="flow-diagram"></div><div id="active-operation" class="active-operation" aria-live="polite"></div><p class="control-note">ตัวเลขบนภาพปัดเศษเพื่อให้อ่านง่าย; บันทึก JSON เพื่อดูค่าที่ใช้คำนวณเต็ม precision</p><details open><summary>ตารางค่าระหว่างทาง — ตรวจด้วยมือได้</summary><div id="result-table"></div></details><div id="tensor-tables" class="tensor-tables"></div><details id="surface-details"><summary>ดู loss surface และเส้นทางของ w₁,b (ตรึง controls อื่น)</summary><div id="surface-chart"></div><p>surface คำนวณ objective ปัจจุบันโดยตรึง degree, penalty, ข้อมูล และ weights อื่น เส้นทางแสดงเฉพาะ snapshots ที่ค่าเหล่านี้ตรงกัน; นอกช่วง w=[−1,5], b=[−2,4] ให้ตรวจค่าจริงใน history</p></details><details><summary>ประวัติการเปลี่ยนค่า</summary><div id="history-table"></div></details></div></section>
+<article id="chapter-article" class="chapter-article"><section id="mechanism-1" class="teaching-section"><span class="section-kicker">CHAPTER 71 · ภาพ → สมการ → โค้ด</span><h2>1. total parameters กับ active parameters ต่างกัน</h2><h3>โจทย์และเหตุผล</h3><p>เก็บ experts ทั้งหมดแต่แต่ละ token ใช้เฉพาะ top-k จึงลด computation บางส่วนได้โดยไม่ได้ลด storage ทั้งชุด router เองเป็น learned function ของ hidden state</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Compute top-2 router weights by hand.</p><p>routerlogits[log.6,log.3,log.1],top2เลือกexperts0,1แล้วrenormalize[2/3,1/3]หากpolicytop-k-renorm; expert2ไม่activeสำหรับtokenนี้</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>x: token feature x,initial=1; router: router weight scale,initial=1; k: top-k experts,initial=2; capacity: expert capacity (tokens),initial=2; tokens: tokens with same route,initial=3</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = 1; กำหนดความหมายและหน่วยของ input ก่อนทดลอง</li><li>router logits=xw; top-k; renormalize selected weights; Σgate*expert(x) = 1.3543436937742044; routing คำนวณจาก input จริง; capacity example ใช้ tokens ที่มี route เดียวกันจึงเกิด imbalance ชัด</li><li>normal / boundary / comparison = 1.3543436937742044; ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="experts-token---router---top-k--">เปิดการทดลองนี้</a><p class="failure-box">เทียบtotalparamsMoEกับdenseโดยไม่reportactivecompute/storageหรือdroptokensทำperformanceclaimผิด; compute-matchedbaselineและcoverageชัด; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>routerlogits[log.6,log.3,log.1],top2เลือกexperts0,1แล้วrenormalize[2/3,1/3]หากpolicytop-k-renorm; expert2ไม่activeสำหรับtokenนี้</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-1-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = 1<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>router logits=xw; top-k; renormalize selected weights; Σgate*expert(x)</code> = 1.3543436937742044<p>routing คำนวณจาก input จริง; capacity example ใช้ tokens ที่มี route เดียวกันจึงเกิด imbalance ชัด</p></li><li><code>normal / boundary / comparison</code> = 1.3543436937742044<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-1-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>shape / range</code> = 1<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>router logits=xw; top-k; renormalize selected weights; Σgate*expert(x)</code> = 1.3543436937742044<p>routing คำนวณจาก input จริง; capacity example ใช้ tokens ที่มี route เดียวกันจึงเกิด imbalance ชัด</p></li><li><code>normal / boundary / comparison</code> = 1.3543436937742044<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-1-code"><summary>โค้ด</summary><p>routerlogits[log.6,log.3,log.1],top2เลือกexperts0,1แล้วrenormalize[2/3,1/3]หากpolicytop-k-renorm; expert2ไม่activeสำหรับtokenนี้</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-1-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = 1<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>router logits=xw; top-k; renormalize selected weights; Σgate*expert(x)</code> = 1.3543436937742044<p>routing คำนวณจาก input จริง; capacity example ใช้ tokens ที่มี route เดียวกันจึงเกิด imbalance ชัด</p></li><li><code>normal / boundary / comparison</code> = 1.3543436937742044<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-1"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-2" class="teaching-section"><span class="section-kicker">CHAPTER 71 · ภาพ → สมการ → โค้ด</span><h2>2. เลือก top-k แล้วต้อง normalize weights ตามนิยาม</h2><h3>โจทย์และเหตุผล</h3><p>ภาพคำนวณ logits จาก x คูณ router weights และรวม expert outputs จริง เปลี่ยน x ทำให้อันดับเปลี่ยนได้ ไม่ใช่เปิด experts ตามเลขคงที่</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Derive capacity for multiple capacity factors.</p><p>capacity=ceil(capacity_factor·N·k/E)ตามconventionนี้; N8,k2,E4,CF1→4,CF1.25→5; Switchtop1ใช้k1ต้องไม่สลับสูตร</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>x: token feature x,initial=1; router: router weight scale,initial=1; k: top-k experts,initial=2; capacity: expert capacity (tokens),initial=2; tokens: tokens with same route,initial=7</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = 1; กำหนดความหมายและหน่วยของ input ก่อนทดลอง</li><li>router logits=xw; top-k; renormalize selected weights; Σgate*expert(x) = 1.3543436937742044; routing คำนวณจาก input จริง; capacity example ใช้ tokens ที่มี route เดียวกันจึงเกิด imbalance ชัด</li><li>normal / boundary / comparison = 1.3543436937742044; ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="experts-capacity-ไม-พอเม--อ-rout">เปิดการทดลองนี้</a><p class="failure-box">เทียบtotalparamsMoEกับdenseโดยไม่reportactivecompute/storageหรือdroptokensทำperformanceclaimผิด; compute-matchedbaselineและcoverageชัด; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>capacity=ceil(capacity_factor·N·k/E)ตามconventionนี้; N8,k2,E4,CF1→4,CF1.25→5; Switchtop1ใช้k1ต้องไม่สลับสูตร</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-2-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = 1<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>router logits=xw; top-k; renormalize selected weights; Σgate*expert(x)</code> = 1.3543436937742044<p>routing คำนวณจาก input จริง; capacity example ใช้ tokens ที่มี route เดียวกันจึงเกิด imbalance ชัด</p></li><li><code>normal / boundary / comparison</code> = 1.3543436937742044<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-2-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>shape / range</code> = 1<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>router logits=xw; top-k; renormalize selected weights; Σgate*expert(x)</code> = 1.3543436937742044<p>routing คำนวณจาก input จริง; capacity example ใช้ tokens ที่มี route เดียวกันจึงเกิด imbalance ชัด</p></li><li><code>normal / boundary / comparison</code> = 1.3543436937742044<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-2-code"><summary>โค้ด</summary><p>capacity=ceil(capacity_factor·N·k/E)ตามconventionนี้; N8,k2,E4,CF1→4,CF1.25→5; Switchtop1ใช้k1ต้องไม่สลับสูตร</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-2-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = 1<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>router logits=xw; top-k; renormalize selected weights; Σgate*expert(x)</code> = 1.3543436937742044<p>routing คำนวณจาก input จริง; capacity example ใช้ tokens ที่มี route เดียวกันจึงเกิด imbalance ชัด</p></li><li><code>normal / boundary / comparison</code> = 1.3543436937742044<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-2"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-3" class="teaching-section"><span class="section-kicker">CHAPTER 71 · ภาพ → สมการ → โค้ด</span><h2>3. load balancing เป็นเรื่องความจุและเวลา</h2><h3>โจทย์และเหตุผล</h3><p>ถ้า tokens มากเข้ากลุ่ม experts เดียวจะ overflow หรือทำให้รอแม้เครื่องส่วนอื่นว่าง ต้องประเมิน auxiliary losses, capacity policy และ all-to-all communication แยกจาก FLOPs ที่ดูประหยัด</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Calculate Switch-style load-balancing loss.</p><p>Switch-styleaux=EΣfᵢPᵢ; E2,f[.75,.25],P[.6,.4]ให้2(.45+.1)=1.1; fเป็นfractionhardassign,Pmeanrouterprob</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>workers: workers,initial=4; localBatch: local batch size,initial=2; accumulation: accumulation steps,initial=1; theta: shared weight θ,initial=0; eta: learning rate,initial=0.1</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = [-2, -4, -6, -8]; กำหนดความหมายและหน่วยของ input ก่อนทดลอง</li><li>g_global=Σg_worker/W; θ′=θ−ηg_global = 0.5; สมมติ equal-sized local batches; uneven batches ต้องถ่วงตาม valid examples/tokens</li><li>normal / boundary / comparison = 0.5; ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="distributed-expert-parallelism-ต-องส">เปิดการทดลองนี้</a><p class="failure-box">เทียบtotalparamsMoEกับdenseโดยไม่reportactivecompute/storageหรือdroptokensทำperformanceclaimผิด; compute-matchedbaselineและcoverageชัด; คำนวณ data-parallel scalar gradients จริง; ไม่มี network/GPU communication benchmark</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Switch-styleaux=EΣfᵢPᵢ; E2,f[.75,.25],P[.6,.4]ให้2(.45+.1)=1.1; fเป็นfractionhardassign,Pmeanrouterprob</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-3-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = [-2, -4, -6, -8]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>g_global=Σg_worker/W; θ′=θ−ηg_global</code> = 0.5<p>สมมติ equal-sized local batches; uneven batches ต้องถ่วงตาม valid examples/tokens</p></li><li><code>normal / boundary / comparison</code> = 0.5<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-3-visual"><summary>ภาพและ shape</summary><p>คำนวณ data-parallel scalar gradients จริง; ไม่มี network/GPU communication benchmark</p><ol><li><code>shape / range</code> = [-2, -4, -6, -8]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>g_global=Σg_worker/W; θ′=θ−ηg_global</code> = 0.5<p>สมมติ equal-sized local batches; uneven batches ต้องถ่วงตาม valid examples/tokens</p></li><li><code>normal / boundary / comparison</code> = 0.5<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-3-code"><summary>โค้ด</summary><p>Switch-styleaux=EΣfᵢPᵢ; E2,f[.75,.25],P[.6,.4]ให้2(.45+.1)=1.1; fเป็นfractionhardassign,Pmeanrouterprob</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-3-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = [-2, -4, -6, -8]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>g_global=Σg_worker/W; θ′=θ−ηg_global</code> = 0.5<p>สมมติ equal-sized local batches; uneven batches ต้องถ่วงตาม valid examples/tokens</p></li><li><code>normal / boundary / comparison</code> = 0.5<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-3"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="reference" class="canonical-section"><h2>เนื้อหาครบทุกหัวข้อ พร้อมแผนที่ objective</h2><nav class="source-toc"><a href="#chapter-71/section/topic-1">1. Sparse Activation</a> <a href="#chapter-71/section/topic-2">2. Learning Objectives</a> <a href="#chapter-71/section/topic-3">3. Router</a> <a href="#chapter-71/section/topic-4">4. Top-K Routing</a> <a href="#chapter-71/section/topic-5">5. Expert Output</a> <a href="#chapter-71/section/topic-6">6. Total vs Active Parameters</a> <a href="#chapter-71/section/topic-7">7. Mixtral Example</a> <a href="#chapter-71/section/topic-8">8. Expert Load</a> <a href="#chapter-71/section/topic-9">9. Expert Capacity</a> <a href="#chapter-71/section/topic-10">10. Overflow</a> <a href="#chapter-71/section/topic-11">11. Load-Balancing Loss</a> <a href="#chapter-71/section/topic-12">12. Expert Collapse</a> <a href="#chapter-71/section/topic-13">13. Router Jitter</a> <a href="#chapter-71/section/topic-14">14. Expert Specialization</a> <a href="#chapter-71/section/topic-15">15. Dense vs Sparse MoE</a> <a href="#chapter-71/section/topic-16">16. Expert Parallelism</a> <a href="#chapter-71/section/topic-17">17. All-to-All Communication</a> <a href="#chapter-71/section/topic-18">18. DeepSpeed MoE</a> <a href="#chapter-71/section/topic-19">19. Memory</a> <a href="#chapter-71/section/topic-20">20. Serving</a> <a href="#chapter-71/section/topic-21">21. Fine-Tuning</a> <a href="#chapter-71/section/topic-22">22. From Scratch</a> <a href="#chapter-71/section/topic-23">23. Common Mistakes</a> <a href="#chapter-71/section/topic-24">24. Exercises / Mini Project</a> <a href="#chapter-71/section/topic-25">25. Checklist</a> <a href="#chapter-71/section/topic-26">26. What&#x27;s Next</a> </nav><section id="topic-1" class="source-topic"><span id="source-71-mixture-of-experts-canonical-chapter-71-mixture-of-experts-moe" class="legacy-anchor"></span><span id="source-71-mixture-of-experts-canonical-1-sparse-activation" class="legacy-anchor"></span><h3>1. Sparse Activation</h3>
+<p>A dense Transformer activates essentially every feed-forward parameter for each token.</p>
+<p>MoE replaces selected dense feed-forward blocks with multiple experts and a router:</p>
+<pre><code class="language-text">token hidden state
+↓
+router
+↓
+top-k experts
+↓
+expert outputs
+↓
+weighted combine
+</code></pre>
+<p>The model may contain many expert parameters while only a small subset is active per token.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>1. Sparse Activation</h3>
+<p>A dense Transformer activates essentially every feed-forward parameter for each token.</p>
+<p>MoE replaces selected dense feed-forward blocks with multiple experts and a router:</p>
+<pre><code class="language-text">token hidden state
+↓
+router
+↓
+top-k experts
+↓
+expert outputs
+↓
+weighted combine
+</code></pre>
+<p>The model may contain many expert parameters while only a small subset is active per token.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-1-equation"><summary>สมการ</summary><h3>1. Sparse Activation</h3>
+<p>A dense Transformer activates essentially every feed-forward parameter for each token.</p>
+<p>MoE replaces selected dense feed-forward blocks with multiple experts and a router:</p>
+<pre><code class="language-text">token hidden state
+↓
+router
+↓
+top-k experts
+↓
+expert outputs
+↓
+weighted combine
+</code></pre>
+<p>The model may contain many expert parameters while only a small subset is active per token.</p></details><details id="help-topic-1-visual"><summary>ภาพและ shape</summary><h3>1. Sparse Activation</h3>
+<p>A dense Transformer activates essentially every feed-forward parameter for each token.</p>
+<p>MoE replaces selected dense feed-forward blocks with multiple experts and a router:</p>
+<pre><code class="language-text">token hidden state
+↓
+router
+↓
+top-k experts
+↓
+expert outputs
+↓
+weighted combine
+</code></pre>
+<p>The model may contain many expert parameters while only a small subset is active per token.</p></details><details id="help-topic-1-code"><summary>โค้ด</summary><h3>1. Sparse Activation</h3>
+<p>A dense Transformer activates essentially every feed-forward parameter for each token.</p>
+<p>MoE replaces selected dense feed-forward blocks with multiple experts and a router:</p>
+<pre><code class="language-text">token hidden state
+↓
+router
+↓
+top-k experts
+↓
+expert outputs
+↓
+weighted combine
+</code></pre>
+<p>The model may contain many expert parameters while only a small subset is active per token.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-1-result"><summary>ผลการทดลอง</summary><h3>1. Sparse Activation</h3>
+<p>A dense Transformer activates essentially every feed-forward parameter for each token.</p>
+<p>MoE replaces selected dense feed-forward blocks with multiple experts and a router:</p>
+<pre><code class="language-text">token hidden state
+↓
+router
+↓
+top-k experts
+↓
+expert outputs
+↓
+weighted combine
+</code></pre>
+<p>The model may contain many expert parameters while only a small subset is active per token.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-1"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-2" class="source-topic"><span id="source-71-mixture-of-experts-canonical-2-learning-objectives" class="legacy-anchor"></span><h3>2. Learning Objectives</h3>
+<ul>
+<li>implement router softmax and top-k selection</li>
+<li>distinguish total vs active parameters</li>
+<li>compute expert capacity</li>
+<li>handle routing overflow</li>
+<li>understand token dropping/overflow policies</li>
+<li>derive load-balancing diagnostics</li>
+<li>understand auxiliary router losses</li>
+<li>explain expert collapse</li>
+<li>understand expert parallelism</li>
+<li>reason about all-to-all communication</li>
+<li>distinguish training and serving bottlenecks</li>
+<li>understand current Mixtral/DeepSpeed concepts</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>2. Learning Objectives</h3>
+<ul>
+<li>implement router softmax and top-k selection</li>
+<li>distinguish total vs active parameters</li>
+<li>compute expert capacity</li>
+<li>handle routing overflow</li>
+<li>understand token dropping/overflow policies</li>
+<li>derive load-balancing diagnostics</li>
+<li>understand auxiliary router losses</li>
+<li>explain expert collapse</li>
+<li>understand expert parallelism</li>
+<li>reason about all-to-all communication</li>
+<li>distinguish training and serving bottlenecks</li>
+<li>understand current Mixtral/DeepSpeed concepts</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-2-equation"><summary>สมการ</summary><h3>2. Learning Objectives</h3>
+<ul>
+<li>implement router softmax and top-k selection</li>
+<li>distinguish total vs active parameters</li>
+<li>compute expert capacity</li>
+<li>handle routing overflow</li>
+<li>understand token dropping/overflow policies</li>
+<li>derive load-balancing diagnostics</li>
+<li>understand auxiliary router losses</li>
+<li>explain expert collapse</li>
+<li>understand expert parallelism</li>
+<li>reason about all-to-all communication</li>
+<li>distinguish training and serving bottlenecks</li>
+<li>understand current Mixtral/DeepSpeed concepts</li>
+</ul></details><details id="help-topic-2-visual"><summary>ภาพและ shape</summary><h3>2. Learning Objectives</h3>
+<ul>
+<li>implement router softmax and top-k selection</li>
+<li>distinguish total vs active parameters</li>
+<li>compute expert capacity</li>
+<li>handle routing overflow</li>
+<li>understand token dropping/overflow policies</li>
+<li>derive load-balancing diagnostics</li>
+<li>understand auxiliary router losses</li>
+<li>explain expert collapse</li>
+<li>understand expert parallelism</li>
+<li>reason about all-to-all communication</li>
+<li>distinguish training and serving bottlenecks</li>
+<li>understand current Mixtral/DeepSpeed concepts</li>
+</ul></details><details id="help-topic-2-code"><summary>โค้ด</summary><h3>2. Learning Objectives</h3>
+<ul>
+<li>implement router softmax and top-k selection</li>
+<li>distinguish total vs active parameters</li>
+<li>compute expert capacity</li>
+<li>handle routing overflow</li>
+<li>understand token dropping/overflow policies</li>
+<li>derive load-balancing diagnostics</li>
+<li>understand auxiliary router losses</li>
+<li>explain expert collapse</li>
+<li>understand expert parallelism</li>
+<li>reason about all-to-all communication</li>
+<li>distinguish training and serving bottlenecks</li>
+<li>understand current Mixtral/DeepSpeed concepts</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-2-result"><summary>ผลการทดลอง</summary><h3>2. Learning Objectives</h3>
+<ul>
+<li>implement router softmax and top-k selection</li>
+<li>distinguish total vs active parameters</li>
+<li>compute expert capacity</li>
+<li>handle routing overflow</li>
+<li>understand token dropping/overflow policies</li>
+<li>derive load-balancing diagnostics</li>
+<li>understand auxiliary router losses</li>
+<li>explain expert collapse</li>
+<li>understand expert parallelism</li>
+<li>reason about all-to-all communication</li>
+<li>distinguish training and serving bottlenecks</li>
+<li>understand current Mixtral/DeepSpeed concepts</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-2"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-3" class="source-topic"><span id="source-71-mixture-of-experts-canonical-3-router" class="legacy-anchor"></span><h3>3. Router</h3>
+<p>For token representation h:</p>
+<pre><code class="language-text">router_logits = W_r h
+router_prob = softmax(router_logits)
+</code></pre>
+<p>Then select top-k experts.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>entropy=−Σp logp; uniform4ให้log4=1.386294,naturalunits; lowentropyไม่แปลbadเสมอหากspecializationเหมาะแต่ต้องดูloadbalance</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>entropy=−Σp logp; uniform4ให้log4=1.386294,naturalunits; lowentropyไม่แปลbadเสมอหากspecializationเหมาะแต่ต้องดูloadbalance</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-3-equation"><summary>สมการ</summary><p>entropy=−Σp logp; uniform4ให้log4=1.386294,naturalunits; lowentropyไม่แปลbadเสมอหากspecializationเหมาะแต่ต้องดูloadbalance</p></details><details id="help-topic-3-visual"><summary>ภาพและ shape</summary><p>entropy=−Σp logp; uniform4ให้log4=1.386294,naturalunits; lowentropyไม่แปลbadเสมอหากspecializationเหมาะแต่ต้องดูloadbalance</p></details><details id="help-topic-3-code"><summary>โค้ด</summary><p>entropy=−Σp logp; uniform4ให้log4=1.386294,naturalunits; lowentropyไม่แปลbadเสมอหากspecializationเหมาะแต่ต้องดูloadbalance</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-3-result"><summary>ผลการทดลอง</summary><p>entropy=−Σp logp; uniform4ให้log4=1.386294,naturalunits; lowentropyไม่แปลbadเสมอหากspecializationเหมาะแต่ต้องดูloadbalance</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-3"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-4" class="source-topic"><span id="source-71-mixture-of-experts-canonical-4-top-k-routing" class="legacy-anchor"></span><h3>4. Top-K Routing</h3>
+<p>For top-2 routing:</p>
+<pre><code class="language-text">experts = arg top2(router_prob)
+</code></pre>
+<p>Selected routing weights are commonly renormalized before combining expert outputs.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>routerlogits[log.6,log.3,log.1],top2เลือกexperts0,1แล้วrenormalize[2/3,1/3]หากpolicytop-k-renorm; expert2ไม่activeสำหรับtokenนี้</p><p>top2weights.6/.3renormเป็น2/3,1/3; capacityoverflowต้องลดactualcontributionตามdroppolicyและไม่แสร้งทุกtokenได้2expertsครบ</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-4-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>routerlogits[log.6,log.3,log.1],top2เลือกexperts0,1แล้วrenormalize[2/3,1/3]หากpolicytop-k-renorm; expert2ไม่activeสำหรับtokenนี้</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-4-equation"><summary>สมการ</summary><p>routerlogits[log.6,log.3,log.1],top2เลือกexperts0,1แล้วrenormalize[2/3,1/3]หากpolicytop-k-renorm; expert2ไม่activeสำหรับtokenนี้</p></details><details id="help-topic-4-visual"><summary>ภาพและ shape</summary><p>routerlogits[log.6,log.3,log.1],top2เลือกexperts0,1แล้วrenormalize[2/3,1/3]หากpolicytop-k-renorm; expert2ไม่activeสำหรับtokenนี้</p></details><details id="help-topic-4-code"><summary>โค้ด</summary><p>routerlogits[log.6,log.3,log.1],top2เลือกexperts0,1แล้วrenormalize[2/3,1/3]หากpolicytop-k-renorm; expert2ไม่activeสำหรับtokenนี้</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-4-result"><summary>ผลการทดลอง</summary><p>routerlogits[log.6,log.3,log.1],top2เลือกexperts0,1แล้วrenormalize[2/3,1/3]หากpolicytop-k-renorm; expert2ไม่activeสำหรับtokenนี้</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-4"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-5" class="source-topic"><span id="source-71-mixture-of-experts-canonical-5-expert-output" class="legacy-anchor"></span><h3>5. Expert Output</h3>
+<p>For selected experts E_i:</p>
+<pre><code class="language-text">y = sum_i gate_i * E_i(h)
+</code></pre>
+<p>Only selected experts process that token.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-5-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>5. Expert Output</h3>
+<p>For selected experts E_i:</p>
+<pre><code class="language-text">y = sum_i gate_i * E_i(h)
+</code></pre>
+<p>Only selected experts process that token.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-5-equation"><summary>สมการ</summary><h3>5. Expert Output</h3>
+<p>For selected experts E_i:</p>
+<pre><code class="language-text">y = sum_i gate_i * E_i(h)
+</code></pre>
+<p>Only selected experts process that token.</p></details><details id="help-topic-5-visual"><summary>ภาพและ shape</summary><h3>5. Expert Output</h3>
+<p>For selected experts E_i:</p>
+<pre><code class="language-text">y = sum_i gate_i * E_i(h)
+</code></pre>
+<p>Only selected experts process that token.</p></details><details id="help-topic-5-code"><summary>โค้ด</summary><h3>5. Expert Output</h3>
+<p>For selected experts E_i:</p>
+<pre><code class="language-text">y = sum_i gate_i * E_i(h)
+</code></pre>
+<p>Only selected experts process that token.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-5-result"><summary>ผลการทดลอง</summary><h3>5. Expert Output</h3>
+<p>For selected experts E_i:</p>
+<pre><code class="language-text">y = sum_i gate_i * E_i(h)
+</code></pre>
+<p>Only selected experts process that token.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-5"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-6" class="source-topic"><span id="source-71-mixture-of-experts-canonical-6-total-vs-active-parameters" class="legacy-anchor"></span><h3>6. Total vs Active Parameters</h3>
+<p>Suppose:</p>
+<pre><code class="language-text">8 experts
+top-2 routing
+</code></pre>
+<p>All expert weights may still need to be stored, while each token computes only through two experts.</p>
+<p>Therefore:</p>
+<pre><code class="language-text">large total parameter count
+!= large active FLOPs per token
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>E8expertsตัวละ1M,shared.5M,total8.5M; top2activeประมาณ2.5Mต่อtokenแต่storageยัง8.5Mและroutingoverheadเพิ่ม</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-6-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>E8expertsตัวละ1M,shared.5M,total8.5M; top2activeประมาณ2.5Mต่อtokenแต่storageยัง8.5Mและroutingoverheadเพิ่ม</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-6-equation"><summary>สมการ</summary><p>E8expertsตัวละ1M,shared.5M,total8.5M; top2activeประมาณ2.5Mต่อtokenแต่storageยัง8.5Mและroutingoverheadเพิ่ม</p></details><details id="help-topic-6-visual"><summary>ภาพและ shape</summary><p>E8expertsตัวละ1M,shared.5M,total8.5M; top2activeประมาณ2.5Mต่อtokenแต่storageยัง8.5Mและroutingoverheadเพิ่ม</p></details><details id="help-topic-6-code"><summary>โค้ด</summary><p>E8expertsตัวละ1M,shared.5M,total8.5M; top2activeประมาณ2.5Mต่อtokenแต่storageยัง8.5Mและroutingoverheadเพิ่ม</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-6-result"><summary>ผลการทดลอง</summary><p>E8expertsตัวละ1M,shared.5M,total8.5M; top2activeประมาณ2.5Mต่อtokenแต่storageยัง8.5Mและroutingoverheadเพิ่ม</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-6"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-7" class="source-topic"><span id="source-71-mixture-of-experts-canonical-7-mixtral-example" class="legacy-anchor"></span><h3>7. Mixtral Example</h3>
+<p>Current Transformers Mixtral documentation describes eight experts per MoE MLP with top-2 token routing and exposes router logits / auxiliary routing loss. (see references.md)</p>
+<p>This is one architecture, not a universal MoE rule.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-7-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>7. Mixtral Example</h3>
+<p>Current Transformers Mixtral documentation describes eight experts per MoE MLP with top-2 token routing and exposes router logits / auxiliary routing loss. (see references.md)</p>
+<p>This is one architecture, not a universal MoE rule.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-7-equation"><summary>สมการ</summary><h3>7. Mixtral Example</h3>
+<p>Current Transformers Mixtral documentation describes eight experts per MoE MLP with top-2 token routing and exposes router logits / auxiliary routing loss. (see references.md)</p>
+<p>This is one architecture, not a universal MoE rule.</p></details><details id="help-topic-7-visual"><summary>ภาพและ shape</summary><h3>7. Mixtral Example</h3>
+<p>Current Transformers Mixtral documentation describes eight experts per MoE MLP with top-2 token routing and exposes router logits / auxiliary routing loss. (see references.md)</p>
+<p>This is one architecture, not a universal MoE rule.</p></details><details id="help-topic-7-code"><summary>โค้ด</summary><h3>7. Mixtral Example</h3>
+<p>Current Transformers Mixtral documentation describes eight experts per MoE MLP with top-2 token routing and exposes router logits / auxiliary routing loss. (see references.md)</p>
+<p>This is one architecture, not a universal MoE rule.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-7-result"><summary>ผลการทดลอง</summary><h3>7. Mixtral Example</h3>
+<p>Current Transformers Mixtral documentation describes eight experts per MoE MLP with top-2 token routing and exposes router logits / auxiliary routing loss. (see references.md)</p>
+<p>This is one architecture, not a universal MoE rule.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-7"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-8" class="source-topic"><span id="source-71-mixture-of-experts-canonical-8-expert-load" class="legacy-anchor"></span><h3>8. Expert Load</h3>
+<p>Count assignments:</p>
+<pre><code class="language-text">load_i = number of token-expert assignments to expert i
+</code></pre>
+<p>Badly imbalanced routing wastes experts and can overload a few devices.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>assignments[[0,1],[0,2],[0,1]]ให้loads[3,2,1]; totalassignments6เท่ากับtokens3·topk2 ไม่เท่าจำนวนtokensเมื่อk&gt;1</p><p>recordrouterprobs(N,E),topIDs(N,k),loads(E),capacity,dispatchindices/expertoutputs/combinemasksและdrop-rate</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-8-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>assignments[[0,1],[0,2],[0,1]]ให้loads[3,2,1]; totalassignments6เท่ากับtokens3·topk2 ไม่เท่าจำนวนtokensเมื่อk&gt;1</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-8-equation"><summary>สมการ</summary><p>assignments[[0,1],[0,2],[0,1]]ให้loads[3,2,1]; totalassignments6เท่ากับtokens3·topk2 ไม่เท่าจำนวนtokensเมื่อk&gt;1</p></details><details id="help-topic-8-visual"><summary>ภาพและ shape</summary><p>assignments[[0,1],[0,2],[0,1]]ให้loads[3,2,1]; totalassignments6เท่ากับtokens3·topk2 ไม่เท่าจำนวนtokensเมื่อk&gt;1</p></details><details id="help-topic-8-code"><summary>โค้ด</summary><p>assignments[[0,1],[0,2],[0,1]]ให้loads[3,2,1]; totalassignments6เท่ากับtokens3·topk2 ไม่เท่าจำนวนtokensเมื่อk&gt;1</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-8-result"><summary>ผลการทดลอง</summary><p>assignments[[0,1],[0,2],[0,1]]ให้loads[3,2,1]; totalassignments6เท่ากับtokens3·topk2 ไม่เท่าจำนวนtokensเมื่อk&gt;1</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-8"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-9" class="source-topic"><span id="source-71-mixture-of-experts-canonical-9-expert-capacity" class="legacy-anchor"></span><h3>9. Expert Capacity</h3>
+<p>Average assignments per expert:</p>
+<pre><code class="language-text">tokens * top_k / num_experts
+</code></pre>
+<p>One simple capacity rule:</p>
+<pre><code class="language-text">capacity = ceil(
+capacity_factor
+* tokens * top_k / num_experts
+)
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>capacity=ceil(capacity_factor·N·k/E)ตามconventionนี้; N8,k2,E4,CF1→4,CF1.25→5; Switchtop1ใช้k1ต้องไม่สลับสูตร</p><p>topkIDsunique/inrange,weightsselectedsum1,loadsum=validassignments,capacitynotexceededและcombineกลับtokenorderถูก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-9-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>capacity=ceil(capacity_factor·N·k/E)ตามconventionนี้; N8,k2,E4,CF1→4,CF1.25→5; Switchtop1ใช้k1ต้องไม่สลับสูตร</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-9-equation"><summary>สมการ</summary><p>capacity=ceil(capacity_factor·N·k/E)ตามconventionนี้; N8,k2,E4,CF1→4,CF1.25→5; Switchtop1ใช้k1ต้องไม่สลับสูตร</p></details><details id="help-topic-9-visual"><summary>ภาพและ shape</summary><p>capacity=ceil(capacity_factor·N·k/E)ตามconventionนี้; N8,k2,E4,CF1→4,CF1.25→5; Switchtop1ใช้k1ต้องไม่สลับสูตร</p></details><details id="help-topic-9-code"><summary>โค้ด</summary><p>capacity=ceil(capacity_factor·N·k/E)ตามconventionนี้; N8,k2,E4,CF1→4,CF1.25→5; Switchtop1ใช้k1ต้องไม่สลับสูตร</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-9-result"><summary>ผลการทดลอง</summary><p>capacity=ceil(capacity_factor·N·k/E)ตามconventionนี้; N8,k2,E4,CF1→4,CF1.25→5; Switchtop1ใช้k1ต้องไม่สลับสูตร</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-9"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-10" class="source-topic"><span id="source-71-mixture-of-experts-canonical-10-overflow" class="legacy-anchor"></span><h3>10. Overflow</h3>
+<p>If an expert receives more assignments than capacity, the system needs a policy:</p>
+<ul>
+<li>drop overflow assignments</li>
+<li>route to another expert</li>
+<li>increase capacity</li>
+<li>use expert-choice-style alternatives</li>
+</ul>
+<p>Token dropping can damage quality if frequent.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>loads[6,2,0,0],capacity3ทำoverflow3จาก8assignments=37.5%; ต้องระบุdrop/reroute/residualpolicyและtokenอาจยังมีexpertอีกตัว</p><p>top2weights.6/.3renormเป็น2/3,1/3; capacityoverflowต้องลดactualcontributionตามdroppolicyและไม่แสร้งทุกtokenได้2expertsครบ</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-10-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>loads[6,2,0,0],capacity3ทำoverflow3จาก8assignments=37.5%; ต้องระบุdrop/reroute/residualpolicyและtokenอาจยังมีexpertอีกตัว</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-10-equation"><summary>สมการ</summary><p>loads[6,2,0,0],capacity3ทำoverflow3จาก8assignments=37.5%; ต้องระบุdrop/reroute/residualpolicyและtokenอาจยังมีexpertอีกตัว</p></details><details id="help-topic-10-visual"><summary>ภาพและ shape</summary><p>loads[6,2,0,0],capacity3ทำoverflow3จาก8assignments=37.5%; ต้องระบุdrop/reroute/residualpolicyและtokenอาจยังมีexpertอีกตัว</p></details><details id="help-topic-10-code"><summary>โค้ด</summary><p>loads[6,2,0,0],capacity3ทำoverflow3จาก8assignments=37.5%; ต้องระบุdrop/reroute/residualpolicyและtokenอาจยังมีexpertอีกตัว</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-10-result"><summary>ผลการทดลอง</summary><p>loads[6,2,0,0],capacity3ทำoverflow3จาก8assignments=37.5%; ต้องระบุdrop/reroute/residualpolicyและtokenอาจยังมีexpertอีกตัว</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-10"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-11" class="source-topic"><span id="source-71-mixture-of-experts-canonical-11-load-balancing-loss" class="legacy-anchor"></span><h3>11. Load-Balancing Loss</h3>
+<p>One Switch-style educational form:</p>
+<pre><code class="language-text">L_aux = E * sum_i(f_i * p_i)
+</code></pre>
+<p>where:
+- f_i = fraction of top-1 assignments to expert i
+- p_i = mean router probability for expert i
+- E = number of experts</p>
+<p>A perfectly uniform case gives approximately 1 under this formulation.</p>
+<p>Current Transformers Mixtral exposes an auxiliary load-balancing loss coefficient and router logits; newer docs also mention router z-loss/load-balancing terms. (see references.md)</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>Switch-styleaux=EΣfᵢPᵢ; E2,f[.75,.25],P[.6,.4]ให้2(.45+.1)=1.1; fเป็นfractionhardassign,Pmeanrouterprob</p><p>auxlossweight0→.01คงtrainingbudget/data/init; reportloadCV/drop/valNLLหลายseedsเพื่อดูbalance-qualitytradeoff</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-11-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Switch-styleaux=EΣfᵢPᵢ; E2,f[.75,.25],P[.6,.4]ให้2(.45+.1)=1.1; fเป็นfractionhardassign,Pmeanrouterprob</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-11-equation"><summary>สมการ</summary><p>Switch-styleaux=EΣfᵢPᵢ; E2,f[.75,.25],P[.6,.4]ให้2(.45+.1)=1.1; fเป็นfractionhardassign,Pmeanrouterprob</p></details><details id="help-topic-11-visual"><summary>ภาพและ shape</summary><p>Switch-styleaux=EΣfᵢPᵢ; E2,f[.75,.25],P[.6,.4]ให้2(.45+.1)=1.1; fเป็นfractionhardassign,Pmeanrouterprob</p></details><details id="help-topic-11-code"><summary>โค้ด</summary><p>Switch-styleaux=EΣfᵢPᵢ; E2,f[.75,.25],P[.6,.4]ให้2(.45+.1)=1.1; fเป็นfractionhardassign,Pmeanrouterprob</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-11-result"><summary>ผลการทดลอง</summary><p>Switch-styleaux=EΣfᵢPᵢ; E2,f[.75,.25],P[.6,.4]ให้2(.45+.1)=1.1; fเป็นfractionhardassign,Pmeanrouterprob</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-11"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-12" class="source-topic"><span id="source-71-mixture-of-experts-canonical-12-expert-collapse" class="legacy-anchor"></span><h3>12. Expert Collapse</h3>
+<p>If router sends almost everything to a few experts:</p>
+<ul>
+<li>capacity overflows</li>
+<li>unused experts learn slowly</li>
+<li>hardware imbalance grows</li>
+</ul>
+<p>Mitigations include auxiliary losses, router noise/jitter and routing-policy changes.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-12-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>12. Expert Collapse</h3>
+<p>If router sends almost everything to a few experts:</p>
+<ul>
+<li>capacity overflows</li>
+<li>unused experts learn slowly</li>
+<li>hardware imbalance grows</li>
+</ul>
+<p>Mitigations include auxiliary losses, router noise/jitter and routing-policy changes.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-12-equation"><summary>สมการ</summary><h3>12. Expert Collapse</h3>
+<p>If router sends almost everything to a few experts:</p>
+<ul>
+<li>capacity overflows</li>
+<li>unused experts learn slowly</li>
+<li>hardware imbalance grows</li>
+</ul>
+<p>Mitigations include auxiliary losses, router noise/jitter and routing-policy changes.</p></details><details id="help-topic-12-visual"><summary>ภาพและ shape</summary><h3>12. Expert Collapse</h3>
+<p>If router sends almost everything to a few experts:</p>
+<ul>
+<li>capacity overflows</li>
+<li>unused experts learn slowly</li>
+<li>hardware imbalance grows</li>
+</ul>
+<p>Mitigations include auxiliary losses, router noise/jitter and routing-policy changes.</p></details><details id="help-topic-12-code"><summary>โค้ด</summary><h3>12. Expert Collapse</h3>
+<p>If router sends almost everything to a few experts:</p>
+<ul>
+<li>capacity overflows</li>
+<li>unused experts learn slowly</li>
+<li>hardware imbalance grows</li>
+</ul>
+<p>Mitigations include auxiliary losses, router noise/jitter and routing-policy changes.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-12-result"><summary>ผลการทดลอง</summary><h3>12. Expert Collapse</h3>
+<p>If router sends almost everything to a few experts:</p>
+<ul>
+<li>capacity overflows</li>
+<li>unused experts learn slowly</li>
+<li>hardware imbalance grows</li>
+</ul>
+<p>Mitigations include auxiliary losses, router noise/jitter and routing-policy changes.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-12"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-13" class="source-topic"><span id="source-71-mixture-of-experts-canonical-13-router-jitter" class="legacy-anchor"></span><h3>13. Router Jitter</h3>
+<p>Small training-time router noise can encourage exploration/load balance.</p>
+<p>Do not add arbitrary inference-time randomness without understanding model implementation.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>jitterเฉพาะtraininglogits/inputตามpolicyด้วยseed; evalไม่มีjitterและrepeatable ไม่sampleexpertแบบtrainขณะbenchmarkdeterministic</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-13-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>jitterเฉพาะtraininglogits/inputตามpolicyด้วยseed; evalไม่มีjitterและrepeatable ไม่sampleexpertแบบtrainขณะbenchmarkdeterministic</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-13-equation"><summary>สมการ</summary><p>jitterเฉพาะtraininglogits/inputตามpolicyด้วยseed; evalไม่มีjitterและrepeatable ไม่sampleexpertแบบtrainขณะbenchmarkdeterministic</p></details><details id="help-topic-13-visual"><summary>ภาพและ shape</summary><p>jitterเฉพาะtraininglogits/inputตามpolicyด้วยseed; evalไม่มีjitterและrepeatable ไม่sampleexpertแบบtrainขณะbenchmarkdeterministic</p></details><details id="help-topic-13-code"><summary>โค้ด</summary><p>jitterเฉพาะtraininglogits/inputตามpolicyด้วยseed; evalไม่มีjitterและrepeatable ไม่sampleexpertแบบtrainขณะbenchmarkdeterministic</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-13-result"><summary>ผลการทดลอง</summary><p>jitterเฉพาะtraininglogits/inputตามpolicyด้วยseed; evalไม่มีjitterและrepeatable ไม่sampleexpertแบบtrainขณะbenchmarkdeterministic</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-13"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-14" class="source-topic"><span id="source-71-mixture-of-experts-canonical-14-expert-specialization" class="legacy-anchor"></span><h3>14. Expert Specialization</h3>
+<p>Experts may specialize by:
+- token pattern
+- syntax
+- domain
+- latent feature combinations</p>
+<p>But routing patterns alone are not guaranteed human-readable semantics.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-14-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>14. Expert Specialization</h3>
+<p>Experts may specialize by:
+- token pattern
+- syntax
+- domain
+- latent feature combinations</p>
+<p>But routing patterns alone are not guaranteed human-readable semantics.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-14-equation"><summary>สมการ</summary><h3>14. Expert Specialization</h3>
+<p>Experts may specialize by:
+- token pattern
+- syntax
+- domain
+- latent feature combinations</p>
+<p>But routing patterns alone are not guaranteed human-readable semantics.</p></details><details id="help-topic-14-visual"><summary>ภาพและ shape</summary><h3>14. Expert Specialization</h3>
+<p>Experts may specialize by:
+- token pattern
+- syntax
+- domain
+- latent feature combinations</p>
+<p>But routing patterns alone are not guaranteed human-readable semantics.</p></details><details id="help-topic-14-code"><summary>โค้ด</summary><h3>14. Expert Specialization</h3>
+<p>Experts may specialize by:
+- token pattern
+- syntax
+- domain
+- latent feature combinations</p>
+<p>But routing patterns alone are not guaranteed human-readable semantics.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-14-result"><summary>ผลการทดลอง</summary><h3>14. Expert Specialization</h3>
+<p>Experts may specialize by:
+- token pattern
+- syntax
+- domain
+- latent feature combinations</p>
+<p>But routing patterns alone are not guaranteed human-readable semantics.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-14"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-15" class="source-topic"><span id="source-71-mixture-of-experts-canonical-15-dense-vs-sparse-moe" class="legacy-anchor"></span><h3>15. Dense vs Sparse MoE</h3>
+<p>Dense mixture:</p>
+<pre><code class="language-text">all experts active
+</code></pre>
+<p>Sparse MoE:</p>
+<pre><code class="language-text">only top-k active
+</code></pre>
+<p>Sparse activation is what provides the compute-vs-parameter advantage.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-15-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>15. Dense vs Sparse MoE</h3>
+<p>Dense mixture:</p>
+<pre><code class="language-text">all experts active
+</code></pre>
+<p>Sparse MoE:</p>
+<pre><code class="language-text">only top-k active
+</code></pre>
+<p>Sparse activation is what provides the compute-vs-parameter advantage.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-15-equation"><summary>สมการ</summary><h3>15. Dense vs Sparse MoE</h3>
+<p>Dense mixture:</p>
+<pre><code class="language-text">all experts active
+</code></pre>
+<p>Sparse MoE:</p>
+<pre><code class="language-text">only top-k active
+</code></pre>
+<p>Sparse activation is what provides the compute-vs-parameter advantage.</p></details><details id="help-topic-15-visual"><summary>ภาพและ shape</summary><h3>15. Dense vs Sparse MoE</h3>
+<p>Dense mixture:</p>
+<pre><code class="language-text">all experts active
+</code></pre>
+<p>Sparse MoE:</p>
+<pre><code class="language-text">only top-k active
+</code></pre>
+<p>Sparse activation is what provides the compute-vs-parameter advantage.</p></details><details id="help-topic-15-code"><summary>โค้ด</summary><h3>15. Dense vs Sparse MoE</h3>
+<p>Dense mixture:</p>
+<pre><code class="language-text">all experts active
+</code></pre>
+<p>Sparse MoE:</p>
+<pre><code class="language-text">only top-k active
+</code></pre>
+<p>Sparse activation is what provides the compute-vs-parameter advantage.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-15-result"><summary>ผลการทดลอง</summary><h3>15. Dense vs Sparse MoE</h3>
+<p>Dense mixture:</p>
+<pre><code class="language-text">all experts active
+</code></pre>
+<p>Sparse MoE:</p>
+<pre><code class="language-text">only top-k active
+</code></pre>
+<p>Sparse activation is what provides the compute-vs-parameter advantage.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-15"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-16" class="source-topic"><span id="source-71-mixture-of-experts-canonical-16-expert-parallelism" class="legacy-anchor"></span><h3>16. Expert Parallelism</h3>
+<p>Place different experts on different devices.</p>
+<p>Tokens must move to the devices owning their selected experts.</p>
+<p>This creates communication that dense local MLPs do not have.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>experts8บนGPU4วาง2ตัว/GPU,tokenrouteไปownerแล้วกลับoriginalposition; sharedexpert/replicationต้องcountmemoryและbalancecommunication</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-16-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>experts8บนGPU4วาง2ตัว/GPU,tokenrouteไปownerแล้วกลับoriginalposition; sharedexpert/replicationต้องcountmemoryและbalancecommunication</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-16-equation"><summary>สมการ</summary><p>experts8บนGPU4วาง2ตัว/GPU,tokenrouteไปownerแล้วกลับoriginalposition; sharedexpert/replicationต้องcountmemoryและbalancecommunication</p></details><details id="help-topic-16-visual"><summary>ภาพและ shape</summary><p>experts8บนGPU4วาง2ตัว/GPU,tokenrouteไปownerแล้วกลับoriginalposition; sharedexpert/replicationต้องcountmemoryและbalancecommunication</p></details><details id="help-topic-16-code"><summary>โค้ด</summary><p>experts8บนGPU4วาง2ตัว/GPU,tokenrouteไปownerแล้วกลับoriginalposition; sharedexpert/replicationต้องcountmemoryและbalancecommunication</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-16-result"><summary>ผลการทดลอง</summary><p>experts8บนGPU4วาง2ตัว/GPU,tokenrouteไปownerแล้วกลับoriginalposition; sharedexpert/replicationต้องcountmemoryและbalancecommunication</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-16"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-17" class="source-topic"><span id="source-71-mixture-of-experts-canonical-17-all-to-all-communication" class="legacy-anchor"></span><h3>17. All-to-All Communication</h3>
+<p>Conceptually:</p>
+<pre><code class="language-text">tokens on each GPU
+↓ route
+all-to-all exchange
+↓ experts execute
+all-to-all return
+↓ combine
+</code></pre>
+<p>Communication can dominate if tokens are small, network is slow or expert placement is poor.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>trafficประมาณremoteassignments·d·bytesสำหรับdispatchและอีกเท่าตอนcombine; remote100,d1024,fp16ไปกลับ≈409600bytesก่อนmetadata/collectiveoverhead</p><p>routerO(NEd),expertcompute≈topk·expertFLOPs,alltoallตามremoteassignments; totalmemoryทุกexpertsไม่ลดตามk/Eโดยอัตโนมัติ</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-17-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>trafficประมาณremoteassignments·d·bytesสำหรับdispatchและอีกเท่าตอนcombine; remote100,d1024,fp16ไปกลับ≈409600bytesก่อนmetadata/collectiveoverhead</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-17-equation"><summary>สมการ</summary><p>trafficประมาณremoteassignments·d·bytesสำหรับdispatchและอีกเท่าตอนcombine; remote100,d1024,fp16ไปกลับ≈409600bytesก่อนmetadata/collectiveoverhead</p></details><details id="help-topic-17-visual"><summary>ภาพและ shape</summary><p>trafficประมาณremoteassignments·d·bytesสำหรับdispatchและอีกเท่าตอนcombine; remote100,d1024,fp16ไปกลับ≈409600bytesก่อนmetadata/collectiveoverhead</p></details><details id="help-topic-17-code"><summary>โค้ด</summary><p>trafficประมาณremoteassignments·d·bytesสำหรับdispatchและอีกเท่าตอนcombine; remote100,d1024,fp16ไปกลับ≈409600bytesก่อนmetadata/collectiveoverhead</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-17-result"><summary>ผลการทดลอง</summary><p>trafficประมาณremoteassignments·d·bytesสำหรับdispatchและอีกเท่าตอนcombine; remote100,d1024,fp16ไปกลับ≈409600bytesก่อนmetadata/collectiveoverhead</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-17"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-18" class="source-topic"><span id="source-71-mixture-of-experts-canonical-18-deepspeed-moe" class="legacy-anchor"></span><h3>18. DeepSpeed MoE</h3>
+<p>Current DeepSpeed MoE documentation supports expert parallelism and combinations with other forms of parallelism; its inference material also emphasizes communication scheduling across expert parallelism. (see references.md)</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-18-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>18. DeepSpeed MoE</h3>
+<p>Current DeepSpeed MoE documentation supports expert parallelism and combinations with other forms of parallelism; its inference material also emphasizes communication scheduling across expert parallelism. (see references.md)</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-18-equation"><summary>สมการ</summary><h3>18. DeepSpeed MoE</h3>
+<p>Current DeepSpeed MoE documentation supports expert parallelism and combinations with other forms of parallelism; its inference material also emphasizes communication scheduling across expert parallelism. (see references.md)</p></details><details id="help-topic-18-visual"><summary>ภาพและ shape</summary><h3>18. DeepSpeed MoE</h3>
+<p>Current DeepSpeed MoE documentation supports expert parallelism and combinations with other forms of parallelism; its inference material also emphasizes communication scheduling across expert parallelism. (see references.md)</p></details><details id="help-topic-18-code"><summary>โค้ด</summary><h3>18. DeepSpeed MoE</h3>
+<p>Current DeepSpeed MoE documentation supports expert parallelism and combinations with other forms of parallelism; its inference material also emphasizes communication scheduling across expert parallelism. (see references.md)</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-18-result"><summary>ผลการทดลอง</summary><h3>18. DeepSpeed MoE</h3>
+<p>Current DeepSpeed MoE documentation supports expert parallelism and combinations with other forms of parallelism; its inference material also emphasizes communication scheduling across expert parallelism. (see references.md)</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-18"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-19" class="source-topic"><span id="source-71-mixture-of-experts-canonical-19-memory" class="legacy-anchor"></span><h3>19. Memory</h3>
+<p>MoE can reduce compute per token relative to an equally large dense model, but all expert parameters still consume aggregate storage/memory somewhere in the system.</p>
+<p>This is why MoE can be compute-efficient yet memory-heavy.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>manifest มีexpert/sharedsizes/topk/renorm/capacityformula/drop/tiepolicy/auxloss/jitter/placement/dtype/tokenbatch/seed/hardware</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-19-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>manifest มีexpert/sharedsizes/topk/renorm/capacityformula/drop/tiepolicy/auxloss/jitter/placement/dtype/tokenbatch/seed/hardware</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-19-equation"><summary>สมการ</summary><p>manifest มีexpert/sharedsizes/topk/renorm/capacityformula/drop/tiepolicy/auxloss/jitter/placement/dtype/tokenbatch/seed/hardware</p></details><details id="help-topic-19-visual"><summary>ภาพและ shape</summary><p>manifest มีexpert/sharedsizes/topk/renorm/capacityformula/drop/tiepolicy/auxloss/jitter/placement/dtype/tokenbatch/seed/hardware</p></details><details id="help-topic-19-code"><summary>โค้ด</summary><p>manifest มีexpert/sharedsizes/topk/renorm/capacityformula/drop/tiepolicy/auxloss/jitter/placement/dtype/tokenbatch/seed/hardware</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-19-result"><summary>ผลการทดลอง</summary><p>manifest มีexpert/sharedsizes/topk/renorm/capacityformula/drop/tiepolicy/auxloss/jitter/placement/dtype/tokenbatch/seed/hardware</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-19"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-20" class="source-topic"><span id="source-71-mixture-of-experts-canonical-20-serving" class="legacy-anchor"></span><h3>20. Serving</h3>
+<p>Serving concerns:
+- expert placement
+- batch composition
+- per-expert load
+- communication
+- routing kernels
+- quantization
+- replica memory</p>
+<p>Tail latency can be controlled by the slowest overloaded expert/device.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>เทียบtotalparamsMoEกับdenseโดยไม่reportactivecompute/storageหรือdroptokensทำperformanceclaimผิด; compute-matchedbaselineและcoverageชัด</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-20-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>เทียบtotalparamsMoEกับdenseโดยไม่reportactivecompute/storageหรือdroptokensทำperformanceclaimผิด; compute-matchedbaselineและcoverageชัด</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-20-equation"><summary>สมการ</summary><p>เทียบtotalparamsMoEกับdenseโดยไม่reportactivecompute/storageหรือdroptokensทำperformanceclaimผิด; compute-matchedbaselineและcoverageชัด</p></details><details id="help-topic-20-visual"><summary>ภาพและ shape</summary><p>เทียบtotalparamsMoEกับdenseโดยไม่reportactivecompute/storageหรือdroptokensทำperformanceclaimผิด; compute-matchedbaselineและcoverageชัด</p></details><details id="help-topic-20-code"><summary>โค้ด</summary><p>เทียบtotalparamsMoEกับdenseโดยไม่reportactivecompute/storageหรือdroptokensทำperformanceclaimผิด; compute-matchedbaselineและcoverageชัด</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-20-result"><summary>ผลการทดลอง</summary><p>เทียบtotalparamsMoEกับdenseโดยไม่reportactivecompute/storageหรือdroptokensทำperformanceclaimผิด; compute-matchedbaselineและcoverageชัด</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-20"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-21" class="source-topic"><span id="source-71-mixture-of-experts-canonical-21-fine-tuning" class="legacy-anchor"></span><h3>21. Fine-Tuning</h3>
+<p>Fine-tuning MoE models adds questions:
+- update router?
+- update experts?
+- adapter per expert?
+- preserve load balance?</p>
+<p>Always monitor routing behavior after adaptation.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-21-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>21. Fine-Tuning</h3>
+<p>Fine-tuning MoE models adds questions:
+- update router?
+- update experts?
+- adapter per expert?
+- preserve load balance?</p>
+<p>Always monitor routing behavior after adaptation.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-21-equation"><summary>สมการ</summary><h3>21. Fine-Tuning</h3>
+<p>Fine-tuning MoE models adds questions:
+- update router?
+- update experts?
+- adapter per expert?
+- preserve load balance?</p>
+<p>Always monitor routing behavior after adaptation.</p></details><details id="help-topic-21-visual"><summary>ภาพและ shape</summary><h3>21. Fine-Tuning</h3>
+<p>Fine-tuning MoE models adds questions:
+- update router?
+- update experts?
+- adapter per expert?
+- preserve load balance?</p>
+<p>Always monitor routing behavior after adaptation.</p></details><details id="help-topic-21-code"><summary>โค้ด</summary><h3>21. Fine-Tuning</h3>
+<p>Fine-tuning MoE models adds questions:
+- update router?
+- update experts?
+- adapter per expert?
+- preserve load balance?</p>
+<p>Always monitor routing behavior after adaptation.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-21-result"><summary>ผลการทดลอง</summary><h3>21. Fine-Tuning</h3>
+<p>Fine-tuning MoE models adds questions:
+- update router?
+- update experts?
+- adapter per expert?
+- preserve load balance?</p>
+<p>Always monitor routing behavior after adaptation.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-21"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-22" class="source-topic"><span id="source-71-mixture-of-experts-canonical-22-from-scratch" class="legacy-anchor"></span><h3>22. From Scratch</h3>
+<p><code>src/moe.py</code> implements:
+- stable_softmax
+- top_k_router
+- expert_load
+- expert_capacity
+- apply_capacity
+- dropped_assignment_fraction
+- switch_load_balance_loss
+- active_parameter_fraction</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>toyrouter/topkเทียบNumPyargsort/softmaxfixture; multideviceall-to-allต้องhardwareintegrationแยก ไม่ถือCPUloadarithmeticพิสูจน์GPUrouting</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-22-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>toyrouter/topkเทียบNumPyargsort/softmaxfixture; multideviceall-to-allต้องhardwareintegrationแยก ไม่ถือCPUloadarithmeticพิสูจน์GPUrouting</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-22-equation"><summary>สมการ</summary><p>toyrouter/topkเทียบNumPyargsort/softmaxfixture; multideviceall-to-allต้องhardwareintegrationแยก ไม่ถือCPUloadarithmeticพิสูจน์GPUrouting</p></details><details id="help-topic-22-visual"><summary>ภาพและ shape</summary><p>toyrouter/topkเทียบNumPyargsort/softmaxfixture; multideviceall-to-allต้องhardwareintegrationแยก ไม่ถือCPUloadarithmeticพิสูจน์GPUrouting</p></details><details id="help-topic-22-code"><summary>โค้ด</summary><p>toyrouter/topkเทียบNumPyargsort/softmaxfixture; multideviceall-to-allต้องhardwareintegrationแยก ไม่ถือCPUloadarithmeticพิสูจน์GPUrouting</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-22-result"><summary>ผลการทดลอง</summary><p>toyrouter/topkเทียบNumPyargsort/softmaxfixture; multideviceall-to-allต้องhardwareintegrationแยก ไม่ถือCPUloadarithmeticพิสูจน์GPUrouting</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-22"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-23" class="source-topic"><span id="source-71-mixture-of-experts-canonical-23-common-mistakes" class="legacy-anchor"></span><h3>23. Common Mistakes</h3>
+<ol>
+<li>total parameters confused with active parameters</li>
+<li>top-k weights not renormalized when required</li>
+<li>expert capacity ignored</li>
+<li>routing imbalance not measured</li>
+<li>auxiliary loss treated as task loss</li>
+<li>expert memory ignored</li>
+<li>expert parallel communication ignored</li>
+<li>router specialization overinterpreted</li>
+<li>dropped-token rate not tracked</li>
+<li>dense-model latency assumptions reused for MoE</li>
+</ol><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-23-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>23. Common Mistakes</h3>
+<ol>
+<li>total parameters confused with active parameters</li>
+<li>top-k weights not renormalized when required</li>
+<li>expert capacity ignored</li>
+<li>routing imbalance not measured</li>
+<li>auxiliary loss treated as task loss</li>
+<li>expert memory ignored</li>
+<li>expert parallel communication ignored</li>
+<li>router specialization overinterpreted</li>
+<li>dropped-token rate not tracked</li>
+<li>dense-model latency assumptions reused for MoE</li>
+</ol><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-23-equation"><summary>สมการ</summary><h3>23. Common Mistakes</h3>
+<ol>
+<li>total parameters confused with active parameters</li>
+<li>top-k weights not renormalized when required</li>
+<li>expert capacity ignored</li>
+<li>routing imbalance not measured</li>
+<li>auxiliary loss treated as task loss</li>
+<li>expert memory ignored</li>
+<li>expert parallel communication ignored</li>
+<li>router specialization overinterpreted</li>
+<li>dropped-token rate not tracked</li>
+<li>dense-model latency assumptions reused for MoE</li>
+</ol></details><details id="help-topic-23-visual"><summary>ภาพและ shape</summary><h3>23. Common Mistakes</h3>
+<ol>
+<li>total parameters confused with active parameters</li>
+<li>top-k weights not renormalized when required</li>
+<li>expert capacity ignored</li>
+<li>routing imbalance not measured</li>
+<li>auxiliary loss treated as task loss</li>
+<li>expert memory ignored</li>
+<li>expert parallel communication ignored</li>
+<li>router specialization overinterpreted</li>
+<li>dropped-token rate not tracked</li>
+<li>dense-model latency assumptions reused for MoE</li>
+</ol></details><details id="help-topic-23-code"><summary>โค้ด</summary><h3>23. Common Mistakes</h3>
+<ol>
+<li>total parameters confused with active parameters</li>
+<li>top-k weights not renormalized when required</li>
+<li>expert capacity ignored</li>
+<li>routing imbalance not measured</li>
+<li>auxiliary loss treated as task loss</li>
+<li>expert memory ignored</li>
+<li>expert parallel communication ignored</li>
+<li>router specialization overinterpreted</li>
+<li>dropped-token rate not tracked</li>
+<li>dense-model latency assumptions reused for MoE</li>
+</ol><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-23-result"><summary>ผลการทดลอง</summary><h3>23. Common Mistakes</h3>
+<ol>
+<li>total parameters confused with active parameters</li>
+<li>top-k weights not renormalized when required</li>
+<li>expert capacity ignored</li>
+<li>routing imbalance not measured</li>
+<li>auxiliary loss treated as task loss</li>
+<li>expert memory ignored</li>
+<li>expert parallel communication ignored</li>
+<li>router specialization overinterpreted</li>
+<li>dropped-token rate not tracked</li>
+<li>dense-model latency assumptions reused for MoE</li>
+</ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-23"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-24" class="source-topic"><span id="source-71-mixture-of-experts-canonical-24-exercises-mini-project" class="legacy-anchor"></span><h3>24. Exercises / Mini Project</h3>
+<ul>
+<li><a href="../71-mixture-of-experts/exercises/README.md">Exercises</a></li>
+<li><a href="../71-mixture-of-experts/solutions/README.md">Solutions</a></li>
+<li><a href="../71-mixture-of-experts/mini-project/README.md">Mini Project</a></li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-24-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>24. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-24-equation"><summary>สมการ</summary><h3>24. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-24-visual"><summary>ภาพและ shape</summary><h3>24. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-24-code"><summary>โค้ด</summary><h3>24. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-24-result"><summary>ผลการทดลอง</summary><h3>24. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-24"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-25" class="source-topic"><span id="source-71-mixture-of-experts-canonical-25-checklist" class="legacy-anchor"></span><h3>25. Checklist</h3>
+<ul>
+<li>[ ] router</li>
+<li>[ ] top-k</li>
+<li>[ ] capacity</li>
+<li>[ ] overflow</li>
+<li>[ ] load balancing</li>
+<li>[ ] expert collapse</li>
+<li>[ ] active parameters</li>
+<li>[ ] expert parallelism</li>
+<li>[ ] communication</li>
+<li>[ ] serving trade-offs</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-25-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>25. Checklist</h3>
+<ul>
+<li>[ ] router</li>
+<li>[ ] top-k</li>
+<li>[ ] capacity</li>
+<li>[ ] overflow</li>
+<li>[ ] load balancing</li>
+<li>[ ] expert collapse</li>
+<li>[ ] active parameters</li>
+<li>[ ] expert parallelism</li>
+<li>[ ] communication</li>
+<li>[ ] serving trade-offs</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-25-equation"><summary>สมการ</summary><h3>25. Checklist</h3>
+<ul>
+<li>[ ] router</li>
+<li>[ ] top-k</li>
+<li>[ ] capacity</li>
+<li>[ ] overflow</li>
+<li>[ ] load balancing</li>
+<li>[ ] expert collapse</li>
+<li>[ ] active parameters</li>
+<li>[ ] expert parallelism</li>
+<li>[ ] communication</li>
+<li>[ ] serving trade-offs</li>
+</ul></details><details id="help-topic-25-visual"><summary>ภาพและ shape</summary><h3>25. Checklist</h3>
+<ul>
+<li>[ ] router</li>
+<li>[ ] top-k</li>
+<li>[ ] capacity</li>
+<li>[ ] overflow</li>
+<li>[ ] load balancing</li>
+<li>[ ] expert collapse</li>
+<li>[ ] active parameters</li>
+<li>[ ] expert parallelism</li>
+<li>[ ] communication</li>
+<li>[ ] serving trade-offs</li>
+</ul></details><details id="help-topic-25-code"><summary>โค้ด</summary><h3>25. Checklist</h3>
+<ul>
+<li>[ ] router</li>
+<li>[ ] top-k</li>
+<li>[ ] capacity</li>
+<li>[ ] overflow</li>
+<li>[ ] load balancing</li>
+<li>[ ] expert collapse</li>
+<li>[ ] active parameters</li>
+<li>[ ] expert parallelism</li>
+<li>[ ] communication</li>
+<li>[ ] serving trade-offs</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-25-result"><summary>ผลการทดลอง</summary><h3>25. Checklist</h3>
+<ul>
+<li>[ ] router</li>
+<li>[ ] top-k</li>
+<li>[ ] capacity</li>
+<li>[ ] overflow</li>
+<li>[ ] load balancing</li>
+<li>[ ] expert collapse</li>
+<li>[ ] active parameters</li>
+<li>[ ] expert parallelism</li>
+<li>[ ] communication</li>
+<li>[ ] serving trade-offs</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-25"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-26" class="source-topic"><span id="source-71-mixture-of-experts-canonical-26-whats-next" class="legacy-anchor"></span><span id="source-71-mixture-of-experts-canonical-71-mixture-of-experts-mixture-of-experts" class="legacy-anchor"></span><h3>26. What's Next</h3>
+<p>Chapter 72 studies another scaling axis: context length and memory beyond one fixed attention window.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-26-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>26. What's Next</h3>
+<p>Chapter 72 studies another scaling axis: context length and memory beyond one fixed attention window.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-26-equation"><summary>สมการ</summary><h3>26. What's Next</h3>
+<p>Chapter 72 studies another scaling axis: context length and memory beyond one fixed attention window.</p></details><details id="help-topic-26-visual"><summary>ภาพและ shape</summary><h3>26. What's Next</h3>
+<p>Chapter 72 studies another scaling axis: context length and memory beyond one fixed attention window.</p></details><details id="help-topic-26-code"><summary>โค้ด</summary><h3>26. What's Next</h3>
+<p>Chapter 72 studies another scaling axis: context length and memory beyond one fixed attention window.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-26-result"><summary>ผลการทดลอง</summary><h3>26. What's Next</h3>
+<p>Chapter 72 studies another scaling axis: context length and memory beyond one fixed attention window.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-26"> อ่านหัวข้อนี้แล้ว</label></section><details><summary>รายละเอียดเพิ่มเติมและข้อกำหนดของ local lab</summary><h3>71-mixture-of-experts — Mixture of Experts</h3>
+<p><strong>Prerequisites:</strong> Complete 70-model-compression; be able to trace array/tensor shapes, separate train/validation/test data, and explain the core objective of the current chapter.</p>
+<p><strong>Mental model:</strong> Treat Mixture of Experts as a pipeline: input representation → central mechanism → objective/state update → observable output. At every boundary, state shape/state, allowed information flow, and the invariant that should remain true.</p>
+<p><strong>Code walkthrough:</strong> Read public API first, then input checks, state/shape transformations, numerical core, returned values and tests. Connect each important code block to the equation or algorithm in the chapter README.</p>
+<p><strong>Visualization / inspection:</strong> Use a tiny case. Inspect intermediate values, distributions, norms, scores, states or trajectories appropriate to Mixture of Experts; do not rely only on the final metric.</p>
+<p><strong>Experiment:</strong> Run a baseline, one controlled parameter change, one edge case and one repeated seeded comparison. Record seed, environment, data version, configuration and metric.</p>
+<p><strong>Limitations:</strong> List at least one assumption, one data-related limitation, one numerical/optimization limitation and one scaling limitation for Mixture of Experts.</p>
+<p><strong>Analysis workflow:</strong> Check inputs → preprocessing → shapes/state → finite numerical values → objective/update → evaluation protocol. The earliest unexpected state is more informative than a downstream metric.</p>
+<p><strong>Performance:</strong> Identify the dominant time and memory terms and measure them on the local learning run before attempting optimization.</p>
+<p><strong>Production perspective:</strong> Define input validation, artifact/configuration versioning, quality and resource measurements, staged release criteria and a way to return to the previous known-good artifact.</p>
+<p><strong>Research perspective:</strong> State a falsifiable hypothesis, baseline, one-factor change, metric, repeated-run plan when stochastic, and how negative results will be recorded.</p>
+<p><strong>Interview questions:</strong>
+1. Explain Mixture of Experts from first principles without naming a library API.
+2. Trace one input through the central mechanism and give the important intermediate shapes/state.
+3. Name the strongest assumption and a case where it fails.
+4. State the dominant compute/memory cost.
+5. Describe how you would validate a new implementation against a trusted baseline.</p>
+<p><strong>Summary / exit condition:</strong> You may move on when you can explain, derive or trace, implement, test, analyze, measure and evaluate Mixture of Experts, and when the chapter mini-project plus twenty total exercises are complete.</p></details></section><section id="objective-evidence" class="canonical-section"><h2>พิสูจน์ความสามารถทีละ objective</h2><p>ทำกรณีใหม่ก่อนเปิด reference แล้วบันทึกงานด้านล่าง ให้ผู้ตรวจใช้ rubric ตรวจคำอธิบาย ผลคำนวณ โค้ด และข้อจำกัด บันทึกเก็บในเบราว์เซอร์เครื่องนี้ กดส่งออกเพื่อสำรองหรือส่งให้ผู้ตรวจ เว็บไม่ได้รันโค้ดหรือตัดสินผลงานแทนผู้ตรวจ</p><button type="button" class="secondary-button" data-export-evidence>ส่งออกหลักฐานบทนี้เป็น JSON</button><p role="status" id="evidence-export-status"></p><details id="ch71-objective-01" class="objective-proof"><summary>implement router softmax and top-k selection</summary><p>implement router softmax and top-k selection: ใช้กรณีในหัวข้อ Router, Top-K Routing, Expert Output เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch71-evidence-01"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch71-evidence-01-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch71-evidence-01-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch71-evidence-01-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch71-evidence-01-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch71-evidence-01-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch71-evidence-01-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch71-evidence-01-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch71-evidence-01-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>routerlogits[log.6,log.3,log.1],top2เลือกexperts0,1แล้วrenormalize[2/3,1/3]หากpolicytop-k-renorm; expert2ไม่activeสำหรับtokenนี้</p><h3>3. Router</h3>
+<p>For token representation h:</p>
+<pre><code class="language-text">router_logits = W_r h
+router_prob = softmax(router_logits)
+</code></pre>
+<p>Then select top-k experts.</p>
+<h3>4. Top-K Routing</h3>
+<p>For top-2 routing:</p>
+<pre><code class="language-text">experts = arg top2(router_prob)
+</code></pre>
+<p>Selected routing weights are commonly renormalized before combining expert outputs.</p>
+<h3>5. Expert Output</h3>
+<p>For selected experts E_i:</p>
+<pre><code class="language-text">y = sum_i gate_i * E_i(h)
+</code></pre>
+<p>Only selected experts process that token.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch71-objective-02" class="objective-proof"><summary>distinguish total vs active parameters</summary><p>distinguish total vs active parameters: ใช้กรณีในหัวข้อ Total vs Active Parameters, Mixtral Example เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch71-evidence-02"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch71-evidence-02-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch71-evidence-02-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch71-evidence-02-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch71-evidence-02-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch71-evidence-02-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch71-evidence-02-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch71-evidence-02-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch71-evidence-02-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>E8expertsตัวละ1M,shared.5M,total8.5M; top2activeประมาณ2.5Mต่อtokenแต่storageยัง8.5Mและroutingoverheadเพิ่ม</p><h3>6. Total vs Active Parameters</h3>
+<p>Suppose:</p>
+<pre><code class="language-text">8 experts
+top-2 routing
+</code></pre>
+<p>All expert weights may still need to be stored, while each token computes only through two experts.</p>
+<p>Therefore:</p>
+<pre><code class="language-text">large total parameter count
+!= large active FLOPs per token
+</code></pre>
+<h3>7. Mixtral Example</h3>
+<p>Current Transformers Mixtral documentation describes eight experts per MoE MLP with top-2 token routing and exposes router logits / auxiliary routing loss. (see references.md)</p>
+<p>This is one architecture, not a universal MoE rule.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch71-objective-03" class="objective-proof"><summary>compute expert capacity</summary><p>compute expert capacity: ใช้กรณีในหัวข้อ Expert Capacity เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch71-evidence-03"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch71-evidence-03-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch71-evidence-03-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch71-evidence-03-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch71-evidence-03-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch71-evidence-03-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch71-evidence-03-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch71-evidence-03-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch71-evidence-03-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>capacity=ceil(capacity_factor·N·k/E)ตามconventionนี้; N8,k2,E4,CF1→4,CF1.25→5; Switchtop1ใช้k1ต้องไม่สลับสูตร</p><h3>9. Expert Capacity</h3>
+<p>Average assignments per expert:</p>
+<pre><code class="language-text">tokens * top_k / num_experts
+</code></pre>
+<p>One simple capacity rule:</p>
+<pre><code class="language-text">capacity = ceil(
+capacity_factor
+* tokens * top_k / num_experts
+)
+</code></pre></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch71-objective-04" class="objective-proof"><summary>handle routing overflow</summary><p>handle routing overflow: ใช้กรณีในหัวข้อ Overflow เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch71-evidence-04"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch71-evidence-04-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch71-evidence-04-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch71-evidence-04-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch71-evidence-04-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch71-evidence-04-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch71-evidence-04-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch71-evidence-04-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch71-evidence-04-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>loads[6,2,0,0],capacity3ทำoverflow3จาก8assignments=37.5%; ต้องระบุdrop/reroute/residualpolicyและtokenอาจยังมีexpertอีกตัว</p><h3>10. Overflow</h3>
+<p>If an expert receives more assignments than capacity, the system needs a policy:</p>
+<ul>
+<li>drop overflow assignments</li>
+<li>route to another expert</li>
+<li>increase capacity</li>
+<li>use expert-choice-style alternatives</li>
+</ul>
+<p>Token dropping can damage quality if frequent.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch71-objective-05" class="objective-proof"><summary>understand token dropping/overflow policies</summary><p>understand token dropping/overflow policies: ใช้กรณีในหัวข้อ Overflow เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch71-evidence-05"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch71-evidence-05-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch71-evidence-05-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch71-evidence-05-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch71-evidence-05-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch71-evidence-05-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch71-evidence-05-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch71-evidence-05-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch71-evidence-05-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>loads[6,2,0,0],capacity3ทำoverflow3จาก8assignments=37.5%; ต้องระบุdrop/reroute/residualpolicyและtokenอาจยังมีexpertอีกตัว</p><h3>10. Overflow</h3>
+<p>If an expert receives more assignments than capacity, the system needs a policy:</p>
+<ul>
+<li>drop overflow assignments</li>
+<li>route to another expert</li>
+<li>increase capacity</li>
+<li>use expert-choice-style alternatives</li>
+</ul>
+<p>Token dropping can damage quality if frequent.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch71-objective-06" class="objective-proof"><summary>derive load-balancing diagnostics</summary><p>derive load-balancing diagnostics: ใช้กรณีในหัวข้อ Expert Load, Expert Collapse เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch71-evidence-06"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch71-evidence-06-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch71-evidence-06-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch71-evidence-06-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch71-evidence-06-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch71-evidence-06-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch71-evidence-06-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch71-evidence-06-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch71-evidence-06-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>assignments[[0,1],[0,2],[0,1]]ให้loads[3,2,1]; totalassignments6เท่ากับtokens3·topk2 ไม่เท่าจำนวนtokensเมื่อk&gt;1</p><h3>8. Expert Load</h3>
+<p>Count assignments:</p>
+<pre><code class="language-text">load_i = number of token-expert assignments to expert i
+</code></pre>
+<p>Badly imbalanced routing wastes experts and can overload a few devices.</p>
+<h3>12. Expert Collapse</h3>
+<p>If router sends almost everything to a few experts:</p>
+<ul>
+<li>capacity overflows</li>
+<li>unused experts learn slowly</li>
+<li>hardware imbalance grows</li>
+</ul>
+<p>Mitigations include auxiliary losses, router noise/jitter and routing-policy changes.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch71-objective-07" class="objective-proof"><summary>understand auxiliary router losses</summary><p>understand auxiliary router losses: ใช้กรณีในหัวข้อ Load-Balancing Loss เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch71-evidence-07"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch71-evidence-07-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch71-evidence-07-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch71-evidence-07-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch71-evidence-07-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch71-evidence-07-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch71-evidence-07-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch71-evidence-07-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch71-evidence-07-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>Switch-styleaux=EΣfᵢPᵢ; E2,f[.75,.25],P[.6,.4]ให้2(.45+.1)=1.1; fเป็นfractionhardassign,Pmeanrouterprob</p><h3>11. Load-Balancing Loss</h3>
+<p>One Switch-style educational form:</p>
+<pre><code class="language-text">L_aux = E * sum_i(f_i * p_i)
+</code></pre>
+<p>where:
+- f_i = fraction of top-1 assignments to expert i
+- p_i = mean router probability for expert i
+- E = number of experts</p>
+<p>A perfectly uniform case gives approximately 1 under this formulation.</p>
+<p>Current Transformers Mixtral exposes an auxiliary load-balancing loss coefficient and router logits; newer docs also mention router z-loss/load-balancing terms. (see references.md)</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch71-objective-08" class="objective-proof"><summary>explain expert collapse</summary><p>explain expert collapse: ใช้กรณีในหัวข้อ Expert Collapse เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch71-evidence-08"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch71-evidence-08-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch71-evidence-08-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch71-evidence-08-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch71-evidence-08-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch71-evidence-08-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch71-evidence-08-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch71-evidence-08-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch71-evidence-08-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>8. Expert Load</h3>
+<p>Count assignments:</p>
+<pre><code class="language-text">load_i = number of token-expert assignments to expert i
+</code></pre>
+<p>Badly imbalanced routing wastes experts and can overload a few devices.</p>
+<h3>12. Expert Collapse</h3>
+<p>If router sends almost everything to a few experts:</p>
+<ul>
+<li>capacity overflows</li>
+<li>unused experts learn slowly</li>
+<li>hardware imbalance grows</li>
+</ul>
+<p>Mitigations include auxiliary losses, router noise/jitter and routing-policy changes.</p><h3>12. Expert Collapse</h3>
+<p>If router sends almost everything to a few experts:</p>
+<ul>
+<li>capacity overflows</li>
+<li>unused experts learn slowly</li>
+<li>hardware imbalance grows</li>
+</ul>
+<p>Mitigations include auxiliary losses, router noise/jitter and routing-policy changes.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch71-objective-09" class="objective-proof"><summary>understand expert parallelism</summary><p>understand expert parallelism: ใช้กรณีในหัวข้อ Expert Parallelism, DeepSpeed MoE เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch71-evidence-09"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch71-evidence-09-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch71-evidence-09-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch71-evidence-09-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch71-evidence-09-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch71-evidence-09-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch71-evidence-09-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch71-evidence-09-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch71-evidence-09-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>experts8บนGPU4วาง2ตัว/GPU,tokenrouteไปownerแล้วกลับoriginalposition; sharedexpert/replicationต้องcountmemoryและbalancecommunication</p><h3>16. Expert Parallelism</h3>
+<p>Place different experts on different devices.</p>
+<p>Tokens must move to the devices owning their selected experts.</p>
+<p>This creates communication that dense local MLPs do not have.</p>
+<h3>18. DeepSpeed MoE</h3>
+<p>Current DeepSpeed MoE documentation supports expert parallelism and combinations with other forms of parallelism; its inference material also emphasizes communication scheduling across expert parallelism. (see references.md)</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch71-objective-10" class="objective-proof"><summary>reason about all-to-all communication</summary><p>reason about all-to-all communication: ใช้กรณีในหัวข้อ All-to-All Communication เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch71-evidence-10"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch71-evidence-10-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch71-evidence-10-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch71-evidence-10-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch71-evidence-10-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch71-evidence-10-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch71-evidence-10-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch71-evidence-10-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch71-evidence-10-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>trafficประมาณremoteassignments·d·bytesสำหรับdispatchและอีกเท่าตอนcombine; remote100,d1024,fp16ไปกลับ≈409600bytesก่อนmetadata/collectiveoverhead</p><h3>17. All-to-All Communication</h3>
+<p>Conceptually:</p>
+<pre><code class="language-text">tokens on each GPU
+↓ route
+all-to-all exchange
+↓ experts execute
+all-to-all return
+↓ combine
+</code></pre>
+<p>Communication can dominate if tokens are small, network is slow or expert placement is poor.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch71-objective-11" class="objective-proof"><summary>distinguish training and serving bottlenecks</summary><p>distinguish training and serving bottlenecks: ใช้กรณีในหัวข้อ Memory, Serving, Fine-Tuning เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch71-evidence-11"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch71-evidence-11-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch71-evidence-11-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch71-evidence-11-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch71-evidence-11-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch71-evidence-11-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch71-evidence-11-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch71-evidence-11-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch71-evidence-11-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>เทียบtotalparamsMoEกับdenseโดยไม่reportactivecompute/storageหรือdroptokensทำperformanceclaimผิด; compute-matchedbaselineและcoverageชัด</p><h3>19. Memory</h3>
+<p>MoE can reduce compute per token relative to an equally large dense model, but all expert parameters still consume aggregate storage/memory somewhere in the system.</p>
+<p>This is why MoE can be compute-efficient yet memory-heavy.</p>
+<h3>20. Serving</h3>
+<p>Serving concerns:
+- expert placement
+- batch composition
+- per-expert load
+- communication
+- routing kernels
+- quantization
+- replica memory</p>
+<p>Tail latency can be controlled by the slowest overloaded expert/device.</p>
+<h3>21. Fine-Tuning</h3>
+<p>Fine-tuning MoE models adds questions:
+- update router?
+- update experts?
+- adapter per expert?
+- preserve load balance?</p>
+<p>Always monitor routing behavior after adaptation.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch71-objective-12" class="objective-proof"><summary>understand current Mixtral/DeepSpeed concepts</summary><p>understand current Mixtral/DeepSpeed concepts: ใช้กรณีในหัวข้อ Mixtral Example, DeepSpeed MoE, From Scratch เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch71-evidence-12"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch71-evidence-12-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch71-evidence-12-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch71-evidence-12-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch71-evidence-12-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch71-evidence-12-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch71-evidence-12-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch71-evidence-12-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch71-evidence-12-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>toyrouter/topkเทียบNumPyargsort/softmaxfixture; multideviceall-to-allต้องhardwareintegrationแยก ไม่ถือCPUloadarithmeticพิสูจน์GPUrouting</p><h3>7. Mixtral Example</h3>
+<p>Current Transformers Mixtral documentation describes eight experts per MoE MLP with top-2 token routing and exposes router logits / auxiliary routing loss. (see references.md)</p>
+<p>This is one architecture, not a universal MoE rule.</p>
+<h3>18. DeepSpeed MoE</h3>
+<p>Current DeepSpeed MoE documentation supports expert parallelism and combinations with other forms of parallelism; its inference material also emphasizes communication scheduling across expert parallelism. (see references.md)</p>
+<h3>22. From Scratch</h3>
+<p><code>src/moe.py</code> implements:
+- stable_softmax
+- top_k_router
+- expert_load
+- expert_capacity
+- apply_capacity
+- dropped_assignment_fraction
+- switch_load_balance_loss
+- active_parameter_fraction</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch71-objective-13" class="objective-proof"><summary>Router Jitter</summary><p>Router Jitter: ใช้กรณีในหัวข้อ Router Jitter เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch71-evidence-13"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch71-evidence-13-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch71-evidence-13-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch71-evidence-13-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch71-evidence-13-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch71-evidence-13-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch71-evidence-13-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch71-evidence-13-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch71-evidence-13-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>jitterเฉพาะtraininglogits/inputตามpolicyด้วยseed; evalไม่มีjitterและrepeatable ไม่sampleexpertแบบtrainขณะbenchmarkdeterministic</p><h3>13. Router Jitter</h3>
+<p>Small training-time router noise can encourage exploration/load balance.</p>
+<p>Do not add arbitrary inference-time randomness without understanding model implementation.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details></section><section id="implementation" class="canonical-section"><h2>Implementation และ tests ที่รันบนเครื่องได้</h2><details><summary>71-mixture-of-experts/src/moe.py</summary><pre><code>&quot;&quot;&quot;Sparse Mixture-of-Experts routing and capacity utilities.&quot;&quot;&quot;
+
+from __future__ import annotations
+
+import math
+import numpy as np
+
+
+def stable_softmax(logits: np.ndarray) -&gt; np.ndarray:
+    z = np.asarray(logits, dtype=float)
+    if z.ndim &lt; 1 or z.size == 0:
+        raise ValueError(&quot;logits must be non-empty&quot;)
+    shifted = z - np.max(z, axis=-1, keepdims=True)
+    exp = np.exp(shifted)
+    return exp / np.sum(exp, axis=-1, keepdims=True)
+
+
+def top_k_router(
+    router_logits: np.ndarray,
+    *,
+    top_k: int,
+) -&gt; tuple[np.ndarray, np.ndarray, np.ndarray]:
+    logits = np.asarray(router_logits, dtype=float)
+    if logits.ndim != 2:
+        raise ValueError(&quot;router_logits must have shape [tokens, experts]&quot;)
+
+    num_experts = logits.shape[1]
+    if not 1 &lt;= top_k &lt;= num_experts:
+        raise ValueError(&quot;top_k must lie in [1,num_experts]&quot;)
+
+    probabilities = stable_softmax(logits)
+    indices = np.argsort(
+        probabilities,
+        axis=1,
+        kind=&quot;stable&quot;,
+    )[:, -top_k:][:, ::-1]
+
+    selected = np.take_along_axis(
+        probabilities,
+        indices,
+        axis=1,
+    )
+    selected_sum = np.sum(
+        selected,
+        axis=1,
+        keepdims=True,
+    )
+    weights = selected / selected_sum
+
+    return indices, weights, probabilities
+
+
+def expert_load(
+    expert_indices: np.ndarray,
+    *,
+    num_experts: int,
+) -&gt; np.ndarray:
+    indices = np.asarray(expert_indices, dtype=int)
+    if indices.ndim != 2:
+        raise ValueError(&quot;expert_indices must be [tokens,top_k]&quot;)
+    if num_experts &lt;= 0:
+        raise ValueError(&quot;num_experts must be positive&quot;)
+    if np.any(indices &lt; 0) or np.any(indices &gt;= num_experts):
+        raise ValueError(&quot;expert index out of range&quot;)
+
+    return np.bincount(
+        indices.reshape(-1),
+        minlength=num_experts,
+    )
+
+
+def expert_capacity(
+    *,
+    tokens: int,
+    num_experts: int,
+    top_k: int,
+    capacity_factor: float = 1.0,
+) -&gt; int:
+    if tokens &lt; 0:
+        raise ValueError(&quot;tokens must be non-negative&quot;)
+    if num_experts &lt;= 0 or top_k &lt;= 0:
+        raise ValueError(&quot;expert counts must be positive&quot;)
+    if top_k &gt; num_experts:
+        raise ValueError(&quot;top_k cannot exceed num_experts&quot;)
+    if capacity_factor &lt;= 0:
+        raise ValueError(&quot;capacity_factor must be positive&quot;)
+
+    if tokens == 0:
+        return 0
+
+    average = tokens * top_k / num_experts
+    return int(math.ceil(capacity_factor * average))
+
+
+def apply_capacity(
+    expert_indices: np.ndarray,
+    routing_weights: np.ndarray,
+    *,
+    num_experts: int,
+    capacity: int,
+) -&gt; np.ndarray:
+    indices = np.asarray(expert_indices, dtype=int)
+    weights = np.asarray(routing_weights, dtype=float)
+
+    if indices.shape != weights.shape or indices.ndim != 2:
+        raise ValueError(&quot;indices/weights must be matching 2D arrays&quot;)
+    if capacity &lt; 0:
+        raise ValueError(&quot;capacity must be non-negative&quot;)
+
+    accepted = np.zeros(indices.shape, dtype=bool)
+
+    for expert in range(num_experts):
+        positions = np.argwhere(indices == expert)
+        if len(positions) == 0 or capacity == 0:
+            continue
+
+        scored = []
+        for token_pos, slot_pos in positions:
+            scored.append(
+                (
+                    float(weights[token_pos, slot_pos]),
+                    int(token_pos),
+                    int(slot_pos),
+                )
+            )
+
+        scored.sort(
+            key=lambda item: (-item[0], item[1], item[2])
+        )
+
+        for _, token_pos, slot_pos in scored[:capacity]:
+            accepted[token_pos, slot_pos] = True
+
+    return accepted
+
+
+def dropped_assignment_fraction(
+    accepted_mask: np.ndarray,
+) -&gt; float:
+    mask = np.asarray(accepted_mask, dtype=bool)
+    if mask.size == 0:
+        raise ValueError(&quot;mask must be non-empty&quot;)
+    return float(1.0 - np.mean(mask))
+
+
+def switch_load_balance_loss(
+    router_probabilities: np.ndarray,
+    top1_experts: np.ndarray,
+) -&gt; float:
+    &quot;&quot;&quot;Educational Switch-style auxiliary load-balancing loss.
+
+    E * sum_i(f_i * p_i), where f_i is the top-1 assignment
+    fraction and p_i is the mean router probability for expert i.
+    &quot;&quot;&quot;
+    probabilities = np.asarray(router_probabilities, dtype=float)
+    assignments = np.asarray(top1_experts, dtype=int).reshape(-1)
+
+    if probabilities.ndim != 2:
+        raise ValueError(&quot;router_probabilities must be [tokens,experts]&quot;)
+    if len(assignments) != len(probabilities):
+        raise ValueError(&quot;assignment length mismatch&quot;)
+
+    tokens, experts = probabilities.shape
+    if tokens == 0:
+        raise ValueError(&quot;at least one token is required&quot;)
+    if np.any(assignments &lt; 0) or np.any(assignments &gt;= experts):
+        raise ValueError(&quot;expert index out of range&quot;)
+
+    f = np.bincount(
+        assignments,
+        minlength=experts,
+    ).astype(float) / tokens
+    p = np.mean(probabilities, axis=0)
+
+    return float(experts * np.sum(f * p))
+
+
+def active_parameter_fraction(
+    *,
+    shared_parameters: int,
+    expert_parameters_each: int,
+    num_experts: int,
+    active_experts: int,
+) -&gt; float:
+    values = [
+        shared_parameters,
+        expert_parameters_each,
+        num_experts,
+        active_experts,
+    ]
+    if any(value &lt; 0 for value in values):
+        raise ValueError(&quot;parameter counts must be non-negative&quot;)
+    if num_experts &lt;= 0:
+        raise ValueError(&quot;num_experts must be positive&quot;)
+    if not 1 &lt;= active_experts &lt;= num_experts:
+        raise ValueError(&quot;active_experts out of range&quot;)
+
+    total = (
+        shared_parameters
+        + expert_parameters_each * num_experts
+    )
+    active = (
+        shared_parameters
+        + expert_parameters_each * active_experts
+    )
+    if total &lt;= 0:
+        raise ValueError(&quot;model must have parameters&quot;)
+
+    return float(active / total)
+</code></pre></details><details><summary>71-mixture-of-experts/tests/test_moe.py</summary><pre><code>from pathlib import Path
+import importlib.util
+
+import numpy as np
+
+
+MODULE_PATH = Path(__file__).parents[1] / &quot;src&quot; / &quot;moe.py&quot;
+SPEC = importlib.util.spec_from_file_location(&quot;moe_course&quot;, MODULE_PATH)
+assert SPEC and SPEC.loader
+mod = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(mod)
+
+
+def test_top_k_router_normalizes_selected_weights() -&gt; None:
+    logits = np.array(
+        [
+            [3.0, 2.0, 1.0],
+            [0.0, 4.0, 2.0],
+        ]
+    )
+    indices, weights, probabilities = mod.top_k_router(
+        logits,
+        top_k=2,
+    )
+
+    assert indices.shape == (2, 2)
+    assert weights.shape == (2, 2)
+    assert probabilities.shape == (2, 3)
+    np.testing.assert_allclose(
+        weights.sum(axis=1),
+        1.0,
+    )
+
+
+def test_expert_capacity() -&gt; None:
+    assert mod.expert_capacity(
+        tokens=16,
+        num_experts=4,
+        top_k=2,
+        capacity_factor=1.25,
+    ) == 10
+
+
+def test_capacity_keeps_highest_weight_assignments() -&gt; None:
+    indices = np.array(
+        [
+            [0, 1],
+            [0, 1],
+            [0, 1],
+        ]
+    )
+    weights = np.array(
+        [
+            [0.9, 0.1],
+            [0.8, 0.2],
+            [0.7, 0.3],
+        ]
+    )
+    accepted = mod.apply_capacity(
+        indices,
+        weights,
+        num_experts=2,
+        capacity=2,
+    )
+
+    assert accepted[:, 0].tolist() == [True, True, False]
+    assert accepted[:, 1].tolist() == [False, True, True]
+
+
+def test_uniform_router_has_unit_switch_aux_loss() -&gt; None:
+    probabilities = np.full((4, 2), 0.5)
+    assignments = np.array([0, 1, 0, 1])
+
+    loss = mod.switch_load_balance_loss(
+        probabilities,
+        assignments,
+    )
+    np.testing.assert_allclose(loss, 1.0)
+
+
+def test_active_parameter_fraction() -&gt; None:
+    fraction = mod.active_parameter_fraction(
+        shared_parameters=20,
+        expert_parameters_each=10,
+        num_experts=8,
+        active_experts=2,
+    )
+    np.testing.assert_allclose(fraction, 40 / 100)
+</code></pre></details></section><section id="glossary" class="canonical-section"><h2>อภิธานศัพท์ — คำไทย ความหมาย และข้อควรตรวจ</h2><dl><dt>tensor</dt><dd>เทนเซอร์: ชุดตัวเลขที่มีแกน เช่น scalar ไม่มีแกน, vector หนึ่งแกน, matrix สองแกน; shape บอกขนาดแต่ละแกน ไม่บอกความหมายของแกนจนกว่าจะระบุ</dd><dt>shape</dt><dd>รูปทรงข้อมูล: (B,T,d) หมายถึง batch × เวลา/ตำแหน่ง × features; ใช้ชื่อแกนกำกับเสมอ การ transpose เปลี่ยนแกนแต่ไม่ใช่แค่เปลี่ยนชื่อ</dd><dt>batch</dt><dd>กลุ่มตัวอย่างที่คำนวณร่วมกันหนึ่งครั้ง; B คือจำนวนตัวอย่าง ไม่ใช่จำนวน features หรือจำนวน optimizer updates</dd><dt>weight w / θ</dt><dd>น้ำหนักหรือพารามิเตอร์ที่โมเดลใช้คำนวณ; แก้ด้วยมือทำ forward ใหม่ ส่วน optimizer ต้องรับ gradient แล้วกด update จึงแก้ state</dd><dt>bias b</dt><dd>ค่าคงที่ที่บวกกับผลเชิงเส้น; regression scalar bias เพิ่ม Δ ทำให้ prediction ทุกจุดเพิ่ม Δ เท่ากัน</dd><dt>prediction ŷ</dt><dd>ค่าที่โมเดลทำนายจาก input และพารามิเตอร์ปัจจุบัน; เครื่องหมายหมวกแยกจาก target y ที่มาจากข้อมูล</dd><dt>residual e</dt><dd>ความคลาดเคลื่อน ในเว็บนี้นิยาม prediction − target; บางตำราใช้เครื่องหมายกลับกัน จึงต้องตรวจนิยามก่อนเทียบสูตร gradient</dd><dt>MSE</dt><dd>mean squared error = ผลรวม residual กำลังสองหารจำนวนรายการที่ระบุ; มีหน่วยเป็น target ยกกำลังสอง และการใช้ sum แทน mean เปลี่ยน scale gradient</dd><dt>loss L / objective J</dt><dd>จำนวนที่ optimizer ต้องการลด; objective อาจรวม data loss และ regularization จึงต้องดูองค์ประกอบและ reduction ให้ตรง implementation</dd><dt>gradient ∇ / ∂</dt><dd>เวกเตอร์ของ partial derivatives บอกอัตราเปลี่ยน loss ต่อพารามิเตอร์แต่ละตัว; ∂ ใช้เมื่อเปลี่ยนตัวหนึ่งโดยตรึงตัวอื่น</dd><dt>chain rule</dt><dd>กฎลูกโซ่: คูณอนุพันธ์ตามเส้นทาง และบวก contribution จากทุกเส้นทางที่มารวมกัน ใช้ย้อนจาก loss ถึง weights</dd><dt>learning rate η</dt><dd>ขนาดตัวคูณ gradient ใน update θnew=θ−ηg; η≥0, ศูนย์หมายถึงไม่มีการขยับพารามิเตอร์ ก้าวใหญ่เกินอาจ diverge</dd><dt>regularization λ</dt><dd>ตัวคูณค่าลงโทษ ต้อง λ≥0 ตามนิยามการลงโทษ; Ridge λΣw² เพิ่ม gradient 2λw โดยบท Regression นี้ไม่ลงโทษ bias</dd><dt>baseline</dt><dd>สถานะอ้างอิงที่ตรึงไว้สำหรับเทียบ; ต้องเก็บ snapshot ไม่อ้าง object ปัจจุบันที่แก้ตามไปด้วย</dd><dt>invariant</dt><dd>คุณสมบัติที่กลไกต้องรักษา เช่น probability รวม1, shape สอดคล้อง, queue ไม่เกิน capacity; ใช้ tests ตรวจได้มากกว่าดูภาพสวย</dd><dt>optimizer state</dt><dd>ความจำของอัลกอริทึม เช่น velocity, moments และ completed updates; คืนเฉพาะ weights ยังไม่เท่ากับเริ่มการฝึกใหม่ทั้งหมด</dd><dt>finite difference</dt><dd>ประมาณ derivative ด้วย [f(x+h)−f(x−h)]/(2h); h&gt;0, ใช้ smooth point และลองหลาย h เพื่อแยก truncation error จาก roundoff</dd><dt>softmax</dt><dd>แปลง logits เป็นความน่าจะเป็นตามแกนที่กำหนด; ลบ max ก่อน exp เพื่อความเสถียร และ fully masked row ต้องมีนโยบายชัดเจน</dd><dt>logit</dt><dd>คะแนนก่อน sigmoid/softmax ไม่ใช่ probability; อาจเป็นจำนวนจริงติดลบหรือเกิน1ได้ จึงห้ามส่งให้ loss ที่คาด probability โดยไม่แปลง</dd><dt>temperature τ / T</dt><dd>ตัวหาร logits ก่อน softmax; ต้องเป็นบวก ค่าเล็กทำ distribution แหลมขึ้น โดยไม่เท่ากับ retrain weights</dd><dt>mask</dt><dd>ตัวกำหนดตำแหน่งที่อ่านหรือคิด loss ได้; causal mask ปิดอนาคต, padding mask ปิดข้อมูลเติม, loss mask เลือก target แต่ละอย่างคนละหน้าที่</dd><dt>Q / K / V</dt><dd>query ใช้ค้นข้อมูล, key ใช้จับคู่ query, value เป็นข้อมูลที่ถูกถัวเฉลี่ย; เป็น learned projections ของ representation ไม่ใช่ป้ายความหมายตายตัว</dd><dt>head</dt><dd>ส่วนของ feature representation ที่ทำ attention แยกกัน แล้ว concat/project กลับ; ต้องตรวจ d_model หารจำนวน heads ลงตัว</dd><dt>ε-neighborhood</dt><dd>เพื่อนบ้านทั้งหมดที่มีระยะไม่เกิน ε รวมจุดตัวเองใน DBSCAN นี้; ε มีหน่วยเดียวกับพิกัด ไม่ใช่จำนวน k ที่ใช้โหวต</dd><dt>core / border / noise</dt><dd>DBSCAN core มีเพื่อนบ้านรวมตัวเองถึง min_samples; border อยู่ใกล้ core แต่เพื่อนบ้านไม่ถึง; noise ไม่ถูกเชื่อมกับ core cluster ใด</dd><dt>bootstrap</dt><dd>สุ่ม observations แบบ replacement ขนาดเท่าเดิมซ้ำหลายครั้งแล้วคำนวณ statistic ใหม่; seed ทำให้ตรวจซ้ำได้ แต่ไม่แก้สมมติฐาน IID ที่ผิด</dd><dt>confidence interval</dt><dd>ช่วงที่สร้างด้วย procedure ที่มี coverage ตามสมมติฐาน; ช่วงหนึ่งที่ได้แล้วไม่ใช่ posterior probability ของ parameter และ sample เล็กยังไม่แน่นอนมาก</dd><dt>validation / test</dt><dd>validation ใช้เลือกโมเดล/ค่าตั้ง ส่วน test ใช้ประเมินหลัง freeze การตัดสินใจ; fit preprocessing/tokenizer จาก test เป็น leakage</dd><dt>leakage</dt><dd>ข้อมูลที่ควรยังไม่รู้ไหลเข้า training/การเลือกโมเดล เช่น future feature หรือเอกสารซ้ำข้าม split ทำให้ metric ดูดีเกินการใช้งานจริง</dd><dt>queue / capacity</dt><dd>queue คือรายการรอ, capacity การให้บริการรวม = workers × service rate ตามแบบจำลอง; เพิ่ม timeout ไม่เพิ่มกำลังประมวลผล</dd><dt>state transition</dt><dd>การเปลี่ยนสถานะเมื่อเกิดเหตุการณ์ที่อนุญาต เช่น queued→active→done; ต้องระบุ guard, side effect และเหตุผลเมื่อ transition ถูกปฏิเสธ</dd><dt>latency / throughput</dt><dd>latency คือเวลาต่อคำขอ, throughput คือปริมาณงานต่อหน่วยเวลา; batching อาจเพิ่ม throughput แต่เพิ่มเวลารอ จึงต้องวัดทั้งคู่</dd><dt>idempotency</dt><dd>ทำคำขอ business operation เดิมซ้ำแล้ว side effect เกิดครั้งเดียวตาม key และ transaction protocol; ไม่ได้รับประกันจากการใช้ UUID ใหม่ทุก attempt</dd><dt>local lab</dt><dd>โปรแกรม Python และ tests ที่ผู้เรียนรันบนเครื่อง; เว็บเก็บเพียงคำยืนยันของผู้เรียน การผ่าน tests ของโค้ดต้นแบบไม่ใช่ผลตรวจโค้ดผู้เรียน</dd></dl></section></article>
+<section id="practice" class="practice-section"><span class="eyebrow">PRACTICE · DEBUG · BUILD</span><h2>พิสูจน์ด้วยการลงมือทำ</h2><div id="web-checks"></div><div class="retry-actions"><button class="secondary-button" id="retry-checks">เริ่มทำโจทย์ในเว็บใหม่</button><button class="text-button" id="undo-retry" hidden>คืนผลก่อนเริ่มใหม่</button></div><div id="exercise-content"><h2>แบบฝึก 20 ข้อ — เฉลยเฉพาะข้อ</h2><p>ทำคำตอบก่อนเปิด hints; โจทย์ปลายเปิดให้ใช้ตัวอย่างคำตอบและหลักฐานราย objective ตรวจงานจริง</p><section id="exercise-1" class="exercise-item"><h3>ข้อ 1</h3><p>Compute top-2 router weights by hand.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Top-K Routing: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): routerlogits[log.6,log.3,log.1],top2เลือกexperts0,1…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: routerlogits[log.6,log.3,log.1],top2เลือกexperts0,1แล้วrenormalize[2/3,1/3]หากpolicytop-k-re…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>routerlogits[log.6,log.3,log.1],top2เลือกexperts0,1แล้วrenormalize[2/3,1/3]หากpolicytop-k-renorm; expert2ไม่activeสำหรับtokenนี้</p><p>อ้างอิง: <a href="#chapter-71/section/topic-4">Top-K Routing</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch71-exercise-01"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-2" class="exercise-item"><h3>ข้อ 2</h3><p>Measure expert load on a token batch.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Expert Load: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): assignments[[0,1],[0,2],[0,1]]ให้loads[3,2,1…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: assignments[[0,1],[0,2],[0,1]]ให้loads[3,2,1]; totalassignments6เท่ากับtokens3·…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>assignments[[0,1],[0,2],[0,1]]ให้loads[3,2,1]; totalassignments6เท่ากับtokens3·topk2 ไม่เท่าจำนวนtokensเมื่อk&gt;1</p><p>อ้างอิง: <a href="#chapter-71/section/topic-8">Expert Load</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch71-exercise-02"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-3" class="exercise-item"><h3>ข้อ 3</h3><p>Derive capacity for multiple capacity factors.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Expert Capacity: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): capacity=ceil(capacity_factor·N·k/E)ตามconv…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: capacity=ceil(capacity_factor·N·k/E)ตามconventionนี้; N8,k2,E4,CF1→4,CF1.25→5;…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>capacity=ceil(capacity_factor·N·k/E)ตามconventionนี้; N8,k2,E4,CF1→4,CF1.25→5; Switchtop1ใช้k1ต้องไม่สลับสูตร</p><p>อ้างอิง: <a href="#chapter-71/section/topic-9">Expert Capacity</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch71-exercise-03"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-4" class="exercise-item"><h3>ข้อ 4</h3><p>Simulate overflow and dropped-assignment rate.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Overflow: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): loads[6,2,0,0],capacity3ทำoverflow3จาก8assignmen…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: loads[6,2,0,0],capacity3ทำoverflow3จาก8assignments=37.5%; ต้องระบุdrop/reroute/residual…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>loads[6,2,0,0],capacity3ทำoverflow3จาก8assignments=37.5%; ต้องระบุdrop/reroute/residualpolicyและtokenอาจยังมีexpertอีกตัว</p><p>อ้างอิง: <a href="#chapter-71/section/topic-10">Overflow</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch71-exercise-04"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-5" class="exercise-item"><h3>ข้อ 5</h3><p>Calculate Switch-style load-balancing loss.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Load-Balancing Loss: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): Switch-styleaux=EΣfᵢPᵢ; E2,f[.75,.25],P[.…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: Switch-styleaux=EΣfᵢPᵢ; E2,f[.75,.25],P[.6,.4]ให้2(.45+.1)=1.1; fเป็นfract…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>Switch-styleaux=EΣfᵢPᵢ; E2,f[.75,.25],P[.6,.4]ให้2(.45+.1)=1.1; fเป็นfractionhardassign,Pmeanrouterprob</p><p>อ้างอิง: <a href="#chapter-71/section/topic-11">Load-Balancing Loss</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch71-exercise-05"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-6" class="exercise-item"><h3>ข้อ 6</h3><p>Compare total vs active parameters.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Total vs Active Parameters: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): E8expertsตัวละ1M,shared.5M,total8.5M; top2…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: E8expertsตัวละ1M,shared.5M,total8.5M; top2activeประมาณ2.5Mต่อtokenแต่storage…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>E8expertsตัวละ1M,shared.5M,total8.5M; top2activeประมาณ2.5Mต่อtokenแต่storageยัง8.5Mและroutingoverheadเพิ่ม</p><p>อ้างอิง: <a href="#chapter-71/section/topic-6">Total vs Active Parameters</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch71-exercise-06"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-7" class="exercise-item"><h3>ข้อ 7</h3><p>Measure router entropy.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Router: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): entropy=−Σp logp; uniform4ให้log4=1.386294,natur…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: entropy=−Σp logp; uniform4ให้log4=1.386294,naturalunits; lowentropyไม่แปลbadเสมอหากspec…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>entropy=−Σp logp; uniform4ให้log4=1.386294,naturalunits; lowentropyไม่แปลbadเสมอหากspecializationเหมาะแต่ต้องดูloadbalance</p><p>อ้างอิง: <a href="#chapter-71/section/topic-3">Router</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch71-exercise-07"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-8" class="exercise-item"><h3>ข้อ 8</h3><p>Add router jitter in a training-only simulation.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Router Jitter: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): jitterเฉพาะtraininglogits/inputตามpolicyด้วยseed; …</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: jitterเฉพาะtraininglogits/inputตามpolicyด้วยseed; evalไม่มีjitterและrepeatable ไม่sampleexp…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>jitterเฉพาะtraininglogits/inputตามpolicyด้วยseed; evalไม่มีjitterและrepeatable ไม่sampleexpertแบบtrainขณะbenchmarkdeterministic</p><p>อ้างอิง: <a href="#chapter-71/section/topic-13">Router Jitter</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch71-exercise-08"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-9" class="exercise-item"><h3>ข้อ 9</h3><p>Design expert placement across four GPUs.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Expert Parallelism: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): experts8บนGPU4วาง2ตัว/GPU,tokenrouteไปownerแล้วกลับo…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: experts8บนGPU4วาง2ตัว/GPU,tokenrouteไปownerแล้วกลับoriginalposition; sharedexpert/replicationต…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>experts8บนGPU4วาง2ตัว/GPU,tokenrouteไปownerแล้วกลับoriginalposition; sharedexpert/replicationต้องcountmemoryและbalancecommunication</p><p>อ้างอิง: <a href="#chapter-71/section/topic-16">Expert Parallelism</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch71-exercise-09"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-10" class="exercise-item"><h3>ข้อ 10</h3><p>Estimate all-to-all traffic from token assignments.</p>
+<p>Challenge:
+- implement a tiny NumPy MoE layer with linear experts
+- reproduce one small PyTorch sparse-MoE block and audit expert load</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ All-to-All Communication: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): trafficประมาณremoteassignments·d·bytesสำหรับdispatchและอี…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: trafficประมาณremoteassignments·d·bytesสำหรับdispatchและอีกเท่าตอนcombine; remote100,d1024,fp16ไปกลับ≈4…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>trafficประมาณremoteassignments·d·bytesสำหรับdispatchและอีกเท่าตอนcombine; remote100,d1024,fp16ไปกลับ≈409600bytesก่อนmetadata/collectiveoverhead</p><p>อ้างอิง: <a href="#chapter-71/section/topic-17">All-to-All Communication</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch71-exercise-10"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-11" class="exercise-item"><h3>ข้อ 11</h3><p>Reproduce one central calculation from Mixture of Experts using a tiny hand-checkable input.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Top-K Routing, Overflow: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): top2weights.6/.3renormเป็น2/3,1/3; capacityoverf…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: top2weights.6/.3renormเป็น2/3,1/3; capacityoverflowต้องลดactualcontributionตามdroppolic…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>top2weights.6/.3renormเป็น2/3,1/3; capacityoverflowต้องลดactualcontributionตามdroppolicyและไม่แสร้งทุกtokenได้2expertsครบ</p><p>อ้างอิง: <a href="#chapter-71/section/topic-4">Top-K Routing</a>, <a href="#chapter-71/section/topic-10">Overflow</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch71-exercise-11"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-12" class="exercise-item"><h3>ข้อ 12</h3><p>Write a deterministic test that verifies the most important invariant in Mixture of Experts.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Expert Capacity: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): topkIDsunique/inrange,weightsselectedsum1,loa…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: topkIDsunique/inrange,weightsselectedsum1,loadsum=validassignments,capacitynotexc…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>topkIDsunique/inrange,weightsselectedsum1,loadsum=validassignments,capacitynotexceededและcombineกลับtokenorderถูก</p><p>อ้างอิง: <a href="#chapter-71/section/topic-9">Expert Capacity</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch71-exercise-12"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-13" class="exercise-item"><h3>ข้อ 13</h3><p>Compare two meaningful configurations while keeping data and seed fixed.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Expert Capacity: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): CF1/1.25คงrouterlogits/tokens/seed; reportdroppedassig…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: CF1/1.25คงrouterlogits/tokens/seed; reportdroppedassignment/loadCV/activebytesและqualityหลังtraini…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>CF1/1.25คงrouterlogits/tokens/seed; reportdroppedassignment/loadCV/activebytesและqualityหลังtrainingจริง ไม่อ้างdropลดคือqualityดีขึ้นแน่</p><p>อ้างอิง: <a href="#chapter-71/section/topic-9">Expert Capacity</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch71-exercise-13"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-14" class="exercise-item"><h3>ข้อ 14</h3><p>Record intermediate shapes, ranges, and one quality metric for a tiny end-to-end run.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Expert Load: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): recordrouterprobs(N,E),topIDs(N,k),loads(E…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: recordrouterprobs(N,E),topIDs(N,k),loads(E),capacity,dispatchindices/expertou…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>recordrouterprobs(N,E),topIDs(N,k),loads(E),capacity,dispatchindices/expertoutputs/combinemasksและdrop-rate</p><p>อ้างอิง: <a href="#chapter-71/section/topic-8">Expert Load</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch71-exercise-14"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-15" class="exercise-item"><h3>ข้อ 15</h3><p>Explain one evaluation mistake that could make a Mixture of Experts result look better than it really is.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Serving: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): เทียบtotalparamsMoEกับdenseโดยไม่reportactivecompute/…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: เทียบtotalparamsMoEกับdenseโดยไม่reportactivecompute/storageหรือdroptokensทำperformanceclaimผิด;…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>เทียบtotalparamsMoEกับdenseโดยไม่reportactivecompute/storageหรือdroptokensทำperformanceclaimผิด; compute-matchedbaselineและcoverageชัด</p><p>อ้างอิง: <a href="#chapter-71/section/topic-20">Serving</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch71-exercise-15"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-16" class="exercise-item"><h3>ข้อ 16</h3><p>State the dominant time and memory complexity for the main operation in Mixture of Experts.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ All-to-All Communication: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): routerO(NEd),expertcompute≈topk·expertFLOPs,all…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: routerO(NEd),expertcompute≈topk·expertFLOPs,alltoallตามremoteassignments; totalmemor…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>routerO(NEd),expertcompute≈topk·expertFLOPs,alltoallตามremoteassignments; totalmemoryทุกexpertsไม่ลดตามk/Eโดยอัตโนมัติ</p><p>อ้างอิง: <a href="#chapter-71/section/topic-17">All-to-All Communication</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch71-exercise-16"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-17" class="exercise-item"><h3>ข้อ 17</h3><p>Compare a from-scratch result with a trusted implementation using identical inputs and settings.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ From Scratch: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): toyrouter/topkเทียบNumPyargsort/softmaxfixture; multid…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: toyrouter/topkเทียบNumPyargsort/softmaxfixture; multideviceall-to-allต้องhardwareintegrationแยก ไ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>toyrouter/topkเทียบNumPyargsort/softmaxfixture; multideviceall-to-allต้องhardwareintegrationแยก ไม่ถือCPUloadarithmeticพิสูจน์GPUrouting</p><p>อ้างอิง: <a href="#chapter-71/section/topic-22">From Scratch</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch71-exercise-17"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-18" class="exercise-item"><h3>ข้อ 18</h3><p>Run a one-factor ablation and report the measured change over repeated runs when randomness matters.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Load-Balancing Loss: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): auxlossweight0→.01คงtrainingbudget/data/ini…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: auxlossweight0→.01คงtrainingbudget/data/init; reportloadCV/drop/valNLLหลายseed…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>auxlossweight0→.01คงtrainingbudget/data/init; reportloadCV/drop/valNLLหลายseedsเพื่อดูbalance-qualitytradeoff</p><p>อ้างอิง: <a href="#chapter-71/section/topic-11">Load-Balancing Loss</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch71-exercise-18"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-19" class="exercise-item"><h3>ข้อ 19</h3><p>Design a small reproducibility record containing seed, code version, data version, configuration, and metric.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Memory: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): manifest มีexpert/sharedsizes/topk/renorm/capacityf…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: manifest มีexpert/sharedsizes/topk/renorm/capacityformula/drop/tiepolicy/auxloss/jitter/plac…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>manifest มีexpert/sharedsizes/topk/renorm/capacityformula/drop/tiepolicy/auxloss/jitter/placement/dtype/tokenbatch/seed/hardware</p><p>อ้างอิง: <a href="#chapter-71/section/topic-19">Memory</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch71-exercise-19"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-20" class="exercise-item"><h3>ข้อ 20</h3><p>Propose one falsifiable research question for Mixture of Experts and specify the baseline, changed factor, and acceptance metric.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Overflow: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ทดลอง“CF1.25ลดdrop≥50%โดยlatencyเพิ่ม≤10%…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ทดลอง“CF1.25ลดdrop≥50%โดยlatencyเพิ่ม≤10%”; CF1baseline,fixedskewedrequest…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ทดลอง“CF1.25ลดdrop≥50%โดยlatencyเพิ่ม≤10%”; CF1baseline,fixedskewedrequesttraceและmodelqualityonholdout</p><p>อ้างอิง: <a href="#chapter-71/section/topic-10">Overflow</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch71-exercise-20"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section></div><div id="local-lab-content"><section id="local-lab"><h2>Local lab: Python 3.12 บน CPU</h2><p>รันจาก repository root; ใช้ Python 3.12 แยก environment สำหรับ framework ตาม requirements ของชุดบท</p><pre><code>python3.12 -m venv .venv-course
+source .venv-course/bin/activate
+python -m pip install -r requirements-batch24.txt pytest
+(cd 71-mixture-of-experts &amp;&amp; python -m pytest tests -q -rs)</code></pre><p>ผลที่คาดหวัง: required tests ผ่านและไม่มี required test ถูก skip; GPU/integrations ที่ยังไม่รันต้องระบุแยก Python 3.15 ที่มากับเครื่องอาจใช้กับ framework wheels เหล่านี้ไม่ได้</p><h2>Mini Project — Sparse MoE Router Lab</h2>
+<p>Build a tiny MoE classifier with 4–8 experts and top-1/top-2 routing.</p>
+<p>Measure:
+- router entropy
+- expert loads
+- capacity overflow
+- dropped assignment rate
+- task loss
+- load-balancing auxiliary loss
+- active vs total parameters</p>
+<p>Then deliberately bias one expert and show how load balance and latency proxies degrade.</p><h2>Batch 24 Integration Project — Compression, Sparse MoE &amp; Memory Lab</h2>
+<p>Batch 24 connects three efficiency/scaling axes:</p>
+<pre><code class="language-text">compress model weights/knowledge
+↓
+route tokens through sparse experts
+↓
+control long-context compute + memory
+</code></pre>
+<h3>Part A — Compression</h3>
+<p>A synthetic weight matrix is magnitude-pruned to 50% sparsity.</p>
+<p>Teacher/student logits are compared with the same temperature-scaled KL definition used in Chapter 70.</p>
+<p>Report:
+- original/pruned nonzeros
+- achieved sparsity
+- masked values
+- distillation loss</p>
+<h3>Part B — Sparse MoE</h3>
+<p>A deterministic top-2 router reports:
+- expert loads
+- expert capacity
+- dropped/overflow assignment fraction
+- Switch-style load-balancing loss
+- active-vs-total parameter fraction</p>
+<h3>Part C — Long Context / Memory</h3>
+<p>Compare:
+- dense causal attention pairs
+- fixed sliding-window attention pairs
+- KV-cache memory
+- bounded sliding cache
+- context packing under a token budget
+- external-memory Recall@K</p>
+<h3>Full Gate</h3>
+<p>The full run passes only when compression is numerically valid, MoE routing stays inside the overflow policy, and long-context/memory checks pass.</p>
+<h3>Run</h3>
+<pre><code class="language-bash">python integration-project-batch24/src/compression_moe_memory_lab.py --mode compression
+python integration-project-batch24/src/compression_moe_memory_lab.py --mode moe
+python integration-project-batch24/src/compression_moe_memory_lab.py --mode context
+python integration-project-batch24/src/compression_moe_memory_lab.py --mode full
+</code></pre>
+<h3>PyTorch Framework Smoke</h3>
+<p>Batch 24 also compares PyTorch unstructured pruning and the PyTorch KL distillation objective against the chapter's framework-independent definitions.</p>
+<p>PyTorch remains outside the core dependency chain and is installed separately in the framework CI.</p>
+<h3>Required Extensions</h3>
+<ol>
+<li>distill a teacher into a smaller trainable student</li>
+<li>prune/fine-tune the student iteratively</li>
+<li>benchmark dense vs sparse runtime</li>
+<li>train a tiny MoE router</li>
+<li>plot expert load over training</li>
+<li>simulate expert-parallel communication</li>
+<li>inspect a real model RoPE configuration</li>
+<li>evaluate position-dependent retrieval</li>
+<li>compare append-all history vs retrieval memory</li>
+<li>report a final quality-memory-latency Pareto frontier</li>
+</ol></section></div><label class="local-confirm"><input type="checkbox" id="local-lab-confirm"> ฉันรัน local lab และตรวจผลตาม rubric ด้วยตัวเองแล้ว</label><p class="local-note">สถานะนี้เป็นคำยืนยันของผู้เรียน เว็บไม่ได้รันหรือตรวจ Python บนเครื่องแทนคุณ</p></section>
+<section id="mastery-review" class="practice-section"><h2>หลักฐานตามเกณฑ์การเรียนรู้</h2><p>ทุก objective ต้องแสดงหลักฐานอธิบาย ทำนาย คำนวณ อ่าน shape/state debug และประยุกต์ พร้อมกรณีใหม่ ผลรัน source ผู้เรียนจริง และการประเมินซ้ำ เกณฑ์นี้ไม่รับประกันความเข้าใจทุกสถานการณ์ เปิด JavaScript เพื่อดูรายการที่ยังขาดและนำเข้ารายงานผู้ตรวจ</p></section><section class="coverage-section"><h2>แผนที่สิ่งที่เรียน → สิ่งที่ต้องแสดงให้ได้</h2><div id="coverage-table"></div></section><footer><span>ZERO TO ELITE AI ENGINEER · LEARNING STUDIO</span><span>อ่าน · derive · implement · debug · experiment · build</span></footer></div></main><noscript><style>.workbench,.sidebar,.reading-route,.lesson-toc,.mastery-status,#web-checks{display:none}main{margin-left:0}</style>อ่านเนื้อหา HTML ได้ตามปกติ เปิด JavaScript เพื่อใช้ห้องทดลองและตรวจคำตอบ</noscript></body></html>

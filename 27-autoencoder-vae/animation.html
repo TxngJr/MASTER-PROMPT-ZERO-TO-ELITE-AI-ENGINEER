@@ -1,0 +1,1608 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="บทเรียน AI Engineer ภาษาไทย พร้อมคณิตศาสตร์ทีละขั้นและห้องทดลองที่คำนวณจริง"><title>Autoencoder/VAE: latent code ต่างจาก latent distribution · AI Engineer Studio</title><link rel="stylesheet" href="../visual-lab/assets/styles.css"><link rel="stylesheet" href="../visual-lab/assets/course.css"><script defer src="../visual-lab/assets/lessons.js"></script><script defer src="../visual-lab/assets/chapter-meta.js"></script><script defer src="../visual-lab/assets/course-math.js"></script><script defer src="../visual-lab/assets/course-models.js"></script><script defer src="../visual-lab/assets/course-models-v3.js"></script><script defer src="../visual-lab/assets/course-assessment.js"></script><script defer src="../visual-lab/assets/course-mastery.js"></script><script defer src="../visual-lab/assets/course-catalog.js"></script><script defer src="../visual-lab/assets/book-content.js"></script><script defer src="../visual-lab/assets/course-render.js"></script><script defer src="../visual-lab/assets/course-mastery-panel.js"></script><script defer src="../visual-lab/assets/quality-report.js"></script><script defer src="../visual-lab/assets/course-app.js"></script></head>
+<body data-chapter="27" data-root="../"><a class="skip-link" href="#main">ข้ามไปบทเรียน</a>
+<aside class="sidebar" id="sidebar" aria-label="เลือกบทเรียน"><a class="brand" href="../visual-lab/index.html"><span class="brand-mark">ai</span><span>AI ENGINEER<small>LEARN · DERIVE · BUILD</small></span></a><div class="sidebar-intro">อ่านให้เข้าใจ · คำนวณให้เห็น · เขียนให้เป็น</div><label class="search-box"><input id="search" type="search" placeholder="ค้นหาบท / attention" aria-label="ค้นหาบทเรียน"></label><label class="filter-label" for="phase-filter">เส้นทางการเรียน <span id="nav-count"></span></label><select id="phase-filter"><option value="">ทุก Phase</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option></select><nav id="chapter-list" class="chapter-list" aria-label="รายชื่อบท"></nav><div class="course-progress"><div><span>ผ่านโจทย์ในเว็บ</span><strong id="progress-count">0 / 80</strong></div><progress id="course-progress" max="80" value="0" aria-label="บทที่ผ่านโจทย์"></progress><a id="resume-link" href="#chapter-1">อ่านต่อจากเดิม →</a></div></aside>
+<button class="nav-backdrop" id="nav-backdrop" aria-label="ปิดเมนู" hidden></button>
+<main id="main" tabindex="-1"><header class="topbar"><div><button id="nav-toggle" class="icon-button mobile-menu" aria-label="เปิดเมนูบทเรียน" aria-expanded="false" aria-controls="sidebar">☰</button><span id="breadcrumb"></span></div><span class="local-badge"><i></i> คำนวณในเครื่อง · ไม่มี API</span></header><div class="content">
+<div class="chapter-navigation"><label for="chapter-select" class="sr-only">เลือกบทเรียน</label><select id="chapter-select"></select><div class="chapter-arrows"><button id="prev-chapter" class="icon-button" aria-label="บทก่อนหน้า">←</button><button id="next-chapter" class="icon-button" aria-label="บทถัดไป">→</button></div></div>
+<section class="chapter-hero"><div><p id="chapter-kicker" class="eyebrow"></p><h1 id="chapter-title">Autoencoder/VAE: latent code ต่างจาก latent distribution</h1><p class="english-title" id="chapter-english"></p></div><span class="hero-symbol">f(x) ↗</span></section>
+<p id="quality-status" class="quality-status"></p><div id="mastery-status" class="mastery-status"></div><div class="reading-route"><a href="#chapter-27/section/overview">01 อ่านบทเรียน</a><a href="#workbench">02 ทดลองสมการ</a><a href="#practice">03 ฝึกและตรวจงาน</a><a href="#mastery-review">04 หลักฐานตามเกณฑ์</a></div>
+<nav id="lesson-toc" class="lesson-toc" aria-label="สารบัญบท"></nav>
+<section id="overview" class="course-overview"><span class="eyebrow">THE LEARNING CONTRACT</span><h2>เรียนบทนี้แล้วต้องทำอะไรได้</h2><p id="chapter-purpose"></p><div id="chapter-objectives"></div><div class="learning-hint">ทำนาย → เปลี่ยนทีละค่า → ตรวจตัวเลข → อธิบายเหตุผล → เขียนด้วย Python เอง</div></section>
+<section class="workbench lab-card" id="workbench" aria-label="ห้องทดลองคำนวณจริง"><div class="card-header"><div><span class="live-dot"></span><span class="eyebrow">COMPUTATION WORKBENCH</span></div><span class="simulation-label">ทุกภาพใช้ผลคำนวณชุดเดียวกัน</span></div><div class="lab-top"><label for="lab-select">เลือกกลไกที่ต้องการทดลอง</label><select id="lab-select"></select><p id="lab-question"></p></div><div class="workbench-grid"><div class="viz-column"><div class="compare-labels"><span>เส้นทึบ: ปัจจุบัน</span><span>เส้นประ: baseline ที่ตรึงไว้</span></div><div id="simulation" class="simulation"></div><div id="metrics" class="metrics"></div><div id="baseline-diff" class="baseline-diff"></div><div class="playback"><div class="playback-buttons"><button class="primary-button" id="update-once">อัปเดตหนึ่งก้าว</button><button class="secondary-button" id="train-many">▶ ฝึก 30 ก้าว</button><button class="icon-button" id="back-state" aria-label="ย้อนประวัติ">↶</button><button class="icon-button" id="forward-state" aria-label="ประวัติถัดไป">↷</button></div></div><div class="lab-secondary-actions"><button id="pin-baseline" class="text-button">ตรึง baseline ปัจจุบัน</button><button id="reset-lab" class="text-button">คืนค่าเริ่มต้น</button><button id="download-state" class="text-button">บันทึกผล JSON</button><span id="history-status"></span></div><p id="simulation-note" class="simulation-note"></p><p class="lab-error" id="lab-error" role="alert" hidden></p></div><div class="controls-column"><h3>เปลี่ยนทีละตัว แล้วสังเกตผล</h3><div id="lab-controls"></div><p class="control-note">แก้ weight ด้วยมือจะคำนวณ forward ใหม่; optimizer เปลี่ยน weights เมื่อกดอัปเดตเท่านั้น</p></div></div>
+<div class="trace-section"><div class="trace-toolbar"><h3>เดินสมการทีละ operation</h3><div><button id="trace-prev" class="icon-button" aria-label="operation ก่อนหน้า">←</button><button id="play-trace" class="secondary-button" aria-pressed="false">▶ เล่น flow</button><button id="trace-next" class="icon-button" aria-label="operation ถัดไป">→</button><span id="stage-counter"></span></div></div><label class="motion-control"><input id="reduce-motion" type="checkbox"> ลดภาพเคลื่อนไหว (หยุดการเล่นที่ค้างอยู่)</label><div id="operation-steps" class="operation-steps"></div><div id="flow-diagram" class="flow-diagram"></div><div id="active-operation" class="active-operation" aria-live="polite"></div><p class="control-note">ตัวเลขบนภาพปัดเศษเพื่อให้อ่านง่าย; บันทึก JSON เพื่อดูค่าที่ใช้คำนวณเต็ม precision</p><details open><summary>ตารางค่าระหว่างทาง — ตรวจด้วยมือได้</summary><div id="result-table"></div></details><div id="tensor-tables" class="tensor-tables"></div><details id="surface-details"><summary>ดู loss surface และเส้นทางของ w₁,b (ตรึง controls อื่น)</summary><div id="surface-chart"></div><p>surface คำนวณ objective ปัจจุบันโดยตรึง degree, penalty, ข้อมูล และ weights อื่น เส้นทางแสดงเฉพาะ snapshots ที่ค่าเหล่านี้ตรงกัน; นอกช่วง w=[−1,5], b=[−2,4] ให้ตรวจค่าจริงใน history</p></details><details><summary>ประวัติการเปลี่ยนค่า</summary><div id="history-table"></div></details></div></section>
+<article id="chapter-article" class="chapter-article"><section id="mechanism-1" class="teaching-section"><span class="section-kicker">CHAPTER 27 · ภาพ → สมการ → โค้ด</span><h2>1. autoencoder เรียน representation จากการสร้าง input กลับ</h2><h3>โจทย์และเหตุผล</h3><p>bottleneck จำกัดข้อมูลที่ผ่าน แต่การ reconstruct ดีไม่ยืนยันว่า latent เหมาะกับการสุ่มใหม่ PCA เป็น baseline เชิงเส้นที่ช่วยแยกประโยชน์ของ nonlinearity</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Explain reconstruction loss.</p><p>reconstructionMSEmean((xhat−x)²); x[2,4],xhat[3,3]ได้1; BCEเหมาะbinary/normalizedlikelihoodตามนิยามไม่ใช่ใช้กับทุกข้อมูล</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>mu: μ,initial=0.5; logvar: log σ²,initial=-0.4; epsilon: normal sample ε,initial=0.5; decoder: decoder weight,initial=2; target: reconstruction target,initial=1; beta: KL weight β,initial=1</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>σ=exp(logvar/2) = 0.8187307530779818; log variance unconstrained จึงได้ σ บวก</li><li>z=μ+σε = 0.9093653765389909; ε เป็น sample ภายนอก; gradient ไหลผ่าน μ,σ</li><li>x̂=decoder*z = 1.8187307530779817; decoder linear ตัวเล็กเพื่อคำนวณมือได้</li><li>L=reconstruction+β KL = 0.8304800690534588; reconstruction ใช้ squared error; KL ของ univariate Gaussian มี closed form</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="vae-μ--log-variance--ε---lat">เปิดการทดลองนี้</a><p class="failure-box">exp(logvar)overflowได้; checkencoderoutput/logvarและlearningrateก่อนclampพร้อมประกาศbounds; KLสูตร−.5Σ(1+logvar−μ²−exp(logvar)); คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>reconstructionMSEmean((xhat−x)²); x[2,4],xhat[3,3]ได้1; BCEเหมาะbinary/normalizedlikelihoodตามนิยามไม่ใช่ใช้กับทุกข้อมูล</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-1-equation"><summary>สมการ</summary><ol><li><code>σ=exp(logvar/2)</code> = 0.8187307530779818<p>log variance unconstrained จึงได้ σ บวก</p></li><li><code>z=μ+σε</code> = 0.9093653765389909<p>ε เป็น sample ภายนอก; gradient ไหลผ่าน μ,σ</p></li><li><code>x̂=decoder*z</code> = 1.8187307530779817<p>decoder linear ตัวเล็กเพื่อคำนวณมือได้</p></li><li><code>L=reconstruction+β KL</code> = 0.8304800690534588<p>reconstruction ใช้ squared error; KL ของ univariate Gaussian มี closed form</p></li></ol></details><details id="help-mechanism-1-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>σ=exp(logvar/2)</code> = 0.8187307530779818<p>log variance unconstrained จึงได้ σ บวก</p></li><li><code>z=μ+σε</code> = 0.9093653765389909<p>ε เป็น sample ภายนอก; gradient ไหลผ่าน μ,σ</p></li><li><code>x̂=decoder*z</code> = 1.8187307530779817<p>decoder linear ตัวเล็กเพื่อคำนวณมือได้</p></li><li><code>L=reconstruction+β KL</code> = 0.8304800690534588<p>reconstruction ใช้ squared error; KL ของ univariate Gaussian มี closed form</p></li></ol></details><details id="help-mechanism-1-code"><summary>โค้ด</summary><p>reconstructionMSEmean((xhat−x)²); x[2,4],xhat[3,3]ได้1; BCEเหมาะbinary/normalizedlikelihoodตามนิยามไม่ใช่ใช้กับทุกข้อมูล</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-1-result"><summary>ผลการทดลอง</summary><ol><li><code>σ=exp(logvar/2)</code> = 0.8187307530779818<p>log variance unconstrained จึงได้ σ บวก</p></li><li><code>z=μ+σε</code> = 0.9093653765389909<p>ε เป็น sample ภายนอก; gradient ไหลผ่าน μ,σ</p></li><li><code>x̂=decoder*z</code> = 1.8187307530779817<p>decoder linear ตัวเล็กเพื่อคำนวณมือได้</p></li><li><code>L=reconstruction+β KL</code> = 0.8304800690534588<p>reconstruction ใช้ squared error; KL ของ univariate Gaussian มี closed form</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-1"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-2" class="teaching-section"><span class="section-kicker">CHAPTER 27 · ภาพ → สมการ → โค้ด</span><h2>2. VAE ให้ distribution ต่อ input</h2><h3>โจทย์และเหตุผล</h3><p>encoder ส่ง μ และ log σ² จากนั้น z=μ+σε ทำให้ gradient ผ่าน parameters ได้โดยย้ายความสุ่มไป ε ลองเปลี่ยน ε โดยคง posterior เพื่อดู sample ต่างจาก model parameter</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Explain the tradeoff introduced by reparameterization trick.</p><p>reparameterization z=μ+exp(.5logvar)ε,ε~N(0,I)ทำgradientผ่านμ/σได้ แต่samplevarianceยังมีและไม่ใช้กับdiscretesampleตรงๆ</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>mu: μ,initial=0.5; logvar: log σ²,initial=-0.4; epsilon: normal sample ε,initial=0.5; decoder: decoder weight,initial=2; target: reconstruction target,initial=1; beta: KL weight β,initial=2</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>σ=exp(logvar/2) = 0.8187307530779818; log variance unconstrained จึงได้ σ บวก</li><li>z=μ+σε = 0.9093653765389909; ε เป็น sample ภายนอก; gradient ไหลผ่าน μ,σ</li><li>x̂=decoder*z = 1.8187307530779817; decoder linear ตัวเล็กเพื่อคำนวณมือได้</li><li>L=reconstruction+β KL = 0.9906400920712785; reconstruction ใช้ squared error; KL ของ univariate Gaussian มี closed form</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="vae-β-เปล--ยน-objective-โดยไ">เปิดการทดลองนี้</a><p class="failure-box">exp(logvar)overflowได้; checkencoderoutput/logvarและlearningrateก่อนclampพร้อมประกาศbounds; KLสูตร−.5Σ(1+logvar−μ²−exp(logvar)); คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>reparameterization z=μ+exp(.5logvar)ε,ε~N(0,I)ทำgradientผ่านμ/σได้ แต่samplevarianceยังมีและไม่ใช้กับdiscretesampleตรงๆ</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-2-equation"><summary>สมการ</summary><ol><li><code>σ=exp(logvar/2)</code> = 0.8187307530779818<p>log variance unconstrained จึงได้ σ บวก</p></li><li><code>z=μ+σε</code> = 0.9093653765389909<p>ε เป็น sample ภายนอก; gradient ไหลผ่าน μ,σ</p></li><li><code>x̂=decoder*z</code> = 1.8187307530779817<p>decoder linear ตัวเล็กเพื่อคำนวณมือได้</p></li><li><code>L=reconstruction+β KL</code> = 0.9906400920712785<p>reconstruction ใช้ squared error; KL ของ univariate Gaussian มี closed form</p></li></ol></details><details id="help-mechanism-2-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>σ=exp(logvar/2)</code> = 0.8187307530779818<p>log variance unconstrained จึงได้ σ บวก</p></li><li><code>z=μ+σε</code> = 0.9093653765389909<p>ε เป็น sample ภายนอก; gradient ไหลผ่าน μ,σ</p></li><li><code>x̂=decoder*z</code> = 1.8187307530779817<p>decoder linear ตัวเล็กเพื่อคำนวณมือได้</p></li><li><code>L=reconstruction+β KL</code> = 0.9906400920712785<p>reconstruction ใช้ squared error; KL ของ univariate Gaussian มี closed form</p></li></ol></details><details id="help-mechanism-2-code"><summary>โค้ด</summary><p>reparameterization z=μ+exp(.5logvar)ε,ε~N(0,I)ทำgradientผ่านμ/σได้ แต่samplevarianceยังมีและไม่ใช้กับdiscretesampleตรงๆ</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-2-result"><summary>ผลการทดลอง</summary><ol><li><code>σ=exp(logvar/2)</code> = 0.8187307530779818<p>log variance unconstrained จึงได้ σ บวก</p></li><li><code>z=μ+σε</code> = 0.9093653765389909<p>ε เป็น sample ภายนอก; gradient ไหลผ่าน μ,σ</p></li><li><code>x̂=decoder*z</code> = 1.8187307530779817<p>decoder linear ตัวเล็กเพื่อคำนวณมือได้</p></li><li><code>L=reconstruction+β KL</code> = 0.9906400920712785<p>reconstruction ใช้ squared error; KL ของ univariate Gaussian มี closed form</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-2"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-3" class="teaching-section"><span class="section-kicker">CHAPTER 27 · ภาพ → สมการ → โค้ด</span><h2>3. KL ไม่ใช่ reconstruction error</h2><h3>โจทย์และเหตุผล</h3><p>Gaussian KL เทียบ posterior กับ N(0,1) เพิ่ม β ถ่วงให้ latent เข้าใกล้ prior มากขึ้น แต่เสี่ยง posterior collapse ต้องตรวจสอง terms แยกกันและดู samples นอก training points</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Explain a limitation involving KL divergence.</p><p>KLสูงเกินทำposteriorcollapse μ≈0,σ≈1และdecoderไม่ใช้z; KLต่ำเกินทำlatentholes ให้ดูKLต่อdimension/activeunits</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>angle: projection angle (degrees),initial=35; scale: feature y scale,initial=1; center: center data (1 yes / 0 no),initial=1</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = [[0, 0], [1, 0.3], [0.6, 1], [3, 3], [4, 3.5], [3.3, 4]]; ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</li><li>z=(X−μ)u; x̂=z uᵀ+μ = [-2.7526852126635575, -1.7614602374692518, -1.6876175497391164, 1.425500229256556, 2.531440491721071, 2.2448222788942993]; PCA หา unit direction ที่ variance สูงสุด; การไม่ center ทำให้ reconstruction ผ่าน origin ไม่ใช่ mean</li><li>finite / normalized / bounded = [-2.7526852126635575, -1.7614602374692518, -1.6876175497391164, 1.425500229256556, 2.531440491721071, 2.2448222788942993]; เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="pca-เท-ยบ-linear-projection-">เปิดการทดลองนี้</a><p class="failure-box">exp(logvar)overflowได้; checkencoderoutput/logvarและlearningrateก่อนclampพร้อมประกาศbounds; KLสูตร−.5Σ(1+logvar−μ²−exp(logvar)); คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>KLสูงเกินทำposteriorcollapse μ≈0,σ≈1และdecoderไม่ใช้z; KLต่ำเกินทำlatentholes ให้ดูKLต่อdimension/activeunits</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-3-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = [[0, 0], [1, 0.3], [0.6, 1], [3, 3], [4, 3.5], [3.3, 4]]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>z=(X−μ)u; x̂=z uᵀ+μ</code> = [-2.7526852126635575, -1.7614602374692518, -1.6876175497391164, 1.425500229256556, 2.531440491721071, 2.2448222788942993]<p>PCA หา unit direction ที่ variance สูงสุด; การไม่ center ทำให้ reconstruction ผ่าน origin ไม่ใช่ mean</p></li><li><code>finite / normalized / bounded</code> = [-2.7526852126635575, -1.7614602374692518, -1.6876175497391164, 1.425500229256556, 2.531440491721071, 2.2448222788942993]<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-3-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>shape / range</code> = [[0, 0], [1, 0.3], [0.6, 1], [3, 3], [4, 3.5], [3.3, 4]]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>z=(X−μ)u; x̂=z uᵀ+μ</code> = [-2.7526852126635575, -1.7614602374692518, -1.6876175497391164, 1.425500229256556, 2.531440491721071, 2.2448222788942993]<p>PCA หา unit direction ที่ variance สูงสุด; การไม่ center ทำให้ reconstruction ผ่าน origin ไม่ใช่ mean</p></li><li><code>finite / normalized / bounded</code> = [-2.7526852126635575, -1.7614602374692518, -1.6876175497391164, 1.425500229256556, 2.531440491721071, 2.2448222788942993]<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-3-code"><summary>โค้ด</summary><p>KLสูงเกินทำposteriorcollapse μ≈0,σ≈1และdecoderไม่ใช้z; KLต่ำเกินทำlatentholes ให้ดูKLต่อdimension/activeunits</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-3-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = [[0, 0], [1, 0.3], [0.6, 1], [3, 3], [4, 3.5], [3.3, 4]]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>z=(X−μ)u; x̂=z uᵀ+μ</code> = [-2.7526852126635575, -1.7614602374692518, -1.6876175497391164, 1.425500229256556, 2.531440491721071, 2.2448222788942993]<p>PCA หา unit direction ที่ variance สูงสุด; การไม่ center ทำให้ reconstruction ผ่าน origin ไม่ใช่ mean</p></li><li><code>finite / normalized / bounded</code> = [-2.7526852126635575, -1.7614602374692518, -1.6876175497391164, 1.425500229256556, 2.531440491721071, 2.2448222788942993]<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-3"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="reference" class="canonical-section"><h2>เนื้อหาครบทุกหัวข้อ พร้อมแผนที่ objective</h2><nav class="source-toc"><a href="#chapter-27/section/topic-1">1. Why Representation Learning?</a> <a href="#chapter-27/section/topic-2">2. Learning Objectives</a> <a href="#chapter-27/section/topic-3">3. Plain Autoencoder</a> <a href="#chapter-27/section/topic-4">4. Bottleneck</a> <a href="#chapter-27/section/topic-5">5. Overcomplete Autoencoder</a> <a href="#chapter-27/section/topic-6">6. Denoising Autoencoder</a> <a href="#chapter-27/section/topic-7">7. Latent Space</a> <a href="#chapter-27/section/topic-8">8. Why VAE?</a> <a href="#chapter-27/section/topic-9">9. Gaussian Encoder</a> <a href="#chapter-27/section/topic-10">10. Sampling Problem</a> <a href="#chapter-27/section/topic-11">11. Reparameterization Trick</a> <a href="#chapter-27/section/topic-12">12. ELBO</a> <a href="#chapter-27/section/topic-13">13. KL to Standard Normal</a> <a href="#chapter-27/section/topic-14">14. Reconstruction Term</a> <a href="#chapter-27/section/topic-15">15. Reconstruction vs Regularization Trade-Off</a> <a href="#chapter-27/section/topic-16">16. beta-VAE</a> <a href="#chapter-27/section/topic-17">17. Posterior Collapse</a> <a href="#chapter-27/section/topic-18">18. Sampling</a> <a href="#chapter-27/section/topic-19">19. Latent Interpolation</a> <a href="#chapter-27/section/topic-20">20. Autoencoder vs PCA</a> <a href="#chapter-27/section/topic-21">21. VAE vs Deterministic Autoencoder</a> <a href="#chapter-27/section/topic-22">22. PyTorch VAE Structure</a> <a href="#chapter-27/section/topic-23">23. Stable Reconstruction</a> <a href="#chapter-27/section/topic-24">24. From Scratch</a> <a href="#chapter-27/section/topic-25">25. Evaluation</a> <a href="#chapter-27/section/topic-26">26. Common Mistakes</a> <a href="#chapter-27/section/topic-27">27. Exercises / Mini Project</a> <a href="#chapter-27/section/topic-28">28. Checklist</a> <a href="#chapter-27/section/topic-29">29. What&#x27;s Next</a> </nav><section id="topic-1" class="source-topic"><span id="source-27-autoencoder-vae-canonical-chapter-27-autoencoders-variational-autoencoders" class="legacy-anchor"></span><span id="source-27-autoencoder-vae-canonical-1-why-representation-learning" class="legacy-anchor"></span><h3>1. Why Representation Learning?</h3>
+<p>An autoencoder learns:</p>
+<pre><code class="language-text">x
+↓ encoder
+z
+↓ decoder
+x_hat
+</code></pre>
+<p>The network is trained to reconstruct its input.</p>
+<p>If the latent representation is constrained appropriately, the model is forced to capture useful structure instead of simply copying the input.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>1. Why Representation Learning?</h3>
+<p>An autoencoder learns:</p>
+<pre><code class="language-text">x
+↓ encoder
+z
+↓ decoder
+x_hat
+</code></pre>
+<p>The network is trained to reconstruct its input.</p>
+<p>If the latent representation is constrained appropriately, the model is forced to capture useful structure instead of simply copying the input.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-1-equation"><summary>สมการ</summary><h3>1. Why Representation Learning?</h3>
+<p>An autoencoder learns:</p>
+<pre><code class="language-text">x
+↓ encoder
+z
+↓ decoder
+x_hat
+</code></pre>
+<p>The network is trained to reconstruct its input.</p>
+<p>If the latent representation is constrained appropriately, the model is forced to capture useful structure instead of simply copying the input.</p></details><details id="help-topic-1-visual"><summary>ภาพและ shape</summary><h3>1. Why Representation Learning?</h3>
+<p>An autoencoder learns:</p>
+<pre><code class="language-text">x
+↓ encoder
+z
+↓ decoder
+x_hat
+</code></pre>
+<p>The network is trained to reconstruct its input.</p>
+<p>If the latent representation is constrained appropriately, the model is forced to capture useful structure instead of simply copying the input.</p></details><details id="help-topic-1-code"><summary>โค้ด</summary><h3>1. Why Representation Learning?</h3>
+<p>An autoencoder learns:</p>
+<pre><code class="language-text">x
+↓ encoder
+z
+↓ decoder
+x_hat
+</code></pre>
+<p>The network is trained to reconstruct its input.</p>
+<p>If the latent representation is constrained appropriately, the model is forced to capture useful structure instead of simply copying the input.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-1-result"><summary>ผลการทดลอง</summary><h3>1. Why Representation Learning?</h3>
+<p>An autoencoder learns:</p>
+<pre><code class="language-text">x
+↓ encoder
+z
+↓ decoder
+x_hat
+</code></pre>
+<p>The network is trained to reconstruct its input.</p>
+<p>If the latent representation is constrained appropriately, the model is forced to capture useful structure instead of simply copying the input.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-1"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-2" class="source-topic"><span id="source-27-autoencoder-vae-canonical-2-learning-objectives" class="legacy-anchor"></span><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>explain encoder / latent / decoder</li>
+<li>distinguish undercomplete and overcomplete autoencoders</li>
+<li>explain reconstruction loss</li>
+<li>understand denoising autoencoders</li>
+<li>understand sparse/regularized autoencoders conceptually</li>
+<li>explain why a plain autoencoder is not automatically generative</li>
+<li>derive the VAE latent distribution parameterization</li>
+<li>implement the reparameterization trick</li>
+<li>calculate Gaussian KL divergence</li>
+<li>explain ELBO</li>
+<li>implement a small VAE in PyTorch</li>
+<li>sample from the prior</li>
+<li>interpolate in latent space</li>
+<li>recognize posterior collapse</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>explain encoder / latent / decoder</li>
+<li>distinguish undercomplete and overcomplete autoencoders</li>
+<li>explain reconstruction loss</li>
+<li>understand denoising autoencoders</li>
+<li>understand sparse/regularized autoencoders conceptually</li>
+<li>explain why a plain autoencoder is not automatically generative</li>
+<li>derive the VAE latent distribution parameterization</li>
+<li>implement the reparameterization trick</li>
+<li>calculate Gaussian KL divergence</li>
+<li>explain ELBO</li>
+<li>implement a small VAE in PyTorch</li>
+<li>sample from the prior</li>
+<li>interpolate in latent space</li>
+<li>recognize posterior collapse</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-2-equation"><summary>สมการ</summary><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>explain encoder / latent / decoder</li>
+<li>distinguish undercomplete and overcomplete autoencoders</li>
+<li>explain reconstruction loss</li>
+<li>understand denoising autoencoders</li>
+<li>understand sparse/regularized autoencoders conceptually</li>
+<li>explain why a plain autoencoder is not automatically generative</li>
+<li>derive the VAE latent distribution parameterization</li>
+<li>implement the reparameterization trick</li>
+<li>calculate Gaussian KL divergence</li>
+<li>explain ELBO</li>
+<li>implement a small VAE in PyTorch</li>
+<li>sample from the prior</li>
+<li>interpolate in latent space</li>
+<li>recognize posterior collapse</li>
+</ul></details><details id="help-topic-2-visual"><summary>ภาพและ shape</summary><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>explain encoder / latent / decoder</li>
+<li>distinguish undercomplete and overcomplete autoencoders</li>
+<li>explain reconstruction loss</li>
+<li>understand denoising autoencoders</li>
+<li>understand sparse/regularized autoencoders conceptually</li>
+<li>explain why a plain autoencoder is not automatically generative</li>
+<li>derive the VAE latent distribution parameterization</li>
+<li>implement the reparameterization trick</li>
+<li>calculate Gaussian KL divergence</li>
+<li>explain ELBO</li>
+<li>implement a small VAE in PyTorch</li>
+<li>sample from the prior</li>
+<li>interpolate in latent space</li>
+<li>recognize posterior collapse</li>
+</ul></details><details id="help-topic-2-code"><summary>โค้ด</summary><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>explain encoder / latent / decoder</li>
+<li>distinguish undercomplete and overcomplete autoencoders</li>
+<li>explain reconstruction loss</li>
+<li>understand denoising autoencoders</li>
+<li>understand sparse/regularized autoencoders conceptually</li>
+<li>explain why a plain autoencoder is not automatically generative</li>
+<li>derive the VAE latent distribution parameterization</li>
+<li>implement the reparameterization trick</li>
+<li>calculate Gaussian KL divergence</li>
+<li>explain ELBO</li>
+<li>implement a small VAE in PyTorch</li>
+<li>sample from the prior</li>
+<li>interpolate in latent space</li>
+<li>recognize posterior collapse</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-2-result"><summary>ผลการทดลอง</summary><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>explain encoder / latent / decoder</li>
+<li>distinguish undercomplete and overcomplete autoencoders</li>
+<li>explain reconstruction loss</li>
+<li>understand denoising autoencoders</li>
+<li>understand sparse/regularized autoencoders conceptually</li>
+<li>explain why a plain autoencoder is not automatically generative</li>
+<li>derive the VAE latent distribution parameterization</li>
+<li>implement the reparameterization trick</li>
+<li>calculate Gaussian KL divergence</li>
+<li>explain ELBO</li>
+<li>implement a small VAE in PyTorch</li>
+<li>sample from the prior</li>
+<li>interpolate in latent space</li>
+<li>recognize posterior collapse</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-2"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-3" class="source-topic"><span id="source-27-autoencoder-vae-canonical-3-plain-autoencoder" class="legacy-anchor"></span><h3>3. Plain Autoencoder</h3>
+<p>Encoder:</p>
+<pre><code class="language-text">z = f_encoder(x)
+</code></pre>
+<p>Decoder:</p>
+<pre><code class="language-text">x_hat = f_decoder(z)
+</code></pre>
+<p>Optimize:</p>
+<pre><code class="language-text">L_reconstruction(x, x_hat)
+</code></pre>
+<p>Examples:
+- MSE for continuous normalized values
+- BCE-like likelihood for Bernoulli-style pixels</p>
+<p>Loss choice should match the assumed observation model.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>encoder fφแปลงx(d)เป็นlatentz(k); linearW=[[1],[1]]/2,x=[2,4]ให้z3; VAEencoderให้μและlogvarianceแทนzเดียว</p><p>decoder gθแปลงzกลับxhat; z3,W=[1,1],b[0,0]ให้[3,3] ไม่ใช่inverseสมบูรณ์ของทุกencoder</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>encoder fφแปลงx(d)เป็นlatentz(k); linearW=[[1],[1]]/2,x=[2,4]ให้z3; VAEencoderให้μและlogvarianceแทนzเดียว</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-3-equation"><summary>สมการ</summary><p>encoder fφแปลงx(d)เป็นlatentz(k); linearW=[[1],[1]]/2,x=[2,4]ให้z3; VAEencoderให้μและlogvarianceแทนzเดียว</p></details><details id="help-topic-3-visual"><summary>ภาพและ shape</summary><p>encoder fφแปลงx(d)เป็นlatentz(k); linearW=[[1],[1]]/2,x=[2,4]ให้z3; VAEencoderให้μและlogvarianceแทนzเดียว</p></details><details id="help-topic-3-code"><summary>โค้ด</summary><p>encoder fφแปลงx(d)เป็นlatentz(k); linearW=[[1],[1]]/2,x=[2,4]ให้z3; VAEencoderให้μและlogvarianceแทนzเดียว</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-3-result"><summary>ผลการทดลอง</summary><p>encoder fφแปลงx(d)เป็นlatentz(k); linearW=[[1],[1]]/2,x=[2,4]ให้z3; VAEencoderให้μและlogvarianceแทนzเดียว</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-3"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-4" class="source-topic"><span id="source-27-autoencoder-vae-canonical-4-bottleneck" class="legacy-anchor"></span><h3>4. Bottleneck</h3>
+<p>An undercomplete autoencoder uses:</p>
+<pre><code class="language-text">dim(z) &lt; dim(x)
+</code></pre>
+<p>This forces compression.</p>
+<p>But compression alone does not guarantee semantically meaningful features.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-4-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>4. Bottleneck</h3>
+<p>An undercomplete autoencoder uses:</p>
+<pre><code class="language-text">dim(z) &lt; dim(x)
+</code></pre>
+<p>This forces compression.</p>
+<p>But compression alone does not guarantee semantically meaningful features.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-4-equation"><summary>สมการ</summary><h3>4. Bottleneck</h3>
+<p>An undercomplete autoencoder uses:</p>
+<pre><code class="language-text">dim(z) &lt; dim(x)
+</code></pre>
+<p>This forces compression.</p>
+<p>But compression alone does not guarantee semantically meaningful features.</p></details><details id="help-topic-4-visual"><summary>ภาพและ shape</summary><h3>4. Bottleneck</h3>
+<p>An undercomplete autoencoder uses:</p>
+<pre><code class="language-text">dim(z) &lt; dim(x)
+</code></pre>
+<p>This forces compression.</p>
+<p>But compression alone does not guarantee semantically meaningful features.</p></details><details id="help-topic-4-code"><summary>โค้ด</summary><h3>4. Bottleneck</h3>
+<p>An undercomplete autoencoder uses:</p>
+<pre><code class="language-text">dim(z) &lt; dim(x)
+</code></pre>
+<p>This forces compression.</p>
+<p>But compression alone does not guarantee semantically meaningful features.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-4-result"><summary>ผลการทดลอง</summary><h3>4. Bottleneck</h3>
+<p>An undercomplete autoencoder uses:</p>
+<pre><code class="language-text">dim(z) &lt; dim(x)
+</code></pre>
+<p>This forces compression.</p>
+<p>But compression alone does not guarantee semantically meaningful features.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-4"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-5" class="source-topic"><span id="source-27-autoencoder-vae-canonical-5-overcomplete-autoencoder" class="legacy-anchor"></span><h3>5. Overcomplete Autoencoder</h3>
+<p>If latent dimension is large:</p>
+<pre><code class="language-text">dim(z) &gt;= dim(x)
+</code></pre>
+<p>the network may learn an identity-like solution unless regularized.</p>
+<p>Possible constraints:
+- noise
+- sparsity
+- weight regularization
+- architecture
+- contractive penalties</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-5-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>5. Overcomplete Autoencoder</h3>
+<p>If latent dimension is large:</p>
+<pre><code class="language-text">dim(z) &gt;= dim(x)
+</code></pre>
+<p>the network may learn an identity-like solution unless regularized.</p>
+<p>Possible constraints:
+- noise
+- sparsity
+- weight regularization
+- architecture
+- contractive penalties</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-5-equation"><summary>สมการ</summary><h3>5. Overcomplete Autoencoder</h3>
+<p>If latent dimension is large:</p>
+<pre><code class="language-text">dim(z) &gt;= dim(x)
+</code></pre>
+<p>the network may learn an identity-like solution unless regularized.</p>
+<p>Possible constraints:
+- noise
+- sparsity
+- weight regularization
+- architecture
+- contractive penalties</p></details><details id="help-topic-5-visual"><summary>ภาพและ shape</summary><h3>5. Overcomplete Autoencoder</h3>
+<p>If latent dimension is large:</p>
+<pre><code class="language-text">dim(z) &gt;= dim(x)
+</code></pre>
+<p>the network may learn an identity-like solution unless regularized.</p>
+<p>Possible constraints:
+- noise
+- sparsity
+- weight regularization
+- architecture
+- contractive penalties</p></details><details id="help-topic-5-code"><summary>โค้ด</summary><h3>5. Overcomplete Autoencoder</h3>
+<p>If latent dimension is large:</p>
+<pre><code class="language-text">dim(z) &gt;= dim(x)
+</code></pre>
+<p>the network may learn an identity-like solution unless regularized.</p>
+<p>Possible constraints:
+- noise
+- sparsity
+- weight regularization
+- architecture
+- contractive penalties</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-5-result"><summary>ผลการทดลอง</summary><h3>5. Overcomplete Autoencoder</h3>
+<p>If latent dimension is large:</p>
+<pre><code class="language-text">dim(z) &gt;= dim(x)
+</code></pre>
+<p>the network may learn an identity-like solution unless regularized.</p>
+<p>Possible constraints:
+- noise
+- sparsity
+- weight regularization
+- architecture
+- contractive penalties</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-5"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-6" class="source-topic"><span id="source-27-autoencoder-vae-canonical-6-denoising-autoencoder" class="legacy-anchor"></span><h3>6. Denoising Autoencoder</h3>
+<p>Train on corrupted input but clean target:</p>
+<pre><code class="language-text">x
+↓ corrupt
+x_tilde
+↓ encoder/decoder
+x_hat
+↓ compare with
+x
+</code></pre>
+<p>The model learns to remove certain perturbations.</p>
+<p>This can encourage robust representations.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-6-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>6. Denoising Autoencoder</h3>
+<p>Train on corrupted input but clean target:</p>
+<pre><code class="language-text">x
+↓ corrupt
+x_tilde
+↓ encoder/decoder
+x_hat
+↓ compare with
+x
+</code></pre>
+<p>The model learns to remove certain perturbations.</p>
+<p>This can encourage robust representations.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-6-equation"><summary>สมการ</summary><h3>6. Denoising Autoencoder</h3>
+<p>Train on corrupted input but clean target:</p>
+<pre><code class="language-text">x
+↓ corrupt
+x_tilde
+↓ encoder/decoder
+x_hat
+↓ compare with
+x
+</code></pre>
+<p>The model learns to remove certain perturbations.</p>
+<p>This can encourage robust representations.</p></details><details id="help-topic-6-visual"><summary>ภาพและ shape</summary><h3>6. Denoising Autoencoder</h3>
+<p>Train on corrupted input but clean target:</p>
+<pre><code class="language-text">x
+↓ corrupt
+x_tilde
+↓ encoder/decoder
+x_hat
+↓ compare with
+x
+</code></pre>
+<p>The model learns to remove certain perturbations.</p>
+<p>This can encourage robust representations.</p></details><details id="help-topic-6-code"><summary>โค้ด</summary><h3>6. Denoising Autoencoder</h3>
+<p>Train on corrupted input but clean target:</p>
+<pre><code class="language-text">x
+↓ corrupt
+x_tilde
+↓ encoder/decoder
+x_hat
+↓ compare with
+x
+</code></pre>
+<p>The model learns to remove certain perturbations.</p>
+<p>This can encourage robust representations.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-6-result"><summary>ผลการทดลอง</summary><h3>6. Denoising Autoencoder</h3>
+<p>Train on corrupted input but clean target:</p>
+<pre><code class="language-text">x
+↓ corrupt
+x_tilde
+↓ encoder/decoder
+x_hat
+↓ compare with
+x
+</code></pre>
+<p>The model learns to remove certain perturbations.</p>
+<p>This can encourage robust representations.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-6"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-7" class="source-topic"><span id="source-27-autoencoder-vae-canonical-7-latent-space" class="legacy-anchor"></span><h3>7. Latent Space</h3>
+<p>A useful latent space may:
+- cluster related samples
+- interpolate smoothly
+- discard nuisance variation
+- support downstream prediction</p>
+<p>But a plain autoencoder does not force the aggregate latent distribution to match a simple prior.</p>
+<p>Random z samples may decode to nonsense.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>latentspaceคือพื้นที่representationที่decoderอ่าน; kน้อยบังคับcompressionแต่ยังอาจจำข้อมูลเมื่อmodelcapacityสูง</p><p>encoderเป็นmappingที่มีparameters ส่วนlatentเป็นผลลัพธ์ของmapping; เปลี่ยนlatentdimensionเปลี่ยนทั้งencoderoutputและdecoderinput</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-7-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>latentspaceคือพื้นที่representationที่decoderอ่าน; kน้อยบังคับcompressionแต่ยังอาจจำข้อมูลเมื่อmodelcapacityสูง</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-7-equation"><summary>สมการ</summary><p>latentspaceคือพื้นที่representationที่decoderอ่าน; kน้อยบังคับcompressionแต่ยังอาจจำข้อมูลเมื่อmodelcapacityสูง</p></details><details id="help-topic-7-visual"><summary>ภาพและ shape</summary><p>latentspaceคือพื้นที่representationที่decoderอ่าน; kน้อยบังคับcompressionแต่ยังอาจจำข้อมูลเมื่อmodelcapacityสูง</p></details><details id="help-topic-7-code"><summary>โค้ด</summary><p>latentspaceคือพื้นที่representationที่decoderอ่าน; kน้อยบังคับcompressionแต่ยังอาจจำข้อมูลเมื่อmodelcapacityสูง</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-7-result"><summary>ผลการทดลอง</summary><p>latentspaceคือพื้นที่representationที่decoderอ่าน; kน้อยบังคับcompressionแต่ยังอาจจำข้อมูลเมื่อmodelcapacityสูง</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-7"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-8" class="source-topic"><span id="source-27-autoencoder-vae-canonical-8-why-vae" class="legacy-anchor"></span><h3>8. Why VAE?</h3>
+<p>A Variational Autoencoder introduces a probabilistic latent model.</p>
+<p>Generative story:</p>
+<pre><code class="language-text">z ~ p(z)
+x ~ p_theta(x | z)
+</code></pre>
+<p>Common prior:</p>
+<pre><code class="language-text">p(z) = N(0, I)
+</code></pre>
+<p>The encoder approximates the intractable posterior:</p>
+<pre><code class="language-text">q_phi(z | x)
+</code></pre><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-8-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>8. Why VAE?</h3>
+<p>A Variational Autoencoder introduces a probabilistic latent model.</p>
+<p>Generative story:</p>
+<pre><code class="language-text">z ~ p(z)
+x ~ p_theta(x | z)
+</code></pre>
+<p>Common prior:</p>
+<pre><code class="language-text">p(z) = N(0, I)
+</code></pre>
+<p>The encoder approximates the intractable posterior:</p>
+<pre><code class="language-text">q_phi(z | x)
+</code></pre><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-8-equation"><summary>สมการ</summary><h3>8. Why VAE?</h3>
+<p>A Variational Autoencoder introduces a probabilistic latent model.</p>
+<p>Generative story:</p>
+<pre><code class="language-text">z ~ p(z)
+x ~ p_theta(x | z)
+</code></pre>
+<p>Common prior:</p>
+<pre><code class="language-text">p(z) = N(0, I)
+</code></pre>
+<p>The encoder approximates the intractable posterior:</p>
+<pre><code class="language-text">q_phi(z | x)
+</code></pre></details><details id="help-topic-8-visual"><summary>ภาพและ shape</summary><h3>8. Why VAE?</h3>
+<p>A Variational Autoencoder introduces a probabilistic latent model.</p>
+<p>Generative story:</p>
+<pre><code class="language-text">z ~ p(z)
+x ~ p_theta(x | z)
+</code></pre>
+<p>Common prior:</p>
+<pre><code class="language-text">p(z) = N(0, I)
+</code></pre>
+<p>The encoder approximates the intractable posterior:</p>
+<pre><code class="language-text">q_phi(z | x)
+</code></pre></details><details id="help-topic-8-code"><summary>โค้ด</summary><h3>8. Why VAE?</h3>
+<p>A Variational Autoencoder introduces a probabilistic latent model.</p>
+<p>Generative story:</p>
+<pre><code class="language-text">z ~ p(z)
+x ~ p_theta(x | z)
+</code></pre>
+<p>Common prior:</p>
+<pre><code class="language-text">p(z) = N(0, I)
+</code></pre>
+<p>The encoder approximates the intractable posterior:</p>
+<pre><code class="language-text">q_phi(z | x)
+</code></pre><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-8-result"><summary>ผลการทดลอง</summary><h3>8. Why VAE?</h3>
+<p>A Variational Autoencoder introduces a probabilistic latent model.</p>
+<p>Generative story:</p>
+<pre><code class="language-text">z ~ p(z)
+x ~ p_theta(x | z)
+</code></pre>
+<p>Common prior:</p>
+<pre><code class="language-text">p(z) = N(0, I)
+</code></pre>
+<p>The encoder approximates the intractable posterior:</p>
+<pre><code class="language-text">q_phi(z | x)
+</code></pre><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-8"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-9" class="source-topic"><span id="source-27-autoencoder-vae-canonical-9-gaussian-encoder" class="legacy-anchor"></span><h3>9. Gaussian Encoder</h3>
+<p>A common encoder outputs:</p>
+<pre><code class="language-text">mu(x)
+logvar(x)
+</code></pre>
+<p>representing:</p>
+<pre><code class="language-text">q(z|x)
+=
+N(
+    mu,
+    diag(exp(logvar))
+)
+</code></pre>
+<p>Use log variance because:
+- variance must be positive
+- unconstrained neural output can represent logvar
+- numerical manipulation is convenient</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>seed7toy2D เปรียบAEกับVAEβ0/.1/1คงcapacity; recordreconstruction/KL/seedsและsamplequalityไม่เทียบtotallossคนละนิยามตรงๆ</p><p>encoderlogvarต้องshape(B,k)เท่าμ ไม่broadcast(B,1)โดยไม่ตั้งใจ; decoderoutputshapeตรงinputและMSEreduceaxisตามsample/feature</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-9-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>seed7toy2D เปรียบAEกับVAEβ0/.1/1คงcapacity; recordreconstruction/KL/seedsและsamplequalityไม่เทียบtotallossคนละนิยามตรงๆ</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-9-equation"><summary>สมการ</summary><p>seed7toy2D เปรียบAEกับVAEβ0/.1/1คงcapacity; recordreconstruction/KL/seedsและsamplequalityไม่เทียบtotallossคนละนิยามตรงๆ</p></details><details id="help-topic-9-visual"><summary>ภาพและ shape</summary><p>seed7toy2D เปรียบAEกับVAEβ0/.1/1คงcapacity; recordreconstruction/KL/seedsและsamplequalityไม่เทียบtotallossคนละนิยามตรงๆ</p></details><details id="help-topic-9-code"><summary>โค้ด</summary><p>seed7toy2D เปรียบAEกับVAEβ0/.1/1คงcapacity; recordreconstruction/KL/seedsและsamplequalityไม่เทียบtotallossคนละนิยามตรงๆ</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-9-result"><summary>ผลการทดลอง</summary><p>seed7toy2D เปรียบAEกับVAEβ0/.1/1คงcapacity; recordreconstruction/KL/seedsและsamplequalityไม่เทียบtotallossคนละนิยามตรงๆ</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-9"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-10" class="source-topic"><span id="source-27-autoencoder-vae-canonical-10-sampling-problem" class="legacy-anchor"></span><h3>10. Sampling Problem</h3>
+<p>Naively:</p>
+<pre><code class="language-text">z ~ N(mu, sigma²)
+</code></pre>
+<p>sampling appears to block straightforward gradient flow through mu/sigma.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-10-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>10. Sampling Problem</h3>
+<p>Naively:</p>
+<pre><code class="language-text">z ~ N(mu, sigma²)
+</code></pre>
+<p>sampling appears to block straightforward gradient flow through mu/sigma.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-10-equation"><summary>สมการ</summary><h3>10. Sampling Problem</h3>
+<p>Naively:</p>
+<pre><code class="language-text">z ~ N(mu, sigma²)
+</code></pre>
+<p>sampling appears to block straightforward gradient flow through mu/sigma.</p></details><details id="help-topic-10-visual"><summary>ภาพและ shape</summary><h3>10. Sampling Problem</h3>
+<p>Naively:</p>
+<pre><code class="language-text">z ~ N(mu, sigma²)
+</code></pre>
+<p>sampling appears to block straightforward gradient flow through mu/sigma.</p></details><details id="help-topic-10-code"><summary>โค้ด</summary><h3>10. Sampling Problem</h3>
+<p>Naively:</p>
+<pre><code class="language-text">z ~ N(mu, sigma²)
+</code></pre>
+<p>sampling appears to block straightforward gradient flow through mu/sigma.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-10-result"><summary>ผลการทดลอง</summary><h3>10. Sampling Problem</h3>
+<p>Naively:</p>
+<pre><code class="language-text">z ~ N(mu, sigma²)
+</code></pre>
+<p>sampling appears to block straightforward gradient flow through mu/sigma.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-10"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-11" class="source-topic"><span id="source-27-autoencoder-vae-canonical-11-reparameterization-trick" class="legacy-anchor"></span><h3>11. Reparameterization Trick</h3>
+<p>Sample:</p>
+<pre><code class="language-text">epsilon ~ N(0,I)
+</code></pre>
+<p>then:</p>
+<pre><code class="language-text">sigma = exp(0.5 * logvar)
+
+z =
+mu
++
+sigma ⊙ epsilon
+</code></pre>
+<p>Now randomness is isolated in epsilon, while z remains differentiable with respect to mu/logvar.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>reparameterization z=μ+exp(.5logvar)ε,ε~N(0,I)ทำgradientผ่านμ/σได้ แต่samplevarianceยังมีและไม่ใช้กับdiscretesampleตรงๆ</p><p>seed7toy2D เปรียบAEกับVAEβ0/.1/1คงcapacity; recordreconstruction/KL/seedsและsamplequalityไม่เทียบtotallossคนละนิยามตรงๆ</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-11-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>reparameterization z=μ+exp(.5logvar)ε,ε~N(0,I)ทำgradientผ่านμ/σได้ แต่samplevarianceยังมีและไม่ใช้กับdiscretesampleตรงๆ</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-11-equation"><summary>สมการ</summary><p>reparameterization z=μ+exp(.5logvar)ε,ε~N(0,I)ทำgradientผ่านμ/σได้ แต่samplevarianceยังมีและไม่ใช้กับdiscretesampleตรงๆ</p></details><details id="help-topic-11-visual"><summary>ภาพและ shape</summary><p>reparameterization z=μ+exp(.5logvar)ε,ε~N(0,I)ทำgradientผ่านμ/σได้ แต่samplevarianceยังมีและไม่ใช้กับdiscretesampleตรงๆ</p></details><details id="help-topic-11-code"><summary>โค้ด</summary><p>reparameterization z=μ+exp(.5logvar)ε,ε~N(0,I)ทำgradientผ่านμ/σได้ แต่samplevarianceยังมีและไม่ใช้กับdiscretesampleตรงๆ</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-11-result"><summary>ผลการทดลอง</summary><p>reparameterization z=μ+exp(.5logvar)ε,ε~N(0,I)ทำgradientผ่านμ/σได้ แต่samplevarianceยังมีและไม่ใช้กับdiscretesampleตรงๆ</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-11"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-12" class="source-topic"><span id="source-27-autoencoder-vae-canonical-12-elbo" class="legacy-anchor"></span><h3>12. ELBO</h3>
+<p>We want high log likelihood:</p>
+<pre><code class="language-text">log p(x)
+</code></pre>
+<p>but direct marginalization over z is generally difficult.</p>
+<p>The evidence lower bound:</p>
+<pre><code class="language-text">ELBO
+=
+E_q [
+    log p_theta(x|z)
+]
+-
+KL(
+    q_phi(z|x)
+    ||
+    p(z)
+)
+</code></pre>
+<p>Maximize ELBO.</p>
+<p>Equivalent loss often written:</p>
+<pre><code class="language-text">VAE loss
+=
+reconstruction loss
++
+KL divergence
+</code></pre>
+<p>with sign/convention depending on implementation.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>x→encoderμ/logvar→ε→z→decoderxhat→reconstruction+βKL→backpropผ่านreparameterization→update; evaluationgenerationเริ่มzpriorไม่ใช่encodex</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-12-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>x→encoderμ/logvar→ε→z→decoderxhat→reconstruction+βKL→backpropผ่านreparameterization→update; evaluationgenerationเริ่มzpriorไม่ใช่encodex</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-12-equation"><summary>สมการ</summary><p>x→encoderμ/logvar→ε→z→decoderxhat→reconstruction+βKL→backpropผ่านreparameterization→update; evaluationgenerationเริ่มzpriorไม่ใช่encodex</p></details><details id="help-topic-12-visual"><summary>ภาพและ shape</summary><p>x→encoderμ/logvar→ε→z→decoderxhat→reconstruction+βKL→backpropผ่านreparameterization→update; evaluationgenerationเริ่มzpriorไม่ใช่encodex</p></details><details id="help-topic-12-code"><summary>โค้ด</summary><p>x→encoderμ/logvar→ε→z→decoderxhat→reconstruction+βKL→backpropผ่านreparameterization→update; evaluationgenerationเริ่มzpriorไม่ใช่encodex</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-12-result"><summary>ผลการทดลอง</summary><p>x→encoderμ/logvar→ε→z→decoderxhat→reconstruction+βKL→backpropผ่านreparameterization→update; evaluationgenerationเริ่มzpriorไม่ใช่encodex</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-12"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-13" class="source-topic"><span id="source-27-autoencoder-vae-canonical-13-kl-to-standard-normal" class="legacy-anchor"></span><h3>13. KL to Standard Normal</h3>
+<p>For diagonal Gaussian:</p>
+<pre><code class="language-text">q(z|x)
+=
+N(mu, diag(sigma²))
+
+p(z)
+=
+N(0,I)
+</code></pre>
+<p>KL per sample:</p>
+<pre><code class="language-text">KL
+=
+-1/2 * sum(
+    1
+    + logvar
+    - mu²
+    - exp(logvar)
+)
+</code></pre>
+<p>This encourages approximate posterior distributions toward the prior.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>assertz3,decoder[3,3],MSE1; fixedεทำreparameterizationdeterministic; KLของμ0/logvar0ต้อง0และshapeμ==logvar</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-13-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>assertz3,decoder[3,3],MSE1; fixedεทำreparameterizationdeterministic; KLของμ0/logvar0ต้อง0และshapeμ==logvar</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-13-equation"><summary>สมการ</summary><p>assertz3,decoder[3,3],MSE1; fixedεทำreparameterizationdeterministic; KLของμ0/logvar0ต้อง0และshapeμ==logvar</p></details><details id="help-topic-13-visual"><summary>ภาพและ shape</summary><p>assertz3,decoder[3,3],MSE1; fixedεทำreparameterizationdeterministic; KLของμ0/logvar0ต้อง0และshapeμ==logvar</p></details><details id="help-topic-13-code"><summary>โค้ด</summary><p>assertz3,decoder[3,3],MSE1; fixedεทำreparameterizationdeterministic; KLของμ0/logvar0ต้อง0และshapeμ==logvar</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-13-result"><summary>ผลการทดลอง</summary><p>assertz3,decoder[3,3],MSE1; fixedεทำreparameterizationdeterministic; KLของμ0/logvar0ต้อง0และshapeμ==logvar</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-13"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-14" class="source-topic"><span id="source-27-autoencoder-vae-canonical-14-reconstruction-term" class="legacy-anchor"></span><h3>14. Reconstruction Term</h3>
+<p>For binary-valued/normalized Bernoulli-style observations, one can model:</p>
+<pre><code class="language-text">p(x|z)
+</code></pre>
+<p>with Bernoulli logits and use BCE-with-logits reconstruction loss.</p>
+<p>For real-valued data, Gaussian likelihood often corresponds to an MSE-like objective under assumptions.</p>
+<p>The reconstruction term is a likelihood model, not an arbitrary cosmetic choice.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>reconstructionMSEmean((xhat−x)²); x[2,4],xhat[3,3]ได้1; BCEเหมาะbinary/normalizedlikelihoodตามนิยามไม่ใช่ใช้กับทุกข้อมูล</p><p>lossreductionเปลี่ยนscalegradient; reconstructionดีอาจเก็บnoiseและไม่ให้latentที่sampleได้ จึงต้องประเมินgenerationด้วย</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-14-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>reconstructionMSEmean((xhat−x)²); x[2,4],xhat[3,3]ได้1; BCEเหมาะbinary/normalizedlikelihoodตามนิยามไม่ใช่ใช้กับทุกข้อมูล</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-14-equation"><summary>สมการ</summary><p>reconstructionMSEmean((xhat−x)²); x[2,4],xhat[3,3]ได้1; BCEเหมาะbinary/normalizedlikelihoodตามนิยามไม่ใช่ใช้กับทุกข้อมูล</p></details><details id="help-topic-14-visual"><summary>ภาพและ shape</summary><p>reconstructionMSEmean((xhat−x)²); x[2,4],xhat[3,3]ได้1; BCEเหมาะbinary/normalizedlikelihoodตามนิยามไม่ใช่ใช้กับทุกข้อมูล</p></details><details id="help-topic-14-code"><summary>โค้ด</summary><p>reconstructionMSEmean((xhat−x)²); x[2,4],xhat[3,3]ได้1; BCEเหมาะbinary/normalizedlikelihoodตามนิยามไม่ใช่ใช้กับทุกข้อมูล</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-14-result"><summary>ผลการทดลอง</summary><p>reconstructionMSEmean((xhat−x)²); x[2,4],xhat[3,3]ได้1; BCEเหมาะbinary/normalizedlikelihoodตามนิยามไม่ใช่ใช้กับทุกข้อมูล</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-14"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-15" class="source-topic"><span id="source-27-autoencoder-vae-canonical-15-reconstruction-vs-regularization-trade-off" class="legacy-anchor"></span><h3>15. Reconstruction vs Regularization Trade-Off</h3>
+<p>Strong reconstruction pressure:
+- preserves detail
+- latent may drift from prior</p>
+<p>Strong KL pressure:
+- latent follows prior
+- reconstructions may degrade
+- posterior collapse may occur</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-15-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>15. Reconstruction vs Regularization Trade-Off</h3>
+<p>Strong reconstruction pressure:
+- preserves detail
+- latent may drift from prior</p>
+<p>Strong KL pressure:
+- latent follows prior
+- reconstructions may degrade
+- posterior collapse may occur</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-15-equation"><summary>สมการ</summary><h3>15. Reconstruction vs Regularization Trade-Off</h3>
+<p>Strong reconstruction pressure:
+- preserves detail
+- latent may drift from prior</p>
+<p>Strong KL pressure:
+- latent follows prior
+- reconstructions may degrade
+- posterior collapse may occur</p></details><details id="help-topic-15-visual"><summary>ภาพและ shape</summary><h3>15. Reconstruction vs Regularization Trade-Off</h3>
+<p>Strong reconstruction pressure:
+- preserves detail
+- latent may drift from prior</p>
+<p>Strong KL pressure:
+- latent follows prior
+- reconstructions may degrade
+- posterior collapse may occur</p></details><details id="help-topic-15-code"><summary>โค้ด</summary><h3>15. Reconstruction vs Regularization Trade-Off</h3>
+<p>Strong reconstruction pressure:
+- preserves detail
+- latent may drift from prior</p>
+<p>Strong KL pressure:
+- latent follows prior
+- reconstructions may degrade
+- posterior collapse may occur</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-15-result"><summary>ผลการทดลอง</summary><h3>15. Reconstruction vs Regularization Trade-Off</h3>
+<p>Strong reconstruction pressure:
+- preserves detail
+- latent may drift from prior</p>
+<p>Strong KL pressure:
+- latent follows prior
+- reconstructions may degrade
+- posterior collapse may occur</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-15"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-16" class="source-topic"><span id="source-27-autoencoder-vae-canonical-16-beta-vae" class="legacy-anchor"></span><h3>16. beta-VAE</h3>
+<p>A common modification:</p>
+<pre><code class="language-text">L =
+reconstruction
++
+beta * KL
+</code></pre>
+<p>beta &gt; 1 increases latent regularization pressure.</p>
+<p>This may encourage certain disentanglement behavior but can hurt reconstruction.</p>
+<p>Disentanglement is not guaranteed automatically.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>เปลี่ยนβ0→1โดยseed/capacity/updatesคงที่; reportreconstructionและKLแยกกับactiveunits ผลไม่จำเป็นmonotonicในstochastictraining</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-16-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>เปลี่ยนβ0→1โดยseed/capacity/updatesคงที่; reportreconstructionและKLแยกกับactiveunits ผลไม่จำเป็นmonotonicในstochastictraining</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-16-equation"><summary>สมการ</summary><p>เปลี่ยนβ0→1โดยseed/capacity/updatesคงที่; reportreconstructionและKLแยกกับactiveunits ผลไม่จำเป็นmonotonicในstochastictraining</p></details><details id="help-topic-16-visual"><summary>ภาพและ shape</summary><p>เปลี่ยนβ0→1โดยseed/capacity/updatesคงที่; reportreconstructionและKLแยกกับactiveunits ผลไม่จำเป็นmonotonicในstochastictraining</p></details><details id="help-topic-16-code"><summary>โค้ด</summary><p>เปลี่ยนβ0→1โดยseed/capacity/updatesคงที่; reportreconstructionและKLแยกกับactiveunits ผลไม่จำเป็นmonotonicในstochastictraining</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-16-result"><summary>ผลการทดลอง</summary><p>เปลี่ยนβ0→1โดยseed/capacity/updatesคงที่; reportreconstructionและKLแยกกับactiveunits ผลไม่จำเป็นmonotonicในstochastictraining</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-16"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-17" class="source-topic"><span id="source-27-autoencoder-vae-canonical-17-posterior-collapse" class="legacy-anchor"></span><h3>17. Posterior Collapse</h3>
+<p>The encoder may learn:</p>
+<pre><code class="language-text">q(z|x) ≈ p(z)
+</code></pre>
+<p>for all x, so decoder effectively ignores z.</p>
+<p>Symptoms:
+- KL near zero
+- poor latent information
+- powerful decoder reconstructs using other structure</p>
+<p>Mitigations can include:
+- KL warmup/annealing
+- free bits
+- decoder capacity choices
+- objective modifications</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>KLสูงเกินทำposteriorcollapse μ≈0,σ≈1และdecoderไม่ใช้z; KLต่ำเกินทำlatentholes ให้ดูKLต่อdimension/activeunits</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-17-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>KLสูงเกินทำposteriorcollapse μ≈0,σ≈1และdecoderไม่ใช้z; KLต่ำเกินทำlatentholes ให้ดูKLต่อdimension/activeunits</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-17-equation"><summary>สมการ</summary><p>KLสูงเกินทำposteriorcollapse μ≈0,σ≈1และdecoderไม่ใช้z; KLต่ำเกินทำlatentholes ให้ดูKLต่อdimension/activeunits</p></details><details id="help-topic-17-visual"><summary>ภาพและ shape</summary><p>KLสูงเกินทำposteriorcollapse μ≈0,σ≈1และdecoderไม่ใช้z; KLต่ำเกินทำlatentholes ให้ดูKLต่อdimension/activeunits</p></details><details id="help-topic-17-code"><summary>โค้ด</summary><p>KLสูงเกินทำposteriorcollapse μ≈0,σ≈1และdecoderไม่ใช้z; KLต่ำเกินทำlatentholes ให้ดูKLต่อdimension/activeunits</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-17-result"><summary>ผลการทดลอง</summary><p>KLสูงเกินทำposteriorcollapse μ≈0,σ≈1และdecoderไม่ใช้z; KLต่ำเกินทำlatentholes ให้ดูKLต่อdimension/activeunits</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-17"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-18" class="source-topic"><span id="source-27-autoencoder-vae-canonical-18-sampling" class="legacy-anchor"></span><h3>18. Sampling</h3>
+<p>After training:</p>
+<pre><code class="language-text">z ~ N(0,I)
+x_generated = decoder(z)
+</code></pre>
+<p>This is why matching latent posteriors toward the prior matters.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-18-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>18. Sampling</h3>
+<p>After training:</p>
+<pre><code class="language-text">z ~ N(0,I)
+x_generated = decoder(z)
+</code></pre>
+<p>This is why matching latent posteriors toward the prior matters.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-18-equation"><summary>สมการ</summary><h3>18. Sampling</h3>
+<p>After training:</p>
+<pre><code class="language-text">z ~ N(0,I)
+x_generated = decoder(z)
+</code></pre>
+<p>This is why matching latent posteriors toward the prior matters.</p></details><details id="help-topic-18-visual"><summary>ภาพและ shape</summary><h3>18. Sampling</h3>
+<p>After training:</p>
+<pre><code class="language-text">z ~ N(0,I)
+x_generated = decoder(z)
+</code></pre>
+<p>This is why matching latent posteriors toward the prior matters.</p></details><details id="help-topic-18-code"><summary>โค้ด</summary><h3>18. Sampling</h3>
+<p>After training:</p>
+<pre><code class="language-text">z ~ N(0,I)
+x_generated = decoder(z)
+</code></pre>
+<p>This is why matching latent posteriors toward the prior matters.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-18-result"><summary>ผลการทดลอง</summary><h3>18. Sampling</h3>
+<p>After training:</p>
+<pre><code class="language-text">z ~ N(0,I)
+x_generated = decoder(z)
+</code></pre>
+<p>This is why matching latent posteriors toward the prior matters.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-18"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-19" class="source-topic"><span id="source-27-autoencoder-vae-canonical-19-latent-interpolation" class="legacy-anchor"></span><h3>19. Latent Interpolation</h3>
+<p>Given z1 and z2:</p>
+<pre><code class="language-text">z(alpha)
+=
+(1-alpha)z1
++
+alpha z2
+</code></pre>
+<p>decode intermediate points.</p>
+<p>Smooth outputs are evidence about decoder geometry, not proof of semantic disentanglement.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-19-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>19. Latent Interpolation</h3>
+<p>Given z1 and z2:</p>
+<pre><code class="language-text">z(alpha)
+=
+(1-alpha)z1
++
+alpha z2
+</code></pre>
+<p>decode intermediate points.</p>
+<p>Smooth outputs are evidence about decoder geometry, not proof of semantic disentanglement.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-19-equation"><summary>สมการ</summary><h3>19. Latent Interpolation</h3>
+<p>Given z1 and z2:</p>
+<pre><code class="language-text">z(alpha)
+=
+(1-alpha)z1
++
+alpha z2
+</code></pre>
+<p>decode intermediate points.</p>
+<p>Smooth outputs are evidence about decoder geometry, not proof of semantic disentanglement.</p></details><details id="help-topic-19-visual"><summary>ภาพและ shape</summary><h3>19. Latent Interpolation</h3>
+<p>Given z1 and z2:</p>
+<pre><code class="language-text">z(alpha)
+=
+(1-alpha)z1
++
+alpha z2
+</code></pre>
+<p>decode intermediate points.</p>
+<p>Smooth outputs are evidence about decoder geometry, not proof of semantic disentanglement.</p></details><details id="help-topic-19-code"><summary>โค้ด</summary><h3>19. Latent Interpolation</h3>
+<p>Given z1 and z2:</p>
+<pre><code class="language-text">z(alpha)
+=
+(1-alpha)z1
++
+alpha z2
+</code></pre>
+<p>decode intermediate points.</p>
+<p>Smooth outputs are evidence about decoder geometry, not proof of semantic disentanglement.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-19-result"><summary>ผลการทดลอง</summary><h3>19. Latent Interpolation</h3>
+<p>Given z1 and z2:</p>
+<pre><code class="language-text">z(alpha)
+=
+(1-alpha)z1
++
+alpha z2
+</code></pre>
+<p>decode intermediate points.</p>
+<p>Smooth outputs are evidence about decoder geometry, not proof of semantic disentanglement.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-19"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-20" class="source-topic"><span id="source-27-autoencoder-vae-canonical-20-autoencoder-vs-pca" class="legacy-anchor"></span><h3>20. Autoencoder vs PCA</h3>
+<p>A linear autoencoder with squared loss and appropriate constraints is closely related to the PCA principal subspace.</p>
+<p>Nonlinear autoencoders can learn nonlinear mappings.</p>
+<p>But they:
+- need optimization
+- can overfit
+- do not automatically provide orthogonal components
+- do not automatically give explained-variance semantics</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-20-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>20. Autoencoder vs PCA</h3>
+<p>A linear autoencoder with squared loss and appropriate constraints is closely related to the PCA principal subspace.</p>
+<p>Nonlinear autoencoders can learn nonlinear mappings.</p>
+<p>But they:
+- need optimization
+- can overfit
+- do not automatically provide orthogonal components
+- do not automatically give explained-variance semantics</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-20-equation"><summary>สมการ</summary><h3>20. Autoencoder vs PCA</h3>
+<p>A linear autoencoder with squared loss and appropriate constraints is closely related to the PCA principal subspace.</p>
+<p>Nonlinear autoencoders can learn nonlinear mappings.</p>
+<p>But they:
+- need optimization
+- can overfit
+- do not automatically provide orthogonal components
+- do not automatically give explained-variance semantics</p></details><details id="help-topic-20-visual"><summary>ภาพและ shape</summary><h3>20. Autoencoder vs PCA</h3>
+<p>A linear autoencoder with squared loss and appropriate constraints is closely related to the PCA principal subspace.</p>
+<p>Nonlinear autoencoders can learn nonlinear mappings.</p>
+<p>But they:
+- need optimization
+- can overfit
+- do not automatically provide orthogonal components
+- do not automatically give explained-variance semantics</p></details><details id="help-topic-20-code"><summary>โค้ด</summary><h3>20. Autoencoder vs PCA</h3>
+<p>A linear autoencoder with squared loss and appropriate constraints is closely related to the PCA principal subspace.</p>
+<p>Nonlinear autoencoders can learn nonlinear mappings.</p>
+<p>But they:
+- need optimization
+- can overfit
+- do not automatically provide orthogonal components
+- do not automatically give explained-variance semantics</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-20-result"><summary>ผลการทดลอง</summary><h3>20. Autoencoder vs PCA</h3>
+<p>A linear autoencoder with squared loss and appropriate constraints is closely related to the PCA principal subspace.</p>
+<p>Nonlinear autoencoders can learn nonlinear mappings.</p>
+<p>But they:
+- need optimization
+- can overfit
+- do not automatically provide orthogonal components
+- do not automatically give explained-variance semantics</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-20"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-21" class="source-topic"><span id="source-27-autoencoder-vae-canonical-21-vae-vs-deterministic-autoencoder" class="legacy-anchor"></span><h3>21. VAE vs Deterministic Autoencoder</h3>
+<p>Plain AE:
+- deterministic z
+- reconstruction objective
+- no required simple prior match</p>
+<p>VAE:
+- distribution q(z|x)
+- stochastic latent sample
+- KL regularization
+- explicit generative latent-variable interpretation</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-21-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>21. VAE vs Deterministic Autoencoder</h3>
+<p>Plain AE:
+- deterministic z
+- reconstruction objective
+- no required simple prior match</p>
+<p>VAE:
+- distribution q(z|x)
+- stochastic latent sample
+- KL regularization
+- explicit generative latent-variable interpretation</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-21-equation"><summary>สมการ</summary><h3>21. VAE vs Deterministic Autoencoder</h3>
+<p>Plain AE:
+- deterministic z
+- reconstruction objective
+- no required simple prior match</p>
+<p>VAE:
+- distribution q(z|x)
+- stochastic latent sample
+- KL regularization
+- explicit generative latent-variable interpretation</p></details><details id="help-topic-21-visual"><summary>ภาพและ shape</summary><h3>21. VAE vs Deterministic Autoencoder</h3>
+<p>Plain AE:
+- deterministic z
+- reconstruction objective
+- no required simple prior match</p>
+<p>VAE:
+- distribution q(z|x)
+- stochastic latent sample
+- KL regularization
+- explicit generative latent-variable interpretation</p></details><details id="help-topic-21-code"><summary>โค้ด</summary><h3>21. VAE vs Deterministic Autoencoder</h3>
+<p>Plain AE:
+- deterministic z
+- reconstruction objective
+- no required simple prior match</p>
+<p>VAE:
+- distribution q(z|x)
+- stochastic latent sample
+- KL regularization
+- explicit generative latent-variable interpretation</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-21-result"><summary>ผลการทดลอง</summary><h3>21. VAE vs Deterministic Autoencoder</h3>
+<p>Plain AE:
+- deterministic z
+- reconstruction objective
+- no required simple prior match</p>
+<p>VAE:
+- distribution q(z|x)
+- stochastic latent sample
+- KL regularization
+- explicit generative latent-variable interpretation</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-21"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-22" class="source-topic"><span id="source-27-autoencoder-vae-canonical-22-pytorch-vae-structure" class="legacy-anchor"></span><h3>22. PyTorch VAE Structure</h3>
+<p>Encoder:</p>
+<pre><code class="language-python">h = encoder(x)
+mu = fc_mu(h)
+logvar = fc_logvar(h)
+</code></pre>
+<p>Reparameterize:</p>
+<pre><code class="language-python">std = torch.exp(0.5 * logvar)
+eps = torch.randn_like(std)
+z = mu + eps * std
+</code></pre>
+<p>Decoder:</p>
+<pre><code class="language-python">logits = decoder(z)
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>denseAE O(Bdk)ต่อlayer,latentO(Bk); VAEเพิ่มmean/varianceheadsและsampling; reportactivation/optimizerstateไม่เอาlatentbytesแทนtrainingmemory</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-22-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>denseAE O(Bdk)ต่อlayer,latentO(Bk); VAEเพิ่มmean/varianceheadsและsampling; reportactivation/optimizerstateไม่เอาlatentbytesแทนtrainingmemory</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-22-equation"><summary>สมการ</summary><p>denseAE O(Bdk)ต่อlayer,latentO(Bk); VAEเพิ่มmean/varianceheadsและsampling; reportactivation/optimizerstateไม่เอาlatentbytesแทนtrainingmemory</p></details><details id="help-topic-22-visual"><summary>ภาพและ shape</summary><p>denseAE O(Bdk)ต่อlayer,latentO(Bk); VAEเพิ่มmean/varianceheadsและsampling; reportactivation/optimizerstateไม่เอาlatentbytesแทนtrainingmemory</p></details><details id="help-topic-22-code"><summary>โค้ด</summary><p>denseAE O(Bdk)ต่อlayer,latentO(Bk); VAEเพิ่มmean/varianceheadsและsampling; reportactivation/optimizerstateไม่เอาlatentbytesแทนtrainingmemory</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-22-result"><summary>ผลการทดลอง</summary><p>denseAE O(Bdk)ต่อlayer,latentO(Bk); VAEเพิ่มmean/varianceheadsและsampling; reportactivation/optimizerstateไม่เอาlatentbytesแทนtrainingmemory</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-22"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-23" class="source-topic"><span id="source-27-autoencoder-vae-canonical-23-stable-reconstruction" class="legacy-anchor"></span><h3>23. Stable Reconstruction</h3>
+<p>Prefer logits-based losses:</p>
+<pre><code class="language-python">F.binary_cross_entropy_with_logits(
+    logits,
+    x,
+    reduction=&quot;sum&quot;,
+)
+</code></pre>
+<p>Do not manually sigmoid then use a logits loss.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>exp(logvar)overflowได้; checkencoderoutput/logvarและlearningrateก่อนclampพร้อมประกาศbounds; KLสูตร−.5Σ(1+logvar−μ²−exp(logvar))</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-23-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>exp(logvar)overflowได้; checkencoderoutput/logvarและlearningrateก่อนclampพร้อมประกาศbounds; KLสูตร−.5Σ(1+logvar−μ²−exp(logvar))</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-23-equation"><summary>สมการ</summary><p>exp(logvar)overflowได้; checkencoderoutput/logvarและlearningrateก่อนclampพร้อมประกาศbounds; KLสูตร−.5Σ(1+logvar−μ²−exp(logvar))</p></details><details id="help-topic-23-visual"><summary>ภาพและ shape</summary><p>exp(logvar)overflowได้; checkencoderoutput/logvarและlearningrateก่อนclampพร้อมประกาศbounds; KLสูตร−.5Σ(1+logvar−μ²−exp(logvar))</p></details><details id="help-topic-23-code"><summary>โค้ด</summary><p>exp(logvar)overflowได้; checkencoderoutput/logvarและlearningrateก่อนclampพร้อมประกาศbounds; KLสูตร−.5Σ(1+logvar−μ²−exp(logvar))</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-23-result"><summary>ผลการทดลอง</summary><p>exp(logvar)overflowได้; checkencoderoutput/logvarและlearningrateก่อนclampพร้อมประกาศbounds; KLสูตร−.5Σ(1+logvar−μ²−exp(logvar))</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-23"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-24" class="source-topic"><span id="source-27-autoencoder-vae-canonical-24-from-scratch" class="legacy-anchor"></span><h3>24. From Scratch</h3>
+<p>src/vae_math.py includes:
+- stable sigmoid
+- reparameterize
+- diagonal Gaussian KL
+- BCE-with-logits
+- ELBO-style loss helper</p>
+<p>The actual trainable neural VAE is exercised in the PyTorch integration lab.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p><code>x=np.array([2.,4.]); z=x@np.array([.5,.5])</code> ได้3; VAEให้μ3,logvar0,ε−1ได้z2ด้วยfixedε</p><p>assertz3,decoder[3,3],MSE1; fixedεทำreparameterizationdeterministic; KLของμ0/logvar0ต้อง0และshapeμ==logvar</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-24-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p><code>x=np.array([2.,4.]); z=x@np.array([.5,.5])</code> ได้3; VAEให้μ3,logvar0,ε−1ได้z2ด้วยfixedε</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-24-equation"><summary>สมการ</summary><p><code>x=np.array([2.,4.]); z=x@np.array([.5,.5])</code> ได้3; VAEให้μ3,logvar0,ε−1ได้z2ด้วยfixedε</p></details><details id="help-topic-24-visual"><summary>ภาพและ shape</summary><p><code>x=np.array([2.,4.]); z=x@np.array([.5,.5])</code> ได้3; VAEให้μ3,logvar0,ε−1ได้z2ด้วยfixedε</p></details><details id="help-topic-24-code"><summary>โค้ด</summary><p><code>x=np.array([2.,4.]); z=x@np.array([.5,.5])</code> ได้3; VAEให้μ3,logvar0,ε−1ได้z2ด้วยfixedε</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-24-result"><summary>ผลการทดลอง</summary><p><code>x=np.array([2.,4.]); z=x@np.array([.5,.5])</code> ได้3; VAEให้μ3,logvar0,ε−1ได้z2ด้วยfixedε</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-24"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-25" class="source-topic"><span id="source-27-autoencoder-vae-canonical-25-evaluation" class="legacy-anchor"></span><h3>25. Evaluation</h3>
+<p>Autoencoder:
+- reconstruction loss
+- downstream latent utility
+- anomaly score behavior
+- robustness</p>
+<p>VAE:
+- reconstruction
+- KL
+- ELBO estimate
+- sample quality
+- latent interpolation
+- downstream utility</p>
+<p>A prettier latent plot is not sufficient evaluation.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>splitก่อนnormalization,validationreconstructionใช้fixedεหรือหลายsamplesรายงานvariance; testgenerationsไม่เลือกเฉพาะตัวอย่างสวย</p><p>บันทึกlatentdim/prior/reconlikelihood/reduction/β/seed; ทดลองKLwarmupลดposteriorcollapseโดยactiveunitsเพิ่มและreconstructionไม่เกินbudget</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-25-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>splitก่อนnormalization,validationreconstructionใช้fixedεหรือหลายsamplesรายงานvariance; testgenerationsไม่เลือกเฉพาะตัวอย่างสวย</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-25-equation"><summary>สมการ</summary><p>splitก่อนnormalization,validationreconstructionใช้fixedεหรือหลายsamplesรายงานvariance; testgenerationsไม่เลือกเฉพาะตัวอย่างสวย</p></details><details id="help-topic-25-visual"><summary>ภาพและ shape</summary><p>splitก่อนnormalization,validationreconstructionใช้fixedεหรือหลายsamplesรายงานvariance; testgenerationsไม่เลือกเฉพาะตัวอย่างสวย</p></details><details id="help-topic-25-code"><summary>โค้ด</summary><p>splitก่อนnormalization,validationreconstructionใช้fixedεหรือหลายsamplesรายงานvariance; testgenerationsไม่เลือกเฉพาะตัวอย่างสวย</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-25-result"><summary>ผลการทดลอง</summary><p>splitก่อนnormalization,validationreconstructionใช้fixedεหรือหลายsamplesรายงานvariance; testgenerationsไม่เลือกเฉพาะตัวอย่างสวย</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-25"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-26" class="source-topic"><span id="source-27-autoencoder-vae-canonical-26-common-mistakes" class="legacy-anchor"></span><h3>26. Common Mistakes</h3>
+<ol>
+<li>calling any autoencoder generative</li>
+<li>sampling random z from a plain AE latent space</li>
+<li>using variance directly without positivity constraint</li>
+<li>forgetting 0.5 in exp(0.5*logvar)</li>
+<li>wrong KL sign</li>
+<li>summing/averaging inconsistently</li>
+<li>double sigmoid with BCEWithLogits</li>
+<li>interpreting KL=0 as always good</li>
+<li>judging VAE only by reconstruction sharpness</li>
+<li>calling latent dimensions disentangled without evidence</li>
+</ol><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-26-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>26. Common Mistakes</h3>
+<ol>
+<li>calling any autoencoder generative</li>
+<li>sampling random z from a plain AE latent space</li>
+<li>using variance directly without positivity constraint</li>
+<li>forgetting 0.5 in exp(0.5*logvar)</li>
+<li>wrong KL sign</li>
+<li>summing/averaging inconsistently</li>
+<li>double sigmoid with BCEWithLogits</li>
+<li>interpreting KL=0 as always good</li>
+<li>judging VAE only by reconstruction sharpness</li>
+<li>calling latent dimensions disentangled without evidence</li>
+</ol><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-26-equation"><summary>สมการ</summary><h3>26. Common Mistakes</h3>
+<ol>
+<li>calling any autoencoder generative</li>
+<li>sampling random z from a plain AE latent space</li>
+<li>using variance directly without positivity constraint</li>
+<li>forgetting 0.5 in exp(0.5*logvar)</li>
+<li>wrong KL sign</li>
+<li>summing/averaging inconsistently</li>
+<li>double sigmoid with BCEWithLogits</li>
+<li>interpreting KL=0 as always good</li>
+<li>judging VAE only by reconstruction sharpness</li>
+<li>calling latent dimensions disentangled without evidence</li>
+</ol></details><details id="help-topic-26-visual"><summary>ภาพและ shape</summary><h3>26. Common Mistakes</h3>
+<ol>
+<li>calling any autoencoder generative</li>
+<li>sampling random z from a plain AE latent space</li>
+<li>using variance directly without positivity constraint</li>
+<li>forgetting 0.5 in exp(0.5*logvar)</li>
+<li>wrong KL sign</li>
+<li>summing/averaging inconsistently</li>
+<li>double sigmoid with BCEWithLogits</li>
+<li>interpreting KL=0 as always good</li>
+<li>judging VAE only by reconstruction sharpness</li>
+<li>calling latent dimensions disentangled without evidence</li>
+</ol></details><details id="help-topic-26-code"><summary>โค้ด</summary><h3>26. Common Mistakes</h3>
+<ol>
+<li>calling any autoencoder generative</li>
+<li>sampling random z from a plain AE latent space</li>
+<li>using variance directly without positivity constraint</li>
+<li>forgetting 0.5 in exp(0.5*logvar)</li>
+<li>wrong KL sign</li>
+<li>summing/averaging inconsistently</li>
+<li>double sigmoid with BCEWithLogits</li>
+<li>interpreting KL=0 as always good</li>
+<li>judging VAE only by reconstruction sharpness</li>
+<li>calling latent dimensions disentangled without evidence</li>
+</ol><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-26-result"><summary>ผลการทดลอง</summary><h3>26. Common Mistakes</h3>
+<ol>
+<li>calling any autoencoder generative</li>
+<li>sampling random z from a plain AE latent space</li>
+<li>using variance directly without positivity constraint</li>
+<li>forgetting 0.5 in exp(0.5*logvar)</li>
+<li>wrong KL sign</li>
+<li>summing/averaging inconsistently</li>
+<li>double sigmoid with BCEWithLogits</li>
+<li>interpreting KL=0 as always good</li>
+<li>judging VAE only by reconstruction sharpness</li>
+<li>calling latent dimensions disentangled without evidence</li>
+</ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-26"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-27" class="source-topic"><span id="source-27-autoencoder-vae-canonical-27-exercises-mini-project" class="legacy-anchor"></span><h3>27. Exercises / Mini Project</h3>
+<ul>
+<li><a href="../27-autoencoder-vae/exercises/README.md">Exercises</a></li>
+<li><a href="../27-autoencoder-vae/solutions/README.md">Solutions</a></li>
+<li><a href="../27-autoencoder-vae/mini-project/README.md">Mini Project</a></li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-27-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>27. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-27-equation"><summary>สมการ</summary><h3>27. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-27-visual"><summary>ภาพและ shape</summary><h3>27. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-27-code"><summary>โค้ด</summary><h3>27. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-27-result"><summary>ผลการทดลอง</summary><h3>27. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-27"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-28" class="source-topic"><span id="source-27-autoencoder-vae-canonical-28-checklist" class="legacy-anchor"></span><h3>28. Checklist</h3>
+<ul>
+<li>[ ] encoder/decoder</li>
+<li>[ ] bottleneck</li>
+<li>[ ] denoising</li>
+<li>[ ] plain AE limits</li>
+<li>[ ] q(z|x)</li>
+<li>[ ] mu/logvar</li>
+<li>[ ] reparameterization</li>
+<li>[ ] KL</li>
+<li>[ ] ELBO</li>
+<li>[ ] beta-VAE</li>
+<li>[ ] posterior collapse</li>
+<li>[ ] prior sampling</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-28-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>28. Checklist</h3>
+<ul>
+<li>[ ] encoder/decoder</li>
+<li>[ ] bottleneck</li>
+<li>[ ] denoising</li>
+<li>[ ] plain AE limits</li>
+<li>[ ] q(z|x)</li>
+<li>[ ] mu/logvar</li>
+<li>[ ] reparameterization</li>
+<li>[ ] KL</li>
+<li>[ ] ELBO</li>
+<li>[ ] beta-VAE</li>
+<li>[ ] posterior collapse</li>
+<li>[ ] prior sampling</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-28-equation"><summary>สมการ</summary><h3>28. Checklist</h3>
+<ul>
+<li>[ ] encoder/decoder</li>
+<li>[ ] bottleneck</li>
+<li>[ ] denoising</li>
+<li>[ ] plain AE limits</li>
+<li>[ ] q(z|x)</li>
+<li>[ ] mu/logvar</li>
+<li>[ ] reparameterization</li>
+<li>[ ] KL</li>
+<li>[ ] ELBO</li>
+<li>[ ] beta-VAE</li>
+<li>[ ] posterior collapse</li>
+<li>[ ] prior sampling</li>
+</ul></details><details id="help-topic-28-visual"><summary>ภาพและ shape</summary><h3>28. Checklist</h3>
+<ul>
+<li>[ ] encoder/decoder</li>
+<li>[ ] bottleneck</li>
+<li>[ ] denoising</li>
+<li>[ ] plain AE limits</li>
+<li>[ ] q(z|x)</li>
+<li>[ ] mu/logvar</li>
+<li>[ ] reparameterization</li>
+<li>[ ] KL</li>
+<li>[ ] ELBO</li>
+<li>[ ] beta-VAE</li>
+<li>[ ] posterior collapse</li>
+<li>[ ] prior sampling</li>
+</ul></details><details id="help-topic-28-code"><summary>โค้ด</summary><h3>28. Checklist</h3>
+<ul>
+<li>[ ] encoder/decoder</li>
+<li>[ ] bottleneck</li>
+<li>[ ] denoising</li>
+<li>[ ] plain AE limits</li>
+<li>[ ] q(z|x)</li>
+<li>[ ] mu/logvar</li>
+<li>[ ] reparameterization</li>
+<li>[ ] KL</li>
+<li>[ ] ELBO</li>
+<li>[ ] beta-VAE</li>
+<li>[ ] posterior collapse</li>
+<li>[ ] prior sampling</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-28-result"><summary>ผลการทดลอง</summary><h3>28. Checklist</h3>
+<ul>
+<li>[ ] encoder/decoder</li>
+<li>[ ] bottleneck</li>
+<li>[ ] denoising</li>
+<li>[ ] plain AE limits</li>
+<li>[ ] q(z|x)</li>
+<li>[ ] mu/logvar</li>
+<li>[ ] reparameterization</li>
+<li>[ ] KL</li>
+<li>[ ] ELBO</li>
+<li>[ ] beta-VAE</li>
+<li>[ ] posterior collapse</li>
+<li>[ ] prior sampling</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-28"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-29" class="source-topic"><span id="source-27-autoencoder-vae-canonical-29-whats-next" class="legacy-anchor"></span><span id="source-27-autoencoder-vae-canonical-27-autoencoder-vae-autoencoders-and-vae" class="legacy-anchor"></span><h3>29. What's Next</h3>
+<p>Batch 10 moves into adversarial and attention-based generative modeling: GANs, Attention, and Transformers.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-29-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>29. What's Next</h3>
+<p>Batch 10 moves into adversarial and attention-based generative modeling: GANs, Attention, and Transformers.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-29-equation"><summary>สมการ</summary><h3>29. What's Next</h3>
+<p>Batch 10 moves into adversarial and attention-based generative modeling: GANs, Attention, and Transformers.</p></details><details id="help-topic-29-visual"><summary>ภาพและ shape</summary><h3>29. What's Next</h3>
+<p>Batch 10 moves into adversarial and attention-based generative modeling: GANs, Attention, and Transformers.</p></details><details id="help-topic-29-code"><summary>โค้ด</summary><h3>29. What's Next</h3>
+<p>Batch 10 moves into adversarial and attention-based generative modeling: GANs, Attention, and Transformers.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-29-result"><summary>ผลการทดลอง</summary><h3>29. What's Next</h3>
+<p>Batch 10 moves into adversarial and attention-based generative modeling: GANs, Attention, and Transformers.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-29"> อ่านหัวข้อนี้แล้ว</label></section><details><summary>รายละเอียดเพิ่มเติมและข้อกำหนดของ local lab</summary><h3>27-autoencoder-vae — Autoencoders and VAE</h3>
+<p><strong>Prerequisites:</strong> Complete 26-lstm-gru; be able to trace array/tensor shapes, separate train/validation/test data, and explain the core objective of the current chapter.</p>
+<p><strong>Mental model:</strong> Treat Autoencoders and VAE as a pipeline: input representation → central mechanism → objective/state update → observable output. At every boundary, state shape/state, allowed information flow, and the invariant that should remain true.</p>
+<p><strong>Code walkthrough:</strong> Read public API first, then input checks, state/shape transformations, numerical core, returned values and tests. Connect each important code block to the equation or algorithm in the chapter README.</p>
+<p><strong>Visualization / inspection:</strong> Use a tiny case. Inspect intermediate values, distributions, norms, scores, states or trajectories appropriate to Autoencoders and VAE; do not rely only on the final metric.</p>
+<p><strong>Experiment:</strong> Run a baseline, one controlled parameter change, one edge case and one repeated seeded comparison. Record seed, environment, data version, configuration and metric.</p>
+<p><strong>Limitations:</strong> List at least one assumption, one data-related limitation, one numerical/optimization limitation and one scaling limitation for Autoencoders and VAE.</p>
+<p><strong>Analysis workflow:</strong> Check inputs → preprocessing → shapes/state → finite numerical values → objective/update → evaluation protocol. The earliest unexpected state is more informative than a downstream metric.</p>
+<p><strong>Performance:</strong> Identify the dominant time and memory terms and measure them on the local learning run before attempting optimization.</p>
+<p><strong>Production perspective:</strong> Define input validation, artifact/configuration versioning, quality and resource measurements, staged release criteria and a way to return to the previous known-good artifact.</p>
+<p><strong>Research perspective:</strong> State a falsifiable hypothesis, baseline, one-factor change, metric, repeated-run plan when stochastic, and how negative results will be recorded.</p>
+<p><strong>Interview questions:</strong>
+1. Explain Autoencoders and VAE from first principles without naming a library API.
+2. Trace one input through the central mechanism and give the important intermediate shapes/state.
+3. Name the strongest assumption and a case where it fails.
+4. State the dominant compute/memory cost.
+5. Describe how you would validate a new implementation against a trusted baseline.</p>
+<p><strong>Summary / exit condition:</strong> You may move on when you can explain, derive or trace, implement, test, analyze, measure and evaluate Autoencoders and VAE, and when the chapter mini-project plus twenty total exercises are complete.</p></details></section><section id="objective-evidence" class="canonical-section"><h2>พิสูจน์ความสามารถทีละ objective</h2><p>ทำกรณีใหม่ก่อนเปิด reference แล้วบันทึกงานด้านล่าง ให้ผู้ตรวจใช้ rubric ตรวจคำอธิบาย ผลคำนวณ โค้ด และข้อจำกัด บันทึกเก็บในเบราว์เซอร์เครื่องนี้ กดส่งออกเพื่อสำรองหรือส่งให้ผู้ตรวจ เว็บไม่ได้รันโค้ดหรือตัดสินผลงานแทนผู้ตรวจ</p><button type="button" class="secondary-button" data-export-evidence>ส่งออกหลักฐานบทนี้เป็น JSON</button><p role="status" id="evidence-export-status"></p><details id="ch27-objective-01" class="objective-proof"><summary>explain encoder / latent / decoder</summary><p>explain encoder / latent / decoder: ใช้กรณีในหัวข้อ Plain Autoencoder, Latent Space เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch27-evidence-01"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch27-evidence-01-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch27-evidence-01-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch27-evidence-01-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch27-evidence-01-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch27-evidence-01-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch27-evidence-01-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch27-evidence-01-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch27-evidence-01-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>encoder fφแปลงx(d)เป็นlatentz(k); linearW=[[1],[1]]/2,x=[2,4]ให้z3; VAEencoderให้μและlogvarianceแทนzเดียว</p><h3>3. Plain Autoencoder</h3>
+<p>Encoder:</p>
+<pre><code class="language-text">z = f_encoder(x)
+</code></pre>
+<p>Decoder:</p>
+<pre><code class="language-text">x_hat = f_decoder(z)
+</code></pre>
+<p>Optimize:</p>
+<pre><code class="language-text">L_reconstruction(x, x_hat)
+</code></pre>
+<p>Examples:
+- MSE for continuous normalized values
+- BCE-like likelihood for Bernoulli-style pixels</p>
+<p>Loss choice should match the assumed observation model.</p>
+<h3>7. Latent Space</h3>
+<p>A useful latent space may:
+- cluster related samples
+- interpolate smoothly
+- discard nuisance variation
+- support downstream prediction</p>
+<p>But a plain autoencoder does not force the aggregate latent distribution to match a simple prior.</p>
+<p>Random z samples may decode to nonsense.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch27-objective-02" class="objective-proof"><summary>distinguish undercomplete and overcomplete autoencoders</summary><p>distinguish undercomplete and overcomplete autoencoders: ใช้กรณีในหัวข้อ Bottleneck, Overcomplete Autoencoder เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch27-evidence-02"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch27-evidence-02-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch27-evidence-02-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch27-evidence-02-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch27-evidence-02-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch27-evidence-02-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch27-evidence-02-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch27-evidence-02-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch27-evidence-02-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>4. Bottleneck</h3>
+<p>An undercomplete autoencoder uses:</p>
+<pre><code class="language-text">dim(z) &lt; dim(x)
+</code></pre>
+<p>This forces compression.</p>
+<p>But compression alone does not guarantee semantically meaningful features.</p>
+<h3>5. Overcomplete Autoencoder</h3>
+<p>If latent dimension is large:</p>
+<pre><code class="language-text">dim(z) &gt;= dim(x)
+</code></pre>
+<p>the network may learn an identity-like solution unless regularized.</p>
+<p>Possible constraints:
+- noise
+- sparsity
+- weight regularization
+- architecture
+- contractive penalties</p><h3>4. Bottleneck</h3>
+<p>An undercomplete autoencoder uses:</p>
+<pre><code class="language-text">dim(z) &lt; dim(x)
+</code></pre>
+<p>This forces compression.</p>
+<p>But compression alone does not guarantee semantically meaningful features.</p>
+<h3>5. Overcomplete Autoencoder</h3>
+<p>If latent dimension is large:</p>
+<pre><code class="language-text">dim(z) &gt;= dim(x)
+</code></pre>
+<p>the network may learn an identity-like solution unless regularized.</p>
+<p>Possible constraints:
+- noise
+- sparsity
+- weight regularization
+- architecture
+- contractive penalties</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch27-objective-03" class="objective-proof"><summary>explain reconstruction loss</summary><p>explain reconstruction loss: ใช้กรณีในหัวข้อ Reconstruction Term เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch27-evidence-03"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch27-evidence-03-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch27-evidence-03-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch27-evidence-03-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch27-evidence-03-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch27-evidence-03-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch27-evidence-03-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch27-evidence-03-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch27-evidence-03-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>reconstructionMSEmean((xhat−x)²); x[2,4],xhat[3,3]ได้1; BCEเหมาะbinary/normalizedlikelihoodตามนิยามไม่ใช่ใช้กับทุกข้อมูล</p><h3>14. Reconstruction Term</h3>
+<p>For binary-valued/normalized Bernoulli-style observations, one can model:</p>
+<pre><code class="language-text">p(x|z)
+</code></pre>
+<p>with Bernoulli logits and use BCE-with-logits reconstruction loss.</p>
+<p>For real-valued data, Gaussian likelihood often corresponds to an MSE-like objective under assumptions.</p>
+<p>The reconstruction term is a likelihood model, not an arbitrary cosmetic choice.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch27-objective-04" class="objective-proof"><summary>understand denoising autoencoders</summary><p>understand denoising autoencoders: ใช้กรณีในหัวข้อ Denoising Autoencoder เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch27-evidence-04"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch27-evidence-04-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch27-evidence-04-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch27-evidence-04-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch27-evidence-04-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch27-evidence-04-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch27-evidence-04-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch27-evidence-04-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch27-evidence-04-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>6. Denoising Autoencoder</h3>
+<p>Train on corrupted input but clean target:</p>
+<pre><code class="language-text">x
+↓ corrupt
+x_tilde
+↓ encoder/decoder
+x_hat
+↓ compare with
+x
+</code></pre>
+<p>The model learns to remove certain perturbations.</p>
+<p>This can encourage robust representations.</p><h3>6. Denoising Autoencoder</h3>
+<p>Train on corrupted input but clean target:</p>
+<pre><code class="language-text">x
+↓ corrupt
+x_tilde
+↓ encoder/decoder
+x_hat
+↓ compare with
+x
+</code></pre>
+<p>The model learns to remove certain perturbations.</p>
+<p>This can encourage robust representations.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch27-objective-05" class="objective-proof"><summary>understand sparse/regularized autoencoders conceptually</summary><p>understand sparse/regularized autoencoders conceptually: ใช้กรณีในหัวข้อ Reconstruction vs Regularization Trade-Off, beta-VAE เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch27-evidence-05"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch27-evidence-05-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch27-evidence-05-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch27-evidence-05-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch27-evidence-05-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch27-evidence-05-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch27-evidence-05-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch27-evidence-05-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch27-evidence-05-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>เปลี่ยนβ0→1โดยseed/capacity/updatesคงที่; reportreconstructionและKLแยกกับactiveunits ผลไม่จำเป็นmonotonicในstochastictraining</p><h3>15. Reconstruction vs Regularization Trade-Off</h3>
+<p>Strong reconstruction pressure:
+- preserves detail
+- latent may drift from prior</p>
+<p>Strong KL pressure:
+- latent follows prior
+- reconstructions may degrade
+- posterior collapse may occur</p>
+<h3>16. beta-VAE</h3>
+<p>A common modification:</p>
+<pre><code class="language-text">L =
+reconstruction
++
+beta * KL
+</code></pre>
+<p>beta &gt; 1 increases latent regularization pressure.</p>
+<p>This may encourage certain disentanglement behavior but can hurt reconstruction.</p>
+<p>Disentanglement is not guaranteed automatically.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch27-objective-06" class="objective-proof"><summary>explain why a plain autoencoder is not automatically generative</summary><p>explain why a plain autoencoder is not automatically generative: ใช้กรณีในหัวข้อ Why VAE?, VAE vs Deterministic Autoencoder เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch27-evidence-06"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch27-evidence-06-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch27-evidence-06-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch27-evidence-06-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch27-evidence-06-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch27-evidence-06-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch27-evidence-06-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch27-evidence-06-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch27-evidence-06-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>8. Why VAE?</h3>
+<p>A Variational Autoencoder introduces a probabilistic latent model.</p>
+<p>Generative story:</p>
+<pre><code class="language-text">z ~ p(z)
+x ~ p_theta(x | z)
+</code></pre>
+<p>Common prior:</p>
+<pre><code class="language-text">p(z) = N(0, I)
+</code></pre>
+<p>The encoder approximates the intractable posterior:</p>
+<pre><code class="language-text">q_phi(z | x)
+</code></pre>
+<h3>21. VAE vs Deterministic Autoencoder</h3>
+<p>Plain AE:
+- deterministic z
+- reconstruction objective
+- no required simple prior match</p>
+<p>VAE:
+- distribution q(z|x)
+- stochastic latent sample
+- KL regularization
+- explicit generative latent-variable interpretation</p><h3>8. Why VAE?</h3>
+<p>A Variational Autoencoder introduces a probabilistic latent model.</p>
+<p>Generative story:</p>
+<pre><code class="language-text">z ~ p(z)
+x ~ p_theta(x | z)
+</code></pre>
+<p>Common prior:</p>
+<pre><code class="language-text">p(z) = N(0, I)
+</code></pre>
+<p>The encoder approximates the intractable posterior:</p>
+<pre><code class="language-text">q_phi(z | x)
+</code></pre>
+<h3>21. VAE vs Deterministic Autoencoder</h3>
+<p>Plain AE:
+- deterministic z
+- reconstruction objective
+- no required simple prior match</p>
+<p>VAE:
+- distribution q(z|x)
+- stochastic latent sample
+- KL regularization
+- explicit generative latent-variable interpretation</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch27-objective-07" class="objective-proof"><summary>derive the VAE latent distribution parameterization</summary><p>derive the VAE latent distribution parameterization: ใช้กรณีในหัวข้อ Gaussian Encoder เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch27-evidence-07"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch27-evidence-07-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch27-evidence-07-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch27-evidence-07-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch27-evidence-07-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch27-evidence-07-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch27-evidence-07-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch27-evidence-07-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch27-evidence-07-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>seed7toy2D เปรียบAEกับVAEβ0/.1/1คงcapacity; recordreconstruction/KL/seedsและsamplequalityไม่เทียบtotallossคนละนิยามตรงๆ</p><h3>9. Gaussian Encoder</h3>
+<p>A common encoder outputs:</p>
+<pre><code class="language-text">mu(x)
+logvar(x)
+</code></pre>
+<p>representing:</p>
+<pre><code class="language-text">q(z|x)
+=
+N(
+    mu,
+    diag(exp(logvar))
+)
+</code></pre>
+<p>Use log variance because:
+- variance must be positive
+- unconstrained neural output can represent logvar
+- numerical manipulation is convenient</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch27-objective-08" class="objective-proof"><summary>implement the reparameterization trick</summary><p>implement the reparameterization trick: ใช้กรณีในหัวข้อ Sampling Problem, Reparameterization Trick เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch27-evidence-08"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch27-evidence-08-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch27-evidence-08-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch27-evidence-08-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch27-evidence-08-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch27-evidence-08-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch27-evidence-08-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch27-evidence-08-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch27-evidence-08-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>reparameterization z=μ+exp(.5logvar)ε,ε~N(0,I)ทำgradientผ่านμ/σได้ แต่samplevarianceยังมีและไม่ใช้กับdiscretesampleตรงๆ</p><h3>10. Sampling Problem</h3>
+<p>Naively:</p>
+<pre><code class="language-text">z ~ N(mu, sigma²)
+</code></pre>
+<p>sampling appears to block straightforward gradient flow through mu/sigma.</p>
+<h3>11. Reparameterization Trick</h3>
+<p>Sample:</p>
+<pre><code class="language-text">epsilon ~ N(0,I)
+</code></pre>
+<p>then:</p>
+<pre><code class="language-text">sigma = exp(0.5 * logvar)
+
+z =
+mu
++
+sigma ⊙ epsilon
+</code></pre>
+<p>Now randomness is isolated in epsilon, while z remains differentiable with respect to mu/logvar.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch27-objective-09" class="objective-proof"><summary>calculate Gaussian KL divergence</summary><p>calculate Gaussian KL divergence: ใช้กรณีในหัวข้อ KL to Standard Normal เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch27-evidence-09"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch27-evidence-09-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch27-evidence-09-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch27-evidence-09-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch27-evidence-09-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch27-evidence-09-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch27-evidence-09-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch27-evidence-09-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch27-evidence-09-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>assertz3,decoder[3,3],MSE1; fixedεทำreparameterizationdeterministic; KLของμ0/logvar0ต้อง0และshapeμ==logvar</p><h3>13. KL to Standard Normal</h3>
+<p>For diagonal Gaussian:</p>
+<pre><code class="language-text">q(z|x)
+=
+N(mu, diag(sigma²))
+
+p(z)
+=
+N(0,I)
+</code></pre>
+<p>KL per sample:</p>
+<pre><code class="language-text">KL
+=
+-1/2 * sum(
+    1
+    + logvar
+    - mu²
+    - exp(logvar)
+)
+</code></pre>
+<p>This encourages approximate posterior distributions toward the prior.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch27-objective-10" class="objective-proof"><summary>explain ELBO</summary><p>explain ELBO: ใช้กรณีในหัวข้อ ELBO เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch27-evidence-10"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch27-evidence-10-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch27-evidence-10-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch27-evidence-10-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch27-evidence-10-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch27-evidence-10-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch27-evidence-10-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch27-evidence-10-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch27-evidence-10-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>x→encoderμ/logvar→ε→z→decoderxhat→reconstruction+βKL→backpropผ่านreparameterization→update; evaluationgenerationเริ่มzpriorไม่ใช่encodex</p><h3>12. ELBO</h3>
+<p>We want high log likelihood:</p>
+<pre><code class="language-text">log p(x)
+</code></pre>
+<p>but direct marginalization over z is generally difficult.</p>
+<p>The evidence lower bound:</p>
+<pre><code class="language-text">ELBO
+=
+E_q [
+    log p_theta(x|z)
+]
+-
+KL(
+    q_phi(z|x)
+    ||
+    p(z)
+)
+</code></pre>
+<p>Maximize ELBO.</p>
+<p>Equivalent loss often written:</p>
+<pre><code class="language-text">VAE loss
+=
+reconstruction loss
++
+KL divergence
+</code></pre>
+<p>with sign/convention depending on implementation.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch27-objective-11" class="objective-proof"><summary>implement a small VAE in PyTorch</summary><p>implement a small VAE in PyTorch: ใช้กรณีในหัวข้อ PyTorch VAE Structure, From Scratch เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch27-evidence-11"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch27-evidence-11-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch27-evidence-11-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch27-evidence-11-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch27-evidence-11-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch27-evidence-11-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch27-evidence-11-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch27-evidence-11-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch27-evidence-11-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p><code>x=np.array([2.,4.]); z=x@np.array([.5,.5])</code> ได้3; VAEให้μ3,logvar0,ε−1ได้z2ด้วยfixedε</p><h3>22. PyTorch VAE Structure</h3>
+<p>Encoder:</p>
+<pre><code class="language-python">h = encoder(x)
+mu = fc_mu(h)
+logvar = fc_logvar(h)
+</code></pre>
+<p>Reparameterize:</p>
+<pre><code class="language-python">std = torch.exp(0.5 * logvar)
+eps = torch.randn_like(std)
+z = mu + eps * std
+</code></pre>
+<p>Decoder:</p>
+<pre><code class="language-python">logits = decoder(z)
+</code></pre>
+<h3>24. From Scratch</h3>
+<p>src/vae_math.py includes:
+- stable sigmoid
+- reparameterize
+- diagonal Gaussian KL
+- BCE-with-logits
+- ELBO-style loss helper</p>
+<p>The actual trainable neural VAE is exercised in the PyTorch integration lab.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch27-objective-12" class="objective-proof"><summary>sample from the prior</summary><p>sample from the prior: ใช้กรณีในหัวข้อ Sampling เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch27-evidence-12"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch27-evidence-12-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch27-evidence-12-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch27-evidence-12-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch27-evidence-12-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch27-evidence-12-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch27-evidence-12-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch27-evidence-12-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch27-evidence-12-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>18. Sampling</h3>
+<p>After training:</p>
+<pre><code class="language-text">z ~ N(0,I)
+x_generated = decoder(z)
+</code></pre>
+<p>This is why matching latent posteriors toward the prior matters.</p><h3>18. Sampling</h3>
+<p>After training:</p>
+<pre><code class="language-text">z ~ N(0,I)
+x_generated = decoder(z)
+</code></pre>
+<p>This is why matching latent posteriors toward the prior matters.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch27-objective-13" class="objective-proof"><summary>interpolate in latent space</summary><p>interpolate in latent space: ใช้กรณีในหัวข้อ Latent Interpolation เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch27-evidence-13"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch27-evidence-13-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch27-evidence-13-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch27-evidence-13-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch27-evidence-13-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch27-evidence-13-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch27-evidence-13-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch27-evidence-13-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch27-evidence-13-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>19. Latent Interpolation</h3>
+<p>Given z1 and z2:</p>
+<pre><code class="language-text">z(alpha)
+=
+(1-alpha)z1
++
+alpha z2
+</code></pre>
+<p>decode intermediate points.</p>
+<p>Smooth outputs are evidence about decoder geometry, not proof of semantic disentanglement.</p><h3>19. Latent Interpolation</h3>
+<p>Given z1 and z2:</p>
+<pre><code class="language-text">z(alpha)
+=
+(1-alpha)z1
++
+alpha z2
+</code></pre>
+<p>decode intermediate points.</p>
+<p>Smooth outputs are evidence about decoder geometry, not proof of semantic disentanglement.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch27-objective-14" class="objective-proof"><summary>recognize posterior collapse</summary><p>recognize posterior collapse: ใช้กรณีในหัวข้อ Posterior Collapse เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch27-evidence-14"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch27-evidence-14-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch27-evidence-14-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch27-evidence-14-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch27-evidence-14-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch27-evidence-14-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch27-evidence-14-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch27-evidence-14-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch27-evidence-14-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>KLสูงเกินทำposteriorcollapse μ≈0,σ≈1และdecoderไม่ใช้z; KLต่ำเกินทำlatentholes ให้ดูKLต่อdimension/activeunits</p><h3>17. Posterior Collapse</h3>
+<p>The encoder may learn:</p>
+<pre><code class="language-text">q(z|x) ≈ p(z)
+</code></pre>
+<p>for all x, so decoder effectively ignores z.</p>
+<p>Symptoms:
+- KL near zero
+- poor latent information
+- powerful decoder reconstructs using other structure</p>
+<p>Mitigations can include:
+- KL warmup/annealing
+- free bits
+- decoder capacity choices
+- objective modifications</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch27-objective-15" class="objective-proof"><summary>Stable Reconstruction</summary><p>Stable Reconstruction: ใช้กรณีในหัวข้อ Stable Reconstruction เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch27-evidence-15"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch27-evidence-15-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch27-evidence-15-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch27-evidence-15-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch27-evidence-15-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch27-evidence-15-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch27-evidence-15-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch27-evidence-15-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch27-evidence-15-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>exp(logvar)overflowได้; checkencoderoutput/logvarและlearningrateก่อนclampพร้อมประกาศbounds; KLสูตร−.5Σ(1+logvar−μ²−exp(logvar))</p><h3>23. Stable Reconstruction</h3>
+<p>Prefer logits-based losses:</p>
+<pre><code class="language-python">F.binary_cross_entropy_with_logits(
+    logits,
+    x,
+    reduction=&quot;sum&quot;,
+)
+</code></pre>
+<p>Do not manually sigmoid then use a logits loss.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch27-objective-16" class="objective-proof"><summary>Evaluation</summary><p>Evaluation: ใช้กรณีในหัวข้อ Evaluation เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch27-evidence-16"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch27-evidence-16-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch27-evidence-16-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch27-evidence-16-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch27-evidence-16-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch27-evidence-16-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch27-evidence-16-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch27-evidence-16-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch27-evidence-16-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>splitก่อนnormalization,validationreconstructionใช้fixedεหรือหลายsamplesรายงานvariance; testgenerationsไม่เลือกเฉพาะตัวอย่างสวย</p><h3>25. Evaluation</h3>
+<p>Autoencoder:
+- reconstruction loss
+- downstream latent utility
+- anomaly score behavior
+- robustness</p>
+<p>VAE:
+- reconstruction
+- KL
+- ELBO estimate
+- sample quality
+- latent interpolation
+- downstream utility</p>
+<p>A prettier latent plot is not sufficient evaluation.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details></section><section id="implementation" class="canonical-section"><h2>Implementation และ tests ที่รันบนเครื่องได้</h2><details><summary>27-autoencoder-vae/src/vae_math.py</summary><pre><code>&quot;&quot;&quot;Numerically stable VAE mathematical primitives implemented with NumPy.&quot;&quot;&quot;
+
+from __future__ import annotations
+
+import numpy as np
+
+
+def sigmoid(x: np.ndarray) -&gt; np.ndarray:
+    values = np.asarray(x, dtype=float)
+    out = np.empty_like(values)
+    positive = values &gt;= 0
+    out[positive] = 1.0 / (1.0 + np.exp(-values[positive]))
+    exp_values = np.exp(values[~positive])
+    out[~positive] = exp_values / (1.0 + exp_values)
+    return out
+
+
+def reparameterize(
+    mu: np.ndarray,
+    logvar: np.ndarray,
+    *,
+    rng: np.random.Generator,
+) -&gt; np.ndarray:
+    mean = np.asarray(mu, dtype=float)
+    lv = np.asarray(logvar, dtype=float)
+    if mean.shape != lv.shape:
+        raise ValueError(&quot;mu and logvar must have equal shapes&quot;)
+    epsilon = rng.normal(size=mean.shape)
+    std = np.exp(0.5 * lv)
+    return mean + std * epsilon
+
+
+def kl_standard_normal(
+    mu: np.ndarray,
+    logvar: np.ndarray,
+    *,
+    reduction: str = &quot;mean&quot;,
+) -&gt; float | np.ndarray:
+    mean = np.asarray(mu, dtype=float)
+    lv = np.asarray(logvar, dtype=float)
+    if mean.shape != lv.shape:
+        raise ValueError(&quot;mu and logvar must have equal shapes&quot;)
+    if mean.ndim &lt; 2:
+        raise ValueError(&quot;expected batch dimension and latent dimension&quot;)
+
+    per_sample = -0.5 * np.sum(
+        1.0 + lv - mean**2 - np.exp(lv),
+        axis=-1,
+    )
+
+    if reduction == &quot;none&quot;:
+        return per_sample
+    if reduction == &quot;sum&quot;:
+        return float(np.sum(per_sample))
+    if reduction == &quot;mean&quot;:
+        return float(np.mean(per_sample))
+    raise ValueError(&quot;reduction must be none, sum, or mean&quot;)
+
+
+def binary_cross_entropy_with_logits(
+    logits: np.ndarray,
+    targets: np.ndarray,
+    *,
+    reduction: str = &quot;mean&quot;,
+) -&gt; float | np.ndarray:
+    z = np.asarray(logits, dtype=float)
+    y = np.asarray(targets, dtype=float)
+
+    if z.shape != y.shape:
+        raise ValueError(&quot;logits and targets must have equal shapes&quot;)
+    if not np.all((y &gt;= 0.0) &amp; (y &lt;= 1.0)):
+        raise ValueError(&quot;targets must lie in [0,1]&quot;)
+
+    # Stable softplus(z) - y*z.
+    loss = np.maximum(z, 0.0) - z * y + np.log1p(np.exp(-np.abs(z)))
+
+    if reduction == &quot;none&quot;:
+        return loss
+    if reduction == &quot;sum&quot;:
+        return float(np.sum(loss))
+    if reduction == &quot;mean&quot;:
+        return float(np.mean(loss))
+    raise ValueError(&quot;reduction must be none, sum, or mean&quot;)
+
+
+def vae_loss(
+    reconstruction_logits: np.ndarray,
+    targets: np.ndarray,
+    mu: np.ndarray,
+    logvar: np.ndarray,
+    *,
+    beta: float = 1.0,
+) -&gt; dict[str, float]:
+    if beta &lt; 0:
+        raise ValueError(&quot;beta must be non-negative&quot;)
+
+    logits = np.asarray(reconstruction_logits, dtype=float)
+    y = np.asarray(targets, dtype=float)
+
+    if logits.ndim &lt; 2:
+        raise ValueError(&quot;expected batch dimension&quot;)
+
+    recon_elementwise = binary_cross_entropy_with_logits(
+        logits,
+        y,
+        reduction=&quot;none&quot;,
+    )
+    reconstruction = float(
+        np.mean(np.sum(recon_elementwise.reshape(len(logits), -1), axis=1))
+    )
+    kl = float(kl_standard_normal(mu, logvar, reduction=&quot;mean&quot;))
+    total = reconstruction + beta * kl
+
+    return {
+        &quot;total&quot;: total,
+        &quot;reconstruction&quot;: reconstruction,
+        &quot;kl&quot;: kl,
+    }
+</code></pre></details><details><summary>27-autoencoder-vae/tests/test_vae_math.py</summary><pre><code>from pathlib import Path
+import importlib.util
+
+import numpy as np
+
+
+MODULE_PATH = Path(__file__).parents[1] / &quot;src&quot; / &quot;vae_math.py&quot;
+SPEC = importlib.util.spec_from_file_location(&quot;vae_math_course&quot;, MODULE_PATH)
+assert SPEC and SPEC.loader
+mod = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(mod)
+
+
+def test_kl_zero_for_standard_normal_posterior() -&gt; None:
+    mu = np.zeros((5, 3))
+    logvar = np.zeros((5, 3))
+
+    assert mod.kl_standard_normal(mu, logvar) == 0.0
+
+
+def test_kl_positive_away_from_prior() -&gt; None:
+    mu = np.ones((4, 2))
+    logvar = np.zeros((4, 2))
+
+    assert mod.kl_standard_normal(mu, logvar) &gt; 0.0
+
+
+def test_reparameterization_reproducible_with_seed() -&gt; None:
+    mu = np.zeros((2, 3))
+    logvar = np.zeros((2, 3))
+
+    a = mod.reparameterize(
+        mu,
+        logvar,
+        rng=np.random.default_rng(7),
+    )
+    b = mod.reparameterize(
+        mu,
+        logvar,
+        rng=np.random.default_rng(7),
+    )
+
+    np.testing.assert_allclose(a, b)
+
+
+def test_bce_logits_is_finite_for_extreme_logits() -&gt; None:
+    logits = np.array([[-1000.0, 1000.0]])
+    targets = np.array([[0.0, 1.0]])
+
+    loss = mod.binary_cross_entropy_with_logits(logits, targets)
+    assert np.isfinite(loss)
+    assert loss &lt; 1e-8
+
+
+def test_vae_loss_components_add_up() -&gt; None:
+    logits = np.zeros((3, 4))
+    targets = np.ones((3, 4))
+    mu = np.ones((3, 2)) * 0.1
+    logvar = np.zeros((3, 2))
+
+    result = mod.vae_loss(
+        logits,
+        targets,
+        mu,
+        logvar,
+        beta=2.0,
+    )
+
+    assert result[&quot;total&quot;] == (
+        result[&quot;reconstruction&quot;] + 2.0 * result[&quot;kl&quot;]
+    )
+</code></pre></details></section><section id="glossary" class="canonical-section"><h2>อภิธานศัพท์ — คำไทย ความหมาย และข้อควรตรวจ</h2><dl><dt>tensor</dt><dd>เทนเซอร์: ชุดตัวเลขที่มีแกน เช่น scalar ไม่มีแกน, vector หนึ่งแกน, matrix สองแกน; shape บอกขนาดแต่ละแกน ไม่บอกความหมายของแกนจนกว่าจะระบุ</dd><dt>shape</dt><dd>รูปทรงข้อมูล: (B,T,d) หมายถึง batch × เวลา/ตำแหน่ง × features; ใช้ชื่อแกนกำกับเสมอ การ transpose เปลี่ยนแกนแต่ไม่ใช่แค่เปลี่ยนชื่อ</dd><dt>batch</dt><dd>กลุ่มตัวอย่างที่คำนวณร่วมกันหนึ่งครั้ง; B คือจำนวนตัวอย่าง ไม่ใช่จำนวน features หรือจำนวน optimizer updates</dd><dt>weight w / θ</dt><dd>น้ำหนักหรือพารามิเตอร์ที่โมเดลใช้คำนวณ; แก้ด้วยมือทำ forward ใหม่ ส่วน optimizer ต้องรับ gradient แล้วกด update จึงแก้ state</dd><dt>bias b</dt><dd>ค่าคงที่ที่บวกกับผลเชิงเส้น; regression scalar bias เพิ่ม Δ ทำให้ prediction ทุกจุดเพิ่ม Δ เท่ากัน</dd><dt>prediction ŷ</dt><dd>ค่าที่โมเดลทำนายจาก input และพารามิเตอร์ปัจจุบัน; เครื่องหมายหมวกแยกจาก target y ที่มาจากข้อมูล</dd><dt>residual e</dt><dd>ความคลาดเคลื่อน ในเว็บนี้นิยาม prediction − target; บางตำราใช้เครื่องหมายกลับกัน จึงต้องตรวจนิยามก่อนเทียบสูตร gradient</dd><dt>MSE</dt><dd>mean squared error = ผลรวม residual กำลังสองหารจำนวนรายการที่ระบุ; มีหน่วยเป็น target ยกกำลังสอง และการใช้ sum แทน mean เปลี่ยน scale gradient</dd><dt>loss L / objective J</dt><dd>จำนวนที่ optimizer ต้องการลด; objective อาจรวม data loss และ regularization จึงต้องดูองค์ประกอบและ reduction ให้ตรง implementation</dd><dt>gradient ∇ / ∂</dt><dd>เวกเตอร์ของ partial derivatives บอกอัตราเปลี่ยน loss ต่อพารามิเตอร์แต่ละตัว; ∂ ใช้เมื่อเปลี่ยนตัวหนึ่งโดยตรึงตัวอื่น</dd><dt>chain rule</dt><dd>กฎลูกโซ่: คูณอนุพันธ์ตามเส้นทาง และบวก contribution จากทุกเส้นทางที่มารวมกัน ใช้ย้อนจาก loss ถึง weights</dd><dt>learning rate η</dt><dd>ขนาดตัวคูณ gradient ใน update θnew=θ−ηg; η≥0, ศูนย์หมายถึงไม่มีการขยับพารามิเตอร์ ก้าวใหญ่เกินอาจ diverge</dd><dt>regularization λ</dt><dd>ตัวคูณค่าลงโทษ ต้อง λ≥0 ตามนิยามการลงโทษ; Ridge λΣw² เพิ่ม gradient 2λw โดยบท Regression นี้ไม่ลงโทษ bias</dd><dt>baseline</dt><dd>สถานะอ้างอิงที่ตรึงไว้สำหรับเทียบ; ต้องเก็บ snapshot ไม่อ้าง object ปัจจุบันที่แก้ตามไปด้วย</dd><dt>invariant</dt><dd>คุณสมบัติที่กลไกต้องรักษา เช่น probability รวม1, shape สอดคล้อง, queue ไม่เกิน capacity; ใช้ tests ตรวจได้มากกว่าดูภาพสวย</dd><dt>optimizer state</dt><dd>ความจำของอัลกอริทึม เช่น velocity, moments และ completed updates; คืนเฉพาะ weights ยังไม่เท่ากับเริ่มการฝึกใหม่ทั้งหมด</dd><dt>finite difference</dt><dd>ประมาณ derivative ด้วย [f(x+h)−f(x−h)]/(2h); h&gt;0, ใช้ smooth point และลองหลาย h เพื่อแยก truncation error จาก roundoff</dd><dt>softmax</dt><dd>แปลง logits เป็นความน่าจะเป็นตามแกนที่กำหนด; ลบ max ก่อน exp เพื่อความเสถียร และ fully masked row ต้องมีนโยบายชัดเจน</dd><dt>logit</dt><dd>คะแนนก่อน sigmoid/softmax ไม่ใช่ probability; อาจเป็นจำนวนจริงติดลบหรือเกิน1ได้ จึงห้ามส่งให้ loss ที่คาด probability โดยไม่แปลง</dd><dt>temperature τ / T</dt><dd>ตัวหาร logits ก่อน softmax; ต้องเป็นบวก ค่าเล็กทำ distribution แหลมขึ้น โดยไม่เท่ากับ retrain weights</dd><dt>mask</dt><dd>ตัวกำหนดตำแหน่งที่อ่านหรือคิด loss ได้; causal mask ปิดอนาคต, padding mask ปิดข้อมูลเติม, loss mask เลือก target แต่ละอย่างคนละหน้าที่</dd><dt>Q / K / V</dt><dd>query ใช้ค้นข้อมูล, key ใช้จับคู่ query, value เป็นข้อมูลที่ถูกถัวเฉลี่ย; เป็น learned projections ของ representation ไม่ใช่ป้ายความหมายตายตัว</dd><dt>head</dt><dd>ส่วนของ feature representation ที่ทำ attention แยกกัน แล้ว concat/project กลับ; ต้องตรวจ d_model หารจำนวน heads ลงตัว</dd><dt>ε-neighborhood</dt><dd>เพื่อนบ้านทั้งหมดที่มีระยะไม่เกิน ε รวมจุดตัวเองใน DBSCAN นี้; ε มีหน่วยเดียวกับพิกัด ไม่ใช่จำนวน k ที่ใช้โหวต</dd><dt>core / border / noise</dt><dd>DBSCAN core มีเพื่อนบ้านรวมตัวเองถึง min_samples; border อยู่ใกล้ core แต่เพื่อนบ้านไม่ถึง; noise ไม่ถูกเชื่อมกับ core cluster ใด</dd><dt>bootstrap</dt><dd>สุ่ม observations แบบ replacement ขนาดเท่าเดิมซ้ำหลายครั้งแล้วคำนวณ statistic ใหม่; seed ทำให้ตรวจซ้ำได้ แต่ไม่แก้สมมติฐาน IID ที่ผิด</dd><dt>confidence interval</dt><dd>ช่วงที่สร้างด้วย procedure ที่มี coverage ตามสมมติฐาน; ช่วงหนึ่งที่ได้แล้วไม่ใช่ posterior probability ของ parameter และ sample เล็กยังไม่แน่นอนมาก</dd><dt>validation / test</dt><dd>validation ใช้เลือกโมเดล/ค่าตั้ง ส่วน test ใช้ประเมินหลัง freeze การตัดสินใจ; fit preprocessing/tokenizer จาก test เป็น leakage</dd><dt>leakage</dt><dd>ข้อมูลที่ควรยังไม่รู้ไหลเข้า training/การเลือกโมเดล เช่น future feature หรือเอกสารซ้ำข้าม split ทำให้ metric ดูดีเกินการใช้งานจริง</dd><dt>queue / capacity</dt><dd>queue คือรายการรอ, capacity การให้บริการรวม = workers × service rate ตามแบบจำลอง; เพิ่ม timeout ไม่เพิ่มกำลังประมวลผล</dd><dt>state transition</dt><dd>การเปลี่ยนสถานะเมื่อเกิดเหตุการณ์ที่อนุญาต เช่น queued→active→done; ต้องระบุ guard, side effect และเหตุผลเมื่อ transition ถูกปฏิเสธ</dd><dt>latency / throughput</dt><dd>latency คือเวลาต่อคำขอ, throughput คือปริมาณงานต่อหน่วยเวลา; batching อาจเพิ่ม throughput แต่เพิ่มเวลารอ จึงต้องวัดทั้งคู่</dd><dt>idempotency</dt><dd>ทำคำขอ business operation เดิมซ้ำแล้ว side effect เกิดครั้งเดียวตาม key และ transaction protocol; ไม่ได้รับประกันจากการใช้ UUID ใหม่ทุก attempt</dd><dt>local lab</dt><dd>โปรแกรม Python และ tests ที่ผู้เรียนรันบนเครื่อง; เว็บเก็บเพียงคำยืนยันของผู้เรียน การผ่าน tests ของโค้ดต้นแบบไม่ใช่ผลตรวจโค้ดผู้เรียน</dd></dl></section></article>
+<section id="practice" class="practice-section"><span class="eyebrow">PRACTICE · DEBUG · BUILD</span><h2>พิสูจน์ด้วยการลงมือทำ</h2><div id="web-checks"></div><div class="retry-actions"><button class="secondary-button" id="retry-checks">เริ่มทำโจทย์ในเว็บใหม่</button><button class="text-button" id="undo-retry" hidden>คืนผลก่อนเริ่มใหม่</button></div><div id="exercise-content"><h2>แบบฝึก 20 ข้อ — เฉลยเฉพาะข้อ</h2><p>ทำคำตอบก่อนเปิด hints; โจทย์ปลายเปิดให้ใช้ตัวอย่างคำตอบและหลักฐานราย objective ตรวจงานจริง</p><section id="exercise-1" class="exercise-item"><h3>ข้อ 1</h3><p>Define encoder.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Plain Autoencoder: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): encoder fφแปลงx(d)เป็นlatentz(k); linearW=…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: encoder fφแปลงx(d)เป็นlatentz(k); linearW=[[1],[1]]/2,x=[2,4]ให้z3; VAEenco…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>encoder fφแปลงx(d)เป็นlatentz(k); linearW=[[1],[1]]/2,x=[2,4]ให้z3; VAEencoderให้μและlogvarianceแทนzเดียว</p><p>อ้างอิง: <a href="#chapter-27/section/topic-3">Plain Autoencoder</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch27-exercise-01"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-2" class="exercise-item"><h3>ข้อ 2</h3><p>Define latent space.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Latent Space: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): latentspaceคือพื้นที่representationที่decode…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: latentspaceคือพื้นที่representationที่decoderอ่าน; kน้อยบังคับcompressionแต่ยัง…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>latentspaceคือพื้นที่representationที่decoderอ่าน; kน้อยบังคับcompressionแต่ยังอาจจำข้อมูลเมื่อmodelcapacityสูง</p><p>อ้างอิง: <a href="#chapter-27/section/topic-7">Latent Space</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch27-exercise-02"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-3" class="exercise-item"><h3>ข้อ 3</h3><p>Explain decoder.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Plain Autoencoder: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): decoder gθแปลงzกลับxhat; z3,W=[1,…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: decoder gθแปลงzกลับxhat; z3,W=[1,1],b[0,0]ให้[3,3] ไม่ใช่inv…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>decoder gθแปลงzกลับxhat; z3,W=[1,1],b[0,0]ให้[3,3] ไม่ใช่inverseสมบูรณ์ของทุกencoder</p><p>อ้างอิง: <a href="#chapter-27/section/topic-3">Plain Autoencoder</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch27-exercise-03"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-4" class="exercise-item"><h3>ข้อ 4</h3><p>Explain reconstruction loss.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Reconstruction Term: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): reconstructionMSEmean((xhat−x)²); x[2,4],xhat[3,…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: reconstructionMSEmean((xhat−x)²); x[2,4],xhat[3,3]ได้1; BCEเหมาะbinary/normalizedlikel…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>reconstructionMSEmean((xhat−x)²); x[2,4],xhat[3,3]ได้1; BCEเหมาะbinary/normalizedlikelihoodตามนิยามไม่ใช่ใช้กับทุกข้อมูล</p><p>อ้างอิง: <a href="#chapter-27/section/topic-14">Reconstruction Term</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch27-exercise-04"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-5" class="exercise-item"><h3>ข้อ 5</h3><p>Compare encoder and latent space.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Latent Space: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): encoderเป็นmappingที่มีparameters ส่วนlatentเป็นผลล…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: encoderเป็นmappingที่มีparameters ส่วนlatentเป็นผลลัพธ์ของmapping; เปลี่ยนlatentdimensionเปล…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>encoderเป็นmappingที่มีparameters ส่วนlatentเป็นผลลัพธ์ของmapping; เปลี่ยนlatentdimensionเปลี่ยนทั้งencoderoutputและdecoderinput</p><p>อ้างอิง: <a href="#chapter-27/section/topic-7">Latent Space</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch27-exercise-05"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-6" class="exercise-item"><h3>ข้อ 6</h3><p>Explain how reconstruction loss changes model behavior.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Reconstruction Term: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): lossreductionเปลี่ยนscalegradient; reconstructi…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: lossreductionเปลี่ยนscalegradient; reconstructionดีอาจเก็บnoiseและไม่ให้latentที่samp…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>lossreductionเปลี่ยนscalegradient; reconstructionดีอาจเก็บnoiseและไม่ให้latentที่sampleได้ จึงต้องประเมินgenerationด้วย</p><p>อ้างอิง: <a href="#chapter-27/section/topic-14">Reconstruction Term</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch27-exercise-06"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-7" class="exercise-item"><h3>ข้อ 7</h3><p>Explain a limitation involving KL divergence.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Posterior Collapse: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): KLสูงเกินทำposteriorcollapse μ≈0,σ≈1และdeco…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: KLสูงเกินทำposteriorcollapse μ≈0,σ≈1และdecoderไม่ใช้z; KLต่ำเกินทำlatentholes …</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>KLสูงเกินทำposteriorcollapse μ≈0,σ≈1และdecoderไม่ใช้z; KLต่ำเกินทำlatentholes ให้ดูKLต่อdimension/activeunits</p><p>อ้างอิง: <a href="#chapter-27/section/topic-17">Posterior Collapse</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch27-exercise-07"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-8" class="exercise-item"><h3>ข้อ 8</h3><p>Explain the tradeoff introduced by reparameterization trick.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Reparameterization Trick: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): reparameterization z=μ+exp(.5logvar)ε,ε~N(0,I)ท…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: reparameterization z=μ+exp(.5logvar)ε,ε~N(0,I)ทำgradientผ่านμ/σได้ แต่samplevarianceย…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>reparameterization z=μ+exp(.5logvar)ε,ε~N(0,I)ทำgradientผ่านμ/σได้ แต่samplevarianceยังมีและไม่ใช้กับdiscretesampleตรงๆ</p><p>อ้างอิง: <a href="#chapter-27/section/topic-11">Reparameterization Trick</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch27-exercise-08"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-9" class="exercise-item"><h3>ข้อ 9</h3><p>Implement a small example of encoder.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ From Scratch: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): `x=np.array([2.,4.]); z=x@np.array…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: <code>x=np.array([2.,4.]); z=x@np.array([.5,.5])</code> ได้3; VAEให้μ3,l…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p><code>x=np.array([2.,4.]); z=x@np.array([.5,.5])</code> ได้3; VAEให้μ3,logvar0,ε−1ได้z2ด้วยfixedε</p><p>อ้างอิง: <a href="#chapter-27/section/topic-24">From Scratch</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch27-exercise-09"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-10" class="exercise-item"><h3>ข้อ 10</h3><p>Add deterministic tests for Exercise 9.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ KL to Standard Normal, From Scratch: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): assertz3,decoder[3,3],MSE1; fixedεทำrepara…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: assertz3,decoder[3,3],MSE1; fixedεทำreparameterizationdeterministic; KLของμ0…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>assertz3,decoder[3,3],MSE1; fixedεทำreparameterizationdeterministic; KLของμ0/logvar0ต้อง0และshapeμ==logvar</p><p>อ้างอิง: <a href="#chapter-27/section/topic-13">KL to Standard Normal</a>, <a href="#chapter-27/section/topic-24">From Scratch</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch27-exercise-10"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-11" class="exercise-item"><h3>ข้อ 11</h3><p>Implement the main calculation behind decoder.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Plain Autoencoder: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): `xhat=np.array([z,z]); loss=np.mean((xhat-[2…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: <code>xhat=np.array([z,z]); loss=np.mean((xhat-[2,4])**2)</code>; z3loss1, z2loss2; คำนวณg…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p><code>xhat=np.array([z,z]); loss=np.mean((xhat-[2,4])**2)</code>; z3loss1, z2loss2; คำนวณgradientdL/dz=2mean(xhat−x)=0ที่3</p><p>อ้างอิง: <a href="#chapter-27/section/topic-3">Plain Autoencoder</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch27-exercise-11"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-12" class="exercise-item"><h3>ข้อ 12</h3><p>Run a small seeded experiment using latent space, reconstruction loss, and reparameterization trick.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Gaussian Encoder, Reparameterization Trick, Reconstruction Term: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): seed7toy2D เปรียบAEกับVAEβ0/.1/1คงcapacity; rec…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: seed7toy2D เปรียบAEกับVAEβ0/.1/1คงcapacity; recordreconstruction/KL/seedsและsamplequa…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>seed7toy2D เปรียบAEกับVAEβ0/.1/1คงcapacity; recordreconstruction/KL/seedsและsamplequalityไม่เทียบtotallossคนละนิยามตรงๆ</p><p>อ้างอิง: <a href="#chapter-27/section/topic-9">Gaussian Encoder</a>, <a href="#chapter-27/section/topic-11">Reparameterization Trick</a>, <a href="#chapter-27/section/topic-14">Reconstruction Term</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch27-exercise-12"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-13" class="exercise-item"><h3>ข้อ 13</h3><p>Explain a common shape or data mismatch.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Gaussian Encoder: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): encoderlogvarต้องshape(B,k)เท่าμ ไม่broadcast(B,1…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: encoderlogvarต้องshape(B,k)เท่าμ ไม่broadcast(B,1)โดยไม่ตั้งใจ; decoderoutputshapeตรงinp…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>encoderlogvarต้องshape(B,k)เท่าμ ไม่broadcast(B,1)โดยไม่ตั้งใจ; decoderoutputshapeตรงinputและMSEreduceaxisตามsample/feature</p><p>อ้างอิง: <a href="#chapter-27/section/topic-9">Gaussian Encoder</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch27-exercise-13"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-14" class="exercise-item"><h3>ข้อ 14</h3><p>Explain one numerical-stability concern.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Stable Reconstruction: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): exp(logvar)overflowได้; checkencoderoutput/logvarแ…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: exp(logvar)overflowได้; checkencoderoutput/logvarและlearningrateก่อนclampพร้อมประกาศbounds;…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>exp(logvar)overflowได้; checkencoderoutput/logvarและlearningrateก่อนclampพร้อมประกาศbounds; KLสูตร−.5Σ(1+logvar−μ²−exp(logvar))</p><p>อ้างอิง: <a href="#chapter-27/section/topic-23">Stable Reconstruction</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch27-exercise-14"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-15" class="exercise-item"><h3>ข้อ 15</h3><p>Explain a correct train, validation, and test workflow.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Evaluation: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): splitก่อนnormalization,validationreconstructionใช้…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: splitก่อนnormalization,validationreconstructionใช้fixedεหรือหลายsamplesรายงานvariance; tes…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>splitก่อนnormalization,validationreconstructionใช้fixedεหรือหลายsamplesรายงานvariance; testgenerationsไม่เลือกเฉพาะตัวอย่างสวย</p><p>อ้างอิง: <a href="#chapter-27/section/topic-25">Evaluation</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch27-exercise-15"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-16" class="exercise-item"><h3>ข้อ 16</h3><p>Measure runtime and memory of the main calculation.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ PyTorch VAE Structure: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): denseAE O(Bdk)ต่อlayer,latentO(Bk); VAEเพิ่มmean/varianc…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: denseAE O(Bdk)ต่อlayer,latentO(Bk); VAEเพิ่มmean/varianceheadsและsampling; reportactivation/optimize…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>denseAE O(Bdk)ต่อlayer,latentO(Bk); VAEเพิ่มmean/varianceheadsและsampling; reportactivation/optimizerstateไม่เอาlatentbytesแทนtrainingmemory</p><p>อ้างอิง: <a href="#chapter-27/section/topic-22">PyTorch VAE Structure</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch27-exercise-16"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-17" class="exercise-item"><h3>ข้อ 17</h3><p>Derive the main input-to-output algorithm for Autoencoders and VAE.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ ELBO: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): x→encoderμ/logvar→ε→z→decoderxhat→reconstruction+βKL→b…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: x→encoderμ/logvar→ε→z→decoderxhat→reconstruction+βKL→backpropผ่านreparameterization→update; evalu…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>x→encoderμ/logvar→ε→z→decoderxhat→reconstruction+βKL→backpropผ่านreparameterization→update; evaluationgenerationเริ่มzpriorไม่ใช่encodex</p><p>อ้างอิง: <a href="#chapter-27/section/topic-12">ELBO</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch27-exercise-17"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-18" class="exercise-item"><h3>ข้อ 18</h3><p>Compare a scratch implementation with a trusted library on identical data.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ From Scratch: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): compareNumPyKLกับtorch.distributions.kl_divergence…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: compareNumPyKLกับtorch.distributions.kl_divergence(Normal(μ,σ),Normal(0,1)).sum(-1)โดยredu…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>compareNumPyKLกับtorch.distributions.kl_divergence(Normal(μ,σ),Normal(0,1)).sum(-1)โดยreductionเดียวกัน,fixedεforwardallclose</p><p>อ้างอิง: <a href="#chapter-27/section/topic-24">From Scratch</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch27-exercise-18"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-19" class="exercise-item"><h3>ข้อ 19</h3><p>Compare a baseline with one controlled change involving KL divergence.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ beta-VAE: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): เปลี่ยนβ0→1โดยseed/capacity/updatesคงที่; reportre…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: เปลี่ยนβ0→1โดยseed/capacity/updatesคงที่; reportreconstructionและKLแยกกับactiveunits ผลไม่…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>เปลี่ยนβ0→1โดยseed/capacity/updatesคงที่; reportreconstructionและKLแยกกับactiveunits ผลไม่จำเป็นmonotonicในstochastictraining</p><p>อ้างอิง: <a href="#chapter-27/section/topic-16">beta-VAE</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch27-exercise-19"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-20" class="exercise-item"><h3>ข้อ 20</h3><p>Summarize validation, reproducibility, and one open research question.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Evaluation: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): บันทึกlatentdim/prior/reconlikelihood/reduction/β/seed…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: บันทึกlatentdim/prior/reconlikelihood/reduction/β/seed; ทดลองKLwarmupลดposteriorcollapseโดยactiveu…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>บันทึกlatentdim/prior/reconlikelihood/reduction/β/seed; ทดลองKLwarmupลดposteriorcollapseโดยactiveunitsเพิ่มและreconstructionไม่เกินbudget</p><p>อ้างอิง: <a href="#chapter-27/section/topic-25">Evaluation</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch27-exercise-20"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section></div><div id="local-lab-content"><section id="local-lab"><h2>Local lab: Python 3.12 บน CPU</h2><p>รันจาก repository root; ใช้ Python 3.12 แยก environment สำหรับ framework ตาม requirements ของชุดบท</p><pre><code>python3.12 -m venv .venv-course
+source .venv-course/bin/activate
+python -m pip install -r requirements-batch09.txt pytest
+(cd 27-autoencoder-vae &amp;&amp; python -m pytest tests -q -rs)</code></pre><p>ผลที่คาดหวัง: required tests ผ่านและไม่มี required test ถูก skip; GPU/integrations ที่ยังไม่รันต้องระบุแยก Python 3.15 ที่มากับเครื่องอาจใช้กับ framework wheels เหล่านี้ไม่ได้</p><h2>Mini Project — Latent Space Lab</h2>
+<p>Use sklearn digits.</p>
+<p>Train:
+- deterministic autoencoder
+- VAE</p>
+<p>Compare:
+- reconstruction loss
+- latent dimension 2/8/16
+- downstream linear classifier on latent features
+- random prior samples
+- interpolation
+- VAE reconstruction/KL curves
+- beta sweep</p>
+<p>Document when lower reconstruction error conflicts with a smoother/sampleable latent space.</p><h2>Batch 09 Integration Project — Sequence &amp; Latent Representation Lab</h2>
+<p>Batch 09 has two complementary experiments.</p>
+<h3>Part A — Sequence Memory Benchmark</h3>
+<p>Train equivalent PyTorch classifiers using:</p>
+<ul>
+<li>vanilla RNN</li>
+<li>LSTM</li>
+<li>GRU</li>
+</ul>
+<p>on a synthetic delayed-memory task.</p>
+<p>The label depends on information near the beginning of the sequence, while distracting noise continues afterward.</p>
+<p>This exposes long-range credit-assignment behavior.</p>
+<h3>Part B — Variational Autoencoder</h3>
+<p>Train a small VAE on sklearn digits.</p>
+<p>Track:</p>
+<ul>
+<li>reconstruction loss</li>
+<li>KL divergence</li>
+<li>total ELBO-style loss</li>
+<li>latent mean/std</li>
+<li>prior samples</li>
+</ul>
+<p>No external dataset download is required.</p>
+<h3>Run Sequence Benchmark</h3>
+<pre><code class="language-bash">python integration-project-batch09/src/sequence_latent_lab.py \
+  --mode sequence \
+  --epochs 5 \
+  --output-dir reports/batch09-sequence
+</code></pre>
+<h3>Run VAE Benchmark</h3>
+<pre><code class="language-bash">python integration-project-batch09/src/sequence_latent_lab.py \
+  --mode vae \
+  --epochs 5 \
+  --output-dir reports/batch09-vae
+</code></pre>
+<h3>Methodology Rules</h3>
+<h4>Sequence branch</h4>
+<ul>
+<li>same train/validation/test split for RNN/LSTM/GRU</li>
+<li>same hidden size</li>
+<li>same optimizer family</li>
+<li>same epoch budget</li>
+<li>validation selects model</li>
+<li>test evaluated once</li>
+</ul>
+<h4>VAE branch</h4>
+<ul>
+<li>training split only for optimization</li>
+<li>validation tracks reconstruction/KL</li>
+<li>test remains held out</li>
+<li>do not select latent plots by test appearance</li>
+</ul>
+<h3>What To Compare</h3>
+<h4>RNN/LSTM/GRU</h4>
+<ul>
+<li>parameter count</li>
+<li>best validation accuracy</li>
+<li>final test accuracy</li>
+<li>training time</li>
+<li>gradient clipping</li>
+<li>sequence-length sensitivity</li>
+</ul>
+<h4>VAE</h4>
+<ul>
+<li>reconstruction</li>
+<li>KL</li>
+<li>latent statistics</li>
+<li>prior-sample range</li>
+<li>beta sensitivity</li>
+</ul>
+<h3>Required Extensions</h3>
+<ol>
+<li>sequence-length sweep</li>
+<li>bidirectional offline benchmark</li>
+<li>packed variable-length sequences</li>
+<li>gradient norm logging</li>
+<li>truncated BPTT</li>
+<li>deterministic AE baseline</li>
+<li>beta-VAE sweep</li>
+<li>2D latent visualization</li>
+<li>latent linear-probe classifier</li>
+<li>posterior-collapse diagnostics</li>
+</ol>
+<h3>Mastery Questions</h3>
+<ul>
+<li>Why can LSTM/GRU retain useful gradients longer than vanilla RNN?</li>
+<li>Why is bidirectional recurrence invalid for causal streaming?</li>
+<li>Why is a plain autoencoder not automatically sampleable from N(0,I)?</li>
+<li>Why does reparameterization preserve gradient flow?</li>
+<li>What does KL≈0 mean in a VAE?</li>
+</ul></section></div><label class="local-confirm"><input type="checkbox" id="local-lab-confirm"> ฉันรัน local lab และตรวจผลตาม rubric ด้วยตัวเองแล้ว</label><p class="local-note">สถานะนี้เป็นคำยืนยันของผู้เรียน เว็บไม่ได้รันหรือตรวจ Python บนเครื่องแทนคุณ</p></section>
+<section id="mastery-review" class="practice-section"><h2>หลักฐานตามเกณฑ์การเรียนรู้</h2><p>ทุก objective ต้องแสดงหลักฐานอธิบาย ทำนาย คำนวณ อ่าน shape/state debug และประยุกต์ พร้อมกรณีใหม่ ผลรัน source ผู้เรียนจริง และการประเมินซ้ำ เกณฑ์นี้ไม่รับประกันความเข้าใจทุกสถานการณ์ เปิด JavaScript เพื่อดูรายการที่ยังขาดและนำเข้ารายงานผู้ตรวจ</p></section><section class="coverage-section"><h2>แผนที่สิ่งที่เรียน → สิ่งที่ต้องแสดงให้ได้</h2><div id="coverage-table"></div></section><footer><span>ZERO TO ELITE AI ENGINEER · LEARNING STUDIO</span><span>อ่าน · derive · implement · debug · experiment · build</span></footer></div></main><noscript><style>.workbench,.sidebar,.reading-route,.lesson-toc,.mastery-status,#web-checks{display:none}main{margin-left:0}</style>อ่านเนื้อหา HTML ได้ตามปกติ เปิด JavaScript เพื่อใช้ห้องทดลองและตรวจคำตอบ</noscript></body></html>

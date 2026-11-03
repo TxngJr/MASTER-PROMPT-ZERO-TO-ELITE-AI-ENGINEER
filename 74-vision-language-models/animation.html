@@ -1,0 +1,1240 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="บทเรียน AI Engineer ภาษาไทย พร้อมคณิตศาสตร์ทีละขั้นและห้องทดลองที่คำนวณจริง"><title>Vision-Language Models: visual tokens เข้าถึงภาษาอย่างไร · AI Engineer Studio</title><link rel="stylesheet" href="../visual-lab/assets/styles.css"><link rel="stylesheet" href="../visual-lab/assets/course.css"><script defer src="../visual-lab/assets/lessons.js"></script><script defer src="../visual-lab/assets/chapter-meta.js"></script><script defer src="../visual-lab/assets/course-math.js"></script><script defer src="../visual-lab/assets/course-models.js"></script><script defer src="../visual-lab/assets/course-models-v3.js"></script><script defer src="../visual-lab/assets/course-assessment.js"></script><script defer src="../visual-lab/assets/course-mastery.js"></script><script defer src="../visual-lab/assets/course-catalog.js"></script><script defer src="../visual-lab/assets/book-content.js"></script><script defer src="../visual-lab/assets/course-render.js"></script><script defer src="../visual-lab/assets/course-mastery-panel.js"></script><script defer src="../visual-lab/assets/quality-report.js"></script><script defer src="../visual-lab/assets/course-app.js"></script></head>
+<body data-chapter="74" data-root="../"><a class="skip-link" href="#main">ข้ามไปบทเรียน</a>
+<aside class="sidebar" id="sidebar" aria-label="เลือกบทเรียน"><a class="brand" href="../visual-lab/index.html"><span class="brand-mark">ai</span><span>AI ENGINEER<small>LEARN · DERIVE · BUILD</small></span></a><div class="sidebar-intro">อ่านให้เข้าใจ · คำนวณให้เห็น · เขียนให้เป็น</div><label class="search-box"><input id="search" type="search" placeholder="ค้นหาบท / attention" aria-label="ค้นหาบทเรียน"></label><label class="filter-label" for="phase-filter">เส้นทางการเรียน <span id="nav-count"></span></label><select id="phase-filter"><option value="">ทุก Phase</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option></select><nav id="chapter-list" class="chapter-list" aria-label="รายชื่อบท"></nav><div class="course-progress"><div><span>ผ่านโจทย์ในเว็บ</span><strong id="progress-count">0 / 80</strong></div><progress id="course-progress" max="80" value="0" aria-label="บทที่ผ่านโจทย์"></progress><a id="resume-link" href="#chapter-1">อ่านต่อจากเดิม →</a></div></aside>
+<button class="nav-backdrop" id="nav-backdrop" aria-label="ปิดเมนู" hidden></button>
+<main id="main" tabindex="-1"><header class="topbar"><div><button id="nav-toggle" class="icon-button mobile-menu" aria-label="เปิดเมนูบทเรียน" aria-expanded="false" aria-controls="sidebar">☰</button><span id="breadcrumb"></span></div><span class="local-badge"><i></i> คำนวณในเครื่อง · ไม่มี API</span></header><div class="content">
+<div class="chapter-navigation"><label for="chapter-select" class="sr-only">เลือกบทเรียน</label><select id="chapter-select"></select><div class="chapter-arrows"><button id="prev-chapter" class="icon-button" aria-label="บทก่อนหน้า">←</button><button id="next-chapter" class="icon-button" aria-label="บทถัดไป">→</button></div></div>
+<section class="chapter-hero"><div><p id="chapter-kicker" class="eyebrow"></p><h1 id="chapter-title">Vision-Language Models: visual tokens เข้าถึงภาษาอย่างไร</h1><p class="english-title" id="chapter-english"></p></div><span class="hero-symbol">f(x) ↗</span></section>
+<p id="quality-status" class="quality-status"></p><div id="mastery-status" class="mastery-status"></div><div class="reading-route"><a href="#chapter-74/section/overview">01 อ่านบทเรียน</a><a href="#workbench">02 ทดลองสมการ</a><a href="#practice">03 ฝึกและตรวจงาน</a><a href="#mastery-review">04 หลักฐานตามเกณฑ์</a></div>
+<nav id="lesson-toc" class="lesson-toc" aria-label="สารบัญบท"></nav>
+<section id="overview" class="course-overview"><span class="eyebrow">THE LEARNING CONTRACT</span><h2>เรียนบทนี้แล้วต้องทำอะไรได้</h2><p id="chapter-purpose"></p><div id="chapter-objectives"></div><div class="learning-hint">ทำนาย → เปลี่ยนทีละค่า → ตรวจตัวเลข → อธิบายเหตุผล → เขียนด้วย Python เอง</div></section>
+<section class="workbench lab-card" id="workbench" aria-label="ห้องทดลองคำนวณจริง"><div class="card-header"><div><span class="live-dot"></span><span class="eyebrow">COMPUTATION WORKBENCH</span></div><span class="simulation-label">ทุกภาพใช้ผลคำนวณชุดเดียวกัน</span></div><div class="lab-top"><label for="lab-select">เลือกกลไกที่ต้องการทดลอง</label><select id="lab-select"></select><p id="lab-question"></p></div><div class="workbench-grid"><div class="viz-column"><div class="compare-labels"><span>เส้นทึบ: ปัจจุบัน</span><span>เส้นประ: baseline ที่ตรึงไว้</span></div><div id="simulation" class="simulation"></div><div id="metrics" class="metrics"></div><div id="baseline-diff" class="baseline-diff"></div><div class="playback"><div class="playback-buttons"><button class="primary-button" id="update-once">อัปเดตหนึ่งก้าว</button><button class="secondary-button" id="train-many">▶ ฝึก 30 ก้าว</button><button class="icon-button" id="back-state" aria-label="ย้อนประวัติ">↶</button><button class="icon-button" id="forward-state" aria-label="ประวัติถัดไป">↷</button></div></div><div class="lab-secondary-actions"><button id="pin-baseline" class="text-button">ตรึง baseline ปัจจุบัน</button><button id="reset-lab" class="text-button">คืนค่าเริ่มต้น</button><button id="download-state" class="text-button">บันทึกผล JSON</button><span id="history-status"></span></div><p id="simulation-note" class="simulation-note"></p><p class="lab-error" id="lab-error" role="alert" hidden></p></div><div class="controls-column"><h3>เปลี่ยนทีละตัว แล้วสังเกตผล</h3><div id="lab-controls"></div><p class="control-note">แก้ weight ด้วยมือจะคำนวณ forward ใหม่; optimizer เปลี่ยน weights เมื่อกดอัปเดตเท่านั้น</p></div></div>
+<div class="trace-section"><div class="trace-toolbar"><h3>เดินสมการทีละ operation</h3><div><button id="trace-prev" class="icon-button" aria-label="operation ก่อนหน้า">←</button><button id="play-trace" class="secondary-button" aria-pressed="false">▶ เล่น flow</button><button id="trace-next" class="icon-button" aria-label="operation ถัดไป">→</button><span id="stage-counter"></span></div></div><label class="motion-control"><input id="reduce-motion" type="checkbox"> ลดภาพเคลื่อนไหว (หยุดการเล่นที่ค้างอยู่)</label><div id="operation-steps" class="operation-steps"></div><div id="flow-diagram" class="flow-diagram"></div><div id="active-operation" class="active-operation" aria-live="polite"></div><p class="control-note">ตัวเลขบนภาพปัดเศษเพื่อให้อ่านง่าย; บันทึก JSON เพื่อดูค่าที่ใช้คำนวณเต็ม precision</p><details open><summary>ตารางค่าระหว่างทาง — ตรวจด้วยมือได้</summary><div id="result-table"></div></details><div id="tensor-tables" class="tensor-tables"></div><details id="surface-details"><summary>ดู loss surface และเส้นทางของ w₁,b (ตรึง controls อื่น)</summary><div id="surface-chart"></div><p>surface คำนวณ objective ปัจจุบันโดยตรึง degree, penalty, ข้อมูล และ weights อื่น เส้นทางแสดงเฉพาะ snapshots ที่ค่าเหล่านี้ตรงกัน; นอกช่วง w=[−1,5], b=[−2,4] ให้ตรวจค่าจริงใน history</p></details><details><summary>ประวัติการเปลี่ยนค่า</summary><div id="history-table"></div></details></div></section>
+<article id="chapter-article" class="chapter-article"><section id="mechanism-1" class="teaching-section"><span class="section-kicker">CHAPTER 74 · ภาพ → สมการ → โค้ด</span><h2>1. vision encoder กับ projector ทำคนละงาน</h2><h3>โจทย์และเหตุผล</h3><p>encoder สรุป pixels เป็น features ส่วน projector จัด dimension/representation ให้ language model อ่านได้ dimension ตรงเป็นแค่เงื่อนไขหนึ่ง ยังต้องเรียน alignment จากข้อมูลที่เหมาะ</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Compute patch/token counts at multiple resolutions.</p><p>squareimage224,P14ได้16²=256patchtokens;448ได้32²=1024ยังไม่รวมCLS/separators; resolutionสองเท่าทำpatchtokens4×</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>imageSize: image side pixels,initial=16; patchSize: patch side pixels,initial=4; channels: channels,initial=3; dimension: embedding dimension,initial=8</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = &quot;image=(16,16,3)&quot;; ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</li><li>N=ceil(H/P)ceil(W/P); patch vector=P²C = 16; padding ขอบเมื่อหารไม่ลงตัว; ลด patch side ครึ่งหนึ่งเพิ่ม tokens ประมาณ 4 เท่า</li><li>finite / normalized / bounded = 16; เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="patches-ภาพ---patch-tokens---pro">เปิดการทดลองนี้</a><p class="failure-box">leakedcaptions/filenamesหรือtextquestionบอกanswerทำVLMดูเห็นภาพทั้งที่ไม่อ่าน; shuffled/no-imageablationsและgroupbyimageholdout; คำนวณ token/parameter counts จริง; ตารางแสดงสูงสุด 64 patches จาก 16 ไม่ได้รัน vision encoder</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>squareimage224,P14ได้16²=256patchtokens;448ได้32²=1024ยังไม่รวมCLS/separators; resolutionสองเท่าทำpatchtokens4×</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-1-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = &quot;image=(16,16,3)&quot;<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>N=ceil(H/P)ceil(W/P); patch vector=P²C</code> = 16<p>padding ขอบเมื่อหารไม่ลงตัว; ลด patch side ครึ่งหนึ่งเพิ่ม tokens ประมาณ 4 เท่า</p></li><li><code>finite / normalized / bounded</code> = 16<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-1-visual"><summary>ภาพและ shape</summary><p>คำนวณ token/parameter counts จริง; ตารางแสดงสูงสุด 64 patches จาก 16 ไม่ได้รัน vision encoder</p><ol><li><code>shape / range</code> = &quot;image=(16,16,3)&quot;<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>N=ceil(H/P)ceil(W/P); patch vector=P²C</code> = 16<p>padding ขอบเมื่อหารไม่ลงตัว; ลด patch side ครึ่งหนึ่งเพิ่ม tokens ประมาณ 4 เท่า</p></li><li><code>finite / normalized / bounded</code> = 16<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-1-code"><summary>โค้ด</summary><p>squareimage224,P14ได้16²=256patchtokens;448ได้32²=1024ยังไม่รวมCLS/separators; resolutionสองเท่าทำpatchtokens4×</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-1-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = &quot;image=(16,16,3)&quot;<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>N=ceil(H/P)ceil(W/P); patch vector=P²C</code> = 16<p>padding ขอบเมื่อหารไม่ลงตัว; ลด patch side ครึ่งหนึ่งเพิ่ม tokens ประมาณ 4 เท่า</p></li><li><code>finite / normalized / bounded</code> = 16<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-1"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-2" class="teaching-section"><span class="section-kicker">CHAPTER 74 · ภาพ → สมการ → โค้ด</span><h2>2. resolution เพิ่มต้นทุน context</h2><h3>โจทย์และเหตุผล</h3><p>patches มากขึ้นช่วยรายละเอียดบางงานแต่กิน token budget และ attention memory จึงต้องเปรียบเทียบ OCR/grounding quality กับ resource cost ด้วยภาพเดียวกัน</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Implement a linear projector from vision width to LM width.</p><p>visionX(B,N,768)@W(768,1024)+b→(B,N,1024); projectoroutputcompatibleLMwidthไม่เท่ากับvisionfeaturesมีภาษาalignmentแล้ว</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>image1: image vector coordinate1,initial=1; image2: image vector coordinate2,initial=0.2; text1: matched text coordinate1,initial=1; text2: matched text coordinate2,initial=0; temperature: temperature τ,initial=0.5</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = [1, 0.2]; กำหนดความหมายและหน่วยของ input ก่อนทดลอง</li><li>p=softmax(cos(image,texts)/τ); L=−log p_match = [0.8142903630106096, 0.1695907077430543, 0.016118929246335994]; negative candidates เปลี่ยน denominator; τ เปลี่ยนความคม ไม่ได้หมุน vectors เอง</li><li>normal / boundary / comparison = [0.8142903630106096, 0.1695907077430543, 0.016118929246335994]; ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="contrastive-image-text-alignment-obj">เปิดการทดลองนี้</a><p class="failure-box">leakedcaptions/filenamesหรือtextquestionบอกanswerทำVLMดูเห็นภาพทั้งที่ไม่อ่าน; shuffled/no-imageablationsและgroupbyimageholdout; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>visionX(B,N,768)@W(768,1024)+b→(B,N,1024); projectoroutputcompatibleLMwidthไม่เท่ากับvisionfeaturesมีภาษาalignmentแล้ว</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-2-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = [1, 0.2]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>p=softmax(cos(image,texts)/τ); L=−log p_match</code> = [0.8142903630106096, 0.1695907077430543, 0.016118929246335994]<p>negative candidates เปลี่ยน denominator; τ เปลี่ยนความคม ไม่ได้หมุน vectors เอง</p></li><li><code>normal / boundary / comparison</code> = [0.8142903630106096, 0.1695907077430543, 0.016118929246335994]<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-2-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>shape / range</code> = [1, 0.2]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>p=softmax(cos(image,texts)/τ); L=−log p_match</code> = [0.8142903630106096, 0.1695907077430543, 0.016118929246335994]<p>negative candidates เปลี่ยน denominator; τ เปลี่ยนความคม ไม่ได้หมุน vectors เอง</p></li><li><code>normal / boundary / comparison</code> = [0.8142903630106096, 0.1695907077430543, 0.016118929246335994]<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-2-code"><summary>โค้ด</summary><p>visionX(B,N,768)@W(768,1024)+b→(B,N,1024); projectoroutputcompatibleLMwidthไม่เท่ากับvisionfeaturesมีภาษาalignmentแล้ว</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-2-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = [1, 0.2]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>p=softmax(cos(image,texts)/τ); L=−log p_match</code> = [0.8142903630106096, 0.1695907077430543, 0.016118929246335994]<p>negative candidates เปลี่ยน denominator; τ เปลี่ยนความคม ไม่ได้หมุน vectors เอง</p></li><li><code>normal / boundary / comparison</code> = [0.8142903630106096, 0.1695907077430543, 0.016118929246335994]<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-2"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-3" class="teaching-section"><span class="section-kicker">CHAPTER 74 · ภาพ → สมการ → โค้ด</span><h2>3. คำตอบเกี่ยวกับภาพต้องตรวจหลักฐานในภาพ</h2><h3>โจทย์และเหตุผล</h3><p>โมเดลอาจตอบจาก prior ของภาษาแม้มองภาพผิด ใช้ tasks ที่ตรวจตำแหน่ง, text และจำนวน objects พร้อม negative controls และไม่ตีความ embedding similarity ว่าคือ visual understanding ครบ</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Compute IoU by hand and in code.</p><p>boxes[0,0,2,2]กับ[1,1,3,3]IoU1/7; coordinateconventioncontinuousและzeroarea-policyต้องตรงevaluation</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>q1: query q₁,initial=1; q2: query q₂,initial=0; k11: key1 coordinate1,initial=1; k12: key1 coordinate2,initial=0; v1: value1,initial=1; temperature: extra temperature,initial=1; queryPosition: query position,initial=2; window: window size,initial=4; mask: mask,initial=none</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>q in R²; K (4,2); V (4,1) = [1, 0]; scalar values ใช้เพื่ออ่าน output ได้; learned projections ในบทเต็ม</li><li>score_j=q·k_j/√2/temperature = [0.7071067811865475, 0, 0.7071067811865475, -0.7071067811865475]; หาร √d_k ลดขนาด score ตามมิติ; extra temperature แยกเพื่อทดลองความคม</li><li>disallowed scores → −∞ = [0.7071067811865475, 0, 0.7071067811865475, -0.7071067811865475]; mask ต้องมาก่อน normalize จึงได้ weight ศูนย์จริง</li><li>a=exp(score−max)/sum(exp(score−max)) = [0.3654723070154712, 0.1802029521613177, 0.3654723070154712, 0.08885243380773993]; ผลรวมหนึ่งต่อ query; ห้าม mask ทุก key</li><li>output=Σ_j a_j v_j = 2.1777048676154798; ค่าทุกตำแหน่งมีส่วนตาม attention weight ไม่ใช่ hard select</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="attention-cross-attention---token-">เปิดการทดลองนี้</a><p class="failure-box">leakedcaptions/filenamesหรือtextquestionบอกanswerทำVLMดูเห็นภาพทั้งที่ไม่อ่าน; shuffled/no-imageablationsและgroupbyimageholdout; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>boxes[0,0,2,2]กับ[1,1,3,3]IoU1/7; coordinateconventioncontinuousและzeroarea-policyต้องตรงevaluation</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-3-equation"><summary>สมการ</summary><ol><li><code>q in R²; K (4,2); V (4,1)</code> = [1, 0]<p>scalar values ใช้เพื่ออ่าน output ได้; learned projections ในบทเต็ม</p></li><li><code>score_j=q·k_j/√2/temperature</code> = [0.7071067811865475, 0, 0.7071067811865475, -0.7071067811865475]<p>หาร √d_k ลดขนาด score ตามมิติ; extra temperature แยกเพื่อทดลองความคม</p></li><li><code>disallowed scores → −∞</code> = [0.7071067811865475, 0, 0.7071067811865475, -0.7071067811865475]<p>mask ต้องมาก่อน normalize จึงได้ weight ศูนย์จริง</p></li><li><code>a=exp(score−max)/sum(exp(score−max))</code> = [0.3654723070154712, 0.1802029521613177, 0.3654723070154712, 0.08885243380773993]<p>ผลรวมหนึ่งต่อ query; ห้าม mask ทุก key</p></li><li><code>output=Σ_j a_j v_j</code> = 2.1777048676154798<p>ค่าทุกตำแหน่งมีส่วนตาม attention weight ไม่ใช่ hard select</p></li></ol></details><details id="help-mechanism-3-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>q in R²; K (4,2); V (4,1)</code> = [1, 0]<p>scalar values ใช้เพื่ออ่าน output ได้; learned projections ในบทเต็ม</p></li><li><code>score_j=q·k_j/√2/temperature</code> = [0.7071067811865475, 0, 0.7071067811865475, -0.7071067811865475]<p>หาร √d_k ลดขนาด score ตามมิติ; extra temperature แยกเพื่อทดลองความคม</p></li><li><code>disallowed scores → −∞</code> = [0.7071067811865475, 0, 0.7071067811865475, -0.7071067811865475]<p>mask ต้องมาก่อน normalize จึงได้ weight ศูนย์จริง</p></li><li><code>a=exp(score−max)/sum(exp(score−max))</code> = [0.3654723070154712, 0.1802029521613177, 0.3654723070154712, 0.08885243380773993]<p>ผลรวมหนึ่งต่อ query; ห้าม mask ทุก key</p></li><li><code>output=Σ_j a_j v_j</code> = 2.1777048676154798<p>ค่าทุกตำแหน่งมีส่วนตาม attention weight ไม่ใช่ hard select</p></li></ol></details><details id="help-mechanism-3-code"><summary>โค้ด</summary><p>boxes[0,0,2,2]กับ[1,1,3,3]IoU1/7; coordinateconventioncontinuousและzeroarea-policyต้องตรงevaluation</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-3-result"><summary>ผลการทดลอง</summary><ol><li><code>q in R²; K (4,2); V (4,1)</code> = [1, 0]<p>scalar values ใช้เพื่ออ่าน output ได้; learned projections ในบทเต็ม</p></li><li><code>score_j=q·k_j/√2/temperature</code> = [0.7071067811865475, 0, 0.7071067811865475, -0.7071067811865475]<p>หาร √d_k ลดขนาด score ตามมิติ; extra temperature แยกเพื่อทดลองความคม</p></li><li><code>disallowed scores → −∞</code> = [0.7071067811865475, 0, 0.7071067811865475, -0.7071067811865475]<p>mask ต้องมาก่อน normalize จึงได้ weight ศูนย์จริง</p></li><li><code>a=exp(score−max)/sum(exp(score−max))</code> = [0.3654723070154712, 0.1802029521613177, 0.3654723070154712, 0.08885243380773993]<p>ผลรวมหนึ่งต่อ query; ห้าม mask ทุก key</p></li><li><code>output=Σ_j a_j v_j</code> = 2.1777048676154798<p>ค่าทุกตำแหน่งมีส่วนตาม attention weight ไม่ใช่ hard select</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-3"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="reference" class="canonical-section"><h2>เนื้อหาครบทุกหัวข้อ พร้อมแผนที่ objective</h2><nav class="source-toc"><a href="#chapter-74/section/topic-1">1. Core Architecture</a> <a href="#chapter-74/section/topic-2">2. Learning Objectives</a> <a href="#chapter-74/section/topic-3">3. Vision Encoder</a> <a href="#chapter-74/section/topic-4">4. Patch Tokens</a> <a href="#chapter-74/section/topic-5">5. Projector</a> <a href="#chapter-74/section/topic-6">6. Fusion Strategies</a> <a href="#chapter-74/section/topic-7">7. Multimodal Chat Templates</a> <a href="#chapter-74/section/topic-8">8. ImageTextToText</a> <a href="#chapter-74/section/topic-9">9. Context Budget</a> <a href="#chapter-74/section/topic-10">10. High Resolution</a> <a href="#chapter-74/section/topic-11">11. Multi-Image</a> <a href="#chapter-74/section/topic-12">12. Video Foundations</a> <a href="#chapter-74/section/topic-13">13. VLM Training Stages</a> <a href="#chapter-74/section/topic-14">14. Alignment Data</a> <a href="#chapter-74/section/topic-15">15. Visual Instruction Tuning</a> <a href="#chapter-74/section/topic-16">16. Grounding</a> <a href="#chapter-74/section/topic-17">17. Bounding Box IoU</a> <a href="#chapter-74/section/topic-18">18. OCR / Documents</a> <a href="#chapter-74/section/topic-19">19. Visual Hallucination</a> <a href="#chapter-74/section/topic-20">20. Grounding Metrics</a> <a href="#chapter-74/section/topic-21">21. Evaluation Slices</a> <a href="#chapter-74/section/topic-22">22. From Scratch</a> <a href="#chapter-74/section/topic-23">23. Common Mistakes</a> <a href="#chapter-74/section/topic-24">24. Exercises / Mini Project</a> <a href="#chapter-74/section/topic-25">25. Checklist</a> <a href="#chapter-74/section/topic-26">26. What&#x27;s Next</a> </nav><section id="topic-1" class="source-topic"><span id="source-74-vision-language-models-canonical-chapter-74-vision-language-models-vlm" class="legacy-anchor"></span><span id="source-74-vision-language-models-canonical-1-core-architecture" class="legacy-anchor"></span><h3>1. Core Architecture</h3>
+<p>A common VLM pattern is:</p>
+<pre><code class="language-text">image
+↓
+vision encoder
+↓
+visual tokens/features
+↓
+projector / resampler
+↓
+language-model embedding space
+↓
+text + image tokens
+↓
+language model
+↓
+answer / caption / grounding
+</code></pre>
+<p>Architectures differ, but this decomposition is a useful first model.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>1. Core Architecture</h3>
+<p>A common VLM pattern is:</p>
+<pre><code class="language-text">image
+↓
+vision encoder
+↓
+visual tokens/features
+↓
+projector / resampler
+↓
+language-model embedding space
+↓
+text + image tokens
+↓
+language model
+↓
+answer / caption / grounding
+</code></pre>
+<p>Architectures differ, but this decomposition is a useful first model.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-1-equation"><summary>สมการ</summary><h3>1. Core Architecture</h3>
+<p>A common VLM pattern is:</p>
+<pre><code class="language-text">image
+↓
+vision encoder
+↓
+visual tokens/features
+↓
+projector / resampler
+↓
+language-model embedding space
+↓
+text + image tokens
+↓
+language model
+↓
+answer / caption / grounding
+</code></pre>
+<p>Architectures differ, but this decomposition is a useful first model.</p></details><details id="help-topic-1-visual"><summary>ภาพและ shape</summary><h3>1. Core Architecture</h3>
+<p>A common VLM pattern is:</p>
+<pre><code class="language-text">image
+↓
+vision encoder
+↓
+visual tokens/features
+↓
+projector / resampler
+↓
+language-model embedding space
+↓
+text + image tokens
+↓
+language model
+↓
+answer / caption / grounding
+</code></pre>
+<p>Architectures differ, but this decomposition is a useful first model.</p></details><details id="help-topic-1-code"><summary>โค้ด</summary><h3>1. Core Architecture</h3>
+<p>A common VLM pattern is:</p>
+<pre><code class="language-text">image
+↓
+vision encoder
+↓
+visual tokens/features
+↓
+projector / resampler
+↓
+language-model embedding space
+↓
+text + image tokens
+↓
+language model
+↓
+answer / caption / grounding
+</code></pre>
+<p>Architectures differ, but this decomposition is a useful first model.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-1-result"><summary>ผลการทดลอง</summary><h3>1. Core Architecture</h3>
+<p>A common VLM pattern is:</p>
+<pre><code class="language-text">image
+↓
+vision encoder
+↓
+visual tokens/features
+↓
+projector / resampler
+↓
+language-model embedding space
+↓
+text + image tokens
+↓
+language model
+↓
+answer / caption / grounding
+</code></pre>
+<p>Architectures differ, but this decomposition is a useful first model.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-1"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-2" class="source-topic"><span id="source-74-vision-language-models-canonical-2-learning-objectives" class="legacy-anchor"></span><h3>2. Learning Objectives</h3>
+<ul>
+<li>derive image patch/token counts</li>
+<li>understand vision encoders and projectors</li>
+<li>distinguish projector fusion from cross-attention</li>
+<li>reason about image-token context budgets</li>
+<li>understand multimodal chat formatting</li>
+<li>understand VLM pretraining and visual instruction tuning</li>
+<li>reason about high-resolution/multi-image/video inputs</li>
+<li>calculate bounding-box IoU</li>
+<li>evaluate grounding precision/recall</li>
+<li>understand OCR/document VLM challenges</li>
+<li>audit visual hallucinations</li>
+<li>design VLM evaluation slices</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>2. Learning Objectives</h3>
+<ul>
+<li>derive image patch/token counts</li>
+<li>understand vision encoders and projectors</li>
+<li>distinguish projector fusion from cross-attention</li>
+<li>reason about image-token context budgets</li>
+<li>understand multimodal chat formatting</li>
+<li>understand VLM pretraining and visual instruction tuning</li>
+<li>reason about high-resolution/multi-image/video inputs</li>
+<li>calculate bounding-box IoU</li>
+<li>evaluate grounding precision/recall</li>
+<li>understand OCR/document VLM challenges</li>
+<li>audit visual hallucinations</li>
+<li>design VLM evaluation slices</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-2-equation"><summary>สมการ</summary><h3>2. Learning Objectives</h3>
+<ul>
+<li>derive image patch/token counts</li>
+<li>understand vision encoders and projectors</li>
+<li>distinguish projector fusion from cross-attention</li>
+<li>reason about image-token context budgets</li>
+<li>understand multimodal chat formatting</li>
+<li>understand VLM pretraining and visual instruction tuning</li>
+<li>reason about high-resolution/multi-image/video inputs</li>
+<li>calculate bounding-box IoU</li>
+<li>evaluate grounding precision/recall</li>
+<li>understand OCR/document VLM challenges</li>
+<li>audit visual hallucinations</li>
+<li>design VLM evaluation slices</li>
+</ul></details><details id="help-topic-2-visual"><summary>ภาพและ shape</summary><h3>2. Learning Objectives</h3>
+<ul>
+<li>derive image patch/token counts</li>
+<li>understand vision encoders and projectors</li>
+<li>distinguish projector fusion from cross-attention</li>
+<li>reason about image-token context budgets</li>
+<li>understand multimodal chat formatting</li>
+<li>understand VLM pretraining and visual instruction tuning</li>
+<li>reason about high-resolution/multi-image/video inputs</li>
+<li>calculate bounding-box IoU</li>
+<li>evaluate grounding precision/recall</li>
+<li>understand OCR/document VLM challenges</li>
+<li>audit visual hallucinations</li>
+<li>design VLM evaluation slices</li>
+</ul></details><details id="help-topic-2-code"><summary>โค้ด</summary><h3>2. Learning Objectives</h3>
+<ul>
+<li>derive image patch/token counts</li>
+<li>understand vision encoders and projectors</li>
+<li>distinguish projector fusion from cross-attention</li>
+<li>reason about image-token context budgets</li>
+<li>understand multimodal chat formatting</li>
+<li>understand VLM pretraining and visual instruction tuning</li>
+<li>reason about high-resolution/multi-image/video inputs</li>
+<li>calculate bounding-box IoU</li>
+<li>evaluate grounding precision/recall</li>
+<li>understand OCR/document VLM challenges</li>
+<li>audit visual hallucinations</li>
+<li>design VLM evaluation slices</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-2-result"><summary>ผลการทดลอง</summary><h3>2. Learning Objectives</h3>
+<ul>
+<li>derive image patch/token counts</li>
+<li>understand vision encoders and projectors</li>
+<li>distinguish projector fusion from cross-attention</li>
+<li>reason about image-token context budgets</li>
+<li>understand multimodal chat formatting</li>
+<li>understand VLM pretraining and visual instruction tuning</li>
+<li>reason about high-resolution/multi-image/video inputs</li>
+<li>calculate bounding-box IoU</li>
+<li>evaluate grounding precision/recall</li>
+<li>understand OCR/document VLM challenges</li>
+<li>audit visual hallucinations</li>
+<li>design VLM evaluation slices</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-2"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-3" class="source-topic"><span id="source-74-vision-language-models-canonical-3-vision-encoder" class="legacy-anchor"></span><h3>3. Vision Encoder</h3>
+<p>Possible backbones include ViT-like encoders or other vision networks.</p>
+<p>The encoder converts pixels into a sequence/grid of semantic visual features.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>3. Vision Encoder</h3>
+<p>Possible backbones include ViT-like encoders or other vision networks.</p>
+<p>The encoder converts pixels into a sequence/grid of semantic visual features.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-3-equation"><summary>สมการ</summary><h3>3. Vision Encoder</h3>
+<p>Possible backbones include ViT-like encoders or other vision networks.</p>
+<p>The encoder converts pixels into a sequence/grid of semantic visual features.</p></details><details id="help-topic-3-visual"><summary>ภาพและ shape</summary><h3>3. Vision Encoder</h3>
+<p>Possible backbones include ViT-like encoders or other vision networks.</p>
+<p>The encoder converts pixels into a sequence/grid of semantic visual features.</p></details><details id="help-topic-3-code"><summary>โค้ด</summary><h3>3. Vision Encoder</h3>
+<p>Possible backbones include ViT-like encoders or other vision networks.</p>
+<p>The encoder converts pixels into a sequence/grid of semantic visual features.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-3-result"><summary>ผลการทดลอง</summary><h3>3. Vision Encoder</h3>
+<p>Possible backbones include ViT-like encoders or other vision networks.</p>
+<p>The encoder converts pixels into a sequence/grid of semantic visual features.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-3"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-4" class="source-topic"><span id="source-74-vision-language-models-canonical-4-patch-tokens" class="legacy-anchor"></span><h3>4. Patch Tokens</h3>
+<p>For image H x W and patch P_h x P_w:</p>
+<pre><code class="language-text">rows = ceil(H / P_h)
+cols = ceil(W / P_w)
+patch_tokens = rows * cols
+</code></pre>
+<p>Exact preprocessing differs by model because images may be resized, cropped, tiled or dynamically packed.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>squareimage224,P14ได้16²=256patchtokens;448ได้32²=1024ยังไม่รวมCLS/separators; resolutionสองเท่าทำpatchtokens4×</p><p>448P14patches1024กับ224256,attentionpairsต่อvisualselfattentionใกล้16×ถ้าคงdense; downstreamLMcostตามtotaltokensรวมtext</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-4-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>squareimage224,P14ได้16²=256patchtokens;448ได้32²=1024ยังไม่รวมCLS/separators; resolutionสองเท่าทำpatchtokens4×</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-4-equation"><summary>สมการ</summary><p>squareimage224,P14ได้16²=256patchtokens;448ได้32²=1024ยังไม่รวมCLS/separators; resolutionสองเท่าทำpatchtokens4×</p></details><details id="help-topic-4-visual"><summary>ภาพและ shape</summary><p>squareimage224,P14ได้16²=256patchtokens;448ได้32²=1024ยังไม่รวมCLS/separators; resolutionสองเท่าทำpatchtokens4×</p></details><details id="help-topic-4-code"><summary>โค้ด</summary><p>squareimage224,P14ได้16²=256patchtokens;448ได้32²=1024ยังไม่รวมCLS/separators; resolutionสองเท่าทำpatchtokens4×</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-4-result"><summary>ผลการทดลอง</summary><p>squareimage224,P14ได้16²=256patchtokens;448ได้32²=1024ยังไม่รวมCLS/separators; resolutionสองเท่าทำpatchtokens4×</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-4"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-5" class="source-topic"><span id="source-74-vision-language-models-canonical-5-projector" class="legacy-anchor"></span><h3>5. Projector</h3>
+<p>If vision width d_v differs from language width d_l:</p>
+<pre><code class="language-text">V_projected = V @ W + b
+W shape = [d_v, d_l]
+</code></pre>
+<p>A simple linear/MLP projector aligns feature dimensions; more complex models may use resamplers or cross-attention.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>visionX(B,N,768)@W(768,1024)+b→(B,N,1024); projectoroutputcompatibleLMwidthไม่เท่ากับvisionfeaturesมีภาษาalignmentแล้ว</p><p>recordimageoriginal/resizeddimensions/patchIDs/projectedshape/contextslots/boxtransformsและgroundedaccuracyแยกOCR/multiimage</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-5-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>visionX(B,N,768)@W(768,1024)+b→(B,N,1024); projectoroutputcompatibleLMwidthไม่เท่ากับvisionfeaturesมีภาษาalignmentแล้ว</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-5-equation"><summary>สมการ</summary><p>visionX(B,N,768)@W(768,1024)+b→(B,N,1024); projectoroutputcompatibleLMwidthไม่เท่ากับvisionfeaturesมีภาษาalignmentแล้ว</p></details><details id="help-topic-5-visual"><summary>ภาพและ shape</summary><p>visionX(B,N,768)@W(768,1024)+b→(B,N,1024); projectoroutputcompatibleLMwidthไม่เท่ากับvisionfeaturesมีภาษาalignmentแล้ว</p></details><details id="help-topic-5-code"><summary>โค้ด</summary><p>visionX(B,N,768)@W(768,1024)+b→(B,N,1024); projectoroutputcompatibleLMwidthไม่เท่ากับvisionfeaturesมีภาษาalignmentแล้ว</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-5-result"><summary>ผลการทดลอง</summary><p>visionX(B,N,768)@W(768,1024)+b→(B,N,1024); projectoroutputcompatibleLMwidthไม่เท่ากับvisionfeaturesมีภาษาalignmentแล้ว</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-5"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-6" class="source-topic"><span id="source-74-vision-language-models-canonical-6-fusion-strategies" class="legacy-anchor"></span><h3>6. Fusion Strategies</h3>
+<p>Common patterns:
+- prepend/insert projected image tokens into LM sequence
+- cross-attention from language states to visual features
+- resample many visual features into fewer latent visual tokens</p>
+<p>No one pattern defines every VLM.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-6-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>6. Fusion Strategies</h3>
+<p>Common patterns:
+- prepend/insert projected image tokens into LM sequence
+- cross-attention from language states to visual features
+- resample many visual features into fewer latent visual tokens</p>
+<p>No one pattern defines every VLM.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-6-equation"><summary>สมการ</summary><h3>6. Fusion Strategies</h3>
+<p>Common patterns:
+- prepend/insert projected image tokens into LM sequence
+- cross-attention from language states to visual features
+- resample many visual features into fewer latent visual tokens</p>
+<p>No one pattern defines every VLM.</p></details><details id="help-topic-6-visual"><summary>ภาพและ shape</summary><h3>6. Fusion Strategies</h3>
+<p>Common patterns:
+- prepend/insert projected image tokens into LM sequence
+- cross-attention from language states to visual features
+- resample many visual features into fewer latent visual tokens</p>
+<p>No one pattern defines every VLM.</p></details><details id="help-topic-6-code"><summary>โค้ด</summary><h3>6. Fusion Strategies</h3>
+<p>Common patterns:
+- prepend/insert projected image tokens into LM sequence
+- cross-attention from language states to visual features
+- resample many visual features into fewer latent visual tokens</p>
+<p>No one pattern defines every VLM.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-6-result"><summary>ผลการทดลอง</summary><h3>6. Fusion Strategies</h3>
+<p>Common patterns:
+- prepend/insert projected image tokens into LM sequence
+- cross-attention from language states to visual features
+- resample many visual features into fewer latent visual tokens</p>
+<p>No one pattern defines every VLM.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-6"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-7" class="source-topic"><span id="source-74-vision-language-models-canonical-7-multimodal-chat-templates" class="legacy-anchor"></span><h3>7. Multimodal Chat Templates</h3>
+<p>Current Transformers multimodal chat templates put modality blocks such as image/text inside each message content list, and multimodal preprocessing/chat templating is handled by a Processor rather than a text-only Tokenizer. (see references.md)</p>
+<p>Model-specific chat templates and special image tokens must be preserved.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>manifest มีvision/LM/tokenizerhash/imagepreprocess/tiling/projector/visualspecialIDs/contextbudget/imageorder/boxconvention/evalslices/seed</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-7-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>manifest มีvision/LM/tokenizerhash/imagepreprocess/tiling/projector/visualspecialIDs/contextbudget/imageorder/boxconvention/evalslices/seed</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-7-equation"><summary>สมการ</summary><p>manifest มีvision/LM/tokenizerhash/imagepreprocess/tiling/projector/visualspecialIDs/contextbudget/imageorder/boxconvention/evalslices/seed</p></details><details id="help-topic-7-visual"><summary>ภาพและ shape</summary><p>manifest มีvision/LM/tokenizerhash/imagepreprocess/tiling/projector/visualspecialIDs/contextbudget/imageorder/boxconvention/evalslices/seed</p></details><details id="help-topic-7-code"><summary>โค้ด</summary><p>manifest มีvision/LM/tokenizerhash/imagepreprocess/tiling/projector/visualspecialIDs/contextbudget/imageorder/boxconvention/evalslices/seed</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-7-result"><summary>ผลการทดลอง</summary><p>manifest มีvision/LM/tokenizerhash/imagepreprocess/tiling/projector/visualspecialIDs/contextbudget/imageorder/boxconvention/evalslices/seed</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-7"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-8" class="source-topic"><span id="source-74-vision-language-models-canonical-8-imagetexttotext" class="legacy-anchor"></span><h3>8. ImageTextToText</h3>
+<p>Current Transformers exposes high-level image-text-to-text inference and lower-level Processor + generation paths for supported VLMs. (see references.md)</p>
+<p>Never assume one model's image placeholder format works for another model.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-8-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>8. ImageTextToText</h3>
+<p>Current Transformers exposes high-level image-text-to-text inference and lower-level Processor + generation paths for supported VLMs. (see references.md)</p>
+<p>Never assume one model's image placeholder format works for another model.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-8-equation"><summary>สมการ</summary><h3>8. ImageTextToText</h3>
+<p>Current Transformers exposes high-level image-text-to-text inference and lower-level Processor + generation paths for supported VLMs. (see references.md)</p>
+<p>Never assume one model's image placeholder format works for another model.</p></details><details id="help-topic-8-visual"><summary>ภาพและ shape</summary><h3>8. ImageTextToText</h3>
+<p>Current Transformers exposes high-level image-text-to-text inference and lower-level Processor + generation paths for supported VLMs. (see references.md)</p>
+<p>Never assume one model's image placeholder format works for another model.</p></details><details id="help-topic-8-code"><summary>โค้ด</summary><h3>8. ImageTextToText</h3>
+<p>Current Transformers exposes high-level image-text-to-text inference and lower-level Processor + generation paths for supported VLMs. (see references.md)</p>
+<p>Never assume one model's image placeholder format works for another model.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-8-result"><summary>ผลการทดลอง</summary><h3>8. ImageTextToText</h3>
+<p>Current Transformers exposes high-level image-text-to-text inference and lower-level Processor + generation paths for supported VLMs. (see references.md)</p>
+<p>Never assume one model's image placeholder format works for another model.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-8"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-9" class="source-topic"><span id="source-74-vision-language-models-canonical-9-context-budget" class="legacy-anchor"></span><h3>9. Context Budget</h3>
+<p>Visual tokens consume the same finite model context budget in architectures that insert them into the LM sequence.</p>
+<pre><code class="language-text">remaining context
+=
+max context
+- text input
+- visual tokens
+- reserved output
+</code></pre>
+<p>High-resolution/multi-image inputs can therefore crowd out text/output budget.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>budget2048,text500,images2×576,special20เหลือreply376; imageplaceholderอาจexpandmanytokensจึงต้องcountactualvisualtokensก่อนadmit</p><p>projectorlastdimตรงLM,visualtokenbudgetไม่เกิน,boxconvertinverse-roundtripและimageswapidentitytestcorrect; imageabsentไม่แต่งvisualclaims</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-9-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>budget2048,text500,images2×576,special20เหลือreply376; imageplaceholderอาจexpandmanytokensจึงต้องcountactualvisualtokensก่อนadmit</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-9-equation"><summary>สมการ</summary><p>budget2048,text500,images2×576,special20เหลือreply376; imageplaceholderอาจexpandmanytokensจึงต้องcountactualvisualtokensก่อนadmit</p></details><details id="help-topic-9-visual"><summary>ภาพและ shape</summary><p>budget2048,text500,images2×576,special20เหลือreply376; imageplaceholderอาจexpandmanytokensจึงต้องcountactualvisualtokensก่อนadmit</p></details><details id="help-topic-9-code"><summary>โค้ด</summary><p>budget2048,text500,images2×576,special20เหลือreply376; imageplaceholderอาจexpandmanytokensจึงต้องcountactualvisualtokensก่อนadmit</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-9-result"><summary>ผลการทดลอง</summary><p>budget2048,text500,images2×576,special20เหลือreply376; imageplaceholderอาจexpandmanytokensจึงต้องcountactualvisualtokensก่อนadmit</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-9"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-10" class="source-topic"><span id="source-74-vision-language-models-canonical-10-high-resolution" class="legacy-anchor"></span><h3>10. High Resolution</h3>
+<p>Strategies may include:
+- resize
+- crop
+- dynamic tiling
+- multi-scale features
+- resampling/compression</p>
+<p>More visual tokens can improve detail but increase compute/memory.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>resize448singleP14ให้1024patches; tiles4×224ให้4×256=1024ก่อนper-tileCLS/globalthumbnail จึงtotalอาจมากกว่าที่คิด</p><p>resizevs4tilesคงimage/questions/model/seed; reportOCRCER/smallobjectrecall/tokens/latencyไม่เลือกเฉพาะtileที่รู้คำตอบ</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-10-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>resize448singleP14ให้1024patches; tiles4×224ให้4×256=1024ก่อนper-tileCLS/globalthumbnail จึงtotalอาจมากกว่าที่คิด</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-10-equation"><summary>สมการ</summary><p>resize448singleP14ให้1024patches; tiles4×224ให้4×256=1024ก่อนper-tileCLS/globalthumbnail จึงtotalอาจมากกว่าที่คิด</p></details><details id="help-topic-10-visual"><summary>ภาพและ shape</summary><p>resize448singleP14ให้1024patches; tiles4×224ให้4×256=1024ก่อนper-tileCLS/globalthumbnail จึงtotalอาจมากกว่าที่คิด</p></details><details id="help-topic-10-code"><summary>โค้ด</summary><p>resize448singleP14ให้1024patches; tiles4×224ให้4×256=1024ก่อนper-tileCLS/globalthumbnail จึงtotalอาจมากกว่าที่คิด</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-10-result"><summary>ผลการทดลอง</summary><p>resize448singleP14ให้1024patches; tiles4×224ให้4×256=1024ก่อนper-tileCLS/globalthumbnail จึงtotalอาจมากกว่าที่คิด</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-10"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-11" class="source-topic"><span id="source-74-vision-language-models-canonical-11-multi-image" class="legacy-anchor"></span><h3>11. Multi-Image</h3>
+<p>Multi-image tasks need explicit image ordering/identity.</p>
+<p>Evaluate whether model confuses:
+- image A vs B
+- temporal/order relationships
+- duplicated images</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>twoimagesA/Bถามattributeของภาพ1/2,swaporderพร้อมexpectedanswerสลับ; duplicate-imageและcontradicting-imagecasesจับidentityconfusion</p><p>projectorlastdimตรงLM,visualtokenbudgetไม่เกิน,boxconvertinverse-roundtripและimageswapidentitytestcorrect; imageabsentไม่แต่งvisualclaims</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-11-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>twoimagesA/Bถามattributeของภาพ1/2,swaporderพร้อมexpectedanswerสลับ; duplicate-imageและcontradicting-imagecasesจับidentityconfusion</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-11-equation"><summary>สมการ</summary><p>twoimagesA/Bถามattributeของภาพ1/2,swaporderพร้อมexpectedanswerสลับ; duplicate-imageและcontradicting-imagecasesจับidentityconfusion</p></details><details id="help-topic-11-visual"><summary>ภาพและ shape</summary><p>twoimagesA/Bถามattributeของภาพ1/2,swaporderพร้อมexpectedanswerสลับ; duplicate-imageและcontradicting-imagecasesจับidentityconfusion</p></details><details id="help-topic-11-code"><summary>โค้ด</summary><p>twoimagesA/Bถามattributeของภาพ1/2,swaporderพร้อมexpectedanswerสลับ; duplicate-imageและcontradicting-imagecasesจับidentityconfusion</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-11-result"><summary>ผลการทดลอง</summary><p>twoimagesA/Bถามattributeของภาพ1/2,swaporderพร้อมexpectedanswerสลับ; duplicate-imageและcontradicting-imagecasesจับidentityconfusion</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-11"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-12" class="source-topic"><span id="source-74-vision-language-models-canonical-12-video-foundations" class="legacy-anchor"></span><h3>12. Video Foundations</h3>
+<p>Video adds a time dimension:</p>
+<pre><code class="language-text">frames
+↓
+frame/clip visual tokens
+↓
+temporal selection/compression
+↓
+language model
+</code></pre>
+<p>Naively sending every frame can explode token count.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-12-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>12. Video Foundations</h3>
+<p>Video adds a time dimension:</p>
+<pre><code class="language-text">frames
+↓
+frame/clip visual tokens
+↓
+temporal selection/compression
+↓
+language model
+</code></pre>
+<p>Naively sending every frame can explode token count.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-12-equation"><summary>สมการ</summary><h3>12. Video Foundations</h3>
+<p>Video adds a time dimension:</p>
+<pre><code class="language-text">frames
+↓
+frame/clip visual tokens
+↓
+temporal selection/compression
+↓
+language model
+</code></pre>
+<p>Naively sending every frame can explode token count.</p></details><details id="help-topic-12-visual"><summary>ภาพและ shape</summary><h3>12. Video Foundations</h3>
+<p>Video adds a time dimension:</p>
+<pre><code class="language-text">frames
+↓
+frame/clip visual tokens
+↓
+temporal selection/compression
+↓
+language model
+</code></pre>
+<p>Naively sending every frame can explode token count.</p></details><details id="help-topic-12-code"><summary>โค้ด</summary><h3>12. Video Foundations</h3>
+<p>Video adds a time dimension:</p>
+<pre><code class="language-text">frames
+↓
+frame/clip visual tokens
+↓
+temporal selection/compression
+↓
+language model
+</code></pre>
+<p>Naively sending every frame can explode token count.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-12-result"><summary>ผลการทดลอง</summary><h3>12. Video Foundations</h3>
+<p>Video adds a time dimension:</p>
+<pre><code class="language-text">frames
+↓
+frame/clip visual tokens
+↓
+temporal selection/compression
+↓
+language model
+</code></pre>
+<p>Naively sending every frame can explode token count.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-12"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-13" class="source-topic"><span id="source-74-vision-language-models-canonical-13-vlm-training-stages" class="legacy-anchor"></span><h3>13. VLM Training Stages</h3>
+<p>A common staged recipe:
+1. pretrained vision encoder and language model
+2. multimodal alignment/projector training
+3. multimodal pretraining
+4. visual instruction tuning</p>
+<p>Some architectures train more components jointly.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-13-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>13. VLM Training Stages</h3>
+<p>A common staged recipe:
+1. pretrained vision encoder and language model
+2. multimodal alignment/projector training
+3. multimodal pretraining
+4. visual instruction tuning</p>
+<p>Some architectures train more components jointly.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-13-equation"><summary>สมการ</summary><h3>13. VLM Training Stages</h3>
+<p>A common staged recipe:
+1. pretrained vision encoder and language model
+2. multimodal alignment/projector training
+3. multimodal pretraining
+4. visual instruction tuning</p>
+<p>Some architectures train more components jointly.</p></details><details id="help-topic-13-visual"><summary>ภาพและ shape</summary><h3>13. VLM Training Stages</h3>
+<p>A common staged recipe:
+1. pretrained vision encoder and language model
+2. multimodal alignment/projector training
+3. multimodal pretraining
+4. visual instruction tuning</p>
+<p>Some architectures train more components jointly.</p></details><details id="help-topic-13-code"><summary>โค้ด</summary><h3>13. VLM Training Stages</h3>
+<p>A common staged recipe:
+1. pretrained vision encoder and language model
+2. multimodal alignment/projector training
+3. multimodal pretraining
+4. visual instruction tuning</p>
+<p>Some architectures train more components jointly.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-13-result"><summary>ผลการทดลอง</summary><h3>13. VLM Training Stages</h3>
+<p>A common staged recipe:
+1. pretrained vision encoder and language model
+2. multimodal alignment/projector training
+3. multimodal pretraining
+4. visual instruction tuning</p>
+<p>Some architectures train more components jointly.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-13"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-14" class="source-topic"><span id="source-74-vision-language-models-canonical-14-alignment-data" class="legacy-anchor"></span><h3>14. Alignment Data</h3>
+<p>Examples:
+- image-caption pairs
+- OCR/document pairs
+- visual QA
+- region-text pairs
+- interleaved image-text documents</p>
+<p>Quality/provenance/duplication matter as much as quantity.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-14-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>14. Alignment Data</h3>
+<p>Examples:
+- image-caption pairs
+- OCR/document pairs
+- visual QA
+- region-text pairs
+- interleaved image-text documents</p>
+<p>Quality/provenance/duplication matter as much as quantity.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-14-equation"><summary>สมการ</summary><h3>14. Alignment Data</h3>
+<p>Examples:
+- image-caption pairs
+- OCR/document pairs
+- visual QA
+- region-text pairs
+- interleaved image-text documents</p>
+<p>Quality/provenance/duplication matter as much as quantity.</p></details><details id="help-topic-14-visual"><summary>ภาพและ shape</summary><h3>14. Alignment Data</h3>
+<p>Examples:
+- image-caption pairs
+- OCR/document pairs
+- visual QA
+- region-text pairs
+- interleaved image-text documents</p>
+<p>Quality/provenance/duplication matter as much as quantity.</p></details><details id="help-topic-14-code"><summary>โค้ด</summary><h3>14. Alignment Data</h3>
+<p>Examples:
+- image-caption pairs
+- OCR/document pairs
+- visual QA
+- region-text pairs
+- interleaved image-text documents</p>
+<p>Quality/provenance/duplication matter as much as quantity.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-14-result"><summary>ผลการทดลอง</summary><h3>14. Alignment Data</h3>
+<p>Examples:
+- image-caption pairs
+- OCR/document pairs
+- visual QA
+- region-text pairs
+- interleaved image-text documents</p>
+<p>Quality/provenance/duplication matter as much as quantity.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-14"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-15" class="source-topic"><span id="source-74-vision-language-models-canonical-15-visual-instruction-tuning" class="legacy-anchor"></span><h3>15. Visual Instruction Tuning</h3>
+<p>Teach model to follow multimodal conversational instructions.</p>
+<p>Examples:
+- describe
+- compare images
+- read text
+- answer questions
+- locate an object</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-15-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>15. Visual Instruction Tuning</h3>
+<p>Teach model to follow multimodal conversational instructions.</p>
+<p>Examples:
+- describe
+- compare images
+- read text
+- answer questions
+- locate an object</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-15-equation"><summary>สมการ</summary><h3>15. Visual Instruction Tuning</h3>
+<p>Teach model to follow multimodal conversational instructions.</p>
+<p>Examples:
+- describe
+- compare images
+- read text
+- answer questions
+- locate an object</p></details><details id="help-topic-15-visual"><summary>ภาพและ shape</summary><h3>15. Visual Instruction Tuning</h3>
+<p>Teach model to follow multimodal conversational instructions.</p>
+<p>Examples:
+- describe
+- compare images
+- read text
+- answer questions
+- locate an object</p></details><details id="help-topic-15-code"><summary>โค้ด</summary><h3>15. Visual Instruction Tuning</h3>
+<p>Teach model to follow multimodal conversational instructions.</p>
+<p>Examples:
+- describe
+- compare images
+- read text
+- answer questions
+- locate an object</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-15-result"><summary>ผลการทดลอง</summary><h3>15. Visual Instruction Tuning</h3>
+<p>Teach model to follow multimodal conversational instructions.</p>
+<p>Examples:
+- describe
+- compare images
+- read text
+- answer questions
+- locate an object</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-15"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-16" class="source-topic"><span id="source-74-vision-language-models-canonical-16-grounding" class="legacy-anchor"></span><h3>16. Grounding</h3>
+<p>Grounding links generated language to image regions.</p>
+<p>Representations:
+- bounding boxes
+- points
+- masks
+- region IDs</p>
+<p>Grounding requires spatial evaluation, not only language quality.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>normalizedxyxy[.1,.2,.5,.8],imageW100,H200→[10,40,50,160]; clip/validationsและletterboxinverseต้องตามpreprocessจริง</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-16-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>normalizedxyxy[.1,.2,.5,.8],imageW100,H200→[10,40,50,160]; clip/validationsและletterboxinverseต้องตามpreprocessจริง</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-16-equation"><summary>สมการ</summary><p>normalizedxyxy[.1,.2,.5,.8],imageW100,H200→[10,40,50,160]; clip/validationsและletterboxinverseต้องตามpreprocessจริง</p></details><details id="help-topic-16-visual"><summary>ภาพและ shape</summary><p>normalizedxyxy[.1,.2,.5,.8],imageW100,H200→[10,40,50,160]; clip/validationsและletterboxinverseต้องตามpreprocessจริง</p></details><details id="help-topic-16-code"><summary>โค้ด</summary><p>normalizedxyxy[.1,.2,.5,.8],imageW100,H200→[10,40,50,160]; clip/validationsและletterboxinverseต้องตามpreprocessจริง</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-16-result"><summary>ผลการทดลอง</summary><p>normalizedxyxy[.1,.2,.5,.8],imageW100,H200→[10,40,50,160]; clip/validationsและletterboxinverseต้องตามpreprocessจริง</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-16"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-17" class="source-topic"><span id="source-74-vision-language-models-canonical-17-bounding-box-iou" class="legacy-anchor"></span><h3>17. Bounding Box IoU</h3>
+<pre><code class="language-text">IoU = intersection_area / union_area
+</code></pre>
+<p>Use an explicit coordinate convention:
+- pixels
+- normalized [0,1]
+- xyxy vs xywh</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>boxes[0,0,2,2]กับ[1,1,3,3]IoU1/7; coordinateconventioncontinuousและzeroarea-policyต้องตรงevaluation</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-17-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>boxes[0,0,2,2]กับ[1,1,3,3]IoU1/7; coordinateconventioncontinuousและzeroarea-policyต้องตรงevaluation</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-17-equation"><summary>สมการ</summary><p>boxes[0,0,2,2]กับ[1,1,3,3]IoU1/7; coordinateconventioncontinuousและzeroarea-policyต้องตรงevaluation</p></details><details id="help-topic-17-visual"><summary>ภาพและ shape</summary><p>boxes[0,0,2,2]กับ[1,1,3,3]IoU1/7; coordinateconventioncontinuousและzeroarea-policyต้องตรงevaluation</p></details><details id="help-topic-17-code"><summary>โค้ด</summary><p>boxes[0,0,2,2]กับ[1,1,3,3]IoU1/7; coordinateconventioncontinuousและzeroarea-policyต้องตรงevaluation</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-17-result"><summary>ผลการทดลอง</summary><p>boxes[0,0,2,2]กับ[1,1,3,3]IoU1/7; coordinateconventioncontinuousและzeroarea-policyต้องตรงevaluation</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-17"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-18" class="source-topic"><span id="source-74-vision-language-models-canonical-18-ocr-documents" class="legacy-anchor"></span><h3>18. OCR / Documents</h3>
+<p>Document VLMs need:
+- high-resolution text
+- reading order
+- tables
+- charts
+- layout
+- small-font robustness</p>
+<p>Caption benchmarks alone do not evaluate document understanding.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>OCRsliceแยกfont/size/rotation/language/blur; measureCER/exactfieldmatchพร้อมgroundtruthlayoutและไม่ให้answerเดาจากdocumenttemplateอย่างเดียว</p><p>ทดลอง“tilingเพิ่มsmallfontOCRexactmatch≥.1โดยvisualtokens≤2×”; resizebaseline,fixedimages/questionsและlatencybudget</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-18-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>OCRsliceแยกfont/size/rotation/language/blur; measureCER/exactfieldmatchพร้อมgroundtruthlayoutและไม่ให้answerเดาจากdocumenttemplateอย่างเดียว</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-18-equation"><summary>สมการ</summary><p>OCRsliceแยกfont/size/rotation/language/blur; measureCER/exactfieldmatchพร้อมgroundtruthlayoutและไม่ให้answerเดาจากdocumenttemplateอย่างเดียว</p></details><details id="help-topic-18-visual"><summary>ภาพและ shape</summary><p>OCRsliceแยกfont/size/rotation/language/blur; measureCER/exactfieldmatchพร้อมgroundtruthlayoutและไม่ให้answerเดาจากdocumenttemplateอย่างเดียว</p></details><details id="help-topic-18-code"><summary>โค้ด</summary><p>OCRsliceแยกfont/size/rotation/language/blur; measureCER/exactfieldmatchพร้อมgroundtruthlayoutและไม่ให้answerเดาจากdocumenttemplateอย่างเดียว</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-18-result"><summary>ผลการทดลอง</summary><p>OCRsliceแยกfont/size/rotation/language/blur; measureCER/exactfieldmatchพร้อมgroundtruthlayoutและไม่ให้answerเดาจากdocumenttemplateอย่างเดียว</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-18"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-19" class="source-topic"><span id="source-74-vision-language-models-canonical-19-visual-hallucination" class="legacy-anchor"></span><h3>19. Visual Hallucination</h3>
+<p>A fluent answer may mention objects/text absent from the image.</p>
+<p>Evaluate:
+- object existence
+- attribute correctness
+- count
+- spatial relation
+- OCR exactness</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>auditclaimsทีละข้อพร้อมvisualevidence/region; fluencyไม่ใช่visualgrounding,includeunanswerable/occludedimageและrefusalpolicyที่เหมาะ</p><p>leakedcaptions/filenamesหรือtextquestionบอกanswerทำVLMดูเห็นภาพทั้งที่ไม่อ่าน; shuffled/no-imageablationsและgroupbyimageholdout</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-19-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>auditclaimsทีละข้อพร้อมvisualevidence/region; fluencyไม่ใช่visualgrounding,includeunanswerable/occludedimageและrefusalpolicyที่เหมาะ</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-19-equation"><summary>สมการ</summary><p>auditclaimsทีละข้อพร้อมvisualevidence/region; fluencyไม่ใช่visualgrounding,includeunanswerable/occludedimageและrefusalpolicyที่เหมาะ</p></details><details id="help-topic-19-visual"><summary>ภาพและ shape</summary><p>auditclaimsทีละข้อพร้อมvisualevidence/region; fluencyไม่ใช่visualgrounding,includeunanswerable/occludedimageและrefusalpolicyที่เหมาะ</p></details><details id="help-topic-19-code"><summary>โค้ด</summary><p>auditclaimsทีละข้อพร้อมvisualevidence/region; fluencyไม่ใช่visualgrounding,includeunanswerable/occludedimageและrefusalpolicyที่เหมาะ</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-19-result"><summary>ผลการทดลอง</summary><p>auditclaimsทีละข้อพร้อมvisualevidence/region; fluencyไม่ใช่visualgrounding,includeunanswerable/occludedimageและrefusalpolicyที่เหมาะ</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-19"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-20" class="source-topic"><span id="source-74-vision-language-models-canonical-20-grounding-metrics" class="legacy-anchor"></span><h3>20. Grounding Metrics</h3>
+<p>For predicted boxes and target boxes:
+- IoU
+- precision
+- recall
+- AP/mAP where appropriate</p>
+<p>Language-only judge scores cannot replace spatial metrics for grounding tasks.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>scoreorderedmatchingGTsameclassIoU≥.5ไม่ซ้ำ; TP2,FP1,FN1ได้precision2/3,recall2/3 ไม่เอาคำบรรยายถูกแทนlocalizationcorrect</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-20-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>scoreorderedmatchingGTsameclassIoU≥.5ไม่ซ้ำ; TP2,FP1,FN1ได้precision2/3,recall2/3 ไม่เอาคำบรรยายถูกแทนlocalizationcorrect</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-20-equation"><summary>สมการ</summary><p>scoreorderedmatchingGTsameclassIoU≥.5ไม่ซ้ำ; TP2,FP1,FN1ได้precision2/3,recall2/3 ไม่เอาคำบรรยายถูกแทนlocalizationcorrect</p></details><details id="help-topic-20-visual"><summary>ภาพและ shape</summary><p>scoreorderedmatchingGTsameclassIoU≥.5ไม่ซ้ำ; TP2,FP1,FN1ได้precision2/3,recall2/3 ไม่เอาคำบรรยายถูกแทนlocalizationcorrect</p></details><details id="help-topic-20-code"><summary>โค้ด</summary><p>scoreorderedmatchingGTsameclassIoU≥.5ไม่ซ้ำ; TP2,FP1,FN1ได้precision2/3,recall2/3 ไม่เอาคำบรรยายถูกแทนlocalizationcorrect</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-20-result"><summary>ผลการทดลอง</summary><p>scoreorderedmatchingGTsameclassIoU≥.5ไม่ซ้ำ; TP2,FP1,FN1ได้precision2/3,recall2/3 ไม่เอาคำบรรยายถูกแทนlocalizationcorrect</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-20"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-21" class="source-topic"><span id="source-74-vision-language-models-canonical-21-evaluation-slices" class="legacy-anchor"></span><h3>21. Evaluation Slices</h3>
+<p>Slice by:
+- resolution
+- text size
+- number of images
+- object count
+- occlusion
+- charts/documents
+- language
+- position in image</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>manifest มีvision/LM/tokenizerhash/imagepreprocess/tiling/projector/visualspecialIDs/contextbudget/imageorder/boxconvention/evalslices/seed</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-21-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>manifest มีvision/LM/tokenizerhash/imagepreprocess/tiling/projector/visualspecialIDs/contextbudget/imageorder/boxconvention/evalslices/seed</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-21-equation"><summary>สมการ</summary><p>manifest มีvision/LM/tokenizerhash/imagepreprocess/tiling/projector/visualspecialIDs/contextbudget/imageorder/boxconvention/evalslices/seed</p></details><details id="help-topic-21-visual"><summary>ภาพและ shape</summary><p>manifest มีvision/LM/tokenizerhash/imagepreprocess/tiling/projector/visualspecialIDs/contextbudget/imageorder/boxconvention/evalslices/seed</p></details><details id="help-topic-21-code"><summary>โค้ด</summary><p>manifest มีvision/LM/tokenizerhash/imagepreprocess/tiling/projector/visualspecialIDs/contextbudget/imageorder/boxconvention/evalslices/seed</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-21-result"><summary>ผลการทดลอง</summary><p>manifest มีvision/LM/tokenizerhash/imagepreprocess/tiling/projector/visualspecialIDs/contextbudget/imageorder/boxconvention/evalslices/seed</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-21"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-22" class="source-topic"><span id="source-74-vision-language-models-canonical-22-from-scratch" class="legacy-anchor"></span><h3>22. From Scratch</h3>
+<p><code>src/vlm.py</code> implements:
+- patch_grid
+- image_token_count
+- linear_project
+- multimodal_context_remaining
+- normalized_box_to_pixels
+- bbox_iou
+- grounding_counts
+- grounding_precision_recall</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>projectionNumPyเทียบTorchcopiedweights,IoUmanualoracle; fullVLMqualityต้องdataset/learnerhumanrubricแยกไม่อ้างtoylinearpassยืนยันmultimodalunderstanding</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-22-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>projectionNumPyเทียบTorchcopiedweights,IoUmanualoracle; fullVLMqualityต้องdataset/learnerhumanrubricแยกไม่อ้างtoylinearpassยืนยันmultimodalunderstanding</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-22-equation"><summary>สมการ</summary><p>projectionNumPyเทียบTorchcopiedweights,IoUmanualoracle; fullVLMqualityต้องdataset/learnerhumanrubricแยกไม่อ้างtoylinearpassยืนยันmultimodalunderstanding</p></details><details id="help-topic-22-visual"><summary>ภาพและ shape</summary><p>projectionNumPyเทียบTorchcopiedweights,IoUmanualoracle; fullVLMqualityต้องdataset/learnerhumanrubricแยกไม่อ้างtoylinearpassยืนยันmultimodalunderstanding</p></details><details id="help-topic-22-code"><summary>โค้ด</summary><p>projectionNumPyเทียบTorchcopiedweights,IoUmanualoracle; fullVLMqualityต้องdataset/learnerhumanrubricแยกไม่อ้างtoylinearpassยืนยันmultimodalunderstanding</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-22-result"><summary>ผลการทดลอง</summary><p>projectionNumPyเทียบTorchcopiedweights,IoUmanualoracle; fullVLMqualityต้องdataset/learnerhumanrubricแยกไม่อ้างtoylinearpassยืนยันmultimodalunderstanding</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-22"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-23" class="source-topic"><span id="source-74-vision-language-models-canonical-23-common-mistakes" class="legacy-anchor"></span><h3>23. Common Mistakes</h3>
+<ol>
+<li>raw image resolution assumed equal to model token count</li>
+<li>projector dimension mismatch ignored</li>
+<li>visual tokens omitted from context budgeting</li>
+<li>one chat template reused across incompatible models</li>
+<li>high resolution always assumed better</li>
+<li>multi-image order not tested</li>
+<li>OCR evaluated only with semantic similarity</li>
+<li>bounding-box coordinate convention undocumented</li>
+<li>visual hallucination hidden by fluent language</li>
+<li>captioning score treated as complete VLM evaluation</li>
+</ol><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-23-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>23. Common Mistakes</h3>
+<ol>
+<li>raw image resolution assumed equal to model token count</li>
+<li>projector dimension mismatch ignored</li>
+<li>visual tokens omitted from context budgeting</li>
+<li>one chat template reused across incompatible models</li>
+<li>high resolution always assumed better</li>
+<li>multi-image order not tested</li>
+<li>OCR evaluated only with semantic similarity</li>
+<li>bounding-box coordinate convention undocumented</li>
+<li>visual hallucination hidden by fluent language</li>
+<li>captioning score treated as complete VLM evaluation</li>
+</ol><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-23-equation"><summary>สมการ</summary><h3>23. Common Mistakes</h3>
+<ol>
+<li>raw image resolution assumed equal to model token count</li>
+<li>projector dimension mismatch ignored</li>
+<li>visual tokens omitted from context budgeting</li>
+<li>one chat template reused across incompatible models</li>
+<li>high resolution always assumed better</li>
+<li>multi-image order not tested</li>
+<li>OCR evaluated only with semantic similarity</li>
+<li>bounding-box coordinate convention undocumented</li>
+<li>visual hallucination hidden by fluent language</li>
+<li>captioning score treated as complete VLM evaluation</li>
+</ol></details><details id="help-topic-23-visual"><summary>ภาพและ shape</summary><h3>23. Common Mistakes</h3>
+<ol>
+<li>raw image resolution assumed equal to model token count</li>
+<li>projector dimension mismatch ignored</li>
+<li>visual tokens omitted from context budgeting</li>
+<li>one chat template reused across incompatible models</li>
+<li>high resolution always assumed better</li>
+<li>multi-image order not tested</li>
+<li>OCR evaluated only with semantic similarity</li>
+<li>bounding-box coordinate convention undocumented</li>
+<li>visual hallucination hidden by fluent language</li>
+<li>captioning score treated as complete VLM evaluation</li>
+</ol></details><details id="help-topic-23-code"><summary>โค้ด</summary><h3>23. Common Mistakes</h3>
+<ol>
+<li>raw image resolution assumed equal to model token count</li>
+<li>projector dimension mismatch ignored</li>
+<li>visual tokens omitted from context budgeting</li>
+<li>one chat template reused across incompatible models</li>
+<li>high resolution always assumed better</li>
+<li>multi-image order not tested</li>
+<li>OCR evaluated only with semantic similarity</li>
+<li>bounding-box coordinate convention undocumented</li>
+<li>visual hallucination hidden by fluent language</li>
+<li>captioning score treated as complete VLM evaluation</li>
+</ol><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-23-result"><summary>ผลการทดลอง</summary><h3>23. Common Mistakes</h3>
+<ol>
+<li>raw image resolution assumed equal to model token count</li>
+<li>projector dimension mismatch ignored</li>
+<li>visual tokens omitted from context budgeting</li>
+<li>one chat template reused across incompatible models</li>
+<li>high resolution always assumed better</li>
+<li>multi-image order not tested</li>
+<li>OCR evaluated only with semantic similarity</li>
+<li>bounding-box coordinate convention undocumented</li>
+<li>visual hallucination hidden by fluent language</li>
+<li>captioning score treated as complete VLM evaluation</li>
+</ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-23"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-24" class="source-topic"><span id="source-74-vision-language-models-canonical-24-exercises-mini-project" class="legacy-anchor"></span><h3>24. Exercises / Mini Project</h3>
+<ul>
+<li><a href="../74-vision-language-models/exercises/README.md">Exercises</a></li>
+<li><a href="../74-vision-language-models/solutions/README.md">Solutions</a></li>
+<li><a href="../74-vision-language-models/mini-project/README.md">Mini Project</a></li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-24-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>24. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-24-equation"><summary>สมการ</summary><h3>24. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-24-visual"><summary>ภาพและ shape</summary><h3>24. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-24-code"><summary>โค้ด</summary><h3>24. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-24-result"><summary>ผลการทดลอง</summary><h3>24. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-24"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-25" class="source-topic"><span id="source-74-vision-language-models-canonical-25-checklist" class="legacy-anchor"></span><h3>25. Checklist</h3>
+<ul>
+<li>[ ] vision encoder</li>
+<li>[ ] patch/image tokens</li>
+<li>[ ] projector</li>
+<li>[ ] multimodal chat template</li>
+<li>[ ] context budget</li>
+<li>[ ] high-res / multi-image</li>
+<li>[ ] grounding</li>
+<li>[ ] OCR/documents</li>
+<li>[ ] hallucination</li>
+<li>[ ] VLM evaluation</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-25-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>25. Checklist</h3>
+<ul>
+<li>[ ] vision encoder</li>
+<li>[ ] patch/image tokens</li>
+<li>[ ] projector</li>
+<li>[ ] multimodal chat template</li>
+<li>[ ] context budget</li>
+<li>[ ] high-res / multi-image</li>
+<li>[ ] grounding</li>
+<li>[ ] OCR/documents</li>
+<li>[ ] hallucination</li>
+<li>[ ] VLM evaluation</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-25-equation"><summary>สมการ</summary><h3>25. Checklist</h3>
+<ul>
+<li>[ ] vision encoder</li>
+<li>[ ] patch/image tokens</li>
+<li>[ ] projector</li>
+<li>[ ] multimodal chat template</li>
+<li>[ ] context budget</li>
+<li>[ ] high-res / multi-image</li>
+<li>[ ] grounding</li>
+<li>[ ] OCR/documents</li>
+<li>[ ] hallucination</li>
+<li>[ ] VLM evaluation</li>
+</ul></details><details id="help-topic-25-visual"><summary>ภาพและ shape</summary><h3>25. Checklist</h3>
+<ul>
+<li>[ ] vision encoder</li>
+<li>[ ] patch/image tokens</li>
+<li>[ ] projector</li>
+<li>[ ] multimodal chat template</li>
+<li>[ ] context budget</li>
+<li>[ ] high-res / multi-image</li>
+<li>[ ] grounding</li>
+<li>[ ] OCR/documents</li>
+<li>[ ] hallucination</li>
+<li>[ ] VLM evaluation</li>
+</ul></details><details id="help-topic-25-code"><summary>โค้ด</summary><h3>25. Checklist</h3>
+<ul>
+<li>[ ] vision encoder</li>
+<li>[ ] patch/image tokens</li>
+<li>[ ] projector</li>
+<li>[ ] multimodal chat template</li>
+<li>[ ] context budget</li>
+<li>[ ] high-res / multi-image</li>
+<li>[ ] grounding</li>
+<li>[ ] OCR/documents</li>
+<li>[ ] hallucination</li>
+<li>[ ] VLM evaluation</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-25-result"><summary>ผลการทดลอง</summary><h3>25. Checklist</h3>
+<ul>
+<li>[ ] vision encoder</li>
+<li>[ ] patch/image tokens</li>
+<li>[ ] projector</li>
+<li>[ ] multimodal chat template</li>
+<li>[ ] context budget</li>
+<li>[ ] high-res / multi-image</li>
+<li>[ ] grounding</li>
+<li>[ ] OCR/documents</li>
+<li>[ ] hallucination</li>
+<li>[ ] VLM evaluation</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-25"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-26" class="source-topic"><span id="source-74-vision-language-models-canonical-26-whats-next" class="legacy-anchor"></span><span id="source-74-vision-language-models-canonical-74-vision-language-models-vision-language-models" class="legacy-anchor"></span><h3>26. What's Next</h3>
+<p>Chapter 75 moves from images to real-time audio and spoken interaction.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-26-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>26. What's Next</h3>
+<p>Chapter 75 moves from images to real-time audio and spoken interaction.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-26-equation"><summary>สมการ</summary><h3>26. What's Next</h3>
+<p>Chapter 75 moves from images to real-time audio and spoken interaction.</p></details><details id="help-topic-26-visual"><summary>ภาพและ shape</summary><h3>26. What's Next</h3>
+<p>Chapter 75 moves from images to real-time audio and spoken interaction.</p></details><details id="help-topic-26-code"><summary>โค้ด</summary><h3>26. What's Next</h3>
+<p>Chapter 75 moves from images to real-time audio and spoken interaction.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-26-result"><summary>ผลการทดลอง</summary><h3>26. What's Next</h3>
+<p>Chapter 75 moves from images to real-time audio and spoken interaction.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-26"> อ่านหัวข้อนี้แล้ว</label></section><details><summary>รายละเอียดเพิ่มเติมและข้อกำหนดของ local lab</summary><h3>74-vision-language-models — Vision-Language Models</h3>
+<p><strong>Prerequisites:</strong> Complete 73-reasoning-models; be able to trace array/tensor shapes, separate train/validation/test data, and explain the core objective of the current chapter.</p>
+<p><strong>Mental model:</strong> Treat Vision-Language Models as a pipeline: input representation → central mechanism → objective/state update → observable output. At every boundary, state shape/state, allowed information flow, and the invariant that should remain true.</p>
+<p><strong>Code walkthrough:</strong> Read public API first, then input checks, state/shape transformations, numerical core, returned values and tests. Connect each important code block to the equation or algorithm in the chapter README.</p>
+<p><strong>Visualization / inspection:</strong> Use a tiny case. Inspect intermediate values, distributions, norms, scores, states or trajectories appropriate to Vision-Language Models; do not rely only on the final metric.</p>
+<p><strong>Experiment:</strong> Run a baseline, one controlled parameter change, one edge case and one repeated seeded comparison. Record seed, environment, data version, configuration and metric.</p>
+<p><strong>Limitations:</strong> List at least one assumption, one data-related limitation, one numerical/optimization limitation and one scaling limitation for Vision-Language Models.</p>
+<p><strong>Analysis workflow:</strong> Check inputs → preprocessing → shapes/state → finite numerical values → objective/update → evaluation protocol. The earliest unexpected state is more informative than a downstream metric.</p>
+<p><strong>Performance:</strong> Identify the dominant time and memory terms and measure them on the local learning run before attempting optimization.</p>
+<p><strong>Production perspective:</strong> Define input validation, artifact/configuration versioning, quality and resource measurements, staged release criteria and a way to return to the previous known-good artifact.</p>
+<p><strong>Research perspective:</strong> State a falsifiable hypothesis, baseline, one-factor change, metric, repeated-run plan when stochastic, and how negative results will be recorded.</p>
+<p><strong>Interview questions:</strong>
+1. Explain Vision-Language Models from first principles without naming a library API.
+2. Trace one input through the central mechanism and give the important intermediate shapes/state.
+3. Name the strongest assumption and a case where it fails.
+4. State the dominant compute/memory cost.
+5. Describe how you would validate a new implementation against a trusted baseline.</p>
+<p><strong>Summary / exit condition:</strong> You may move on when you can explain, derive or trace, implement, test, analyze, measure and evaluate Vision-Language Models, and when the chapter mini-project plus twenty total exercises are complete.</p></details></section><section id="objective-evidence" class="canonical-section"><h2>พิสูจน์ความสามารถทีละ objective</h2><p>ทำกรณีใหม่ก่อนเปิด reference แล้วบันทึกงานด้านล่าง ให้ผู้ตรวจใช้ rubric ตรวจคำอธิบาย ผลคำนวณ โค้ด และข้อจำกัด บันทึกเก็บในเบราว์เซอร์เครื่องนี้ กดส่งออกเพื่อสำรองหรือส่งให้ผู้ตรวจ เว็บไม่ได้รันโค้ดหรือตัดสินผลงานแทนผู้ตรวจ</p><button type="button" class="secondary-button" data-export-evidence>ส่งออกหลักฐานบทนี้เป็น JSON</button><p role="status" id="evidence-export-status"></p><details id="ch74-objective-01" class="objective-proof"><summary>derive image patch/token counts</summary><p>derive image patch/token counts: ใช้กรณีในหัวข้อ Vision Encoder, Patch Tokens เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch74-evidence-01"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch74-evidence-01-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch74-evidence-01-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch74-evidence-01-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch74-evidence-01-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch74-evidence-01-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch74-evidence-01-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch74-evidence-01-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch74-evidence-01-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>squareimage224,P14ได้16²=256patchtokens;448ได้32²=1024ยังไม่รวมCLS/separators; resolutionสองเท่าทำpatchtokens4×</p><h3>3. Vision Encoder</h3>
+<p>Possible backbones include ViT-like encoders or other vision networks.</p>
+<p>The encoder converts pixels into a sequence/grid of semantic visual features.</p>
+<h3>4. Patch Tokens</h3>
+<p>For image H x W and patch P_h x P_w:</p>
+<pre><code class="language-text">rows = ceil(H / P_h)
+cols = ceil(W / P_w)
+patch_tokens = rows * cols
+</code></pre>
+<p>Exact preprocessing differs by model because images may be resized, cropped, tiled or dynamically packed.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch74-objective-02" class="objective-proof"><summary>understand vision encoders and projectors</summary><p>understand vision encoders and projectors: ใช้กรณีในหัวข้อ Projector เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch74-evidence-02"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch74-evidence-02-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch74-evidence-02-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch74-evidence-02-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch74-evidence-02-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch74-evidence-02-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch74-evidence-02-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch74-evidence-02-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch74-evidence-02-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>visionX(B,N,768)@W(768,1024)+b→(B,N,1024); projectoroutputcompatibleLMwidthไม่เท่ากับvisionfeaturesมีภาษาalignmentแล้ว</p><h3>5. Projector</h3>
+<p>If vision width d_v differs from language width d_l:</p>
+<pre><code class="language-text">V_projected = V @ W + b
+W shape = [d_v, d_l]
+</code></pre>
+<p>A simple linear/MLP projector aligns feature dimensions; more complex models may use resamplers or cross-attention.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch74-objective-03" class="objective-proof"><summary>distinguish projector fusion from cross-attention</summary><p>distinguish projector fusion from cross-attention: ใช้กรณีในหัวข้อ Fusion Strategies เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch74-evidence-03"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch74-evidence-03-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch74-evidence-03-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch74-evidence-03-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch74-evidence-03-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch74-evidence-03-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch74-evidence-03-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch74-evidence-03-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch74-evidence-03-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>6. Fusion Strategies</h3>
+<p>Common patterns:
+- prepend/insert projected image tokens into LM sequence
+- cross-attention from language states to visual features
+- resample many visual features into fewer latent visual tokens</p>
+<p>No one pattern defines every VLM.</p><h3>6. Fusion Strategies</h3>
+<p>Common patterns:
+- prepend/insert projected image tokens into LM sequence
+- cross-attention from language states to visual features
+- resample many visual features into fewer latent visual tokens</p>
+<p>No one pattern defines every VLM.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch74-objective-04" class="objective-proof"><summary>reason about image-token context budgets</summary><p>reason about image-token context budgets: ใช้กรณีในหัวข้อ Context Budget เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch74-evidence-04"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch74-evidence-04-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch74-evidence-04-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch74-evidence-04-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch74-evidence-04-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch74-evidence-04-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch74-evidence-04-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch74-evidence-04-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch74-evidence-04-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>budget2048,text500,images2×576,special20เหลือreply376; imageplaceholderอาจexpandmanytokensจึงต้องcountactualvisualtokensก่อนadmit</p><h3>9. Context Budget</h3>
+<p>Visual tokens consume the same finite model context budget in architectures that insert them into the LM sequence.</p>
+<pre><code class="language-text">remaining context
+=
+max context
+- text input
+- visual tokens
+- reserved output
+</code></pre>
+<p>High-resolution/multi-image inputs can therefore crowd out text/output budget.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch74-objective-05" class="objective-proof"><summary>understand multimodal chat formatting</summary><p>understand multimodal chat formatting: ใช้กรณีในหัวข้อ Multimodal Chat Templates, ImageTextToText เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch74-evidence-05"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch74-evidence-05-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch74-evidence-05-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch74-evidence-05-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch74-evidence-05-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch74-evidence-05-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch74-evidence-05-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch74-evidence-05-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch74-evidence-05-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>manifest มีvision/LM/tokenizerhash/imagepreprocess/tiling/projector/visualspecialIDs/contextbudget/imageorder/boxconvention/evalslices/seed</p><h3>7. Multimodal Chat Templates</h3>
+<p>Current Transformers multimodal chat templates put modality blocks such as image/text inside each message content list, and multimodal preprocessing/chat templating is handled by a Processor rather than a text-only Tokenizer. (see references.md)</p>
+<p>Model-specific chat templates and special image tokens must be preserved.</p>
+<h3>8. ImageTextToText</h3>
+<p>Current Transformers exposes high-level image-text-to-text inference and lower-level Processor + generation paths for supported VLMs. (see references.md)</p>
+<p>Never assume one model's image placeholder format works for another model.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch74-objective-06" class="objective-proof"><summary>understand VLM pretraining and visual instruction tuning</summary><p>understand VLM pretraining and visual instruction tuning: ใช้กรณีในหัวข้อ VLM Training Stages, Alignment Data, Visual Instruction Tuning เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch74-evidence-06"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch74-evidence-06-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch74-evidence-06-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch74-evidence-06-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch74-evidence-06-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch74-evidence-06-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch74-evidence-06-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch74-evidence-06-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch74-evidence-06-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>13. VLM Training Stages</h3>
+<p>A common staged recipe:
+1. pretrained vision encoder and language model
+2. multimodal alignment/projector training
+3. multimodal pretraining
+4. visual instruction tuning</p>
+<p>Some architectures train more components jointly.</p>
+<h3>14. Alignment Data</h3>
+<p>Examples:
+- image-caption pairs
+- OCR/document pairs
+- visual QA
+- region-text pairs
+- interleaved image-text documents</p>
+<p>Quality/provenance/duplication matter as much as quantity.</p>
+<h3>15. Visual Instruction Tuning</h3>
+<p>Teach model to follow multimodal conversational instructions.</p>
+<p>Examples:
+- describe
+- compare images
+- read text
+- answer questions
+- locate an object</p><h3>13. VLM Training Stages</h3>
+<p>A common staged recipe:
+1. pretrained vision encoder and language model
+2. multimodal alignment/projector training
+3. multimodal pretraining
+4. visual instruction tuning</p>
+<p>Some architectures train more components jointly.</p>
+<h3>14. Alignment Data</h3>
+<p>Examples:
+- image-caption pairs
+- OCR/document pairs
+- visual QA
+- region-text pairs
+- interleaved image-text documents</p>
+<p>Quality/provenance/duplication matter as much as quantity.</p>
+<h3>15. Visual Instruction Tuning</h3>
+<p>Teach model to follow multimodal conversational instructions.</p>
+<p>Examples:
+- describe
+- compare images
+- read text
+- answer questions
+- locate an object</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch74-objective-07" class="objective-proof"><summary>reason about high-resolution/multi-image/video inputs</summary><p>reason about high-resolution/multi-image/video inputs: ใช้กรณีในหัวข้อ High Resolution, Multi-Image, Video Foundations เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch74-evidence-07"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch74-evidence-07-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch74-evidence-07-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch74-evidence-07-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch74-evidence-07-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch74-evidence-07-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch74-evidence-07-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch74-evidence-07-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch74-evidence-07-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>resize448singleP14ให้1024patches; tiles4×224ให้4×256=1024ก่อนper-tileCLS/globalthumbnail จึงtotalอาจมากกว่าที่คิด</p><h3>10. High Resolution</h3>
+<p>Strategies may include:
+- resize
+- crop
+- dynamic tiling
+- multi-scale features
+- resampling/compression</p>
+<p>More visual tokens can improve detail but increase compute/memory.</p>
+<h3>11. Multi-Image</h3>
+<p>Multi-image tasks need explicit image ordering/identity.</p>
+<p>Evaluate whether model confuses:
+- image A vs B
+- temporal/order relationships
+- duplicated images</p>
+<h3>12. Video Foundations</h3>
+<p>Video adds a time dimension:</p>
+<pre><code class="language-text">frames
+↓
+frame/clip visual tokens
+↓
+temporal selection/compression
+↓
+language model
+</code></pre>
+<p>Naively sending every frame can explode token count.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch74-objective-08" class="objective-proof"><summary>calculate bounding-box IoU</summary><p>calculate bounding-box IoU: ใช้กรณีในหัวข้อ Bounding Box IoU เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch74-evidence-08"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch74-evidence-08-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch74-evidence-08-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch74-evidence-08-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch74-evidence-08-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch74-evidence-08-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch74-evidence-08-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch74-evidence-08-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch74-evidence-08-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>boxes[0,0,2,2]กับ[1,1,3,3]IoU1/7; coordinateconventioncontinuousและzeroarea-policyต้องตรงevaluation</p><h3>17. Bounding Box IoU</h3>
+<pre><code class="language-text">IoU = intersection_area / union_area
+</code></pre>
+<p>Use an explicit coordinate convention:
+- pixels
+- normalized [0,1]
+- xyxy vs xywh</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch74-objective-09" class="objective-proof"><summary>evaluate grounding precision/recall</summary><p>evaluate grounding precision/recall: ใช้กรณีในหัวข้อ Grounding, Grounding Metrics เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch74-evidence-09"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch74-evidence-09-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch74-evidence-09-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch74-evidence-09-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch74-evidence-09-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch74-evidence-09-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch74-evidence-09-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch74-evidence-09-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch74-evidence-09-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>normalizedxyxy[.1,.2,.5,.8],imageW100,H200→[10,40,50,160]; clip/validationsและletterboxinverseต้องตามpreprocessจริง</p><h3>16. Grounding</h3>
+<p>Grounding links generated language to image regions.</p>
+<p>Representations:
+- bounding boxes
+- points
+- masks
+- region IDs</p>
+<p>Grounding requires spatial evaluation, not only language quality.</p>
+<h3>20. Grounding Metrics</h3>
+<p>For predicted boxes and target boxes:
+- IoU
+- precision
+- recall
+- AP/mAP where appropriate</p>
+<p>Language-only judge scores cannot replace spatial metrics for grounding tasks.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch74-objective-10" class="objective-proof"><summary>understand OCR/document VLM challenges</summary><p>understand OCR/document VLM challenges: ใช้กรณีในหัวข้อ OCR / Documents เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch74-evidence-10"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch74-evidence-10-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch74-evidence-10-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch74-evidence-10-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch74-evidence-10-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch74-evidence-10-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch74-evidence-10-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch74-evidence-10-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch74-evidence-10-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>OCRsliceแยกfont/size/rotation/language/blur; measureCER/exactfieldmatchพร้อมgroundtruthlayoutและไม่ให้answerเดาจากdocumenttemplateอย่างเดียว</p><h3>18. OCR / Documents</h3>
+<p>Document VLMs need:
+- high-resolution text
+- reading order
+- tables
+- charts
+- layout
+- small-font robustness</p>
+<p>Caption benchmarks alone do not evaluate document understanding.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch74-objective-11" class="objective-proof"><summary>audit visual hallucinations</summary><p>audit visual hallucinations: ใช้กรณีในหัวข้อ Visual Hallucination เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch74-evidence-11"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch74-evidence-11-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch74-evidence-11-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch74-evidence-11-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch74-evidence-11-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch74-evidence-11-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch74-evidence-11-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch74-evidence-11-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch74-evidence-11-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>auditclaimsทีละข้อพร้อมvisualevidence/region; fluencyไม่ใช่visualgrounding,includeunanswerable/occludedimageและrefusalpolicyที่เหมาะ</p><h3>19. Visual Hallucination</h3>
+<p>A fluent answer may mention objects/text absent from the image.</p>
+<p>Evaluate:
+- object existence
+- attribute correctness
+- count
+- spatial relation
+- OCR exactness</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch74-objective-12" class="objective-proof"><summary>design VLM evaluation slices</summary><p>design VLM evaluation slices: ใช้กรณีในหัวข้อ Evaluation Slices, From Scratch เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch74-evidence-12"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch74-evidence-12-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch74-evidence-12-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch74-evidence-12-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch74-evidence-12-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch74-evidence-12-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch74-evidence-12-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch74-evidence-12-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch74-evidence-12-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>projectionNumPyเทียบTorchcopiedweights,IoUmanualoracle; fullVLMqualityต้องdataset/learnerhumanrubricแยกไม่อ้างtoylinearpassยืนยันmultimodalunderstanding</p><h3>21. Evaluation Slices</h3>
+<p>Slice by:
+- resolution
+- text size
+- number of images
+- object count
+- occlusion
+- charts/documents
+- language
+- position in image</p>
+<h3>22. From Scratch</h3>
+<p><code>src/vlm.py</code> implements:
+- patch_grid
+- image_token_count
+- linear_project
+- multimodal_context_remaining
+- normalized_box_to_pixels
+- bbox_iou
+- grounding_counts
+- grounding_precision_recall</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details></section><section id="implementation" class="canonical-section"><h2>Implementation และ tests ที่รันบนเครื่องได้</h2><details><summary>74-vision-language-models/src/vlm.py</summary><pre><code>&quot;&quot;&quot;Vision-language token, projection, and grounding utilities.&quot;&quot;&quot;
+
+from __future__ import annotations
+
+import math
+import numpy as np
+
+
+def patch_grid(
+    image_height: int,
+    image_width: int,
+    *,
+    patch_height: int,
+    patch_width: int | None = None,
+) -&gt; tuple[int, int]:
+    if image_height &lt;= 0 or image_width &lt;= 0:
+        raise ValueError(&quot;image dimensions must be positive&quot;)
+    if patch_height &lt;= 0:
+        raise ValueError(&quot;patch_height must be positive&quot;)
+
+    width = patch_height if patch_width is None else patch_width
+    if width &lt;= 0:
+        raise ValueError(&quot;patch_width must be positive&quot;)
+
+    rows = math.ceil(image_height / patch_height)
+    cols = math.ceil(image_width / width)
+    return int(rows), int(cols)
+
+
+def image_token_count(
+    image_height: int,
+    image_width: int,
+    *,
+    patch_height: int,
+    patch_width: int | None = None,
+    extra_tokens: int = 0,
+) -&gt; int:
+    if extra_tokens &lt; 0:
+        raise ValueError(&quot;extra_tokens must be non-negative&quot;)
+
+    rows, cols = patch_grid(
+        image_height,
+        image_width,
+        patch_height=patch_height,
+        patch_width=patch_width,
+    )
+    return int(rows * cols + extra_tokens)
+
+
+def linear_project(
+    vision_tokens: np.ndarray,
+    weight: np.ndarray,
+    *,
+    bias: np.ndarray | None = None,
+) -&gt; np.ndarray:
+    x = np.asarray(vision_tokens, dtype=float)
+    w = np.asarray(weight, dtype=float)
+
+    if x.ndim != 2 or w.ndim != 2:
+        raise ValueError(&quot;vision_tokens and weight must be 2D&quot;)
+    if x.shape[1] != w.shape[0]:
+        raise ValueError(&quot;projection dimension mismatch&quot;)
+
+    output = x @ w
+
+    if bias is not None:
+        b = np.asarray(bias, dtype=float)
+        if b.shape != (w.shape[1],):
+            raise ValueError(&quot;bias shape mismatch&quot;)
+        output = output + b
+
+    return output
+
+
+def multimodal_context_remaining(
+    *,
+    max_context_tokens: int,
+    text_tokens: int,
+    image_tokens: list[int],
+    reserved_output_tokens: int = 0,
+) -&gt; int:
+    values = [
+        max_context_tokens,
+        text_tokens,
+        reserved_output_tokens,
+        *image_tokens,
+    ]
+    if any(value &lt; 0 for value in values):
+        raise ValueError(&quot;token counts must be non-negative&quot;)
+
+    used = text_tokens + sum(image_tokens) + reserved_output_tokens
+    return int(max_context_tokens - used)
+
+
+def normalized_box_to_pixels(
+    box_xyxy: tuple[float, float, float, float],
+    *,
+    image_width: int,
+    image_height: int,
+) -&gt; tuple[float, float, float, float]:
+    if image_width &lt;= 0 or image_height &lt;= 0:
+        raise ValueError(&quot;image dimensions must be positive&quot;)
+
+    x1, y1, x2, y2 = box_xyxy
+    if not (
+        0.0 &lt;= x1 &lt;= x2 &lt;= 1.0
+        and 0.0 &lt;= y1 &lt;= y2 &lt;= 1.0
+    ):
+        raise ValueError(&quot;normalized box must satisfy 0&lt;=x1&lt;=x2&lt;=1&quot;)
+
+    return (
+        x1 * image_width,
+        y1 * image_height,
+        x2 * image_width,
+        y2 * image_height,
+    )
+
+
+def bbox_iou(
+    first: tuple[float, float, float, float],
+    second: tuple[float, float, float, float],
+) -&gt; float:
+    ax1, ay1, ax2, ay2 = first
+    bx1, by1, bx2, by2 = second
+
+    if ax2 &lt; ax1 or ay2 &lt; ay1 or bx2 &lt; bx1 or by2 &lt; by1:
+        raise ValueError(&quot;invalid box coordinates&quot;)
+
+    ix1 = max(ax1, bx1)
+    iy1 = max(ay1, by1)
+    ix2 = min(ax2, bx2)
+    iy2 = min(ay2, by2)
+
+    iw = max(0.0, ix2 - ix1)
+    ih = max(0.0, iy2 - iy1)
+    intersection = iw * ih
+
+    area_a = (ax2 - ax1) * (ay2 - ay1)
+    area_b = (bx2 - bx1) * (by2 - by1)
+    union = area_a + area_b - intersection
+
+    if union &lt;= 0:
+        return 0.0
+
+    return float(intersection / union)
+
+
+def grounding_counts(
+    predicted_boxes: list[tuple[float, float, float, float]],
+    target_boxes: list[tuple[float, float, float, float]],
+    *,
+    iou_threshold: float = 0.5,
+) -&gt; dict[str, int]:
+    if not 0.0 &lt;= iou_threshold &lt;= 1.0:
+        raise ValueError(&quot;iou_threshold must lie in [0,1]&quot;)
+
+    matched_targets: set[int] = set()
+    true_positive = 0
+
+    for predicted in predicted_boxes:
+        best_target = None
+        best_iou = -1.0
+
+        for index, target in enumerate(target_boxes):
+            if index in matched_targets:
+                continue
+
+            score = bbox_iou(predicted, target)
+            if score &gt; best_iou:
+                best_iou = score
+                best_target = index
+
+        if (
+            best_target is not None
+            and best_iou &gt;= iou_threshold
+        ):
+            matched_targets.add(best_target)
+            true_positive += 1
+
+    false_positive = len(predicted_boxes) - true_positive
+    false_negative = len(target_boxes) - true_positive
+
+    return {
+        &quot;tp&quot;: true_positive,
+        &quot;fp&quot;: false_positive,
+        &quot;fn&quot;: false_negative,
+    }
+
+
+def grounding_precision_recall(
+    predicted_boxes: list[tuple[float, float, float, float]],
+    target_boxes: list[tuple[float, float, float, float]],
+    *,
+    iou_threshold: float = 0.5,
+) -&gt; dict[str, float]:
+    counts = grounding_counts(
+        predicted_boxes,
+        target_boxes,
+        iou_threshold=iou_threshold,
+    )
+    tp = counts[&quot;tp&quot;]
+    fp = counts[&quot;fp&quot;]
+    fn = counts[&quot;fn&quot;]
+
+    precision = tp / (tp + fp) if tp + fp else 0.0
+    recall = tp / (tp + fn) if tp + fn else 0.0
+
+    return {
+        &quot;precision&quot;: float(precision),
+        &quot;recall&quot;: float(recall),
+    }
+</code></pre></details><details><summary>74-vision-language-models/tests/test_vlm.py</summary><pre><code>from pathlib import Path
+import importlib.util
+
+import numpy as np
+
+
+MODULE_PATH = Path(__file__).parents[1] / &quot;src&quot; / &quot;vlm.py&quot;
+SPEC = importlib.util.spec_from_file_location(&quot;vlm_course&quot;, MODULE_PATH)
+assert SPEC and SPEC.loader
+mod = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(mod)
+
+
+def test_patch_grid_ceil_behavior() -&gt; None:
+    rows, cols = mod.patch_grid(
+        230,
+        250,
+        patch_height=16,
+    )
+    assert rows == 15
+    assert cols == 16
+
+
+def test_image_token_count() -&gt; None:
+    count = mod.image_token_count(
+        224,
+        224,
+        patch_height=14,
+        extra_tokens=1,
+    )
+    assert count == 257
+
+
+def test_linear_project_shape() -&gt; None:
+    tokens = np.ones((8, 4))
+    weight = np.arange(12, dtype=float).reshape(4, 3)
+    output = mod.linear_project(tokens, weight)
+    assert output.shape == (8, 3)
+
+
+def test_multimodal_context_remaining() -&gt; None:
+    remaining = mod.multimodal_context_remaining(
+        max_context_tokens=4096,
+        text_tokens=1000,
+        image_tokens=[576, 576],
+        reserved_output_tokens=512,
+    )
+    assert remaining == 1432
+
+
+def test_bbox_iou() -&gt; None:
+    score = mod.bbox_iou(
+        (0.0, 0.0, 2.0, 2.0),
+        (1.0, 1.0, 3.0, 3.0),
+    )
+    np.testing.assert_allclose(score, 1 / 7)
+
+
+def test_grounding_metrics() -&gt; None:
+    predictions = [
+        (0.0, 0.0, 1.0, 1.0),
+        (10.0, 10.0, 12.0, 12.0),
+    ]
+    targets = [
+        (0.0, 0.0, 1.0, 1.0),
+    ]
+
+    metrics = mod.grounding_precision_recall(
+        predictions,
+        targets,
+        iou_threshold=0.5,
+    )
+    assert metrics[&quot;precision&quot;] == 0.5
+    assert metrics[&quot;recall&quot;] == 1.0
+</code></pre></details></section><section id="glossary" class="canonical-section"><h2>อภิธานศัพท์ — คำไทย ความหมาย และข้อควรตรวจ</h2><dl><dt>tensor</dt><dd>เทนเซอร์: ชุดตัวเลขที่มีแกน เช่น scalar ไม่มีแกน, vector หนึ่งแกน, matrix สองแกน; shape บอกขนาดแต่ละแกน ไม่บอกความหมายของแกนจนกว่าจะระบุ</dd><dt>shape</dt><dd>รูปทรงข้อมูล: (B,T,d) หมายถึง batch × เวลา/ตำแหน่ง × features; ใช้ชื่อแกนกำกับเสมอ การ transpose เปลี่ยนแกนแต่ไม่ใช่แค่เปลี่ยนชื่อ</dd><dt>batch</dt><dd>กลุ่มตัวอย่างที่คำนวณร่วมกันหนึ่งครั้ง; B คือจำนวนตัวอย่าง ไม่ใช่จำนวน features หรือจำนวน optimizer updates</dd><dt>weight w / θ</dt><dd>น้ำหนักหรือพารามิเตอร์ที่โมเดลใช้คำนวณ; แก้ด้วยมือทำ forward ใหม่ ส่วน optimizer ต้องรับ gradient แล้วกด update จึงแก้ state</dd><dt>bias b</dt><dd>ค่าคงที่ที่บวกกับผลเชิงเส้น; regression scalar bias เพิ่ม Δ ทำให้ prediction ทุกจุดเพิ่ม Δ เท่ากัน</dd><dt>prediction ŷ</dt><dd>ค่าที่โมเดลทำนายจาก input และพารามิเตอร์ปัจจุบัน; เครื่องหมายหมวกแยกจาก target y ที่มาจากข้อมูล</dd><dt>residual e</dt><dd>ความคลาดเคลื่อน ในเว็บนี้นิยาม prediction − target; บางตำราใช้เครื่องหมายกลับกัน จึงต้องตรวจนิยามก่อนเทียบสูตร gradient</dd><dt>MSE</dt><dd>mean squared error = ผลรวม residual กำลังสองหารจำนวนรายการที่ระบุ; มีหน่วยเป็น target ยกกำลังสอง และการใช้ sum แทน mean เปลี่ยน scale gradient</dd><dt>loss L / objective J</dt><dd>จำนวนที่ optimizer ต้องการลด; objective อาจรวม data loss และ regularization จึงต้องดูองค์ประกอบและ reduction ให้ตรง implementation</dd><dt>gradient ∇ / ∂</dt><dd>เวกเตอร์ของ partial derivatives บอกอัตราเปลี่ยน loss ต่อพารามิเตอร์แต่ละตัว; ∂ ใช้เมื่อเปลี่ยนตัวหนึ่งโดยตรึงตัวอื่น</dd><dt>chain rule</dt><dd>กฎลูกโซ่: คูณอนุพันธ์ตามเส้นทาง และบวก contribution จากทุกเส้นทางที่มารวมกัน ใช้ย้อนจาก loss ถึง weights</dd><dt>learning rate η</dt><dd>ขนาดตัวคูณ gradient ใน update θnew=θ−ηg; η≥0, ศูนย์หมายถึงไม่มีการขยับพารามิเตอร์ ก้าวใหญ่เกินอาจ diverge</dd><dt>regularization λ</dt><dd>ตัวคูณค่าลงโทษ ต้อง λ≥0 ตามนิยามการลงโทษ; Ridge λΣw² เพิ่ม gradient 2λw โดยบท Regression นี้ไม่ลงโทษ bias</dd><dt>baseline</dt><dd>สถานะอ้างอิงที่ตรึงไว้สำหรับเทียบ; ต้องเก็บ snapshot ไม่อ้าง object ปัจจุบันที่แก้ตามไปด้วย</dd><dt>invariant</dt><dd>คุณสมบัติที่กลไกต้องรักษา เช่น probability รวม1, shape สอดคล้อง, queue ไม่เกิน capacity; ใช้ tests ตรวจได้มากกว่าดูภาพสวย</dd><dt>optimizer state</dt><dd>ความจำของอัลกอริทึม เช่น velocity, moments และ completed updates; คืนเฉพาะ weights ยังไม่เท่ากับเริ่มการฝึกใหม่ทั้งหมด</dd><dt>finite difference</dt><dd>ประมาณ derivative ด้วย [f(x+h)−f(x−h)]/(2h); h&gt;0, ใช้ smooth point และลองหลาย h เพื่อแยก truncation error จาก roundoff</dd><dt>softmax</dt><dd>แปลง logits เป็นความน่าจะเป็นตามแกนที่กำหนด; ลบ max ก่อน exp เพื่อความเสถียร และ fully masked row ต้องมีนโยบายชัดเจน</dd><dt>logit</dt><dd>คะแนนก่อน sigmoid/softmax ไม่ใช่ probability; อาจเป็นจำนวนจริงติดลบหรือเกิน1ได้ จึงห้ามส่งให้ loss ที่คาด probability โดยไม่แปลง</dd><dt>temperature τ / T</dt><dd>ตัวหาร logits ก่อน softmax; ต้องเป็นบวก ค่าเล็กทำ distribution แหลมขึ้น โดยไม่เท่ากับ retrain weights</dd><dt>mask</dt><dd>ตัวกำหนดตำแหน่งที่อ่านหรือคิด loss ได้; causal mask ปิดอนาคต, padding mask ปิดข้อมูลเติม, loss mask เลือก target แต่ละอย่างคนละหน้าที่</dd><dt>Q / K / V</dt><dd>query ใช้ค้นข้อมูล, key ใช้จับคู่ query, value เป็นข้อมูลที่ถูกถัวเฉลี่ย; เป็น learned projections ของ representation ไม่ใช่ป้ายความหมายตายตัว</dd><dt>head</dt><dd>ส่วนของ feature representation ที่ทำ attention แยกกัน แล้ว concat/project กลับ; ต้องตรวจ d_model หารจำนวน heads ลงตัว</dd><dt>ε-neighborhood</dt><dd>เพื่อนบ้านทั้งหมดที่มีระยะไม่เกิน ε รวมจุดตัวเองใน DBSCAN นี้; ε มีหน่วยเดียวกับพิกัด ไม่ใช่จำนวน k ที่ใช้โหวต</dd><dt>core / border / noise</dt><dd>DBSCAN core มีเพื่อนบ้านรวมตัวเองถึง min_samples; border อยู่ใกล้ core แต่เพื่อนบ้านไม่ถึง; noise ไม่ถูกเชื่อมกับ core cluster ใด</dd><dt>bootstrap</dt><dd>สุ่ม observations แบบ replacement ขนาดเท่าเดิมซ้ำหลายครั้งแล้วคำนวณ statistic ใหม่; seed ทำให้ตรวจซ้ำได้ แต่ไม่แก้สมมติฐาน IID ที่ผิด</dd><dt>confidence interval</dt><dd>ช่วงที่สร้างด้วย procedure ที่มี coverage ตามสมมติฐาน; ช่วงหนึ่งที่ได้แล้วไม่ใช่ posterior probability ของ parameter และ sample เล็กยังไม่แน่นอนมาก</dd><dt>validation / test</dt><dd>validation ใช้เลือกโมเดล/ค่าตั้ง ส่วน test ใช้ประเมินหลัง freeze การตัดสินใจ; fit preprocessing/tokenizer จาก test เป็น leakage</dd><dt>leakage</dt><dd>ข้อมูลที่ควรยังไม่รู้ไหลเข้า training/การเลือกโมเดล เช่น future feature หรือเอกสารซ้ำข้าม split ทำให้ metric ดูดีเกินการใช้งานจริง</dd><dt>queue / capacity</dt><dd>queue คือรายการรอ, capacity การให้บริการรวม = workers × service rate ตามแบบจำลอง; เพิ่ม timeout ไม่เพิ่มกำลังประมวลผล</dd><dt>state transition</dt><dd>การเปลี่ยนสถานะเมื่อเกิดเหตุการณ์ที่อนุญาต เช่น queued→active→done; ต้องระบุ guard, side effect และเหตุผลเมื่อ transition ถูกปฏิเสธ</dd><dt>latency / throughput</dt><dd>latency คือเวลาต่อคำขอ, throughput คือปริมาณงานต่อหน่วยเวลา; batching อาจเพิ่ม throughput แต่เพิ่มเวลารอ จึงต้องวัดทั้งคู่</dd><dt>idempotency</dt><dd>ทำคำขอ business operation เดิมซ้ำแล้ว side effect เกิดครั้งเดียวตาม key และ transaction protocol; ไม่ได้รับประกันจากการใช้ UUID ใหม่ทุก attempt</dd><dt>local lab</dt><dd>โปรแกรม Python และ tests ที่ผู้เรียนรันบนเครื่อง; เว็บเก็บเพียงคำยืนยันของผู้เรียน การผ่าน tests ของโค้ดต้นแบบไม่ใช่ผลตรวจโค้ดผู้เรียน</dd></dl></section></article>
+<section id="practice" class="practice-section"><span class="eyebrow">PRACTICE · DEBUG · BUILD</span><h2>พิสูจน์ด้วยการลงมือทำ</h2><div id="web-checks"></div><div class="retry-actions"><button class="secondary-button" id="retry-checks">เริ่มทำโจทย์ในเว็บใหม่</button><button class="text-button" id="undo-retry" hidden>คืนผลก่อนเริ่มใหม่</button></div><div id="exercise-content"><h2>แบบฝึก 20 ข้อ — เฉลยเฉพาะข้อ</h2><p>ทำคำตอบก่อนเปิด hints; โจทย์ปลายเปิดให้ใช้ตัวอย่างคำตอบและหลักฐานราย objective ตรวจงานจริง</p><section id="exercise-1" class="exercise-item"><h3>ข้อ 1</h3><p>Compute patch/token counts at multiple resolutions.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Patch Tokens: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): squareimage224,P14ได้16²=256patchtokens;448ไ…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: squareimage224,P14ได้16²=256patchtokens;448ได้32²=1024ยังไม่รวมCLS/separators; …</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>squareimage224,P14ได้16²=256patchtokens;448ได้32²=1024ยังไม่รวมCLS/separators; resolutionสองเท่าทำpatchtokens4×</p><p>อ้างอิง: <a href="#chapter-74/section/topic-4">Patch Tokens</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch74-exercise-01"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-2" class="exercise-item"><h3>ข้อ 2</h3><p>Implement a linear projector from vision width to LM width.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Projector: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): visionX(B,N,768)@W(768,1024)+b→(B,N,1024); proj…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: visionX(B,N,768)@W(768,1024)+b→(B,N,1024); projectoroutputcompatibleLMwidthไม่เท่ากั…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>visionX(B,N,768)@W(768,1024)+b→(B,N,1024); projectoroutputcompatibleLMwidthไม่เท่ากับvisionfeaturesมีภาษาalignmentแล้ว</p><p>อ้างอิง: <a href="#chapter-74/section/topic-5">Projector</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch74-exercise-02"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-3" class="exercise-item"><h3>ข้อ 3</h3><p>Calculate text+multi-image context budgets.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Context Budget: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): budget2048,text500,images2×576,special20เหลือreply3…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: budget2048,text500,images2×576,special20เหลือreply376; imageplaceholderอาจexpandmanytokensจึ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>budget2048,text500,images2×576,special20เหลือreply376; imageplaceholderอาจexpandmanytokensจึงต้องcountactualvisualtokensก่อนadmit</p><p>อ้างอิง: <a href="#chapter-74/section/topic-9">Context Budget</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch74-exercise-03"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-4" class="exercise-item"><h3>ข้อ 4</h3><p>Compare resize vs tiling token counts.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ High Resolution: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): resize448singleP14ให้1024patches; tiles4×224ใ…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: resize448singleP14ให้1024patches; tiles4×224ให้4×256=1024ก่อนper-tileCLS/globalth…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>resize448singleP14ให้1024patches; tiles4×224ให้4×256=1024ก่อนper-tileCLS/globalthumbnail จึงtotalอาจมากกว่าที่คิด</p><p>อ้างอิง: <a href="#chapter-74/section/topic-10">High Resolution</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch74-exercise-04"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-5" class="exercise-item"><h3>ข้อ 5</h3><p>Convert normalized boxes to pixel boxes.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Grounding: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): normalizedxyxy[.1,.2,.5,.8],imageW100,H200→[10…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: normalizedxyxy[.1,.2,.5,.8],imageW100,H200→[10,40,50,160]; clip/validationsและlett…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>normalizedxyxy[.1,.2,.5,.8],imageW100,H200→[10,40,50,160]; clip/validationsและletterboxinverseต้องตามpreprocessจริง</p><p>อ้างอิง: <a href="#chapter-74/section/topic-16">Grounding</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch74-exercise-05"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-6" class="exercise-item"><h3>ข้อ 6</h3><p>Compute IoU by hand and in code.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Bounding Box IoU: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): boxes[0,0,2,2]กับ[1,1,3,3]IoU1/7; coord…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: boxes[0,0,2,2]กับ[1,1,3,3]IoU1/7; coordinateconventioncontinuousและzero…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>boxes[0,0,2,2]กับ[1,1,3,3]IoU1/7; coordinateconventioncontinuousและzeroarea-policyต้องตรงevaluation</p><p>อ้างอิง: <a href="#chapter-74/section/topic-17">Bounding Box IoU</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch74-exercise-06"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-7" class="exercise-item"><h3>ข้อ 7</h3><p>Match predicted/target boxes and calculate precision/recall.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Grounding Metrics: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): scoreorderedmatchingGTsameclassIoU≥.5ไม่ซ้ำ; TP2…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: scoreorderedmatchingGTsameclassIoU≥.5ไม่ซ้ำ; TP2,FP1,FN1ได้precision2/3,recall2/3 ไม่เอ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>scoreorderedmatchingGTsameclassIoU≥.5ไม่ซ้ำ; TP2,FP1,FN1ได้precision2/3,recall2/3 ไม่เอาคำบรรยายถูกแทนlocalizationcorrect</p><p>อ้างอิง: <a href="#chapter-74/section/topic-20">Grounding Metrics</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch74-exercise-07"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-8" class="exercise-item"><h3>ข้อ 8</h3><p>Design an OCR-specific evaluation slice.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ OCR / Documents: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): OCRsliceแยกfont/size/rotation/language/blur; measureCER/…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: OCRsliceแยกfont/size/rotation/language/blur; measureCER/exactfieldmatchพร้อมgroundtruthlayoutและไม่ใ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>OCRsliceแยกfont/size/rotation/language/blur; measureCER/exactfieldmatchพร้อมgroundtruthlayoutและไม่ให้answerเดาจากdocumenttemplateอย่างเดียว</p><p>อ้างอิง: <a href="#chapter-74/section/topic-18">OCR / Documents</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch74-exercise-08"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-9" class="exercise-item"><h3>ข้อ 9</h3><p>Create a multi-image identity/order test set.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Multi-Image: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): twoimagesA/Bถามattributeของภาพ1/2,swaporderพร้อมexpe…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: twoimagesA/Bถามattributeของภาพ1/2,swaporderพร้อมexpectedanswerสลับ; duplicate-imageและcontrad…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>twoimagesA/Bถามattributeของภาพ1/2,swaporderพร้อมexpectedanswerสลับ; duplicate-imageและcontradicting-imagecasesจับidentityconfusion</p><p>อ้างอิง: <a href="#chapter-74/section/topic-11">Multi-Image</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch74-exercise-09"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-10" class="exercise-item"><h3>ข้อ 10</h3><p>Design a hallucination audit separating language fluency from visual evidence.</p>
+<p>Challenge:
+- build a tiny image-patch + projector + text fusion PyTorch model
+- format a supported Transformers multimodal chat without downloading a huge model</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Visual Hallucination: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): auditclaimsทีละข้อพร้อมvisualevidence/region; fluenc…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: auditclaimsทีละข้อพร้อมvisualevidence/region; fluencyไม่ใช่visualgrounding,includeunanswerable/…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>auditclaimsทีละข้อพร้อมvisualevidence/region; fluencyไม่ใช่visualgrounding,includeunanswerable/occludedimageและrefusalpolicyที่เหมาะ</p><p>อ้างอิง: <a href="#chapter-74/section/topic-19">Visual Hallucination</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch74-exercise-10"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-11" class="exercise-item"><h3>ข้อ 11</h3><p>Reproduce one central calculation from Vision-Language Models using a tiny hand-checkable input.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Patch Tokens: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): 448P14patches1024กับ224256,attentionpairsต่อvis…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: 448P14patches1024กับ224256,attentionpairsต่อvisualselfattentionใกล้16×ถ้าคงdense; dow…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>448P14patches1024กับ224256,attentionpairsต่อvisualselfattentionใกล้16×ถ้าคงdense; downstreamLMcostตามtotaltokensรวมtext</p><p>อ้างอิง: <a href="#chapter-74/section/topic-4">Patch Tokens</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch74-exercise-11"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-12" class="exercise-item"><h3>ข้อ 12</h3><p>Write a deterministic test that verifies the most important invariant in Vision-Language Models.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Context Budget, Multi-Image: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): projectorlastdimตรงLM,visualtokenbudgetไม่เกิน,boxconv…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: projectorlastdimตรงLM,visualtokenbudgetไม่เกิน,boxconvertinverse-roundtripและimageswapidentitytest…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>projectorlastdimตรงLM,visualtokenbudgetไม่เกิน,boxconvertinverse-roundtripและimageswapidentitytestcorrect; imageabsentไม่แต่งvisualclaims</p><p>อ้างอิง: <a href="#chapter-74/section/topic-9">Context Budget</a>, <a href="#chapter-74/section/topic-11">Multi-Image</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch74-exercise-12"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-13" class="exercise-item"><h3>ข้อ 13</h3><p>Compare two meaningful configurations while keeping data and seed fixed.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ High Resolution: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): resizevs4tilesคงimage/questions/model/seed; re…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: resizevs4tilesคงimage/questions/model/seed; reportOCRCER/smallobjectrecall/tokens/la…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>resizevs4tilesคงimage/questions/model/seed; reportOCRCER/smallobjectrecall/tokens/latencyไม่เลือกเฉพาะtileที่รู้คำตอบ</p><p>อ้างอิง: <a href="#chapter-74/section/topic-10">High Resolution</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch74-exercise-13"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-14" class="exercise-item"><h3>ข้อ 14</h3><p>Record intermediate shapes, ranges, and one quality metric for a tiny end-to-end run.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Projector: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): recordimageoriginal/resizeddimensions/patchIDs/pr…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: recordimageoriginal/resizeddimensions/patchIDs/projectedshape/contextslots/boxtransformsแ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>recordimageoriginal/resizeddimensions/patchIDs/projectedshape/contextslots/boxtransformsและgroundedaccuracyแยกOCR/multiimage</p><p>อ้างอิง: <a href="#chapter-74/section/topic-5">Projector</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch74-exercise-14"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-15" class="exercise-item"><h3>ข้อ 15</h3><p>Explain one evaluation mistake that could make a Vision-Language Models result look better than it really is.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Visual Hallucination: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): leakedcaptions/filenamesหรือtextquestionบอกanswerท…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: leakedcaptions/filenamesหรือtextquestionบอกanswerทำVLMดูเห็นภาพทั้งที่ไม่อ่าน; shuffled/no-…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>leakedcaptions/filenamesหรือtextquestionบอกanswerทำVLMดูเห็นภาพทั้งที่ไม่อ่าน; shuffled/no-imageablationsและgroupbyimageholdout</p><p>อ้างอิง: <a href="#chapter-74/section/topic-19">Visual Hallucination</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch74-exercise-15"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-16" class="exercise-item"><h3>ข้อ 16</h3><p>State the dominant time and memory complexity for the main operation in Vision-Language Models.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Context Budget: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): visualencoderattentionO(Nv²d),LMdenseattentionO((Nv…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: visualencoderattentionO(Nv²d),LMdenseattentionO((Nv+Nt)²d),projectorO(Nvdvdlm); tilingเพิ่มt…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>visualencoderattentionO(Nv²d),LMdenseattentionO((Nv+Nt)²d),projectorO(Nvdvdlm); tilingเพิ่มtokens/cache/latencyตามimplementation</p><p>อ้างอิง: <a href="#chapter-74/section/topic-9">Context Budget</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch74-exercise-16"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-17" class="exercise-item"><h3>ข้อ 17</h3><p>Compare a from-scratch result with a trusted implementation using identical inputs and settings.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ From Scratch: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): projectionNumPyเทียบTorchcopiedweights,IoUmanualoracle; full…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: projectionNumPyเทียบTorchcopiedweights,IoUmanualoracle; fullVLMqualityต้องdataset/learnerhumanrubricแยกไม่อ้า…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>projectionNumPyเทียบTorchcopiedweights,IoUmanualoracle; fullVLMqualityต้องdataset/learnerhumanrubricแยกไม่อ้างtoylinearpassยืนยันmultimodalunderstanding</p><p>อ้างอิง: <a href="#chapter-74/section/topic-22">From Scratch</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch74-exercise-17"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-18" class="exercise-item"><h3>ข้อ 18</h3><p>Run a one-factor ablation and report the measured change over repeated runs when randomness matters.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Projector: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): linearprojector→MLPคงencoders/data/budget; repor…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: linearprojector→MLPคงencoders/data/budget; reportgroundedaccuracy/latencyและparameterco…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>linearprojector→MLPคงencoders/data/budget; reportgroundedaccuracy/latencyและparametercountหลายseed ไม่trainfullLMพร้อมกัน</p><p>อ้างอิง: <a href="#chapter-74/section/topic-5">Projector</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch74-exercise-18"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-19" class="exercise-item"><h3>ข้อ 19</h3><p>Design a small reproducibility record containing seed, code version, data version, configuration, and metric.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Multimodal Chat Templates, Evaluation Slices: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): manifest มีvision/LM/tokenizerhash/imagepreprocess/tili…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: manifest มีvision/LM/tokenizerhash/imagepreprocess/tiling/projector/visualspecialIDs/contextbudget/i…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>manifest มีvision/LM/tokenizerhash/imagepreprocess/tiling/projector/visualspecialIDs/contextbudget/imageorder/boxconvention/evalslices/seed</p><p>อ้างอิง: <a href="#chapter-74/section/topic-7">Multimodal Chat Templates</a>, <a href="#chapter-74/section/topic-21">Evaluation Slices</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch74-exercise-19"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-20" class="exercise-item"><h3>ข้อ 20</h3><p>Propose one falsifiable research question for Vision-Language Models and specify the baseline, changed factor, and acceptance metric.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ OCR / Documents: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ทดลอง“tilingเพิ่มsmallfontOCRexactmatch≥.1โดยv…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ทดลอง“tilingเพิ่มsmallfontOCRexactmatch≥.1โดยvisualtokens≤2×”; resizebaseline,fixe…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ทดลอง“tilingเพิ่มsmallfontOCRexactmatch≥.1โดยvisualtokens≤2×”; resizebaseline,fixedimages/questionsและlatencybudget</p><p>อ้างอิง: <a href="#chapter-74/section/topic-18">OCR / Documents</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch74-exercise-20"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section></div><div id="local-lab-content"><section id="local-lab"><h2>Local lab: Python 3.12 บน CPU</h2><p>รันจาก repository root; ใช้ Python 3.12 แยก environment สำหรับ framework ตาม requirements ของชุดบท</p><pre><code>python3.12 -m venv .venv-course
+source .venv-course/bin/activate
+python -m pip install -r requirements-batch25.txt pytest
+(cd 74-vision-language-models &amp;&amp; python -m pytest tests -q -rs)</code></pre><p>ผลที่คาดหวัง: required tests ผ่านและไม่มี required test ถูก skip; GPU/integrations ที่ยังไม่รันต้องระบุแยก Python 3.15 ที่มากับเครื่องอาจใช้กับ framework wheels เหล่านี้ไม่ได้</p><h2>Mini Project — Tiny Grounded VLM Interface</h2>
+<p>Build a small synthetic vision-language pipeline with:
+- image patchification
+- visual feature projection
+- text-token placeholders
+- fixed multimodal context budget
+- object-label generation
+- normalized bounding-box output</p>
+<p>Evaluate label accuracy separately from box IoU/grounding precision and add multi-image order tests.</p><h2>Batch 25 Integration Project — Reasoning, VLM &amp; Real-Time Voice Lab</h2>
+<p>Batch 25 connects three interactive AI capabilities:</p>
+<pre><code class="language-text">budgeted reasoning
+↓
+visual grounding / multimodal context
+↓
+streaming voice interface
+</code></pre>
+<h3>Part A — Reasoning</h3>
+<p>Compare:
+- majority/self-consistency
+- best-of-N verifier selection
+- pass@k
+- token-budget allocation
+- solve-per-token efficiency</p>
+<h3>Part B — VLM</h3>
+<p>Calculate:
+- image patch/token counts
+- multi-image context usage
+- remaining output/text budget
+- grounding IoU/precision/recall</p>
+<h3>Part C — Voice</h3>
+<p>Simulate:
+- VAD
+- endpointing
+- neural-codec bitrate
+- real-time factor
+- first-response latency budget</p>
+<h3>Full Gate</h3>
+<p>The combined system passes only when:
+- reasoning selection fits its compute budget
+- multimodal context fits and grounding succeeds
+- streaming voice has an endpoint, RTF below 1, and sub-second modeled first response</p>
+<h3>Run</h3>
+<pre><code class="language-bash">python integration-project-batch25/src/reasoning_vlm_voice_lab.py --mode reasoning
+python integration-project-batch25/src/reasoning_vlm_voice_lab.py --mode vlm
+python integration-project-batch25/src/reasoning_vlm_voice_lab.py --mode voice
+python integration-project-batch25/src/reasoning_vlm_voice_lab.py --mode full
+</code></pre>
+<h3>PyTorch Framework Smoke</h3>
+<p>CI also validates:
+- patch count with torch.nn.Unfold
+- NumPy visual projector against torch.nn.Linear
+- NumPy RMS against PyTorch tensor math</p>
+<p>No large multimodal/audio model is downloaded in CI.</p>
+<h3>Required Extensions</h3>
+<ol>
+<li>verifier-guided search on a symbolic task</li>
+<li>compute-matched self-consistency benchmark</li>
+<li>tiny trainable image-patch projector</li>
+<li>multi-image context-budget stress test</li>
+<li>OCR/grounding evaluation slices</li>
+<li>streaming VAD false-positive benchmark</li>
+<li>barge-in cancellation simulator</li>
+<li>partial-ASR revision-rate metric</li>
+<li>optional supported Transformers multimodal/audio processor lab</li>
+<li>final accuracy-latency-token Pareto report</li>
+</ol></section></div><label class="local-confirm"><input type="checkbox" id="local-lab-confirm"> ฉันรัน local lab และตรวจผลตาม rubric ด้วยตัวเองแล้ว</label><p class="local-note">สถานะนี้เป็นคำยืนยันของผู้เรียน เว็บไม่ได้รันหรือตรวจ Python บนเครื่องแทนคุณ</p></section>
+<section id="mastery-review" class="practice-section"><h2>หลักฐานตามเกณฑ์การเรียนรู้</h2><p>ทุก objective ต้องแสดงหลักฐานอธิบาย ทำนาย คำนวณ อ่าน shape/state debug และประยุกต์ พร้อมกรณีใหม่ ผลรัน source ผู้เรียนจริง และการประเมินซ้ำ เกณฑ์นี้ไม่รับประกันความเข้าใจทุกสถานการณ์ เปิด JavaScript เพื่อดูรายการที่ยังขาดและนำเข้ารายงานผู้ตรวจ</p></section><section class="coverage-section"><h2>แผนที่สิ่งที่เรียน → สิ่งที่ต้องแสดงให้ได้</h2><div id="coverage-table"></div></section><footer><span>ZERO TO ELITE AI ENGINEER · LEARNING STUDIO</span><span>อ่าน · derive · implement · debug · experiment · build</span></footer></div></main><noscript><style>.workbench,.sidebar,.reading-route,.lesson-toc,.mastery-status,#web-checks{display:none}main{margin-left:0}</style>อ่านเนื้อหา HTML ได้ตามปกติ เปิด JavaScript เพื่อใช้ห้องทดลองและตรวจคำตอบ</noscript></body></html>

@@ -1,0 +1,1016 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="บทเรียน AI Engineer ภาษาไทย พร้อมคณิตศาสตร์ทีละขั้นและห้องทดลองที่คำนวณจริง"><title>Anomaly Detection: score → threshold → ตรวจ alert · AI Engineer Studio</title><link rel="stylesheet" href="../visual-lab/assets/styles.css"><link rel="stylesheet" href="../visual-lab/assets/course.css"><script defer src="../visual-lab/assets/lessons.js"></script><script defer src="../visual-lab/assets/chapter-meta.js"></script><script defer src="../visual-lab/assets/course-math.js"></script><script defer src="../visual-lab/assets/course-models.js"></script><script defer src="../visual-lab/assets/course-models-v3.js"></script><script defer src="../visual-lab/assets/course-assessment.js"></script><script defer src="../visual-lab/assets/course-mastery.js"></script><script defer src="../visual-lab/assets/course-catalog.js"></script><script defer src="../visual-lab/assets/book-content.js"></script><script defer src="../visual-lab/assets/course-render.js"></script><script defer src="../visual-lab/assets/course-mastery-panel.js"></script><script defer src="../visual-lab/assets/quality-report.js"></script><script defer src="../visual-lab/assets/course-app.js"></script></head>
+<body data-chapter="16" data-root="../"><a class="skip-link" href="#main">ข้ามไปบทเรียน</a>
+<aside class="sidebar" id="sidebar" aria-label="เลือกบทเรียน"><a class="brand" href="../visual-lab/index.html"><span class="brand-mark">ai</span><span>AI ENGINEER<small>LEARN · DERIVE · BUILD</small></span></a><div class="sidebar-intro">อ่านให้เข้าใจ · คำนวณให้เห็น · เขียนให้เป็น</div><label class="search-box"><input id="search" type="search" placeholder="ค้นหาบท / attention" aria-label="ค้นหาบทเรียน"></label><label class="filter-label" for="phase-filter">เส้นทางการเรียน <span id="nav-count"></span></label><select id="phase-filter"><option value="">ทุก Phase</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option></select><nav id="chapter-list" class="chapter-list" aria-label="รายชื่อบท"></nav><div class="course-progress"><div><span>ผ่านโจทย์ในเว็บ</span><strong id="progress-count">0 / 80</strong></div><progress id="course-progress" max="80" value="0" aria-label="บทที่ผ่านโจทย์"></progress><a id="resume-link" href="#chapter-1">อ่านต่อจากเดิม →</a></div></aside>
+<button class="nav-backdrop" id="nav-backdrop" aria-label="ปิดเมนู" hidden></button>
+<main id="main" tabindex="-1"><header class="topbar"><div><button id="nav-toggle" class="icon-button mobile-menu" aria-label="เปิดเมนูบทเรียน" aria-expanded="false" aria-controls="sidebar">☰</button><span id="breadcrumb"></span></div><span class="local-badge"><i></i> คำนวณในเครื่อง · ไม่มี API</span></header><div class="content">
+<div class="chapter-navigation"><label for="chapter-select" class="sr-only">เลือกบทเรียน</label><select id="chapter-select"></select><div class="chapter-arrows"><button id="prev-chapter" class="icon-button" aria-label="บทก่อนหน้า">←</button><button id="next-chapter" class="icon-button" aria-label="บทถัดไป">→</button></div></div>
+<section class="chapter-hero"><div><p id="chapter-kicker" class="eyebrow"></p><h1 id="chapter-title">Anomaly Detection: score → threshold → ตรวจ alert</h1><p class="english-title" id="chapter-english"></p></div><span class="hero-symbol">f(x) ↗</span></section>
+<p id="quality-status" class="quality-status"></p><div id="mastery-status" class="mastery-status"></div><div class="reading-route"><a href="#chapter-16/section/overview">01 อ่านบทเรียน</a><a href="#workbench">02 ทดลองสมการ</a><a href="#practice">03 ฝึกและตรวจงาน</a><a href="#mastery-review">04 หลักฐานตามเกณฑ์</a></div>
+<nav id="lesson-toc" class="lesson-toc" aria-label="สารบัญบท"></nav>
+<section id="overview" class="course-overview"><span class="eyebrow">THE LEARNING CONTRACT</span><h2>เรียนบทนี้แล้วต้องทำอะไรได้</h2><p id="chapter-purpose"></p><div id="chapter-objectives"></div><div class="learning-hint">ทำนาย → เปลี่ยนทีละค่า → ตรวจตัวเลข → อธิบายเหตุผล → เขียนด้วย Python เอง</div></section>
+<section class="workbench lab-card" id="workbench" aria-label="ห้องทดลองคำนวณจริง"><div class="card-header"><div><span class="live-dot"></span><span class="eyebrow">COMPUTATION WORKBENCH</span></div><span class="simulation-label">ทุกภาพใช้ผลคำนวณชุดเดียวกัน</span></div><div class="lab-top"><label for="lab-select">เลือกกลไกที่ต้องการทดลอง</label><select id="lab-select"></select><p id="lab-question"></p></div><div class="workbench-grid"><div class="viz-column"><div class="compare-labels"><span>เส้นทึบ: ปัจจุบัน</span><span>เส้นประ: baseline ที่ตรึงไว้</span></div><div id="simulation" class="simulation"></div><div id="metrics" class="metrics"></div><div id="baseline-diff" class="baseline-diff"></div><div class="playback"><div class="playback-buttons"><button class="primary-button" id="update-once">อัปเดตหนึ่งก้าว</button><button class="secondary-button" id="train-many">▶ ฝึก 30 ก้าว</button><button class="icon-button" id="back-state" aria-label="ย้อนประวัติ">↶</button><button class="icon-button" id="forward-state" aria-label="ประวัติถัดไป">↷</button></div></div><div class="lab-secondary-actions"><button id="pin-baseline" class="text-button">ตรึง baseline ปัจจุบัน</button><button id="reset-lab" class="text-button">คืนค่าเริ่มต้น</button><button id="download-state" class="text-button">บันทึกผล JSON</button><span id="history-status"></span></div><p id="simulation-note" class="simulation-note"></p><p class="lab-error" id="lab-error" role="alert" hidden></p></div><div class="controls-column"><h3>เปลี่ยนทีละตัว แล้วสังเกตผล</h3><div id="lab-controls"></div><p class="control-note">แก้ weight ด้วยมือจะคำนวณ forward ใหม่; optimizer เปลี่ยน weights เมื่อกดอัปเดตเท่านั้น</p></div></div>
+<div class="trace-section"><div class="trace-toolbar"><h3>เดินสมการทีละ operation</h3><div><button id="trace-prev" class="icon-button" aria-label="operation ก่อนหน้า">←</button><button id="play-trace" class="secondary-button" aria-pressed="false">▶ เล่น flow</button><button id="trace-next" class="icon-button" aria-label="operation ถัดไป">→</button><span id="stage-counter"></span></div></div><label class="motion-control"><input id="reduce-motion" type="checkbox"> ลดภาพเคลื่อนไหว (หยุดการเล่นที่ค้างอยู่)</label><div id="operation-steps" class="operation-steps"></div><div id="flow-diagram" class="flow-diagram"></div><div id="active-operation" class="active-operation" aria-live="polite"></div><p class="control-note">ตัวเลขบนภาพปัดเศษเพื่อให้อ่านง่าย; บันทึก JSON เพื่อดูค่าที่ใช้คำนวณเต็ม precision</p><details open><summary>ตารางค่าระหว่างทาง — ตรวจด้วยมือได้</summary><div id="result-table"></div></details><div id="tensor-tables" class="tensor-tables"></div><details id="surface-details"><summary>ดู loss surface และเส้นทางของ w₁,b (ตรึง controls อื่น)</summary><div id="surface-chart"></div><p>surface คำนวณ objective ปัจจุบันโดยตรึง degree, penalty, ข้อมูล และ weights อื่น เส้นทางแสดงเฉพาะ snapshots ที่ค่าเหล่านี้ตรงกัน; นอกช่วง w=[−1,5], b=[−2,4] ให้ตรวจค่าจริงใน history</p></details><details><summary>ประวัติการเปลี่ยนค่า</summary><div id="history-table"></div></details></div></section>
+<article id="chapter-article" class="chapter-article"><section id="mechanism-1" class="teaching-section"><span class="section-kicker">CHAPTER 16 · ภาพ → สมการ → โค้ด</span><h2>1. reference statistics ต้องมาจากชุดที่เหมาะ</h2><h3>โจทย์และเหตุผล</h3><p>เพิ่ม outlier ในชุดอ้างอิงแล้ว mean/std อาจขยับจน query เดิมดูไม่ผิดปกติ การประมาณ normal distribution จากข้อมูลที่ปน anomalies มากจึงเปลี่ยน detector เอง</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Implement a small from-scratch example of z-score.</p><p><code>mu=X.mean(0); sd=X.std(0); z=np.divide(X-mu,sd,out=np.zeros_like(X,dtype=float),where=sd&gt;0)</code>; X=[1,2,3] ได้ [−1.2247449,0,1.2247449]</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>value: query value,initial=5; threshold: alert threshold,initial=2; outlier: reference outlier,initial=3; stat: reference,initial=standard</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = [0, 0.5, 1, 1.5, 2, 3]; ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</li><li>z=(x−center)/scale = 3.7186787208054732; robust mode ใช้ median และ 1.4826 MAD; threshold เป็นกติกาตัดสิน ไม่ใช่ label truth</li><li>finite / normalized / bounded = 3.7186787208054732; เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="anomaly-z-score-และ-threshold">เปิดการทดลองนี้</a><p class="failure-box">σเล็กทำ zใหญ่และRBF underflowได้; standardizeด้วยtrainstats,guard σ=0,ใช้ finitechecks; distance overflowใช้float64/scaleและไม่ silentlyclip inputผิด; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p><code>mu=X.mean(0); sd=X.std(0); z=np.divide(X-mu,sd,out=np.zeros_like(X,dtype=float),where=sd&gt;0)</code>; X=[1,2,3] ได้ [−1.2247449,0,1.2247449]</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-1-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = [0, 0.5, 1, 1.5, 2, 3]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>z=(x−center)/scale</code> = 3.7186787208054732<p>robust mode ใช้ median และ 1.4826 MAD; threshold เป็นกติกาตัดสิน ไม่ใช่ label truth</p></li><li><code>finite / normalized / bounded</code> = 3.7186787208054732<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-1-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>shape / range</code> = [0, 0.5, 1, 1.5, 2, 3]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>z=(x−center)/scale</code> = 3.7186787208054732<p>robust mode ใช้ median และ 1.4826 MAD; threshold เป็นกติกาตัดสิน ไม่ใช่ label truth</p></li><li><code>finite / normalized / bounded</code> = 3.7186787208054732<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-1-code"><summary>โค้ด</summary><p><code>mu=X.mean(0); sd=X.std(0); z=np.divide(X-mu,sd,out=np.zeros_like(X,dtype=float),where=sd&gt;0)</code>; X=[1,2,3] ได้ [−1.2247449,0,1.2247449]</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-1-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = [0, 0.5, 1, 1.5, 2, 3]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>z=(x−center)/scale</code> = 3.7186787208054732<p>robust mode ใช้ median และ 1.4826 MAD; threshold เป็นกติกาตัดสิน ไม่ใช่ label truth</p></li><li><code>finite / normalized / bounded</code> = 3.7186787208054732<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-1"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-2" class="teaching-section"><span class="section-kicker">CHAPTER 16 · ภาพ → สมการ → โค้ด</span><h2>2. score ต่อเนื่องกับ alert เป็นคนละขั้น</h2><h3>โจทย์และเหตุผล</h3><p>เพิ่ม threshold ทำให้ผ่านเงื่อนไข |z|&gt;τ ยากขึ้น จึงอาจลด false positives พร้อมพลาด anomalies เพิ่ม เลือกเกณฑ์จาก validation/ต้นทุนการตรวจ ไม่ใช่ค่าที่ดูสวยบน train</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Explain a common limitation involving threshold.</p><p>threshold ไม่ใช่ probability calibrated; ตั้ง percentile ให้ alert5%ไม่ได้แปลว่า5%เป็น anomaly จริง ต้องตรวจ false positives และต้นทุน missed event</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>value: query value,initial=5; threshold: alert threshold,initial=2; outlier: reference outlier,initial=12; stat: reference,initial=robust</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = [0, 0.5, 1, 1.5, 2, 12]; ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</li><li>z=(x−center)/scale = 3.372453797382976; robust mode ใช้ median และ 1.4826 MAD; threshold เป็นกติกาตัดสิน ไม่ใช่ label truth</li><li>finite / normalized / bounded = 3.372453797382976; เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="anomaly-median-mad-ร-บม-อ-refere">เปิดการทดลองนี้</a><p class="failure-box">σเล็กทำ zใหญ่และRBF underflowได้; standardizeด้วยtrainstats,guard σ=0,ใช้ finitechecks; distance overflowใช้float64/scaleและไม่ silentlyclip inputผิด; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>threshold ไม่ใช่ probability calibrated; ตั้ง percentile ให้ alert5%ไม่ได้แปลว่า5%เป็น anomaly จริง ต้องตรวจ false positives และต้นทุน missed event</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-2-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = [0, 0.5, 1, 1.5, 2, 12]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>z=(x−center)/scale</code> = 3.372453797382976<p>robust mode ใช้ median และ 1.4826 MAD; threshold เป็นกติกาตัดสิน ไม่ใช่ label truth</p></li><li><code>finite / normalized / bounded</code> = 3.372453797382976<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-2-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>shape / range</code> = [0, 0.5, 1, 1.5, 2, 12]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>z=(x−center)/scale</code> = 3.372453797382976<p>robust mode ใช้ median และ 1.4826 MAD; threshold เป็นกติกาตัดสิน ไม่ใช่ label truth</p></li><li><code>finite / normalized / bounded</code> = 3.372453797382976<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-2-code"><summary>โค้ด</summary><p>threshold ไม่ใช่ probability calibrated; ตั้ง percentile ให้ alert5%ไม่ได้แปลว่า5%เป็น anomaly จริง ต้องตรวจ false positives และต้นทุน missed event</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-2-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = [0, 0.5, 1, 1.5, 2, 12]<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>z=(x−center)/scale</code> = 3.372453797382976<p>robust mode ใช้ median และ 1.4826 MAD; threshold เป็นกติกาตัดสิน ไม่ใช่ label truth</p></li><li><code>finite / normalized / bounded</code> = 3.372453797382976<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-2"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-3" class="teaching-section"><span class="section-kicker">CHAPTER 16 · ภาพ → สมการ → โค้ด</span><h2>3. ความผิดปกติขึ้นกับบริบท</h2><h3>โจทย์และเหตุผล</h3><p>จุดที่ห่างทั่วโลกอาจปกติในกลุ่มย่อย LOF/Isolation Forest และ time-series detectors ใช้สมมติฐานต่างกัน ต้องรายงาน label quality และ alert review process แทน accuracy อย่างเดียว</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Explain the tradeoff introduced by precision-recall.</p><p>precision ลดมักแลก recall เมื่อ threshold ผ่อน; prevalence ต่ำทำ PRสำคัญ เช่น TP8,FP92,FN2 ได้ precision.08,recall.8 แม้จับได้เกือบหมด</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>correct: correct predictions,initial=16; n: sample count,initial=20; confidence: reported confidence,initial=0.8; baseline: baseline accuracy,initial=0.7</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = [16, 20]; กำหนดความหมายและหน่วยของ input ก่อนทดลอง</li><li>p̂=correct/n; Wilson 95% interval = [0.5839782779742401, 0.9193436467288]; n เพิ่มโดย correct คงที่ทำให้ accuracy เปลี่ยนด้วย; ถ้าต้องการคง p ต้องเปลี่ยน correct ตาม</li><li>normal / boundary / comparison = [0.5839782779742401, 0.9193436467288]; ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="metrics-rare-event-evaluation-แล">เปิดการทดลองนี้</a><p class="failure-box">σเล็กทำ zใหญ่และRBF underflowได้; standardizeด้วยtrainstats,guard σ=0,ใช้ finitechecks; distance overflowใช้float64/scaleและไม่ silentlyclip inputผิด; Wilson interval สมมติ IID Bernoulli trials; calibration gap เป็นตัวอย่างหนึ่ง bin ไม่ใช่ ECE หลาย bins</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>precision ลดมักแลก recall เมื่อ threshold ผ่อน; prevalence ต่ำทำ PRสำคัญ เช่น TP8,FP92,FN2 ได้ precision.08,recall.8 แม้จับได้เกือบหมด</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-3-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = [16, 20]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>p̂=correct/n; Wilson 95% interval</code> = [0.5839782779742401, 0.9193436467288]<p>n เพิ่มโดย correct คงที่ทำให้ accuracy เปลี่ยนด้วย; ถ้าต้องการคง p ต้องเปลี่ยน correct ตาม</p></li><li><code>normal / boundary / comparison</code> = [0.5839782779742401, 0.9193436467288]<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-3-visual"><summary>ภาพและ shape</summary><p>Wilson interval สมมติ IID Bernoulli trials; calibration gap เป็นตัวอย่างหนึ่ง bin ไม่ใช่ ECE หลาย bins</p><ol><li><code>shape / range</code> = [16, 20]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>p̂=correct/n; Wilson 95% interval</code> = [0.5839782779742401, 0.9193436467288]<p>n เพิ่มโดย correct คงที่ทำให้ accuracy เปลี่ยนด้วย; ถ้าต้องการคง p ต้องเปลี่ยน correct ตาม</p></li><li><code>normal / boundary / comparison</code> = [0.5839782779742401, 0.9193436467288]<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-3-code"><summary>โค้ด</summary><p>precision ลดมักแลก recall เมื่อ threshold ผ่อน; prevalence ต่ำทำ PRสำคัญ เช่น TP8,FP92,FN2 ได้ precision.08,recall.8 แม้จับได้เกือบหมด</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-3-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = [16, 20]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>p̂=correct/n; Wilson 95% interval</code> = [0.5839782779742401, 0.9193436467288]<p>n เพิ่มโดย correct คงที่ทำให้ accuracy เปลี่ยนด้วย; ถ้าต้องการคง p ต้องเปลี่ยน correct ตาม</p></li><li><code>normal / boundary / comparison</code> = [0.5839782779742401, 0.9193436467288]<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-3"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="reference" class="canonical-section"><h2>เนื้อหาครบทุกหัวข้อ พร้อมแผนที่ objective</h2><nav class="source-toc"><a href="#chapter-16/section/topic-1">1. Why This Matters</a> <a href="#chapter-16/section/topic-2">2. Outlier Detection vs Novelty Detection</a> <a href="#chapter-16/section/topic-3">3. Learning Objectives</a> <a href="#chapter-16/section/topic-4">4. Univariate Z-Score</a> <a href="#chapter-16/section/topic-5">5. Robust Z-Score</a> <a href="#chapter-16/section/topic-6">6. Mahalanobis Distance</a> <a href="#chapter-16/section/topic-7">7. Isolation Forest Intuition</a> <a href="#chapter-16/section/topic-8">8. Contamination</a> <a href="#chapter-16/section/topic-9">9. Local Outlier Factor</a> <a href="#chapter-16/section/topic-10">10. One-Class SVM</a> <a href="#chapter-16/section/topic-11">11. Global vs Local Anomaly</a> <a href="#chapter-16/section/topic-12">12. Supervised Evaluation</a> <a href="#chapter-16/section/topic-13">13. Threshold Selection</a> <a href="#chapter-16/section/topic-14">14. Unsupervised Evaluation Problem</a> <a href="#chapter-16/section/topic-15">15. Time-Series Anomalies</a> <a href="#chapter-16/section/topic-16">16. Leakage</a> <a href="#chapter-16/section/topic-17">17. From Scratch</a> <a href="#chapter-16/section/topic-18">18. scikit-learn</a> <a href="#chapter-16/section/topic-19">19. Failure Cases</a> <a href="#chapter-16/section/topic-20">20. Common Mistakes</a> <a href="#chapter-16/section/topic-21">21. Exercises / Project</a> <a href="#chapter-16/section/topic-22">22. Checklist</a> <a href="#chapter-16/section/topic-23">23. What&#x27;s Next</a> </nav><section id="topic-1" class="source-topic"><span id="source-16-anomaly-detection-canonical-chapter-16-anomaly-detection" class="legacy-anchor"></span><span id="source-16-anomaly-detection-canonical-1-why-this-matters" class="legacy-anchor"></span><h3>1. Why This Matters</h3>
+<p>Anomaly Detection ถามคำถามต่างจาก classification:</p>
+<pre><code class="language-text">ข้อมูลนี้ผิดปกติแค่ไหน?
+</code></pre>
+<p>ไม่จำเป็นต้องมี anomaly labels ครบทุกตัว และในงานจริง anomalies มักหายากมาก</p>
+<p>ตัวอย่าง:
+- sensor failure
+- fraudulent-looking behavior
+- manufacturing defects
+- server metrics spike
+- unusual user activity
+- data pipeline corruption</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>1. Why This Matters</h3>
+<p>Anomaly Detection ถามคำถามต่างจาก classification:</p>
+<pre><code class="language-text">ข้อมูลนี้ผิดปกติแค่ไหน?
+</code></pre>
+<p>ไม่จำเป็นต้องมี anomaly labels ครบทุกตัว และในงานจริง anomalies มักหายากมาก</p>
+<p>ตัวอย่าง:
+- sensor failure
+- fraudulent-looking behavior
+- manufacturing defects
+- server metrics spike
+- unusual user activity
+- data pipeline corruption</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-1-equation"><summary>สมการ</summary><h3>1. Why This Matters</h3>
+<p>Anomaly Detection ถามคำถามต่างจาก classification:</p>
+<pre><code class="language-text">ข้อมูลนี้ผิดปกติแค่ไหน?
+</code></pre>
+<p>ไม่จำเป็นต้องมี anomaly labels ครบทุกตัว และในงานจริง anomalies มักหายากมาก</p>
+<p>ตัวอย่าง:
+- sensor failure
+- fraudulent-looking behavior
+- manufacturing defects
+- server metrics spike
+- unusual user activity
+- data pipeline corruption</p></details><details id="help-topic-1-visual"><summary>ภาพและ shape</summary><h3>1. Why This Matters</h3>
+<p>Anomaly Detection ถามคำถามต่างจาก classification:</p>
+<pre><code class="language-text">ข้อมูลนี้ผิดปกติแค่ไหน?
+</code></pre>
+<p>ไม่จำเป็นต้องมี anomaly labels ครบทุกตัว และในงานจริง anomalies มักหายากมาก</p>
+<p>ตัวอย่าง:
+- sensor failure
+- fraudulent-looking behavior
+- manufacturing defects
+- server metrics spike
+- unusual user activity
+- data pipeline corruption</p></details><details id="help-topic-1-code"><summary>โค้ด</summary><h3>1. Why This Matters</h3>
+<p>Anomaly Detection ถามคำถามต่างจาก classification:</p>
+<pre><code class="language-text">ข้อมูลนี้ผิดปกติแค่ไหน?
+</code></pre>
+<p>ไม่จำเป็นต้องมี anomaly labels ครบทุกตัว และในงานจริง anomalies มักหายากมาก</p>
+<p>ตัวอย่าง:
+- sensor failure
+- fraudulent-looking behavior
+- manufacturing defects
+- server metrics spike
+- unusual user activity
+- data pipeline corruption</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-1-result"><summary>ผลการทดลอง</summary><h3>1. Why This Matters</h3>
+<p>Anomaly Detection ถามคำถามต่างจาก classification:</p>
+<pre><code class="language-text">ข้อมูลนี้ผิดปกติแค่ไหน?
+</code></pre>
+<p>ไม่จำเป็นต้องมี anomaly labels ครบทุกตัว และในงานจริง anomalies มักหายากมาก</p>
+<p>ตัวอย่าง:
+- sensor failure
+- fraudulent-looking behavior
+- manufacturing defects
+- server metrics spike
+- unusual user activity
+- data pipeline corruption</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-1"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-2" class="source-topic"><span id="source-16-anomaly-detection-canonical-2-outlier-detection-vs-novelty-detection" class="legacy-anchor"></span><h3>2. Outlier Detection vs Novelty Detection</h3>
+<p><strong>Outlier Detection</strong>
+training data อาจมี anomalies ปนอยู่แล้ว</p>
+<p><strong>Novelty Detection</strong>
+training data สมมติว่า mostly normal แล้วตรวจ sample ใหม่ภายหลัง</p>
+<p>ความต่างนี้สำคัญมาก เช่น Local Outlier Factor ใน scikit-learn ใช้ novelty=False สำหรับ outlier detection โดย default; ถ้าจะ score unseen data ต้องใช้ novelty=True</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>2. Outlier Detection vs Novelty Detection</h3>
+<p><strong>Outlier Detection</strong>
+training data อาจมี anomalies ปนอยู่แล้ว</p>
+<p><strong>Novelty Detection</strong>
+training data สมมติว่า mostly normal แล้วตรวจ sample ใหม่ภายหลัง</p>
+<p>ความต่างนี้สำคัญมาก เช่น Local Outlier Factor ใน scikit-learn ใช้ novelty=False สำหรับ outlier detection โดย default; ถ้าจะ score unseen data ต้องใช้ novelty=True</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-2-equation"><summary>สมการ</summary><h3>2. Outlier Detection vs Novelty Detection</h3>
+<p><strong>Outlier Detection</strong>
+training data อาจมี anomalies ปนอยู่แล้ว</p>
+<p><strong>Novelty Detection</strong>
+training data สมมติว่า mostly normal แล้วตรวจ sample ใหม่ภายหลัง</p>
+<p>ความต่างนี้สำคัญมาก เช่น Local Outlier Factor ใน scikit-learn ใช้ novelty=False สำหรับ outlier detection โดย default; ถ้าจะ score unseen data ต้องใช้ novelty=True</p></details><details id="help-topic-2-visual"><summary>ภาพและ shape</summary><h3>2. Outlier Detection vs Novelty Detection</h3>
+<p><strong>Outlier Detection</strong>
+training data อาจมี anomalies ปนอยู่แล้ว</p>
+<p><strong>Novelty Detection</strong>
+training data สมมติว่า mostly normal แล้วตรวจ sample ใหม่ภายหลัง</p>
+<p>ความต่างนี้สำคัญมาก เช่น Local Outlier Factor ใน scikit-learn ใช้ novelty=False สำหรับ outlier detection โดย default; ถ้าจะ score unseen data ต้องใช้ novelty=True</p></details><details id="help-topic-2-code"><summary>โค้ด</summary><h3>2. Outlier Detection vs Novelty Detection</h3>
+<p><strong>Outlier Detection</strong>
+training data อาจมี anomalies ปนอยู่แล้ว</p>
+<p><strong>Novelty Detection</strong>
+training data สมมติว่า mostly normal แล้วตรวจ sample ใหม่ภายหลัง</p>
+<p>ความต่างนี้สำคัญมาก เช่น Local Outlier Factor ใน scikit-learn ใช้ novelty=False สำหรับ outlier detection โดย default; ถ้าจะ score unseen data ต้องใช้ novelty=True</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-2-result"><summary>ผลการทดลอง</summary><h3>2. Outlier Detection vs Novelty Detection</h3>
+<p><strong>Outlier Detection</strong>
+training data อาจมี anomalies ปนอยู่แล้ว</p>
+<p><strong>Novelty Detection</strong>
+training data สมมติว่า mostly normal แล้วตรวจ sample ใหม่ภายหลัง</p>
+<p>ความต่างนี้สำคัญมาก เช่น Local Outlier Factor ใน scikit-learn ใช้ novelty=False สำหรับ outlier detection โดย default; ถ้าจะ score unseen data ต้องใช้ novelty=True</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-2"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-3" class="source-topic"><span id="source-16-anomaly-detection-canonical-3-learning-objectives" class="legacy-anchor"></span><h3>3. Learning Objectives</h3>
+<p>เมื่อจบบทนี้คุณควร:
+- แยก anomaly / outlier / novelty
+- ใช้ robust univariate scores
+- อธิบาย multivariate anomaly
+- implement z-score / robust-z / Mahalanobis detector
+- อธิบาย Isolation Forest
+- อธิบาย Local Outlier Factor
+- อธิบาย One-Class SVM
+- tune threshold ด้วย validation labels เมื่อมี
+- ประเมินด้วย precision/recall/PR-AUC
+- หลีกเลี่ยง contamination leakage
+- เข้าใจ time-dependent anomaly caveats</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>3. Learning Objectives</h3>
+<p>เมื่อจบบทนี้คุณควร:
+- แยก anomaly / outlier / novelty
+- ใช้ robust univariate scores
+- อธิบาย multivariate anomaly
+- implement z-score / robust-z / Mahalanobis detector
+- อธิบาย Isolation Forest
+- อธิบาย Local Outlier Factor
+- อธิบาย One-Class SVM
+- tune threshold ด้วย validation labels เมื่อมี
+- ประเมินด้วย precision/recall/PR-AUC
+- หลีกเลี่ยง contamination leakage
+- เข้าใจ time-dependent anomaly caveats</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-3-equation"><summary>สมการ</summary><h3>3. Learning Objectives</h3>
+<p>เมื่อจบบทนี้คุณควร:
+- แยก anomaly / outlier / novelty
+- ใช้ robust univariate scores
+- อธิบาย multivariate anomaly
+- implement z-score / robust-z / Mahalanobis detector
+- อธิบาย Isolation Forest
+- อธิบาย Local Outlier Factor
+- อธิบาย One-Class SVM
+- tune threshold ด้วย validation labels เมื่อมี
+- ประเมินด้วย precision/recall/PR-AUC
+- หลีกเลี่ยง contamination leakage
+- เข้าใจ time-dependent anomaly caveats</p></details><details id="help-topic-3-visual"><summary>ภาพและ shape</summary><h3>3. Learning Objectives</h3>
+<p>เมื่อจบบทนี้คุณควร:
+- แยก anomaly / outlier / novelty
+- ใช้ robust univariate scores
+- อธิบาย multivariate anomaly
+- implement z-score / robust-z / Mahalanobis detector
+- อธิบาย Isolation Forest
+- อธิบาย Local Outlier Factor
+- อธิบาย One-Class SVM
+- tune threshold ด้วย validation labels เมื่อมี
+- ประเมินด้วย precision/recall/PR-AUC
+- หลีกเลี่ยง contamination leakage
+- เข้าใจ time-dependent anomaly caveats</p></details><details id="help-topic-3-code"><summary>โค้ด</summary><h3>3. Learning Objectives</h3>
+<p>เมื่อจบบทนี้คุณควร:
+- แยก anomaly / outlier / novelty
+- ใช้ robust univariate scores
+- อธิบาย multivariate anomaly
+- implement z-score / robust-z / Mahalanobis detector
+- อธิบาย Isolation Forest
+- อธิบาย Local Outlier Factor
+- อธิบาย One-Class SVM
+- tune threshold ด้วย validation labels เมื่อมี
+- ประเมินด้วย precision/recall/PR-AUC
+- หลีกเลี่ยง contamination leakage
+- เข้าใจ time-dependent anomaly caveats</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-3-result"><summary>ผลการทดลอง</summary><h3>3. Learning Objectives</h3>
+<p>เมื่อจบบทนี้คุณควร:
+- แยก anomaly / outlier / novelty
+- ใช้ robust univariate scores
+- อธิบาย multivariate anomaly
+- implement z-score / robust-z / Mahalanobis detector
+- อธิบาย Isolation Forest
+- อธิบาย Local Outlier Factor
+- อธิบาย One-Class SVM
+- tune threshold ด้วย validation labels เมื่อมี
+- ประเมินด้วย precision/recall/PR-AUC
+- หลีกเลี่ยง contamination leakage
+- เข้าใจ time-dependent anomaly caveats</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-3"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-4" class="source-topic"><span id="source-16-anomaly-detection-canonical-4-univariate-z-score" class="legacy-anchor"></span><h3>4. Univariate Z-Score</h3>
+<pre><code class="language-text">z = (x - μ) / σ
+</code></pre>
+<p>ถ้า |z| สูง sample อาจผิดปกติ</p>
+<p>ข้อจำกัด:
+- mean/std sensitive ต่อ outliers
+- Gaussian-like assumption โดยนัย
+- ไม่ capture feature interactions</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-4-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>4. Univariate Z-Score</h3>
+<pre><code class="language-text">z = (x - μ) / σ
+</code></pre>
+<p>ถ้า |z| สูง sample อาจผิดปกติ</p>
+<p>ข้อจำกัด:
+- mean/std sensitive ต่อ outliers
+- Gaussian-like assumption โดยนัย
+- ไม่ capture feature interactions</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-4-equation"><summary>สมการ</summary><h3>4. Univariate Z-Score</h3>
+<pre><code class="language-text">z = (x - μ) / σ
+</code></pre>
+<p>ถ้า |z| สูง sample อาจผิดปกติ</p>
+<p>ข้อจำกัด:
+- mean/std sensitive ต่อ outliers
+- Gaussian-like assumption โดยนัย
+- ไม่ capture feature interactions</p></details><details id="help-topic-4-visual"><summary>ภาพและ shape</summary><h3>4. Univariate Z-Score</h3>
+<pre><code class="language-text">z = (x - μ) / σ
+</code></pre>
+<p>ถ้า |z| สูง sample อาจผิดปกติ</p>
+<p>ข้อจำกัด:
+- mean/std sensitive ต่อ outliers
+- Gaussian-like assumption โดยนัย
+- ไม่ capture feature interactions</p></details><details id="help-topic-4-code"><summary>โค้ด</summary><h3>4. Univariate Z-Score</h3>
+<pre><code class="language-text">z = (x - μ) / σ
+</code></pre>
+<p>ถ้า |z| สูง sample อาจผิดปกติ</p>
+<p>ข้อจำกัด:
+- mean/std sensitive ต่อ outliers
+- Gaussian-like assumption โดยนัย
+- ไม่ capture feature interactions</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-4-result"><summary>ผลการทดลอง</summary><h3>4. Univariate Z-Score</h3>
+<pre><code class="language-text">z = (x - μ) / σ
+</code></pre>
+<p>ถ้า |z| สูง sample อาจผิดปกติ</p>
+<p>ข้อจำกัด:
+- mean/std sensitive ต่อ outliers
+- Gaussian-like assumption โดยนัย
+- ไม่ capture feature interactions</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-4"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-5" class="source-topic"><span id="source-16-anomaly-detection-canonical-5-robust-z-score" class="legacy-anchor"></span><h3>5. Robust Z-Score</h3>
+<p>ใช้ median และ MAD:</p>
+<pre><code class="language-text">MAD = median(|x - median(x)|)
+</code></pre>
+<p>modified score:</p>
+<pre><code class="language-text">z_robust ≈ 0.6745(x - median)/MAD
+</code></pre>
+<p>robust ต่อ extreme values มากกว่า mean/std</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>z-score z=(x−μ)/σ บอกระยะจากค่าเฉลี่ยเป็นหน่วยส่วนเบี่ยงเบน; μ=10,σ=2,x=16 ได้3; σ=0 ต้องกำหนดนโยบาย</p><p><code>mu=X.mean(0); sd=X.std(0); z=np.divide(X-mu,sd,out=np.zeros_like(X,dtype=float),where=sd&gt;0)</code>; X=[1,2,3] ได้ [−1.2247449,0,1.2247449]</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-5-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>z-score z=(x−μ)/σ บอกระยะจากค่าเฉลี่ยเป็นหน่วยส่วนเบี่ยงเบน; μ=10,σ=2,x=16 ได้3; σ=0 ต้องกำหนดนโยบาย</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-5-equation"><summary>สมการ</summary><p>z-score z=(x−μ)/σ บอกระยะจากค่าเฉลี่ยเป็นหน่วยส่วนเบี่ยงเบน; μ=10,σ=2,x=16 ได้3; σ=0 ต้องกำหนดนโยบาย</p></details><details id="help-topic-5-visual"><summary>ภาพและ shape</summary><p>z-score z=(x−μ)/σ บอกระยะจากค่าเฉลี่ยเป็นหน่วยส่วนเบี่ยงเบน; μ=10,σ=2,x=16 ได้3; σ=0 ต้องกำหนดนโยบาย</p></details><details id="help-topic-5-code"><summary>โค้ด</summary><p>z-score z=(x−μ)/σ บอกระยะจากค่าเฉลี่ยเป็นหน่วยส่วนเบี่ยงเบน; μ=10,σ=2,x=16 ได้3; σ=0 ต้องกำหนดนโยบาย</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-5-result"><summary>ผลการทดลอง</summary><p>z-score z=(x−μ)/σ บอกระยะจากค่าเฉลี่ยเป็นหน่วยส่วนเบี่ยงเบน; μ=10,σ=2,x=16 ได้3; σ=0 ต้องกำหนดนโยบาย</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-5"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-6" class="source-topic"><span id="source-16-anomaly-detection-canonical-6-mahalanobis-distance" class="legacy-anchor"></span><h3>6. Mahalanobis Distance</h3>
+<p>sample อาจดูปกติทีละ feature แต่ผิดปกติเมื่อมองร่วมกัน</p>
+<pre><code class="language-text">D²(x)
+=
+(x-μ)ᵀ Σ⁻¹ (x-μ)
+</code></pre>
+<p>มัน account covariance ระหว่าง features</p>
+<p>ข้อจำกัด:
+- covariance invertibility
+- sensitive เมื่อ d ใหญ่เทียบ n
+- classical mean/covariance ไม่ robust ต่อ contamination</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>z-score มองรายแกนและอิง mean/std จึงพลาด correlated anomaly; IF สุ่ม partition หลายfeature จับ nonlinear pattern ได้ แต่ score ยังขึ้นกับ train distribution</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-6-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>z-score มองรายแกนและอิง mean/std จึงพลาด correlated anomaly; IF สุ่ม partition หลายfeature จับ nonlinear pattern ได้ แต่ score ยังขึ้นกับ train distribution</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-6-equation"><summary>สมการ</summary><p>z-score มองรายแกนและอิง mean/std จึงพลาด correlated anomaly; IF สุ่ม partition หลายfeature จับ nonlinear pattern ได้ แต่ score ยังขึ้นกับ train distribution</p></details><details id="help-topic-6-visual"><summary>ภาพและ shape</summary><p>z-score มองรายแกนและอิง mean/std จึงพลาด correlated anomaly; IF สุ่ม partition หลายfeature จับ nonlinear pattern ได้ แต่ score ยังขึ้นกับ train distribution</p></details><details id="help-topic-6-code"><summary>โค้ด</summary><p>z-score มองรายแกนและอิง mean/std จึงพลาด correlated anomaly; IF สุ่ม partition หลายfeature จับ nonlinear pattern ได้ แต่ score ยังขึ้นกับ train distribution</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-6-result"><summary>ผลการทดลอง</summary><p>z-score มองรายแกนและอิง mean/std จึงพลาด correlated anomaly; IF สุ่ม partition หลายfeature จับ nonlinear pattern ได้ แต่ score ยังขึ้นกับ train distribution</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-6"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-7" class="source-topic"><span id="source-16-anomaly-detection-canonical-7-isolation-forest-intuition" class="legacy-anchor"></span><h3>7. Isolation Forest Intuition</h3>
+<p>Isolation Forest ถามว่า point นี้ถูก isolate ด้วย random splits ได้เร็วแค่ไหน</p>
+<p>algorithm:
+1. sample data
+2. choose random feature
+3. choose random split
+4. recurse
+5. measure path length
+6. average across trees</p>
+<p>shorter path โดยทั่วไปหมายถึง anomalous มากขึ้น</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>Isolation Forest สุ่ม feature/split เพื่อแยกจุด; จุดโดดเดี่ยวใช้ path สั้นกว่า จึง anomaly score สูงตาม normalization ไม่ใช่ distance ถึง centroid</p><p>seed7 สร้างสองnormalclustersกับ outliers; fit IF/LOF บน train normal เท่านั้น; คง testlabelsเพื่อPR-AUC/recall@budget และรายงานthresholdจากvalidation</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-7-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Isolation Forest สุ่ม feature/split เพื่อแยกจุด; จุดโดดเดี่ยวใช้ path สั้นกว่า จึง anomaly score สูงตาม normalization ไม่ใช่ distance ถึง centroid</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-7-equation"><summary>สมการ</summary><p>Isolation Forest สุ่ม feature/split เพื่อแยกจุด; จุดโดดเดี่ยวใช้ path สั้นกว่า จึง anomaly score สูงตาม normalization ไม่ใช่ distance ถึง centroid</p></details><details id="help-topic-7-visual"><summary>ภาพและ shape</summary><p>Isolation Forest สุ่ม feature/split เพื่อแยกจุด; จุดโดดเดี่ยวใช้ path สั้นกว่า จึง anomaly score สูงตาม normalization ไม่ใช่ distance ถึง centroid</p></details><details id="help-topic-7-code"><summary>โค้ด</summary><p>Isolation Forest สุ่ม feature/split เพื่อแยกจุด; จุดโดดเดี่ยวใช้ path สั้นกว่า จึง anomaly score สูงตาม normalization ไม่ใช่ distance ถึง centroid</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-7-result"><summary>ผลการทดลอง</summary><p>Isolation Forest สุ่ม feature/split เพื่อแยกจุด; จุดโดดเดี่ยวใช้ path สั้นกว่า จึง anomaly score สูงตาม normalization ไม่ใช่ distance ถึง centroid</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-7"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-8" class="source-topic"><span id="source-16-anomaly-detection-canonical-8-contamination" class="legacy-anchor"></span><h3>8. Contamination</h3>
+<p>contamination เป็น assumption/thresholding aid ว่า anomaly fraction ประมาณเท่าไร</p>
+<p>ห้าม:
+- ตั้ง contamination จาก test labels แล้วรายงาน test เดิม
+- assume anomaly fraction คงที่ตลอด production</p>
+<p>threshold ควรแยกจาก raw anomaly score</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-8-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>8. Contamination</h3>
+<p>contamination เป็น assumption/thresholding aid ว่า anomaly fraction ประมาณเท่าไร</p>
+<p>ห้าม:
+- ตั้ง contamination จาก test labels แล้วรายงาน test เดิม
+- assume anomaly fraction คงที่ตลอด production</p>
+<p>threshold ควรแยกจาก raw anomaly score</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-8-equation"><summary>สมการ</summary><h3>8. Contamination</h3>
+<p>contamination เป็น assumption/thresholding aid ว่า anomaly fraction ประมาณเท่าไร</p>
+<p>ห้าม:
+- ตั้ง contamination จาก test labels แล้วรายงาน test เดิม
+- assume anomaly fraction คงที่ตลอด production</p>
+<p>threshold ควรแยกจาก raw anomaly score</p></details><details id="help-topic-8-visual"><summary>ภาพและ shape</summary><h3>8. Contamination</h3>
+<p>contamination เป็น assumption/thresholding aid ว่า anomaly fraction ประมาณเท่าไร</p>
+<p>ห้าม:
+- ตั้ง contamination จาก test labels แล้วรายงาน test เดิม
+- assume anomaly fraction คงที่ตลอด production</p>
+<p>threshold ควรแยกจาก raw anomaly score</p></details><details id="help-topic-8-code"><summary>โค้ด</summary><h3>8. Contamination</h3>
+<p>contamination เป็น assumption/thresholding aid ว่า anomaly fraction ประมาณเท่าไร</p>
+<p>ห้าม:
+- ตั้ง contamination จาก test labels แล้วรายงาน test เดิม
+- assume anomaly fraction คงที่ตลอด production</p>
+<p>threshold ควรแยกจาก raw anomaly score</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-8-result"><summary>ผลการทดลอง</summary><h3>8. Contamination</h3>
+<p>contamination เป็น assumption/thresholding aid ว่า anomaly fraction ประมาณเท่าไร</p>
+<p>ห้าม:
+- ตั้ง contamination จาก test labels แล้วรายงาน test เดิม
+- assume anomaly fraction คงที่ตลอด production</p>
+<p>threshold ควรแยกจาก raw anomaly score</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-8"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-9" class="source-topic"><span id="source-16-anomaly-detection-canonical-9-local-outlier-factor" class="legacy-anchor"></span><h3>9. Local Outlier Factor</h3>
+<p>LOF เปรียบเทียบ local density ของ point กับ neighbors</p>
+<pre><code class="language-text">density(point)
+vs
+density(neighbors)
+</code></pre>
+<p>ถ้า point มี density ต่ำกว่าบริเวณรอบ ๆ มาก อาจเป็น local outlier</p>
+<p>ข้อเสีย:
+- sensitive ต่อ k / metric / scaling
+- high-dimensional neighborhoods เสื่อม</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>LOF เปรียบเทียบ local reachability density ของจุดกับเพื่อนบ้าน; density ต่ำกว่าเพื่อนมากให้ LOF&gt;1 จึงจับ local anomaly ในกลุ่มความหนาแน่นต่างกันได้</p><p>n_neighbors เล็กจับ local noise มากขึ้น; ใหญ่กลายเป็นมุมมอง global; LOF sklearn novelty=False ใช้ fit_predict train ส่วนจุดใหม่ต้อง novelty=True ตั้งแต่สร้าง</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-9-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>LOF เปรียบเทียบ local reachability density ของจุดกับเพื่อนบ้าน; density ต่ำกว่าเพื่อนมากให้ LOF&gt;1 จึงจับ local anomaly ในกลุ่มความหนาแน่นต่างกันได้</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-9-equation"><summary>สมการ</summary><p>LOF เปรียบเทียบ local reachability density ของจุดกับเพื่อนบ้าน; density ต่ำกว่าเพื่อนมากให้ LOF&gt;1 จึงจับ local anomaly ในกลุ่มความหนาแน่นต่างกันได้</p></details><details id="help-topic-9-visual"><summary>ภาพและ shape</summary><p>LOF เปรียบเทียบ local reachability density ของจุดกับเพื่อนบ้าน; density ต่ำกว่าเพื่อนมากให้ LOF&gt;1 จึงจับ local anomaly ในกลุ่มความหนาแน่นต่างกันได้</p></details><details id="help-topic-9-code"><summary>โค้ด</summary><p>LOF เปรียบเทียบ local reachability density ของจุดกับเพื่อนบ้าน; density ต่ำกว่าเพื่อนมากให้ LOF&gt;1 จึงจับ local anomaly ในกลุ่มความหนาแน่นต่างกันได้</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-9-result"><summary>ผลการทดลอง</summary><p>LOF เปรียบเทียบ local reachability density ของจุดกับเพื่อนบ้าน; density ต่ำกว่าเพื่อนมากให้ LOF&gt;1 จึงจับ local anomaly ในกลุ่มความหนาแน่นต่างกันได้</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-9"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-10" class="source-topic"><span id="source-16-anomaly-detection-canonical-10-one-class-svm" class="legacy-anchor"></span><h3>10. One-Class SVM</h3>
+<p>พยายาม estimate support/boundary ของ normal distribution ใน feature space</p>
+<p>RBF kernel ช่วยสร้าง nonlinear boundary</p>
+<p>parameters สำคัญ:
+- nu
+- gamma
+- kernel</p>
+<p>ต้อง scale features</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>One-Class SVM หา boundary ของ train normal ใน feature space; f(x)=ΣαᵢK(xᵢ,x)−ρ ค่าลบจัดนอก boundary โดย ν/γ ต้องเลือกบน validation</p><p>ใช้ RBF score <code>K=np.exp(-gamma*((X[:,None]-SV[None,:])**2).sum(-1)); f=K@alpha-rho</code>; SV=[[0]],α=[1],γ=1,ρ=.5 ให้ f(0)=.5,f(2)=−.481684</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-10-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>One-Class SVM หา boundary ของ train normal ใน feature space; f(x)=ΣαᵢK(xᵢ,x)−ρ ค่าลบจัดนอก boundary โดย ν/γ ต้องเลือกบน validation</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-10-equation"><summary>สมการ</summary><p>One-Class SVM หา boundary ของ train normal ใน feature space; f(x)=ΣαᵢK(xᵢ,x)−ρ ค่าลบจัดนอก boundary โดย ν/γ ต้องเลือกบน validation</p></details><details id="help-topic-10-visual"><summary>ภาพและ shape</summary><p>One-Class SVM หา boundary ของ train normal ใน feature space; f(x)=ΣαᵢK(xᵢ,x)−ρ ค่าลบจัดนอก boundary โดย ν/γ ต้องเลือกบน validation</p></details><details id="help-topic-10-code"><summary>โค้ด</summary><p>One-Class SVM หา boundary ของ train normal ใน feature space; f(x)=ΣαᵢK(xᵢ,x)−ρ ค่าลบจัดนอก boundary โดย ν/γ ต้องเลือกบน validation</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-10-result"><summary>ผลการทดลอง</summary><p>One-Class SVM หา boundary ของ train normal ใน feature space; f(x)=ΣαᵢK(xᵢ,x)−ρ ค่าลบจัดนอก boundary โดย ν/γ ต้องเลือกบน validation</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-10"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-11" class="source-topic"><span id="source-16-anomaly-detection-canonical-11-global-vs-local-anomaly" class="legacy-anchor"></span><h3>11. Global vs Local Anomaly</h3>
+<p>point อาจ global-far แต่ local-normal หรือกลับกัน</p>
+<p>ดังนั้น anomaly definition ขึ้นกับ context และ representation</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-11-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>11. Global vs Local Anomaly</h3>
+<p>point อาจ global-far แต่ local-normal หรือกลับกัน</p>
+<p>ดังนั้น anomaly definition ขึ้นกับ context และ representation</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-11-equation"><summary>สมการ</summary><h3>11. Global vs Local Anomaly</h3>
+<p>point อาจ global-far แต่ local-normal หรือกลับกัน</p>
+<p>ดังนั้น anomaly definition ขึ้นกับ context และ representation</p></details><details id="help-topic-11-visual"><summary>ภาพและ shape</summary><h3>11. Global vs Local Anomaly</h3>
+<p>point อาจ global-far แต่ local-normal หรือกลับกัน</p>
+<p>ดังนั้น anomaly definition ขึ้นกับ context และ representation</p></details><details id="help-topic-11-code"><summary>โค้ด</summary><h3>11. Global vs Local Anomaly</h3>
+<p>point อาจ global-far แต่ local-normal หรือกลับกัน</p>
+<p>ดังนั้น anomaly definition ขึ้นกับ context และ representation</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-11-result"><summary>ผลการทดลอง</summary><h3>11. Global vs Local Anomaly</h3>
+<p>point อาจ global-far แต่ local-normal หรือกลับกัน</p>
+<p>ดังนั้น anomaly definition ขึ้นกับ context และ representation</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-11"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-12" class="source-topic"><span id="source-16-anomaly-detection-canonical-12-supervised-evaluation" class="legacy-anchor"></span><h3>12. Supervised Evaluation</h3>
+<p>ถ้ามี anomaly labels:
+- Precision
+- Recall
+- F1
+- ROC-AUC
+- PR-AUC</p>
+<p>สำหรับ rare anomalies PR-AUC มัก informative กว่า accuracy</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>precision ลดมักแลก recall เมื่อ threshold ผ่อน; prevalence ต่ำทำ PRสำคัญ เช่น TP8,FP92,FN2 ได้ precision.08,recall.8 แม้จับได้เกือบหมด</p><p>seed7 สร้างสองnormalclustersกับ outliers; fit IF/LOF บน train normal เท่านั้น; คง testlabelsเพื่อPR-AUC/recall@budget และรายงานthresholdจากvalidation</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-12-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>precision ลดมักแลก recall เมื่อ threshold ผ่อน; prevalence ต่ำทำ PRสำคัญ เช่น TP8,FP92,FN2 ได้ precision.08,recall.8 แม้จับได้เกือบหมด</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-12-equation"><summary>สมการ</summary><p>precision ลดมักแลก recall เมื่อ threshold ผ่อน; prevalence ต่ำทำ PRสำคัญ เช่น TP8,FP92,FN2 ได้ precision.08,recall.8 แม้จับได้เกือบหมด</p></details><details id="help-topic-12-visual"><summary>ภาพและ shape</summary><p>precision ลดมักแลก recall เมื่อ threshold ผ่อน; prevalence ต่ำทำ PRสำคัญ เช่น TP8,FP92,FN2 ได้ precision.08,recall.8 แม้จับได้เกือบหมด</p></details><details id="help-topic-12-code"><summary>โค้ด</summary><p>precision ลดมักแลก recall เมื่อ threshold ผ่อน; prevalence ต่ำทำ PRสำคัญ เช่น TP8,FP92,FN2 ได้ precision.08,recall.8 แม้จับได้เกือบหมด</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-12-result"><summary>ผลการทดลอง</summary><p>precision ลดมักแลก recall เมื่อ threshold ผ่อน; prevalence ต่ำทำ PRสำคัญ เช่น TP8,FP92,FN2 ได้ precision.08,recall.8 แม้จับได้เกือบหมด</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-12"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-13" class="source-topic"><span id="source-16-anomaly-detection-canonical-13-threshold-selection" class="legacy-anchor"></span><h3>13. Threshold Selection</h3>
+<p>anomaly score:</p>
+<pre><code class="language-text">higher score → more abnormal
+</code></pre>
+<p>เลือก threshold บน validation set ตาม cost</p>
+<p>เช่น:
+- false negative แพง → favor recall
+- false positive แพง → favor precision</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>threshold ไม่ใช่ probability calibrated; ตั้ง percentile ให้ alert5%ไม่ได้แปลว่า5%เป็น anomaly จริง ต้องตรวจ false positives และต้นทุน missed event</p><p>ตรึงscoresและlabels เปลี่ยนthresholdจากvalidationquantile.95→.99; จำนวนalertไม่ควรเพิ่ม แต่recallอาจลด; แสดงTP,FP,FNจริงทั้งสองค่า</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-13-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>threshold ไม่ใช่ probability calibrated; ตั้ง percentile ให้ alert5%ไม่ได้แปลว่า5%เป็น anomaly จริง ต้องตรวจ false positives และต้นทุน missed event</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-13-equation"><summary>สมการ</summary><p>threshold ไม่ใช่ probability calibrated; ตั้ง percentile ให้ alert5%ไม่ได้แปลว่า5%เป็น anomaly จริง ต้องตรวจ false positives และต้นทุน missed event</p></details><details id="help-topic-13-visual"><summary>ภาพและ shape</summary><p>threshold ไม่ใช่ probability calibrated; ตั้ง percentile ให้ alert5%ไม่ได้แปลว่า5%เป็น anomaly จริง ต้องตรวจ false positives และต้นทุน missed event</p></details><details id="help-topic-13-code"><summary>โค้ด</summary><p>threshold ไม่ใช่ probability calibrated; ตั้ง percentile ให้ alert5%ไม่ได้แปลว่า5%เป็น anomaly จริง ต้องตรวจ false positives และต้นทุน missed event</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-13-result"><summary>ผลการทดลอง</summary><p>threshold ไม่ใช่ probability calibrated; ตั้ง percentile ให้ alert5%ไม่ได้แปลว่า5%เป็น anomaly จริง ต้องตรวจ false positives และต้นทุน missed event</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-13"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-14" class="source-topic"><span id="source-16-anomaly-detection-canonical-14-unsupervised-evaluation-problem" class="legacy-anchor"></span><h3>14. Unsupervised Evaluation Problem</h3>
+<p>ถ้าไม่มี labels จริง:
+- score distribution
+- stability
+- domain inspection
+- synthetic corruption
+- human review
+- downstream impact</p>
+<p>ไม่มี internal metric universal ที่พิสูจน์ว่า detector ถูกต้อง</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-14-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>14. Unsupervised Evaluation Problem</h3>
+<p>ถ้าไม่มี labels จริง:
+- score distribution
+- stability
+- domain inspection
+- synthetic corruption
+- human review
+- downstream impact</p>
+<p>ไม่มี internal metric universal ที่พิสูจน์ว่า detector ถูกต้อง</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-14-equation"><summary>สมการ</summary><h3>14. Unsupervised Evaluation Problem</h3>
+<p>ถ้าไม่มี labels จริง:
+- score distribution
+- stability
+- domain inspection
+- synthetic corruption
+- human review
+- downstream impact</p>
+<p>ไม่มี internal metric universal ที่พิสูจน์ว่า detector ถูกต้อง</p></details><details id="help-topic-14-visual"><summary>ภาพและ shape</summary><h3>14. Unsupervised Evaluation Problem</h3>
+<p>ถ้าไม่มี labels จริง:
+- score distribution
+- stability
+- domain inspection
+- synthetic corruption
+- human review
+- downstream impact</p>
+<p>ไม่มี internal metric universal ที่พิสูจน์ว่า detector ถูกต้อง</p></details><details id="help-topic-14-code"><summary>โค้ด</summary><h3>14. Unsupervised Evaluation Problem</h3>
+<p>ถ้าไม่มี labels จริง:
+- score distribution
+- stability
+- domain inspection
+- synthetic corruption
+- human review
+- downstream impact</p>
+<p>ไม่มี internal metric universal ที่พิสูจน์ว่า detector ถูกต้อง</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-14-result"><summary>ผลการทดลอง</summary><h3>14. Unsupervised Evaluation Problem</h3>
+<p>ถ้าไม่มี labels จริง:
+- score distribution
+- stability
+- domain inspection
+- synthetic corruption
+- human review
+- downstream impact</p>
+<p>ไม่มี internal metric universal ที่พิสูจน์ว่า detector ถูกต้อง</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-14"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-15" class="source-topic"><span id="source-16-anomaly-detection-canonical-15-time-series-anomalies" class="legacy-anchor"></span><h3>15. Time-Series Anomalies</h3>
+<p>time series ต้องพิจารณา:
+- point anomaly
+- contextual anomaly
+- collective anomaly</p>
+<p>ค่าเดียวกันอาจปกติกลางวันแต่ผิดปกติตอนกลางคืน</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>บันทึกnormal-definition/score-direction/threshold/datawindow; monitor alertvolumeและdelayedlabels; ทดลองthresholdpersegmentลดfalsealertโดยrecallไม่ต่ำกว่าbaseline</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-15-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>บันทึกnormal-definition/score-direction/threshold/datawindow; monitor alertvolumeและdelayedlabels; ทดลองthresholdpersegmentลดfalsealertโดยrecallไม่ต่ำกว่าbaseline</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-15-equation"><summary>สมการ</summary><p>บันทึกnormal-definition/score-direction/threshold/datawindow; monitor alertvolumeและdelayedlabels; ทดลองthresholdpersegmentลดfalsealertโดยrecallไม่ต่ำกว่าbaseline</p></details><details id="help-topic-15-visual"><summary>ภาพและ shape</summary><p>บันทึกnormal-definition/score-direction/threshold/datawindow; monitor alertvolumeและdelayedlabels; ทดลองthresholdpersegmentลดfalsealertโดยrecallไม่ต่ำกว่าbaseline</p></details><details id="help-topic-15-code"><summary>โค้ด</summary><p>บันทึกnormal-definition/score-direction/threshold/datawindow; monitor alertvolumeและdelayedlabels; ทดลองthresholdpersegmentลดfalsealertโดยrecallไม่ต่ำกว่าbaseline</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-15-result"><summary>ผลการทดลอง</summary><p>บันทึกnormal-definition/score-direction/threshold/datawindow; monitor alertvolumeและdelayedlabels; ทดลองthresholdpersegmentลดfalsealertโดยrecallไม่ต่ำกว่าbaseline</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-15"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-16" class="source-topic"><span id="source-16-anomaly-detection-canonical-16-leakage" class="legacy-anchor"></span><h3>16. Leakage</h3>
+<p>ถ้า fit scaler / covariance / anomaly detector บน full data ก่อน split:</p>
+<pre><code class="language-text">future/test distribution
+→ influence detector
+</code></pre>
+<p>นี่คือ leakage</p>
+<p>สำหรับ novelty detection:
+- fit เฉพาะ training period
+- score validation/test ใหม่</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>novelty detection trainเฉพาะnormalที่เชื่อถือได้, validationเลือกthresholdด้วยlabel, testท้ายสุด; time-splitเมื่อเป็นsensorและไม่นำanomalytestfit scaler</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-16-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>novelty detection trainเฉพาะnormalที่เชื่อถือได้, validationเลือกthresholdด้วยlabel, testท้ายสุด; time-splitเมื่อเป็นsensorและไม่นำanomalytestfit scaler</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-16-equation"><summary>สมการ</summary><p>novelty detection trainเฉพาะnormalที่เชื่อถือได้, validationเลือกthresholdด้วยlabel, testท้ายสุด; time-splitเมื่อเป็นsensorและไม่นำanomalytestfit scaler</p></details><details id="help-topic-16-visual"><summary>ภาพและ shape</summary><p>novelty detection trainเฉพาะnormalที่เชื่อถือได้, validationเลือกthresholdด้วยlabel, testท้ายสุด; time-splitเมื่อเป็นsensorและไม่นำanomalytestfit scaler</p></details><details id="help-topic-16-code"><summary>โค้ด</summary><p>novelty detection trainเฉพาะnormalที่เชื่อถือได้, validationเลือกthresholdด้วยlabel, testท้ายสุด; time-splitเมื่อเป็นsensorและไม่นำanomalytestfit scaler</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-16-result"><summary>ผลการทดลอง</summary><p>novelty detection trainเฉพาะnormalที่เชื่อถือได้, validationเลือกthresholdด้วยlabel, testท้ายสุด; time-splitเมื่อเป็นsensorและไม่นำanomalytestfit scaler</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-16"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-17" class="source-topic"><span id="source-16-anomaly-detection-canonical-17-from-scratch" class="legacy-anchor"></span><h3>17. From Scratch</h3>
+<p>ดู src/anomaly.py</p>
+<p>มี:
+- ZScoreDetector
+- RobustZScoreDetector
+- MahalanobisDetector
+- threshold helper</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>assert z mean≈0,std≈1 สำหรับ nonconstant feature; X=[2,2] ต้อง finite zeros; emptyinput reject; tiny zเทียบ population ddof0 ตามนิยามข้อ9</p><p>X→trainpreprocess→rawscore→กำหนดทิศทางanomaly→validationthreshold→alert→PR/falsealertbudget; เก็บscoreต่อจุดเพื่อdebugไม่ใช่เฉพาะ0/1</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-17-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>assert z mean≈0,std≈1 สำหรับ nonconstant feature; X=[2,2] ต้อง finite zeros; emptyinput reject; tiny zเทียบ population ddof0 ตามนิยามข้อ9</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-17-equation"><summary>สมการ</summary><p>assert z mean≈0,std≈1 สำหรับ nonconstant feature; X=[2,2] ต้อง finite zeros; emptyinput reject; tiny zเทียบ population ddof0 ตามนิยามข้อ9</p></details><details id="help-topic-17-visual"><summary>ภาพและ shape</summary><p>assert z mean≈0,std≈1 สำหรับ nonconstant feature; X=[2,2] ต้อง finite zeros; emptyinput reject; tiny zเทียบ population ddof0 ตามนิยามข้อ9</p></details><details id="help-topic-17-code"><summary>โค้ด</summary><p>assert z mean≈0,std≈1 สำหรับ nonconstant feature; X=[2,2] ต้อง finite zeros; emptyinput reject; tiny zเทียบ population ddof0 ตามนิยามข้อ9</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-17-result"><summary>ผลการทดลอง</summary><p>assert z mean≈0,std≈1 สำหรับ nonconstant feature; X=[2,2] ต้อง finite zeros; emptyinput reject; tiny zเทียบ population ddof0 ตามนิยามข้อ9</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-17"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-18" class="source-topic"><span id="source-16-anomaly-detection-canonical-18-scikit-learn" class="legacy-anchor"></span><h3>18. scikit-learn</h3>
+<p>สำคัญ:
+- IsolationForest
+- LocalOutlierFactor
+- OneClassSVM</p>
+<p>LOF:
+- novelty=False → training-set outlier detection
+- novelty=True → score/predict unseen samples</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-18-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>18. scikit-learn</h3>
+<p>สำคัญ:
+- IsolationForest
+- LocalOutlierFactor
+- OneClassSVM</p>
+<p>LOF:
+- novelty=False → training-set outlier detection
+- novelty=True → score/predict unseen samples</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-18-equation"><summary>สมการ</summary><h3>18. scikit-learn</h3>
+<p>สำคัญ:
+- IsolationForest
+- LocalOutlierFactor
+- OneClassSVM</p>
+<p>LOF:
+- novelty=False → training-set outlier detection
+- novelty=True → score/predict unseen samples</p></details><details id="help-topic-18-visual"><summary>ภาพและ shape</summary><h3>18. scikit-learn</h3>
+<p>สำคัญ:
+- IsolationForest
+- LocalOutlierFactor
+- OneClassSVM</p>
+<p>LOF:
+- novelty=False → training-set outlier detection
+- novelty=True → score/predict unseen samples</p></details><details id="help-topic-18-code"><summary>โค้ด</summary><h3>18. scikit-learn</h3>
+<p>สำคัญ:
+- IsolationForest
+- LocalOutlierFactor
+- OneClassSVM</p>
+<p>LOF:
+- novelty=False → training-set outlier detection
+- novelty=True → score/predict unseen samples</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-18-result"><summary>ผลการทดลอง</summary><h3>18. scikit-learn</h3>
+<p>สำคัญ:
+- IsolationForest
+- LocalOutlierFactor
+- OneClassSVM</p>
+<p>LOF:
+- novelty=False → training-set outlier detection
+- novelty=True → score/predict unseen samples</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-18"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-19" class="source-topic"><span id="source-16-anomaly-detection-canonical-19-failure-cases" class="legacy-anchor"></span><h3>19. Failure Cases</h3>
+<ul>
+<li>unscaled distances</li>
+<li>anomaly distribution changes</li>
+<li>contamination wrong</li>
+<li>high-dimensional sparse data</li>
+<li>local-density assumption wrong</li>
+<li>normal training set already contaminated</li>
+<li>covariance singular</li>
+<li>time leakage</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-19-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>19. Failure Cases</h3>
+<ul>
+<li>unscaled distances</li>
+<li>anomaly distribution changes</li>
+<li>contamination wrong</li>
+<li>high-dimensional sparse data</li>
+<li>local-density assumption wrong</li>
+<li>normal training set already contaminated</li>
+<li>covariance singular</li>
+<li>time leakage</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-19-equation"><summary>สมการ</summary><h3>19. Failure Cases</h3>
+<ul>
+<li>unscaled distances</li>
+<li>anomaly distribution changes</li>
+<li>contamination wrong</li>
+<li>high-dimensional sparse data</li>
+<li>local-density assumption wrong</li>
+<li>normal training set already contaminated</li>
+<li>covariance singular</li>
+<li>time leakage</li>
+</ul></details><details id="help-topic-19-visual"><summary>ภาพและ shape</summary><h3>19. Failure Cases</h3>
+<ul>
+<li>unscaled distances</li>
+<li>anomaly distribution changes</li>
+<li>contamination wrong</li>
+<li>high-dimensional sparse data</li>
+<li>local-density assumption wrong</li>
+<li>normal training set already contaminated</li>
+<li>covariance singular</li>
+<li>time leakage</li>
+</ul></details><details id="help-topic-19-code"><summary>โค้ด</summary><h3>19. Failure Cases</h3>
+<ul>
+<li>unscaled distances</li>
+<li>anomaly distribution changes</li>
+<li>contamination wrong</li>
+<li>high-dimensional sparse data</li>
+<li>local-density assumption wrong</li>
+<li>normal training set already contaminated</li>
+<li>covariance singular</li>
+<li>time leakage</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-19-result"><summary>ผลการทดลอง</summary><h3>19. Failure Cases</h3>
+<ul>
+<li>unscaled distances</li>
+<li>anomaly distribution changes</li>
+<li>contamination wrong</li>
+<li>high-dimensional sparse data</li>
+<li>local-density assumption wrong</li>
+<li>normal training set already contaminated</li>
+<li>covariance singular</li>
+<li>time leakage</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-19"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-20" class="source-topic"><span id="source-16-anomaly-detection-canonical-20-common-mistakes" class="legacy-anchor"></span><h3>20. Common Mistakes</h3>
+<ol>
+<li>ใช้ accuracy อย่างเดียว</li>
+<li>remove every anomaly automatically</li>
+<li>fit detector before split</li>
+<li>anomaly score = probability</li>
+<li>threshold tuned on test</li>
+<li>LOF novelty mode misunderstood</li>
+<li>One-Class SVM unscaled</li>
+<li>anomaly = invalid data เสมอ</li>
+<li>rare but valuable events deleted</li>
+<li>synthetic anomalies treated as perfect ground truth</li>
+</ol><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-20-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>20. Common Mistakes</h3>
+<ol>
+<li>ใช้ accuracy อย่างเดียว</li>
+<li>remove every anomaly automatically</li>
+<li>fit detector before split</li>
+<li>anomaly score = probability</li>
+<li>threshold tuned on test</li>
+<li>LOF novelty mode misunderstood</li>
+<li>One-Class SVM unscaled</li>
+<li>anomaly = invalid data เสมอ</li>
+<li>rare but valuable events deleted</li>
+<li>synthetic anomalies treated as perfect ground truth</li>
+</ol><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-20-equation"><summary>สมการ</summary><h3>20. Common Mistakes</h3>
+<ol>
+<li>ใช้ accuracy อย่างเดียว</li>
+<li>remove every anomaly automatically</li>
+<li>fit detector before split</li>
+<li>anomaly score = probability</li>
+<li>threshold tuned on test</li>
+<li>LOF novelty mode misunderstood</li>
+<li>One-Class SVM unscaled</li>
+<li>anomaly = invalid data เสมอ</li>
+<li>rare but valuable events deleted</li>
+<li>synthetic anomalies treated as perfect ground truth</li>
+</ol></details><details id="help-topic-20-visual"><summary>ภาพและ shape</summary><h3>20. Common Mistakes</h3>
+<ol>
+<li>ใช้ accuracy อย่างเดียว</li>
+<li>remove every anomaly automatically</li>
+<li>fit detector before split</li>
+<li>anomaly score = probability</li>
+<li>threshold tuned on test</li>
+<li>LOF novelty mode misunderstood</li>
+<li>One-Class SVM unscaled</li>
+<li>anomaly = invalid data เสมอ</li>
+<li>rare but valuable events deleted</li>
+<li>synthetic anomalies treated as perfect ground truth</li>
+</ol></details><details id="help-topic-20-code"><summary>โค้ด</summary><h3>20. Common Mistakes</h3>
+<ol>
+<li>ใช้ accuracy อย่างเดียว</li>
+<li>remove every anomaly automatically</li>
+<li>fit detector before split</li>
+<li>anomaly score = probability</li>
+<li>threshold tuned on test</li>
+<li>LOF novelty mode misunderstood</li>
+<li>One-Class SVM unscaled</li>
+<li>anomaly = invalid data เสมอ</li>
+<li>rare but valuable events deleted</li>
+<li>synthetic anomalies treated as perfect ground truth</li>
+</ol><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-20-result"><summary>ผลการทดลอง</summary><h3>20. Common Mistakes</h3>
+<ol>
+<li>ใช้ accuracy อย่างเดียว</li>
+<li>remove every anomaly automatically</li>
+<li>fit detector before split</li>
+<li>anomaly score = probability</li>
+<li>threshold tuned on test</li>
+<li>LOF novelty mode misunderstood</li>
+<li>One-Class SVM unscaled</li>
+<li>anomaly = invalid data เสมอ</li>
+<li>rare but valuable events deleted</li>
+<li>synthetic anomalies treated as perfect ground truth</li>
+</ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-20"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-21" class="source-topic"><span id="source-16-anomaly-detection-canonical-21-exercises-project" class="legacy-anchor"></span><h3>21. Exercises / Project</h3>
+<ul>
+<li><a href="../16-anomaly-detection/exercises/README.md">Exercises</a></li>
+<li><a href="../16-anomaly-detection/solutions/README.md">Solutions</a></li>
+<li><a href="../16-anomaly-detection/mini-project/README.md">Mini Project</a></li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-21-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>21. Exercises / Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-21-equation"><summary>สมการ</summary><h3>21. Exercises / Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-21-visual"><summary>ภาพและ shape</summary><h3>21. Exercises / Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-21-code"><summary>โค้ด</summary><h3>21. Exercises / Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-21-result"><summary>ผลการทดลอง</summary><h3>21. Exercises / Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-21"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-22" class="source-topic"><span id="source-16-anomaly-detection-canonical-22-checklist" class="legacy-anchor"></span><h3>22. Checklist</h3>
+<ul>
+<li>[ ] outlier vs novelty</li>
+<li>[ ] z / robust-z</li>
+<li>[ ] Mahalanobis</li>
+<li>[ ] Isolation Forest</li>
+<li>[ ] LOF</li>
+<li>[ ] One-Class SVM</li>
+<li>[ ] threshold</li>
+<li>[ ] PR-AUC</li>
+<li>[ ] leakage</li>
+<li>[ ] contextual anomalies</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-22-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>22. Checklist</h3>
+<ul>
+<li>[ ] outlier vs novelty</li>
+<li>[ ] z / robust-z</li>
+<li>[ ] Mahalanobis</li>
+<li>[ ] Isolation Forest</li>
+<li>[ ] LOF</li>
+<li>[ ] One-Class SVM</li>
+<li>[ ] threshold</li>
+<li>[ ] PR-AUC</li>
+<li>[ ] leakage</li>
+<li>[ ] contextual anomalies</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-22-equation"><summary>สมการ</summary><h3>22. Checklist</h3>
+<ul>
+<li>[ ] outlier vs novelty</li>
+<li>[ ] z / robust-z</li>
+<li>[ ] Mahalanobis</li>
+<li>[ ] Isolation Forest</li>
+<li>[ ] LOF</li>
+<li>[ ] One-Class SVM</li>
+<li>[ ] threshold</li>
+<li>[ ] PR-AUC</li>
+<li>[ ] leakage</li>
+<li>[ ] contextual anomalies</li>
+</ul></details><details id="help-topic-22-visual"><summary>ภาพและ shape</summary><h3>22. Checklist</h3>
+<ul>
+<li>[ ] outlier vs novelty</li>
+<li>[ ] z / robust-z</li>
+<li>[ ] Mahalanobis</li>
+<li>[ ] Isolation Forest</li>
+<li>[ ] LOF</li>
+<li>[ ] One-Class SVM</li>
+<li>[ ] threshold</li>
+<li>[ ] PR-AUC</li>
+<li>[ ] leakage</li>
+<li>[ ] contextual anomalies</li>
+</ul></details><details id="help-topic-22-code"><summary>โค้ด</summary><h3>22. Checklist</h3>
+<ul>
+<li>[ ] outlier vs novelty</li>
+<li>[ ] z / robust-z</li>
+<li>[ ] Mahalanobis</li>
+<li>[ ] Isolation Forest</li>
+<li>[ ] LOF</li>
+<li>[ ] One-Class SVM</li>
+<li>[ ] threshold</li>
+<li>[ ] PR-AUC</li>
+<li>[ ] leakage</li>
+<li>[ ] contextual anomalies</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-22-result"><summary>ผลการทดลอง</summary><h3>22. Checklist</h3>
+<ul>
+<li>[ ] outlier vs novelty</li>
+<li>[ ] z / robust-z</li>
+<li>[ ] Mahalanobis</li>
+<li>[ ] Isolation Forest</li>
+<li>[ ] LOF</li>
+<li>[ ] One-Class SVM</li>
+<li>[ ] threshold</li>
+<li>[ ] PR-AUC</li>
+<li>[ ] leakage</li>
+<li>[ ] contextual anomalies</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-22"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-23" class="source-topic"><span id="source-16-anomaly-detection-canonical-23-whats-next" class="legacy-anchor"></span><span id="source-16-anomaly-detection-canonical-16-anomaly-detection-anomaly-detection" class="legacy-anchor"></span><h3>23. What's Next</h3>
+<p>Chapter 17 จะเพิ่มแกนเวลา ทำให้ random split และ IID assumptions ใช้ไม่ได้ตรง ๆ</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-23-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>23. What's Next</h3>
+<p>Chapter 17 จะเพิ่มแกนเวลา ทำให้ random split และ IID assumptions ใช้ไม่ได้ตรง ๆ</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-23-equation"><summary>สมการ</summary><h3>23. What's Next</h3>
+<p>Chapter 17 จะเพิ่มแกนเวลา ทำให้ random split และ IID assumptions ใช้ไม่ได้ตรง ๆ</p></details><details id="help-topic-23-visual"><summary>ภาพและ shape</summary><h3>23. What's Next</h3>
+<p>Chapter 17 จะเพิ่มแกนเวลา ทำให้ random split และ IID assumptions ใช้ไม่ได้ตรง ๆ</p></details><details id="help-topic-23-code"><summary>โค้ด</summary><h3>23. What's Next</h3>
+<p>Chapter 17 จะเพิ่มแกนเวลา ทำให้ random split และ IID assumptions ใช้ไม่ได้ตรง ๆ</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-23-result"><summary>ผลการทดลอง</summary><h3>23. What's Next</h3>
+<p>Chapter 17 จะเพิ่มแกนเวลา ทำให้ random split และ IID assumptions ใช้ไม่ได้ตรง ๆ</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-23"> อ่านหัวข้อนี้แล้ว</label></section><details><summary>รายละเอียดเพิ่มเติมและข้อกำหนดของ local lab</summary><h3>16-anomaly-detection — Anomaly Detection</h3>
+<p><strong>Prerequisites:</strong> Complete 15-dimensionality-reduction; be able to trace array/tensor shapes, separate train/validation/test data, and explain the core objective of the current chapter.</p>
+<p><strong>Mental model:</strong> Treat Anomaly Detection as a pipeline: input representation → central mechanism → objective/state update → observable output. At every boundary, state shape/state, allowed information flow, and the invariant that should remain true.</p>
+<p><strong>Code walkthrough:</strong> Read public API first, then input checks, state/shape transformations, numerical core, returned values and tests. Connect each important code block to the equation or algorithm in the chapter README.</p>
+<p><strong>Visualization / inspection:</strong> Use a tiny case. Inspect intermediate values, distributions, norms, scores, states or trajectories appropriate to Anomaly Detection; do not rely only on the final metric.</p>
+<p><strong>Experiment:</strong> Run a baseline, one controlled parameter change, one edge case and one repeated seeded comparison. Record seed, environment, data version, configuration and metric.</p>
+<p><strong>Limitations:</strong> List at least one assumption, one data-related limitation, one numerical/optimization limitation and one scaling limitation for Anomaly Detection.</p>
+<p><strong>Analysis workflow:</strong> Check inputs → preprocessing → shapes/state → finite numerical values → objective/update → evaluation protocol. The earliest unexpected state is more informative than a downstream metric.</p>
+<p><strong>Performance:</strong> Identify the dominant time and memory terms and measure them on the local learning run before attempting optimization.</p>
+<p><strong>Production perspective:</strong> Define input validation, artifact/configuration versioning, quality and resource measurements, staged release criteria and a way to return to the previous known-good artifact.</p>
+<p><strong>Research perspective:</strong> State a falsifiable hypothesis, baseline, one-factor change, metric, repeated-run plan when stochastic, and how negative results will be recorded.</p>
+<p><strong>Interview questions:</strong>
+1. Explain Anomaly Detection from first principles without naming a library API.
+2. Trace one input through the central mechanism and give the important intermediate shapes/state.
+3. Name the strongest assumption and a case where it fails.
+4. State the dominant compute/memory cost.
+5. Describe how you would validate a new implementation against a trusted baseline.</p>
+<p><strong>Summary / exit condition:</strong> You may move on when you can explain, derive or trace, implement, test, analyze, measure and evaluate Anomaly Detection, and when the chapter mini-project plus twenty total exercises are complete.</p></details></section><section id="objective-evidence" class="canonical-section"><h2>พิสูจน์ความสามารถทีละ objective</h2><p>ทำกรณีใหม่ก่อนเปิด reference แล้วบันทึกงานด้านล่าง ให้ผู้ตรวจใช้ rubric ตรวจคำอธิบาย ผลคำนวณ โค้ด และข้อจำกัด บันทึกเก็บในเบราว์เซอร์เครื่องนี้ กดส่งออกเพื่อสำรองหรือส่งให้ผู้ตรวจ เว็บไม่ได้รันโค้ดหรือตัดสินผลงานแทนผู้ตรวจ</p><button type="button" class="secondary-button" data-export-evidence>ส่งออกหลักฐานบทนี้เป็น JSON</button><p role="status" id="evidence-export-status"></p><details id="ch16-objective-01" class="objective-proof"><summary>แยก anomaly / outlier / novelty</summary><p>แยก anomaly / outlier / novelty: ใช้กรณีในหัวข้อ Outlier Detection vs Novelty Detection เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch16-evidence-01"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch16-evidence-01-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch16-evidence-01-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch16-evidence-01-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch16-evidence-01-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch16-evidence-01-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch16-evidence-01-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch16-evidence-01-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch16-evidence-01-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>2. Outlier Detection vs Novelty Detection</h3>
+<p><strong>Outlier Detection</strong>
+training data อาจมี anomalies ปนอยู่แล้ว</p>
+<p><strong>Novelty Detection</strong>
+training data สมมติว่า mostly normal แล้วตรวจ sample ใหม่ภายหลัง</p>
+<p>ความต่างนี้สำคัญมาก เช่น Local Outlier Factor ใน scikit-learn ใช้ novelty=False สำหรับ outlier detection โดย default; ถ้าจะ score unseen data ต้องใช้ novelty=True</p><h3>2. Outlier Detection vs Novelty Detection</h3>
+<p><strong>Outlier Detection</strong>
+training data อาจมี anomalies ปนอยู่แล้ว</p>
+<p><strong>Novelty Detection</strong>
+training data สมมติว่า mostly normal แล้วตรวจ sample ใหม่ภายหลัง</p>
+<p>ความต่างนี้สำคัญมาก เช่น Local Outlier Factor ใน scikit-learn ใช้ novelty=False สำหรับ outlier detection โดย default; ถ้าจะ score unseen data ต้องใช้ novelty=True</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch16-objective-02" class="objective-proof"><summary>ใช้ robust univariate scores</summary><p>ใช้ robust univariate scores: ใช้กรณีในหัวข้อ Robust Z-Score เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch16-evidence-02"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch16-evidence-02-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch16-evidence-02-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch16-evidence-02-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch16-evidence-02-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch16-evidence-02-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch16-evidence-02-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch16-evidence-02-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch16-evidence-02-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>z-score z=(x−μ)/σ บอกระยะจากค่าเฉลี่ยเป็นหน่วยส่วนเบี่ยงเบน; μ=10,σ=2,x=16 ได้3; σ=0 ต้องกำหนดนโยบาย</p><h3>5. Robust Z-Score</h3>
+<p>ใช้ median และ MAD:</p>
+<pre><code class="language-text">MAD = median(|x - median(x)|)
+</code></pre>
+<p>modified score:</p>
+<pre><code class="language-text">z_robust ≈ 0.6745(x - median)/MAD
+</code></pre>
+<p>robust ต่อ extreme values มากกว่า mean/std</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch16-objective-03" class="objective-proof"><summary>อธิบาย multivariate anomaly</summary><p>อธิบาย multivariate anomaly: ใช้กรณีในหัวข้อ Mahalanobis Distance เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch16-evidence-03"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch16-evidence-03-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch16-evidence-03-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch16-evidence-03-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch16-evidence-03-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch16-evidence-03-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch16-evidence-03-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch16-evidence-03-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch16-evidence-03-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>z-score มองรายแกนและอิง mean/std จึงพลาด correlated anomaly; IF สุ่ม partition หลายfeature จับ nonlinear pattern ได้ แต่ score ยังขึ้นกับ train distribution</p><h3>6. Mahalanobis Distance</h3>
+<p>sample อาจดูปกติทีละ feature แต่ผิดปกติเมื่อมองร่วมกัน</p>
+<pre><code class="language-text">D²(x)
+=
+(x-μ)ᵀ Σ⁻¹ (x-μ)
+</code></pre>
+<p>มัน account covariance ระหว่าง features</p>
+<p>ข้อจำกัด:
+- covariance invertibility
+- sensitive เมื่อ d ใหญ่เทียบ n
+- classical mean/covariance ไม่ robust ต่อ contamination</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch16-objective-04" class="objective-proof"><summary>implement z-score / robust-z / Mahalanobis detector</summary><p>implement z-score / robust-z / Mahalanobis detector: ใช้กรณีในหัวข้อ From Scratch เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch16-evidence-04"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch16-evidence-04-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch16-evidence-04-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch16-evidence-04-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch16-evidence-04-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch16-evidence-04-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch16-evidence-04-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch16-evidence-04-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch16-evidence-04-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>assert z mean≈0,std≈1 สำหรับ nonconstant feature; X=[2,2] ต้อง finite zeros; emptyinput reject; tiny zเทียบ population ddof0 ตามนิยามข้อ9</p><h3>17. From Scratch</h3>
+<p>ดู src/anomaly.py</p>
+<p>มี:
+- ZScoreDetector
+- RobustZScoreDetector
+- MahalanobisDetector
+- threshold helper</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch16-objective-05" class="objective-proof"><summary>อธิบาย Isolation Forest</summary><p>อธิบาย Isolation Forest: ใช้กรณีในหัวข้อ Isolation Forest Intuition เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch16-evidence-05"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch16-evidence-05-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch16-evidence-05-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch16-evidence-05-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch16-evidence-05-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch16-evidence-05-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch16-evidence-05-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch16-evidence-05-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch16-evidence-05-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>Isolation Forest สุ่ม feature/split เพื่อแยกจุด; จุดโดดเดี่ยวใช้ path สั้นกว่า จึง anomaly score สูงตาม normalization ไม่ใช่ distance ถึง centroid</p><h3>7. Isolation Forest Intuition</h3>
+<p>Isolation Forest ถามว่า point นี้ถูก isolate ด้วย random splits ได้เร็วแค่ไหน</p>
+<p>algorithm:
+1. sample data
+2. choose random feature
+3. choose random split
+4. recurse
+5. measure path length
+6. average across trees</p>
+<p>shorter path โดยทั่วไปหมายถึง anomalous มากขึ้น</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch16-objective-06" class="objective-proof"><summary>อธิบาย Local Outlier Factor</summary><p>อธิบาย Local Outlier Factor: ใช้กรณีในหัวข้อ Local Outlier Factor เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch16-evidence-06"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch16-evidence-06-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch16-evidence-06-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch16-evidence-06-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch16-evidence-06-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch16-evidence-06-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch16-evidence-06-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch16-evidence-06-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch16-evidence-06-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>LOF เปรียบเทียบ local reachability density ของจุดกับเพื่อนบ้าน; density ต่ำกว่าเพื่อนมากให้ LOF&gt;1 จึงจับ local anomaly ในกลุ่มความหนาแน่นต่างกันได้</p><h3>9. Local Outlier Factor</h3>
+<p>LOF เปรียบเทียบ local density ของ point กับ neighbors</p>
+<pre><code class="language-text">density(point)
+vs
+density(neighbors)
+</code></pre>
+<p>ถ้า point มี density ต่ำกว่าบริเวณรอบ ๆ มาก อาจเป็น local outlier</p>
+<p>ข้อเสีย:
+- sensitive ต่อ k / metric / scaling
+- high-dimensional neighborhoods เสื่อม</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch16-objective-07" class="objective-proof"><summary>อธิบาย One-Class SVM</summary><p>อธิบาย One-Class SVM: ใช้กรณีในหัวข้อ One-Class SVM เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch16-evidence-07"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch16-evidence-07-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch16-evidence-07-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch16-evidence-07-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch16-evidence-07-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch16-evidence-07-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch16-evidence-07-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch16-evidence-07-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch16-evidence-07-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>One-Class SVM หา boundary ของ train normal ใน feature space; f(x)=ΣαᵢK(xᵢ,x)−ρ ค่าลบจัดนอก boundary โดย ν/γ ต้องเลือกบน validation</p><h3>10. One-Class SVM</h3>
+<p>พยายาม estimate support/boundary ของ normal distribution ใน feature space</p>
+<p>RBF kernel ช่วยสร้าง nonlinear boundary</p>
+<p>parameters สำคัญ:
+- nu
+- gamma
+- kernel</p>
+<p>ต้อง scale features</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch16-objective-08" class="objective-proof"><summary>tune threshold ด้วย validation labels เมื่อมี</summary><p>tune threshold ด้วย validation labels เมื่อมี: ใช้กรณีในหัวข้อ Threshold Selection เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch16-evidence-08"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch16-evidence-08-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch16-evidence-08-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch16-evidence-08-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch16-evidence-08-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch16-evidence-08-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch16-evidence-08-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch16-evidence-08-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch16-evidence-08-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>threshold ไม่ใช่ probability calibrated; ตั้ง percentile ให้ alert5%ไม่ได้แปลว่า5%เป็น anomaly จริง ต้องตรวจ false positives และต้นทุน missed event</p><h3>13. Threshold Selection</h3>
+<p>anomaly score:</p>
+<pre><code class="language-text">higher score → more abnormal
+</code></pre>
+<p>เลือก threshold บน validation set ตาม cost</p>
+<p>เช่น:
+- false negative แพง → favor recall
+- false positive แพง → favor precision</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch16-objective-09" class="objective-proof"><summary>ประเมินด้วย precision/recall/PR-AUC</summary><p>ประเมินด้วย precision/recall/PR-AUC: ใช้กรณีในหัวข้อ Supervised Evaluation เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch16-evidence-09"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch16-evidence-09-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch16-evidence-09-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch16-evidence-09-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch16-evidence-09-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch16-evidence-09-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch16-evidence-09-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch16-evidence-09-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch16-evidence-09-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>precision ลดมักแลก recall เมื่อ threshold ผ่อน; prevalence ต่ำทำ PRสำคัญ เช่น TP8,FP92,FN2 ได้ precision.08,recall.8 แม้จับได้เกือบหมด</p><h3>12. Supervised Evaluation</h3>
+<p>ถ้ามี anomaly labels:
+- Precision
+- Recall
+- F1
+- ROC-AUC
+- PR-AUC</p>
+<p>สำหรับ rare anomalies PR-AUC มัก informative กว่า accuracy</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch16-objective-10" class="objective-proof"><summary>หลีกเลี่ยง contamination leakage</summary><p>หลีกเลี่ยง contamination leakage: ใช้กรณีในหัวข้อ Leakage เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch16-evidence-10"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch16-evidence-10-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch16-evidence-10-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch16-evidence-10-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch16-evidence-10-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch16-evidence-10-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch16-evidence-10-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch16-evidence-10-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch16-evidence-10-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>novelty detection trainเฉพาะnormalที่เชื่อถือได้, validationเลือกthresholdด้วยlabel, testท้ายสุด; time-splitเมื่อเป็นsensorและไม่นำanomalytestfit scaler</p><h3>16. Leakage</h3>
+<p>ถ้า fit scaler / covariance / anomaly detector บน full data ก่อน split:</p>
+<pre><code class="language-text">future/test distribution
+→ influence detector
+</code></pre>
+<p>นี่คือ leakage</p>
+<p>สำหรับ novelty detection:
+- fit เฉพาะ training period
+- score validation/test ใหม่</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch16-objective-11" class="objective-proof"><summary>เข้าใจ time-dependent anomaly caveats</summary><p>เข้าใจ time-dependent anomaly caveats: ใช้กรณีในหัวข้อ Time-Series Anomalies เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch16-evidence-11"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch16-evidence-11-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch16-evidence-11-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch16-evidence-11-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch16-evidence-11-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch16-evidence-11-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch16-evidence-11-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch16-evidence-11-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch16-evidence-11-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>บันทึกnormal-definition/score-direction/threshold/datawindow; monitor alertvolumeและdelayedlabels; ทดลองthresholdpersegmentลดfalsealertโดยrecallไม่ต่ำกว่าbaseline</p><h3>15. Time-Series Anomalies</h3>
+<p>time series ต้องพิจารณา:
+- point anomaly
+- contextual anomaly
+- collective anomaly</p>
+<p>ค่าเดียวกันอาจปกติกลางวันแต่ผิดปกติตอนกลางคืน</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details></section><section id="implementation" class="canonical-section"><h2>Implementation และ tests ที่รันบนเครื่องได้</h2><details><summary>16-anomaly-detection/src/anomaly.py</summary><pre><code>&quot;&quot;&quot;Educational anomaly detectors implemented from statistical primitives.&quot;&quot;&quot;
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+import numpy as np
+
+
+def _as_2d(X: np.ndarray) -&gt; np.ndarray:
+    arr = np.asarray(X, dtype=float)
+    if arr.ndim == 1:
+        arr = arr.reshape(-1, 1)
+    if arr.ndim != 2 or arr.shape[0] == 0 or arr.shape[1] == 0:
+        raise ValueError(&quot;X must be non-empty 2D&quot;)
+    if not np.all(np.isfinite(arr)):
+        raise ValueError(&quot;X must be finite&quot;)
+    return arr
+
+
+@dataclass
+class ZScoreDetector:
+    mean_: np.ndarray | None = None
+    scale_: np.ndarray | None = None
+
+    def fit(self, X: np.ndarray) -&gt; &quot;ZScoreDetector&quot;:
+        arr = _as_2d(X)
+        self.mean_ = arr.mean(axis=0)
+        std = arr.std(axis=0, ddof=0)
+        self.scale_ = np.where(std == 0.0, 1.0, std)
+        return self
+
+    def score_samples(self, X: np.ndarray) -&gt; np.ndarray:
+        if self.mean_ is None or self.scale_ is None:
+            raise RuntimeError(&quot;fit before scoring&quot;)
+        arr = _as_2d(X)
+        z = np.abs((arr - self.mean_) / self.scale_)
+        return np.max(z, axis=1)
+
+
+@dataclass
+class RobustZScoreDetector:
+    median_: np.ndarray | None = None
+    mad_: np.ndarray | None = None
+
+    def fit(self, X: np.ndarray) -&gt; &quot;RobustZScoreDetector&quot;:
+        arr = _as_2d(X)
+        self.median_ = np.median(arr, axis=0)
+        mad = np.median(np.abs(arr - self.median_), axis=0)
+        self.mad_ = np.where(mad == 0.0, 1.0, mad)
+        return self
+
+    def score_samples(self, X: np.ndarray) -&gt; np.ndarray:
+        if self.median_ is None or self.mad_ is None:
+            raise RuntimeError(&quot;fit before scoring&quot;)
+        arr = _as_2d(X)
+        score = 0.67448975 * np.abs(arr - self.median_) / self.mad_
+        return np.max(score, axis=1)
+
+
+@dataclass
+class MahalanobisDetector:
+    regularization: float = 1e-6
+    mean_: np.ndarray | None = None
+    precision_: np.ndarray | None = None
+
+    def fit(self, X: np.ndarray) -&gt; &quot;MahalanobisDetector&quot;:
+        arr = _as_2d(X)
+        if self.regularization &lt;= 0:
+            raise ValueError(&quot;regularization must be positive&quot;)
+        if arr.shape[0] &lt; 2:
+            raise ValueError(&quot;need at least 2 samples&quot;)
+
+        self.mean_ = arr.mean(axis=0)
+        covariance = np.atleast_2d(np.cov(arr, rowvar=False, ddof=1))
+        covariance += self.regularization * np.eye(arr.shape[1])
+        self.precision_ = np.linalg.pinv(covariance)
+        return self
+
+    def score_samples(self, X: np.ndarray) -&gt; np.ndarray:
+        if self.mean_ is None or self.precision_ is None:
+            raise RuntimeError(&quot;fit before scoring&quot;)
+        arr = _as_2d(X)
+        delta = arr - self.mean_
+        squared = np.einsum(&quot;ni,ij,nj-&gt;n&quot;, delta, self.precision_, delta)
+        return np.sqrt(np.maximum(squared, 0.0))
+
+
+def threshold_from_quantile(
+    training_scores: np.ndarray,
+    *,
+    contamination: float,
+) -&gt; float:
+    scores = np.asarray(training_scores, dtype=float).reshape(-1)
+    if scores.size == 0 or not np.all(np.isfinite(scores)):
+        raise ValueError(&quot;scores must be finite and non-empty&quot;)
+    if not 0.0 &lt; contamination &lt; 0.5:
+        raise ValueError(&quot;contamination must be in (0, 0.5)&quot;)
+    return float(np.quantile(scores, 1.0 - contamination))
+
+
+def predict_from_scores(scores: np.ndarray, threshold: float) -&gt; np.ndarray:
+    values = np.asarray(scores, dtype=float).reshape(-1)
+    return (values &gt;= threshold).astype(int)
+</code></pre></details><details><summary>16-anomaly-detection/tests/test_anomaly.py</summary><pre><code>from pathlib import Path
+import importlib.util
+import sys
+
+import numpy as np
+
+
+MODULE_PATH = Path(__file__).parents[1] / &quot;src&quot; / &quot;anomaly.py&quot;
+SPEC = importlib.util.spec_from_file_location(&quot;anomaly_course&quot;, MODULE_PATH)
+assert SPEC and SPEC.loader
+mod = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = mod
+SPEC.loader.exec_module(mod)
+
+
+def test_zscore_flags_extreme_point() -&gt; None:
+    train = np.array([[0.0], [0.1], [-0.1], [0.05], [-0.05]])
+    model = mod.ZScoreDetector().fit(train)
+    scores = model.score_samples(np.array([[0.0], [10.0]]))
+    assert scores[1] &gt; scores[0] * 20
+
+
+def test_robust_detector_less_distorted_by_extreme_training_value() -&gt; None:
+    train = np.array([[0.0], [0.1], [-0.1], [0.05], [20.0]])
+    z = mod.ZScoreDetector().fit(train)
+    robust = mod.RobustZScoreDetector().fit(train)
+
+    query = np.array([[2.0]])
+    assert robust.score_samples(query)[0] &gt; z.score_samples(query)[0]
+
+
+def test_mahalanobis_captures_correlated_direction() -&gt; None:
+    rng = np.random.default_rng(3)
+    x = rng.normal(size=500)
+    train = np.column_stack([x, x + rng.normal(0, 0.05, size=500)])
+
+    model = mod.MahalanobisDetector().fit(train)
+    on_manifold = np.array([[3.0, 3.0]])
+    off_manifold = np.array([[3.0, -3.0]])
+
+    assert model.score_samples(off_manifold)[0] &gt; model.score_samples(on_manifold)[0]
+
+
+def test_quantile_threshold_predicts_binary() -&gt; None:
+    scores = np.arange(100, dtype=float)
+    threshold = mod.threshold_from_quantile(scores, contamination=0.1)
+    pred = mod.predict_from_scores(scores, threshold)
+    assert 9 &lt;= pred.sum() &lt;= 11
+</code></pre></details></section><section id="glossary" class="canonical-section"><h2>อภิธานศัพท์ — คำไทย ความหมาย และข้อควรตรวจ</h2><dl><dt>tensor</dt><dd>เทนเซอร์: ชุดตัวเลขที่มีแกน เช่น scalar ไม่มีแกน, vector หนึ่งแกน, matrix สองแกน; shape บอกขนาดแต่ละแกน ไม่บอกความหมายของแกนจนกว่าจะระบุ</dd><dt>shape</dt><dd>รูปทรงข้อมูล: (B,T,d) หมายถึง batch × เวลา/ตำแหน่ง × features; ใช้ชื่อแกนกำกับเสมอ การ transpose เปลี่ยนแกนแต่ไม่ใช่แค่เปลี่ยนชื่อ</dd><dt>batch</dt><dd>กลุ่มตัวอย่างที่คำนวณร่วมกันหนึ่งครั้ง; B คือจำนวนตัวอย่าง ไม่ใช่จำนวน features หรือจำนวน optimizer updates</dd><dt>weight w / θ</dt><dd>น้ำหนักหรือพารามิเตอร์ที่โมเดลใช้คำนวณ; แก้ด้วยมือทำ forward ใหม่ ส่วน optimizer ต้องรับ gradient แล้วกด update จึงแก้ state</dd><dt>bias b</dt><dd>ค่าคงที่ที่บวกกับผลเชิงเส้น; regression scalar bias เพิ่ม Δ ทำให้ prediction ทุกจุดเพิ่ม Δ เท่ากัน</dd><dt>prediction ŷ</dt><dd>ค่าที่โมเดลทำนายจาก input และพารามิเตอร์ปัจจุบัน; เครื่องหมายหมวกแยกจาก target y ที่มาจากข้อมูล</dd><dt>residual e</dt><dd>ความคลาดเคลื่อน ในเว็บนี้นิยาม prediction − target; บางตำราใช้เครื่องหมายกลับกัน จึงต้องตรวจนิยามก่อนเทียบสูตร gradient</dd><dt>MSE</dt><dd>mean squared error = ผลรวม residual กำลังสองหารจำนวนรายการที่ระบุ; มีหน่วยเป็น target ยกกำลังสอง และการใช้ sum แทน mean เปลี่ยน scale gradient</dd><dt>loss L / objective J</dt><dd>จำนวนที่ optimizer ต้องการลด; objective อาจรวม data loss และ regularization จึงต้องดูองค์ประกอบและ reduction ให้ตรง implementation</dd><dt>gradient ∇ / ∂</dt><dd>เวกเตอร์ของ partial derivatives บอกอัตราเปลี่ยน loss ต่อพารามิเตอร์แต่ละตัว; ∂ ใช้เมื่อเปลี่ยนตัวหนึ่งโดยตรึงตัวอื่น</dd><dt>chain rule</dt><dd>กฎลูกโซ่: คูณอนุพันธ์ตามเส้นทาง และบวก contribution จากทุกเส้นทางที่มารวมกัน ใช้ย้อนจาก loss ถึง weights</dd><dt>learning rate η</dt><dd>ขนาดตัวคูณ gradient ใน update θnew=θ−ηg; η≥0, ศูนย์หมายถึงไม่มีการขยับพารามิเตอร์ ก้าวใหญ่เกินอาจ diverge</dd><dt>regularization λ</dt><dd>ตัวคูณค่าลงโทษ ต้อง λ≥0 ตามนิยามการลงโทษ; Ridge λΣw² เพิ่ม gradient 2λw โดยบท Regression นี้ไม่ลงโทษ bias</dd><dt>baseline</dt><dd>สถานะอ้างอิงที่ตรึงไว้สำหรับเทียบ; ต้องเก็บ snapshot ไม่อ้าง object ปัจจุบันที่แก้ตามไปด้วย</dd><dt>invariant</dt><dd>คุณสมบัติที่กลไกต้องรักษา เช่น probability รวม1, shape สอดคล้อง, queue ไม่เกิน capacity; ใช้ tests ตรวจได้มากกว่าดูภาพสวย</dd><dt>optimizer state</dt><dd>ความจำของอัลกอริทึม เช่น velocity, moments และ completed updates; คืนเฉพาะ weights ยังไม่เท่ากับเริ่มการฝึกใหม่ทั้งหมด</dd><dt>finite difference</dt><dd>ประมาณ derivative ด้วย [f(x+h)−f(x−h)]/(2h); h&gt;0, ใช้ smooth point และลองหลาย h เพื่อแยก truncation error จาก roundoff</dd><dt>softmax</dt><dd>แปลง logits เป็นความน่าจะเป็นตามแกนที่กำหนด; ลบ max ก่อน exp เพื่อความเสถียร และ fully masked row ต้องมีนโยบายชัดเจน</dd><dt>logit</dt><dd>คะแนนก่อน sigmoid/softmax ไม่ใช่ probability; อาจเป็นจำนวนจริงติดลบหรือเกิน1ได้ จึงห้ามส่งให้ loss ที่คาด probability โดยไม่แปลง</dd><dt>temperature τ / T</dt><dd>ตัวหาร logits ก่อน softmax; ต้องเป็นบวก ค่าเล็กทำ distribution แหลมขึ้น โดยไม่เท่ากับ retrain weights</dd><dt>mask</dt><dd>ตัวกำหนดตำแหน่งที่อ่านหรือคิด loss ได้; causal mask ปิดอนาคต, padding mask ปิดข้อมูลเติม, loss mask เลือก target แต่ละอย่างคนละหน้าที่</dd><dt>Q / K / V</dt><dd>query ใช้ค้นข้อมูล, key ใช้จับคู่ query, value เป็นข้อมูลที่ถูกถัวเฉลี่ย; เป็น learned projections ของ representation ไม่ใช่ป้ายความหมายตายตัว</dd><dt>head</dt><dd>ส่วนของ feature representation ที่ทำ attention แยกกัน แล้ว concat/project กลับ; ต้องตรวจ d_model หารจำนวน heads ลงตัว</dd><dt>ε-neighborhood</dt><dd>เพื่อนบ้านทั้งหมดที่มีระยะไม่เกิน ε รวมจุดตัวเองใน DBSCAN นี้; ε มีหน่วยเดียวกับพิกัด ไม่ใช่จำนวน k ที่ใช้โหวต</dd><dt>core / border / noise</dt><dd>DBSCAN core มีเพื่อนบ้านรวมตัวเองถึง min_samples; border อยู่ใกล้ core แต่เพื่อนบ้านไม่ถึง; noise ไม่ถูกเชื่อมกับ core cluster ใด</dd><dt>bootstrap</dt><dd>สุ่ม observations แบบ replacement ขนาดเท่าเดิมซ้ำหลายครั้งแล้วคำนวณ statistic ใหม่; seed ทำให้ตรวจซ้ำได้ แต่ไม่แก้สมมติฐาน IID ที่ผิด</dd><dt>confidence interval</dt><dd>ช่วงที่สร้างด้วย procedure ที่มี coverage ตามสมมติฐาน; ช่วงหนึ่งที่ได้แล้วไม่ใช่ posterior probability ของ parameter และ sample เล็กยังไม่แน่นอนมาก</dd><dt>validation / test</dt><dd>validation ใช้เลือกโมเดล/ค่าตั้ง ส่วน test ใช้ประเมินหลัง freeze การตัดสินใจ; fit preprocessing/tokenizer จาก test เป็น leakage</dd><dt>leakage</dt><dd>ข้อมูลที่ควรยังไม่รู้ไหลเข้า training/การเลือกโมเดล เช่น future feature หรือเอกสารซ้ำข้าม split ทำให้ metric ดูดีเกินการใช้งานจริง</dd><dt>queue / capacity</dt><dd>queue คือรายการรอ, capacity การให้บริการรวม = workers × service rate ตามแบบจำลอง; เพิ่ม timeout ไม่เพิ่มกำลังประมวลผล</dd><dt>state transition</dt><dd>การเปลี่ยนสถานะเมื่อเกิดเหตุการณ์ที่อนุญาต เช่น queued→active→done; ต้องระบุ guard, side effect และเหตุผลเมื่อ transition ถูกปฏิเสธ</dd><dt>latency / throughput</dt><dd>latency คือเวลาต่อคำขอ, throughput คือปริมาณงานต่อหน่วยเวลา; batching อาจเพิ่ม throughput แต่เพิ่มเวลารอ จึงต้องวัดทั้งคู่</dd><dt>idempotency</dt><dd>ทำคำขอ business operation เดิมซ้ำแล้ว side effect เกิดครั้งเดียวตาม key และ transaction protocol; ไม่ได้รับประกันจากการใช้ UUID ใหม่ทุก attempt</dd><dt>local lab</dt><dd>โปรแกรม Python และ tests ที่ผู้เรียนรันบนเครื่อง; เว็บเก็บเพียงคำยืนยันของผู้เรียน การผ่าน tests ของโค้ดต้นแบบไม่ใช่ผลตรวจโค้ดผู้เรียน</dd></dl></section></article>
+<section id="practice" class="practice-section"><span class="eyebrow">PRACTICE · DEBUG · BUILD</span><h2>พิสูจน์ด้วยการลงมือทำ</h2><div id="web-checks"></div><div class="retry-actions"><button class="secondary-button" id="retry-checks">เริ่มทำโจทย์ในเว็บใหม่</button><button class="text-button" id="undo-retry" hidden>คืนผลก่อนเริ่มใหม่</button></div><div id="exercise-content"><h2>แบบฝึก 20 ข้อ — เฉลยเฉพาะข้อ</h2><p>ทำคำตอบก่อนเปิด hints; โจทย์ปลายเปิดให้ใช้ตัวอย่างคำตอบและหลักฐานราย objective ตรวจงานจริง</p><section id="exercise-1" class="exercise-item"><h3>ข้อ 1</h3><p>Define z-score.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Robust Z-Score: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): z-score z=(x−μ)/σ บอกระยะจากค่าเฉลี่ยเป็…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: z-score z=(x−μ)/σ บอกระยะจากค่าเฉลี่ยเป็นหน่วยส่วนเบี่ยงเบน; μ=10,σ=2,x=…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>z-score z=(x−μ)/σ บอกระยะจากค่าเฉลี่ยเป็นหน่วยส่วนเบี่ยงเบน; μ=10,σ=2,x=16 ได้3; σ=0 ต้องกำหนดนโยบาย</p><p>อ้างอิง: <a href="#chapter-16/section/topic-5">Robust Z-Score</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch16-exercise-01"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-2" class="exercise-item"><h3>ข้อ 2</h3><p>Define Isolation Forest with a small example.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Isolation Forest Intuition: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): Isolation Forest สุ่ม feature/split เพื่อแยกจุด; จุดโดดเดี…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: Isolation Forest สุ่ม feature/split เพื่อแยกจุด; จุดโดดเดี่ยวใช้ path สั้นกว่า จึง anomaly score สูงตาม n…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>Isolation Forest สุ่ม feature/split เพื่อแยกจุด; จุดโดดเดี่ยวใช้ path สั้นกว่า จึง anomaly score สูงตาม normalization ไม่ใช่ distance ถึง centroid</p><p>อ้างอิง: <a href="#chapter-16/section/topic-7">Isolation Forest Intuition</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch16-exercise-02"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-3" class="exercise-item"><h3>ข้อ 3</h3><p>Explain One-Class SVM.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ One-Class SVM: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): One-Class SVM หา boundary ของ train normal ใน featur…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: One-Class SVM หา boundary ของ train normal ใน feature space; f(x)=ΣαᵢK(xᵢ,x)−ρ ค่าลบจัดนอก bo…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>One-Class SVM หา boundary ของ train normal ใน feature space; f(x)=ΣαᵢK(xᵢ,x)−ρ ค่าลบจัดนอก boundary โดย ν/γ ต้องเลือกบน validation</p><p>อ้างอิง: <a href="#chapter-16/section/topic-10">One-Class SVM</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch16-exercise-03"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-4" class="exercise-item"><h3>ข้อ 4</h3><p>Explain Local Outlier Factor.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Local Outlier Factor: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): LOF เปรียบเทียบ local reachability density ของจุดกับเพื่อน…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: LOF เปรียบเทียบ local reachability density ของจุดกับเพื่อนบ้าน; density ต่ำกว่าเพื่อนมากให้ LOF&gt;1 จึงจับ …</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>LOF เปรียบเทียบ local reachability density ของจุดกับเพื่อนบ้าน; density ต่ำกว่าเพื่อนมากให้ LOF&gt;1 จึงจับ local anomaly ในกลุ่มความหนาแน่นต่างกันได้</p><p>อ้างอิง: <a href="#chapter-16/section/topic-9">Local Outlier Factor</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch16-exercise-04"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-5" class="exercise-item"><h3>ข้อ 5</h3><p>Compare z-score and Isolation Forest.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Mahalanobis Distance: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): z-score มองรายแกนและอิง mean/std จึงพลาด correlated anomaly; I…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: z-score มองรายแกนและอิง mean/std จึงพลาด correlated anomaly; IF สุ่ม partition หลายfeature จับ nonlinear pattern…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>z-score มองรายแกนและอิง mean/std จึงพลาด correlated anomaly; IF สุ่ม partition หลายfeature จับ nonlinear pattern ได้ แต่ score ยังขึ้นกับ train distribution</p><p>อ้างอิง: <a href="#chapter-16/section/topic-6">Mahalanobis Distance</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch16-exercise-05"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-6" class="exercise-item"><h3>ข้อ 6</h3><p>Explain how Local Outlier Factor changes model behavior.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Local Outlier Factor: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): n_neighbors เล็กจับ local noise มากขึ้น; ใหญ่กลายเป็นมุมมอง gl…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: n_neighbors เล็กจับ local noise มากขึ้น; ใหญ่กลายเป็นมุมมอง global; LOF sklearn novelty=False ใช้ fit_predict tra…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>n_neighbors เล็กจับ local noise มากขึ้น; ใหญ่กลายเป็นมุมมอง global; LOF sklearn novelty=False ใช้ fit_predict train ส่วนจุดใหม่ต้อง novelty=True ตั้งแต่สร้าง</p><p>อ้างอิง: <a href="#chapter-16/section/topic-9">Local Outlier Factor</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch16-exercise-06"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-7" class="exercise-item"><h3>ข้อ 7</h3><p>Explain a common limitation involving threshold.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Threshold Selection: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): threshold ไม่ใช่ probability calibrated; ตั้ง percentile ใ…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: threshold ไม่ใช่ probability calibrated; ตั้ง percentile ให้ alert5%ไม่ได้แปลว่า5%เป็น anomaly จริง ต้องต…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>threshold ไม่ใช่ probability calibrated; ตั้ง percentile ให้ alert5%ไม่ได้แปลว่า5%เป็น anomaly จริง ต้องตรวจ false positives และต้นทุน missed event</p><p>อ้างอิง: <a href="#chapter-16/section/topic-13">Threshold Selection</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch16-exercise-07"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-8" class="exercise-item"><h3>ข้อ 8</h3><p>Explain the tradeoff introduced by precision-recall.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Supervised Evaluation: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): precision ลดมักแลก recall เมื่อ threshold ผ่อน; preva…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: precision ลดมักแลก recall เมื่อ threshold ผ่อน; prevalence ต่ำทำ PRสำคัญ เช่น TP8,FP92,FN2 ได้ p…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>precision ลดมักแลก recall เมื่อ threshold ผ่อน; prevalence ต่ำทำ PRสำคัญ เช่น TP8,FP92,FN2 ได้ precision.08,recall.8 แม้จับได้เกือบหมด</p><p>อ้างอิง: <a href="#chapter-16/section/topic-12">Supervised Evaluation</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch16-exercise-08"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-9" class="exercise-item"><h3>ข้อ 9</h3><p>Implement a small from-scratch example of z-score.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Robust Z-Score: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): `mu=X.mean(0); sd=X.std(0); z=np.divide(X-mu,sd,out=n…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: <code>mu=X.mean(0); sd=X.std(0); z=np.divide(X-mu,sd,out=np.zeros_like(X,dtype=float),where=sd&gt;0)</code>; …</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p><code>mu=X.mean(0); sd=X.std(0); z=np.divide(X-mu,sd,out=np.zeros_like(X,dtype=float),where=sd&gt;0)</code>; X=[1,2,3] ได้ [−1.2247449,0,1.2247449]</p><p>อ้างอิง: <a href="#chapter-16/section/topic-5">Robust Z-Score</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch16-exercise-09"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-10" class="exercise-item"><h3>ข้อ 10</h3><p>Add deterministic tests for Exercise 9.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ From Scratch: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): assert z mean≈0,std≈1 สำหรับ nonconstant feature; X=[2…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: assert z mean≈0,std≈1 สำหรับ nonconstant feature; X=[2,2] ต้อง finite zeros; emptyinput reject; ti…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>assert z mean≈0,std≈1 สำหรับ nonconstant feature; X=[2,2] ต้อง finite zeros; emptyinput reject; tiny zเทียบ population ddof0 ตามนิยามข้อ9</p><p>อ้างอิง: <a href="#chapter-16/section/topic-17">From Scratch</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch16-exercise-10"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-11" class="exercise-item"><h3>ข้อ 11</h3><p>Implement the main computation behind One-Class SVM.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ One-Class SVM: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ใช้ RBF score `K=np.exp(-gamma*((X[:,None]-SV[None,:]…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ใช้ RBF score <code>K=np.exp(-gamma*((X[:,None]-SV[None,:])**2).sum(-1)); f=K@alpha-rho</code>; SV=[[0]],α=…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ใช้ RBF score <code>K=np.exp(-gamma*((X[:,None]-SV[None,:])**2).sum(-1)); f=K@alpha-rho</code>; SV=[[0]],α=[1],γ=1,ρ=.5 ให้ f(0)=.5,f(2)=−.481684</p><p>อ้างอิง: <a href="#chapter-16/section/topic-10">One-Class SVM</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch16-exercise-11"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-12" class="exercise-item"><h3>ข้อ 12</h3><p>Run a small seeded experiment using Isolation Forest, Local Outlier Factor, and precision-recall.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Isolation Forest Intuition, Local Outlier Factor, Supervised Evaluation: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): seed7 สร้างสองnormalclustersกับ outliers; fit IF/LOF บน tra…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: seed7 สร้างสองnormalclustersกับ outliers; fit IF/LOF บน train normal เท่านั้น; คง testlabelsเพื่อPR-AUC/rec…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>seed7 สร้างสองnormalclustersกับ outliers; fit IF/LOF บน train normal เท่านั้น; คง testlabelsเพื่อPR-AUC/recall@budget และรายงานthresholdจากvalidation</p><p>อ้างอิง: <a href="#chapter-16/section/topic-7">Isolation Forest Intuition</a>, <a href="#chapter-16/section/topic-9">Local Outlier Factor</a>, <a href="#chapter-16/section/topic-12">Supervised Evaluation</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch16-exercise-12"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-13" class="exercise-item"><h3>ข้อ 13</h3><p>Explain a common shape or data mismatch for this topic.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ One-Class SVM: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): sklearn score_samples บางโมเดลยิ่งต่ำยิ่งผิดปกติ ต่าง…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: sklearn score_samples บางโมเดลยิ่งต่ำยิ่งผิดปกติ ต่างจาก anomaly scoreยิ่งสูง; ทำทิศทางเดียวก่อน…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>sklearn score_samples บางโมเดลยิ่งต่ำยิ่งผิดปกติ ต่างจาก anomaly scoreยิ่งสูง; ทำทิศทางเดียวก่อน ROC/PR อย่ากลับ labels เพื่อแต่งคะแนน</p><p>อ้างอิง: <a href="#chapter-16/section/topic-10">One-Class SVM</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch16-exercise-13"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-14" class="exercise-item"><h3>ข้อ 14</h3><p>Explain one numerical-stability concern.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Robust Z-Score: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): σเล็กทำ zใหญ่และRBF underflowได้; standardizeด้วยtrainstats…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: σเล็กทำ zใหญ่และRBF underflowได้; standardizeด้วยtrainstats,guard σ=0,ใช้ finitechecks; distance overflowใช…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>σเล็กทำ zใหญ่และRBF underflowได้; standardizeด้วยtrainstats,guard σ=0,ใช้ finitechecks; distance overflowใช้float64/scaleและไม่ silentlyclip inputผิด</p><p>อ้างอิง: <a href="#chapter-16/section/topic-5">Robust Z-Score</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch16-exercise-14"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-15" class="exercise-item"><h3>ข้อ 15</h3><p>Explain the correct train, validation, and test workflow.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Leakage: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): novelty detection trainเฉพาะnormalที่เชื่อถือได้, validation…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: novelty detection trainเฉพาะnormalที่เชื่อถือได้, validationเลือกthresholdด้วยlabel, testท้ายสุด; time-splitเ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>novelty detection trainเฉพาะnormalที่เชื่อถือได้, validationเลือกthresholdด้วยlabel, testท้ายสุด; time-splitเมื่อเป็นsensorและไม่นำanomalytestfit scaler</p><p>อ้างอิง: <a href="#chapter-16/section/topic-16">Leakage</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch16-exercise-15"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-16" class="exercise-item"><h3>ข้อ 16</h3><p>Measure runtime and memory of the main computation.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Isolation Forest Intuition, Local Outlier Factor: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): zscore O(nd), IFขึ้นกับจำนวนต้นไม้และsubsample, LOF…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: zscore O(nd), IFขึ้นกับจำนวนต้นไม้และsubsample, LOFอาจO(n²d) หากbruteforce; รายงาน index,nei…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>zscore O(nd), IFขึ้นกับจำนวนต้นไม้และsubsample, LOFอาจO(n²d) หากbruteforce; รายงาน index,neighborcount,walltimeและpeakmemoryตาม n</p><p>อ้างอิง: <a href="#chapter-16/section/topic-7">Isolation Forest Intuition</a>, <a href="#chapter-16/section/topic-9">Local Outlier Factor</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch16-exercise-16"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-17" class="exercise-item"><h3>ข้อ 17</h3><p>Derive the main input-to-output algorithm for Anomaly Detection.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ From Scratch: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): X→trainpreprocess→rawscore→กำหนดทิศทางanomaly→valida…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: X→trainpreprocess→rawscore→กำหนดทิศทางanomaly→validationthreshold→alert→PR/falsealertbudget; เก…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>X→trainpreprocess→rawscore→กำหนดทิศทางanomaly→validationthreshold→alert→PR/falsealertbudget; เก็บscoreต่อจุดเพื่อdebugไม่ใช่เฉพาะ0/1</p><p>อ้างอิง: <a href="#chapter-16/section/topic-17">From Scratch</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch16-exercise-17"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-18" class="exercise-item"><h3>ข้อ 18</h3><p>Compare a scratch implementation with a trusted library on identical data.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ From Scratch: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): zscoreเทียบ scipy.stats.zscore(ddof=0); IF/LOFไม่ควรคาด l…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: zscoreเทียบ scipy.stats.zscore(ddof=0); IF/LOFไม่ควรคาด labelตรงเพราะเพียงใช้seedเดียวต่างimplementati…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>zscoreเทียบ scipy.stats.zscore(ddof=0); IF/LOFไม่ควรคาด labelตรงเพราะเพียงใช้seedเดียวต่างimplementation ให้เทียบscore rankและqualityบนชุดเดียว</p><p>อ้างอิง: <a href="#chapter-16/section/topic-17">From Scratch</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch16-exercise-18"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-19" class="exercise-item"><h3>ข้อ 19</h3><p>Compare a baseline with a controlled change involving threshold.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Threshold Selection: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ตรึงscoresและlabels เปลี่ยนthresholdจากvalidationqua…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ตรึงscoresและlabels เปลี่ยนthresholdจากvalidationquantile.95→.99; จำนวนalertไม่ควรเพิ่ม แต่re…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ตรึงscoresและlabels เปลี่ยนthresholdจากvalidationquantile.95→.99; จำนวนalertไม่ควรเพิ่ม แต่recallอาจลด; แสดงTP,FP,FNจริงทั้งสองค่า</p><p>อ้างอิง: <a href="#chapter-16/section/topic-13">Threshold Selection</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch16-exercise-19"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-20" class="exercise-item"><h3>ข้อ 20</h3><p>Summarize validation, reproducibility, monitoring, and one open research question.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Time-Series Anomalies: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): บันทึกnormal-definition/score-direction/threshold/datawindow; mo…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: บันทึกnormal-definition/score-direction/threshold/datawindow; monitor alertvolumeและdelayedlabels; ทดลองthresholdper…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>บันทึกnormal-definition/score-direction/threshold/datawindow; monitor alertvolumeและdelayedlabels; ทดลองthresholdpersegmentลดfalsealertโดยrecallไม่ต่ำกว่าbaseline</p><p>อ้างอิง: <a href="#chapter-16/section/topic-15">Time-Series Anomalies</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch16-exercise-20"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section></div><div id="local-lab-content"><section id="local-lab"><h2>Local lab: Python 3.12 บน CPU</h2><p>รันจาก repository root; ใช้ Python 3.12 แยก environment สำหรับ framework ตาม requirements ของชุดบท</p><pre><code>python3.12 -m venv .venv-course
+source .venv-course/bin/activate
+python -m pip install -r requirements-batch06.txt pytest
+(cd 16-anomaly-detection &amp;&amp; python -m pytest tests -q -rs)</code></pre><p>ผลที่คาดหวัง: required tests ผ่านและไม่มี required test ถูก skip; GPU/integrations ที่ยังไม่รันต้องระบุแยก Python 3.15 ที่มากับเครื่องอาจใช้กับ framework wheels เหล่านี้ไม่ได้</p><h2>Mini Project — Anomaly Detector Benchmark</h2>
+<p>Create mostly-normal 2D/5D data and inject rare anomalies.</p>
+<p>Compare:
+- robust z-score
+- Mahalanobis
+- IsolationForest
+- LOF
+- OneClassSVM</p>
+<p>Protocol:
+1. training = mostly normal
+2. validation contains labeled synthetic anomalies
+3. choose thresholds/hyperparameters on validation
+4. final test once
+5. report precision/recall/F1/PR-AUC
+6. visualize score distributions
+7. repeat anomaly types</p>
+<p>Do not delete anomalies automatically; discuss whether they are errors, risks, or valuable rare events.</p><h2>Batch 06 Integration Project — Anomaly-Aware Forecasting &amp; Neural Baseline Lab</h2>
+<p>รวม Chapters 16–18:</p>
+<pre><code class="language-text">time series
+   ↓
+chronological split
+   ↓
+causal anomaly features
+   ↓
+IsolationForest fit on TRAIN only
+   ↓
+lag-window supervised dataset
+   ↓
+Seasonal Naive
+Linear Autoregression
+MLPRegressor
+   ↓
+validation RMSE
+   ↓
+model selection
+   ↓
+final future test
+</code></pre>
+<h3>Goal</h3>
+<p>แยก 3 งานให้ชัด:</p>
+<ol>
+<li><strong>Detection</strong> — จุดไหนดูผิดปกติ?</li>
+<li><strong>Forecasting</strong> — ค่าถัดไปควรเป็นเท่าไร?</li>
+<li><strong>Neural Representation</strong> — MLP ใช้ lag window อย่างไร?</li>
+</ol>
+<p>Anomaly detector ไม่ได้ลบข้อมูลโดยอัตโนมัติ; project เพียงรายงาน scores/flags และวัดว่ามี anomalies กระจายตรงไหน</p>
+<h3>Run</h3>
+<pre><code class="language-bash">source .venv/bin/activate
+python -m pip install -r requirements-batch06.txt
+
+python integration-project-batch06/src/forecasting_neural_lab.py   --output-dir reports/batch06   --seed 42
+</code></pre>
+<h3>Models</h3>
+<ul>
+<li>seasonal naive baseline</li>
+<li>linear autoregression on lag features</li>
+<li>MLPRegressor on lag features</li>
+</ul>
+<h3>Leakage Rules</h3>
+<ul>
+<li>chronological split only</li>
+<li>anomaly detector fit on training timeline only</li>
+<li>lag row at time t uses values before t only</li>
+<li>StandardScaler lives inside the MLP Pipeline</li>
+<li>validation selects model</li>
+<li>final test is evaluated once</li>
+</ul>
+<h3>Required Extensions</h3>
+<ol>
+<li>add statsmodels ARIMA candidate</li>
+<li>optional Prophet candidate</li>
+<li>rolling-origin evaluation</li>
+<li>multi-step recursive forecast</li>
+<li>contextual anomaly detector using hour/day features</li>
+<li>compare anomaly-removal vs robust training carefully</li>
+<li>add prediction intervals</li>
+<li>MLP hidden-layer sweep</li>
+<li>anomaly-aware loss weighting</li>
+<li>regime-shift scenario</li>
+</ol>
+<h3>Mastery Questions</h3>
+<ul>
+<li>ทำไม anomaly detector fit full timeline จึง leak?</li>
+<li>ทำไม anomaly ไม่ควรถูกลบอัตโนมัติ?</li>
+<li>one-step lag evaluation ต่างจาก recursive multi-step อย่างไร?</li>
+<li>MLP training ใช้ backprop แม้ Chapter 18 ยังไม่ derive อย่างไร?</li>
+<li>validation/test chronology สำคัญอย่างไร?</li>
+</ul></section></div><label class="local-confirm"><input type="checkbox" id="local-lab-confirm"> ฉันรัน local lab และตรวจผลตาม rubric ด้วยตัวเองแล้ว</label><p class="local-note">สถานะนี้เป็นคำยืนยันของผู้เรียน เว็บไม่ได้รันหรือตรวจ Python บนเครื่องแทนคุณ</p></section>
+<section id="mastery-review" class="practice-section"><h2>หลักฐานตามเกณฑ์การเรียนรู้</h2><p>ทุก objective ต้องแสดงหลักฐานอธิบาย ทำนาย คำนวณ อ่าน shape/state debug และประยุกต์ พร้อมกรณีใหม่ ผลรัน source ผู้เรียนจริง และการประเมินซ้ำ เกณฑ์นี้ไม่รับประกันความเข้าใจทุกสถานการณ์ เปิด JavaScript เพื่อดูรายการที่ยังขาดและนำเข้ารายงานผู้ตรวจ</p></section><section class="coverage-section"><h2>แผนที่สิ่งที่เรียน → สิ่งที่ต้องแสดงให้ได้</h2><div id="coverage-table"></div></section><footer><span>ZERO TO ELITE AI ENGINEER · LEARNING STUDIO</span><span>อ่าน · derive · implement · debug · experiment · build</span></footer></div></main><noscript><style>.workbench,.sidebar,.reading-route,.lesson-toc,.mastery-status,#web-checks{display:none}main{margin-left:0}</style>อ่านเนื้อหา HTML ได้ตามปกติ เปิด JavaScript เพื่อใช้ห้องทดลองและตรวจคำตอบ</noscript></body></html>

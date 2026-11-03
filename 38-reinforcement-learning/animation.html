@@ -1,0 +1,1567 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="บทเรียน AI Engineer ภาษาไทย พร้อมคณิตศาสตร์ทีละขั้นและห้องทดลองที่คำนวณจริง"><title>Reinforcement Learning: reward วันนี้มีผลต่อ action วันหน้า · AI Engineer Studio</title><link rel="stylesheet" href="../visual-lab/assets/styles.css"><link rel="stylesheet" href="../visual-lab/assets/course.css"><script defer src="../visual-lab/assets/lessons.js"></script><script defer src="../visual-lab/assets/chapter-meta.js"></script><script defer src="../visual-lab/assets/course-math.js"></script><script defer src="../visual-lab/assets/course-models.js"></script><script defer src="../visual-lab/assets/course-models-v3.js"></script><script defer src="../visual-lab/assets/course-assessment.js"></script><script defer src="../visual-lab/assets/course-mastery.js"></script><script defer src="../visual-lab/assets/course-catalog.js"></script><script defer src="../visual-lab/assets/book-content.js"></script><script defer src="../visual-lab/assets/course-render.js"></script><script defer src="../visual-lab/assets/course-mastery-panel.js"></script><script defer src="../visual-lab/assets/quality-report.js"></script><script defer src="../visual-lab/assets/course-app.js"></script></head>
+<body data-chapter="38" data-root="../"><a class="skip-link" href="#main">ข้ามไปบทเรียน</a>
+<aside class="sidebar" id="sidebar" aria-label="เลือกบทเรียน"><a class="brand" href="../visual-lab/index.html"><span class="brand-mark">ai</span><span>AI ENGINEER<small>LEARN · DERIVE · BUILD</small></span></a><div class="sidebar-intro">อ่านให้เข้าใจ · คำนวณให้เห็น · เขียนให้เป็น</div><label class="search-box"><input id="search" type="search" placeholder="ค้นหาบท / attention" aria-label="ค้นหาบทเรียน"></label><label class="filter-label" for="phase-filter">เส้นทางการเรียน <span id="nav-count"></span></label><select id="phase-filter"><option value="">ทุก Phase</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option></select><nav id="chapter-list" class="chapter-list" aria-label="รายชื่อบท"></nav><div class="course-progress"><div><span>ผ่านโจทย์ในเว็บ</span><strong id="progress-count">0 / 80</strong></div><progress id="course-progress" max="80" value="0" aria-label="บทที่ผ่านโจทย์"></progress><a id="resume-link" href="#chapter-1">อ่านต่อจากเดิม →</a></div></aside>
+<button class="nav-backdrop" id="nav-backdrop" aria-label="ปิดเมนู" hidden></button>
+<main id="main" tabindex="-1"><header class="topbar"><div><button id="nav-toggle" class="icon-button mobile-menu" aria-label="เปิดเมนูบทเรียน" aria-expanded="false" aria-controls="sidebar">☰</button><span id="breadcrumb"></span></div><span class="local-badge"><i></i> คำนวณในเครื่อง · ไม่มี API</span></header><div class="content">
+<div class="chapter-navigation"><label for="chapter-select" class="sr-only">เลือกบทเรียน</label><select id="chapter-select"></select><div class="chapter-arrows"><button id="prev-chapter" class="icon-button" aria-label="บทก่อนหน้า">←</button><button id="next-chapter" class="icon-button" aria-label="บทถัดไป">→</button></div></div>
+<section class="chapter-hero"><div><p id="chapter-kicker" class="eyebrow"></p><h1 id="chapter-title">Reinforcement Learning: reward วันนี้มีผลต่อ action วันหน้า</h1><p class="english-title" id="chapter-english"></p></div><span class="hero-symbol">f(x) ↗</span></section>
+<p id="quality-status" class="quality-status"></p><div id="mastery-status" class="mastery-status"></div><div class="reading-route"><a href="#chapter-38/section/overview">01 อ่านบทเรียน</a><a href="#workbench">02 ทดลองสมการ</a><a href="#practice">03 ฝึกและตรวจงาน</a><a href="#mastery-review">04 หลักฐานตามเกณฑ์</a></div>
+<nav id="lesson-toc" class="lesson-toc" aria-label="สารบัญบท"></nav>
+<section id="overview" class="course-overview"><span class="eyebrow">THE LEARNING CONTRACT</span><h2>เรียนบทนี้แล้วต้องทำอะไรได้</h2><p id="chapter-purpose"></p><div id="chapter-objectives"></div><div class="learning-hint">ทำนาย → เปลี่ยนทีละค่า → ตรวจตัวเลข → อธิบายเหตุผล → เขียนด้วย Python เอง</div></section>
+<section class="workbench lab-card" id="workbench" aria-label="ห้องทดลองคำนวณจริง"><div class="card-header"><div><span class="live-dot"></span><span class="eyebrow">COMPUTATION WORKBENCH</span></div><span class="simulation-label">ทุกภาพใช้ผลคำนวณชุดเดียวกัน</span></div><div class="lab-top"><label for="lab-select">เลือกกลไกที่ต้องการทดลอง</label><select id="lab-select"></select><p id="lab-question"></p></div><div class="workbench-grid"><div class="viz-column"><div class="compare-labels"><span>เส้นทึบ: ปัจจุบัน</span><span>เส้นประ: baseline ที่ตรึงไว้</span></div><div id="simulation" class="simulation"></div><div id="metrics" class="metrics"></div><div id="baseline-diff" class="baseline-diff"></div><div class="playback"><div class="playback-buttons"><button class="primary-button" id="update-once">อัปเดตหนึ่งก้าว</button><button class="secondary-button" id="train-many">▶ ฝึก 30 ก้าว</button><button class="icon-button" id="back-state" aria-label="ย้อนประวัติ">↶</button><button class="icon-button" id="forward-state" aria-label="ประวัติถัดไป">↷</button></div></div><div class="lab-secondary-actions"><button id="pin-baseline" class="text-button">ตรึง baseline ปัจจุบัน</button><button id="reset-lab" class="text-button">คืนค่าเริ่มต้น</button><button id="download-state" class="text-button">บันทึกผล JSON</button><span id="history-status"></span></div><p id="simulation-note" class="simulation-note"></p><p class="lab-error" id="lab-error" role="alert" hidden></p></div><div class="controls-column"><h3>เปลี่ยนทีละตัว แล้วสังเกตผล</h3><div id="lab-controls"></div><p class="control-note">แก้ weight ด้วยมือจะคำนวณ forward ใหม่; optimizer เปลี่ยน weights เมื่อกดอัปเดตเท่านั้น</p></div></div>
+<div class="trace-section"><div class="trace-toolbar"><h3>เดินสมการทีละ operation</h3><div><button id="trace-prev" class="icon-button" aria-label="operation ก่อนหน้า">←</button><button id="play-trace" class="secondary-button" aria-pressed="false">▶ เล่น flow</button><button id="trace-next" class="icon-button" aria-label="operation ถัดไป">→</button><span id="stage-counter"></span></div></div><label class="motion-control"><input id="reduce-motion" type="checkbox"> ลดภาพเคลื่อนไหว (หยุดการเล่นที่ค้างอยู่)</label><div id="operation-steps" class="operation-steps"></div><div id="flow-diagram" class="flow-diagram"></div><div id="active-operation" class="active-operation" aria-live="polite"></div><p class="control-note">ตัวเลขบนภาพปัดเศษเพื่อให้อ่านง่าย; บันทึก JSON เพื่อดูค่าที่ใช้คำนวณเต็ม precision</p><details open><summary>ตารางค่าระหว่างทาง — ตรวจด้วยมือได้</summary><div id="result-table"></div></details><div id="tensor-tables" class="tensor-tables"></div><details id="surface-details"><summary>ดู loss surface และเส้นทางของ w₁,b (ตรึง controls อื่น)</summary><div id="surface-chart"></div><p>surface คำนวณ objective ปัจจุบันโดยตรึง degree, penalty, ข้อมูล และ weights อื่น เส้นทางแสดงเฉพาะ snapshots ที่ค่าเหล่านี้ตรงกัน; นอกช่วง w=[−1,5], b=[−2,4] ให้ตรวจค่าจริงใน history</p></details><details><summary>ประวัติการเปลี่ยนค่า</summary><div id="history-table"></div></details></div></section>
+<article id="chapter-article" class="chapter-article"><section id="mechanism-1" class="teaching-section"><span class="section-kicker">CHAPTER 38 · ภาพ → สมการ → โค้ด</span><h2>1. environment ไม่ได้ให้ label ของ action ที่ดีที่สุดเสมอ</h2><h3>โจทย์และเหตุผล</h3><p>agent เลือก action แล้วเห็น reward และ next state จึงต้องเรียนจากผลที่ตามมา นิยาม state ให้พอสำหรับ Markov assumption และออกแบบ reward ที่ไม่เปิดช่องให้ทำผิดเป้าหมาย</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Implement tabular Q-Learning.</p><p>Q(s,a)←Q+α[r+γmaxQ(s',·)−Q]; Q2,r1,nextmax4,γ.5,α.1ให้Q2.1; terminaltargetrเท่านั้น</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>q: Q(s,a),initial=0; reward: reward r,initial=1; nextQ: max Q(next,a),initial=2; gamma: discount γ,initial=0.9; alpha: step size α,initial=0.2; terminal: terminal (1 yes),initial=0</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = 0; ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</li><li>target=r+γ(1−terminal)max Q_next; Q′=Q+α(target−Q) = 0.5599999999999999; terminal state ไม่ bootstrap; Q-learning ใช้ greedy nextQ ต่างจาก SARSA ที่ใช้ action ที่ policy เลือกจริง</li><li>finite / normalized / bounded = 0.5599999999999999; เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="reinforcement-q-learning-td-update">เปิดการทดลองนี้</a><p class="failure-box">evalยังเปิดεสูงทำmetricปนexploration; train/testenvironmentseedsแยกและreportevaluationpolicyε; tunedrewardไม่แทนrealobjectiveอัตโนมัติ; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Q(s,a)←Q+α[r+γmaxQ(s',·)−Q]; Q2,r1,nextmax4,γ.5,α.1ให้Q2.1; terminaltargetrเท่านั้น</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-1-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = 0<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>target=r+γ(1−terminal)max Q_next; Q′=Q+α(target−Q)</code> = 0.5599999999999999<p>terminal state ไม่ bootstrap; Q-learning ใช้ greedy nextQ ต่างจาก SARSA ที่ใช้ action ที่ policy เลือกจริง</p></li><li><code>finite / normalized / bounded</code> = 0.5599999999999999<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-1-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>shape / range</code> = 0<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>target=r+γ(1−terminal)max Q_next; Q′=Q+α(target−Q)</code> = 0.5599999999999999<p>terminal state ไม่ bootstrap; Q-learning ใช้ greedy nextQ ต่างจาก SARSA ที่ใช้ action ที่ policy เลือกจริง</p></li><li><code>finite / normalized / bounded</code> = 0.5599999999999999<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-1-code"><summary>โค้ด</summary><p>Q(s,a)←Q+α[r+γmaxQ(s',·)−Q]; Q2,r1,nextmax4,γ.5,α.1ให้Q2.1; terminaltargetrเท่านั้น</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-1-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = 0<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>target=r+γ(1−terminal)max Q_next; Q′=Q+α(target−Q)</code> = 0.5599999999999999<p>terminal state ไม่ bootstrap; Q-learning ใช้ greedy nextQ ต่างจาก SARSA ที่ใช้ action ที่ policy เลือกจริง</p></li><li><code>finite / normalized / bounded</code> = 0.5599999999999999<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-1"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-2" class="teaching-section"><span class="section-kicker">CHAPTER 38 · ภาพ → สมการ → โค้ด</span><h2>2. TD target ประกอบจาก reward กับค่าของอนาคต</h2><h3>โจทย์และเหตุผล</h3><p>Q-learning ใช้ r+γ maxQ(next) แต่ SARSA ใช้ Q ของ action ที่ policy เลือกจริง terminal state ไม่มีอนาคตให้ bootstrap จึงต้องตัด term นี้</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Implement a DQN TD target with terminal masking.</p><p>target=r+γ(1−terminated)maxQtarget(s'); r1,nextmax4,γ.5ให้3ถ้าnonterminalและ1ถ้าterminal; truncationไม่จำเป็นต้องterminalตามenvsemantics</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>q: Q(s,a),initial=0; reward: reward r,initial=1; nextQ: max Q(next,a),initial=2; gamma: discount γ,initial=0.9; alpha: step size α,initial=0.2; terminal: terminal (1 yes),initial=1</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = 0; ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</li><li>target=r+γ(1−terminal)max Q_next; Q′=Q+α(target−Q) = 0.2; terminal state ไม่ bootstrap; Q-learning ใช้ greedy nextQ ต่างจาก SARSA ที่ใช้ action ที่ policy เลือกจริง</li><li>finite / normalized / bounded = 0.2; เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="reinforcement-terminal-ต-องไม--bootstr">เปิดการทดลองนี้</a><p class="failure-box">evalยังเปิดεสูงทำmetricปนexploration; train/testenvironmentseedsแยกและreportevaluationpolicyε; tunedrewardไม่แทนrealobjectiveอัตโนมัติ; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>target=r+γ(1−terminated)maxQtarget(s'); r1,nextmax4,γ.5ให้3ถ้าnonterminalและ1ถ้าterminal; truncationไม่จำเป็นต้องterminalตามenvsemantics</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-2-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = 0<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>target=r+γ(1−terminal)max Q_next; Q′=Q+α(target−Q)</code> = 0.2<p>terminal state ไม่ bootstrap; Q-learning ใช้ greedy nextQ ต่างจาก SARSA ที่ใช้ action ที่ policy เลือกจริง</p></li><li><code>finite / normalized / bounded</code> = 0.2<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-2-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>shape / range</code> = 0<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>target=r+γ(1−terminal)max Q_next; Q′=Q+α(target−Q)</code> = 0.2<p>terminal state ไม่ bootstrap; Q-learning ใช้ greedy nextQ ต่างจาก SARSA ที่ใช้ action ที่ policy เลือกจริง</p></li><li><code>finite / normalized / bounded</code> = 0.2<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-2-code"><summary>โค้ด</summary><p>target=r+γ(1−terminated)maxQtarget(s'); r1,nextmax4,γ.5ให้3ถ้าnonterminalและ1ถ้าterminal; truncationไม่จำเป็นต้องterminalตามenvsemantics</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-2-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = 0<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>target=r+γ(1−terminal)max Q_next; Q′=Q+α(target−Q)</code> = 0.2<p>terminal state ไม่ bootstrap; Q-learning ใช้ greedy nextQ ต่างจาก SARSA ที่ใช้ action ที่ policy เลือกจริง</p></li><li><code>finite / normalized / bounded</code> = 0.2<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-2"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-3" class="teaching-section"><span class="section-kicker">CHAPTER 38 · ภาพ → สมการ → โค้ด</span><h2>3. exploration กับ evaluation ต้องแยก</h2><h3>โจทย์และเหตุผล</h3><p>policy ที่สำรวจอาจได้ return น้อยระหว่างเรียนแต่พบทางใหม่ตอนฝึก เมื่อประเมินให้กำหนด seeds/episodes และ policy mode คงที่ DQN/PPO เพิ่ม neural approximation และ optimization constraints เหนือ toy table</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Compute PPO clipped surrogate values manually.</p>
+<p>Challenge:
+- build DQN on a tiny chain environment
+- build PPO on a synthetic discrete-control environment</p><p>A2,ratio1.3,ε.2 surrogate=min(2.6,2.4)=2.4; A−2,ratio.7ได้min(−1.4,−1.6)=−1.6; lossคือลบmean</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>gain: controller / dynamics coefficient,initial=0.5; horizon: rollout steps,initial=8; bias: model dynamics bias,initial=0.1; limit: action magnitude limit,initial=1; mode: closed-loop / model,initial=robot</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = 0; กำหนดความหมายและหน่วยของ input ก่อนทดลอง</li><li>a=clip(Kp(target−x)); x_next=x+a = [8, 0.00390625, 0.99609375, 0.99609375, 0.00390625]; robot ใช้ observation ใหม่ทุกรอบ; world mode ใช้ prediction เดิมจึงสะสม model error</li><li>normal / boundary / comparison = [8, 0.00390625, 0.99609375, 0.99609375, 0.00390625]; ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="control-policy-อย--ในวงจรก-บ-env">เปิดการทดลองนี้</a><p class="failure-box">evalยังเปิดεสูงทำmetricปนexploration; train/testenvironmentseedsแยกและreportevaluationpolicyε; tunedrewardไม่แทนrealobjectiveอัตโนมัติ; unit-step scalar dynamics; ไม่อ้างว่าเป็น robot physics เต็มหรือ learned world model ที่ฝึกจากภาพ</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>A2,ratio1.3,ε.2 surrogate=min(2.6,2.4)=2.4; A−2,ratio.7ได้min(−1.4,−1.6)=−1.6; lossคือลบmean</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-3-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = 0<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>a=clip(Kp(target−x)); x_next=x+a</code> = [8, 0.00390625, 0.99609375, 0.99609375, 0.00390625]<p>robot ใช้ observation ใหม่ทุกรอบ; world mode ใช้ prediction เดิมจึงสะสม model error</p></li><li><code>normal / boundary / comparison</code> = [8, 0.00390625, 0.99609375, 0.99609375, 0.00390625]<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-3-visual"><summary>ภาพและ shape</summary><p>unit-step scalar dynamics; ไม่อ้างว่าเป็น robot physics เต็มหรือ learned world model ที่ฝึกจากภาพ</p><ol><li><code>shape / range</code> = 0<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>a=clip(Kp(target−x)); x_next=x+a</code> = [8, 0.00390625, 0.99609375, 0.99609375, 0.00390625]<p>robot ใช้ observation ใหม่ทุกรอบ; world mode ใช้ prediction เดิมจึงสะสม model error</p></li><li><code>normal / boundary / comparison</code> = [8, 0.00390625, 0.99609375, 0.99609375, 0.00390625]<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-3-code"><summary>โค้ด</summary><p>A2,ratio1.3,ε.2 surrogate=min(2.6,2.4)=2.4; A−2,ratio.7ได้min(−1.4,−1.6)=−1.6; lossคือลบmean</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-3-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = 0<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>a=clip(Kp(target−x)); x_next=x+a</code> = [8, 0.00390625, 0.99609375, 0.99609375, 0.00390625]<p>robot ใช้ observation ใหม่ทุกรอบ; world mode ใช้ prediction เดิมจึงสะสม model error</p></li><li><code>normal / boundary / comparison</code> = [8, 0.00390625, 0.99609375, 0.99609375, 0.00390625]<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-3"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="reference" class="canonical-section"><h2>เนื้อหาครบทุกหัวข้อ พร้อมแผนที่ objective</h2><nav class="source-toc"><a href="#chapter-38/section/topic-1">1. What Is Reinforcement Learning?</a> <a href="#chapter-38/section/topic-2">2. Learning Objectives</a> <a href="#chapter-38/section/topic-3">3. Markov Decision Process</a> <a href="#chapter-38/section/topic-4">4. Markov Property</a> <a href="#chapter-38/section/topic-5">5. Return</a> <a href="#chapter-38/section/topic-6">6. Discount Factor</a> <a href="#chapter-38/section/topic-7">7. Policy</a> <a href="#chapter-38/section/topic-8">8. State Value</a> <a href="#chapter-38/section/topic-9">9. Action Value</a> <a href="#chapter-38/section/topic-10">10. Bellman Expectation Equation</a> <a href="#chapter-38/section/topic-11">11. Bellman Optimality</a> <a href="#chapter-38/section/topic-12">12. Value Iteration</a> <a href="#chapter-38/section/topic-13">13. Q-Learning</a> <a href="#chapter-38/section/topic-14">14. Temporal-Difference Error</a> <a href="#chapter-38/section/topic-15">15. Exploration vs Exploitation</a> <a href="#chapter-38/section/topic-16">16. Epsilon Schedule</a> <a href="#chapter-38/section/topic-17">17. DQN</a> <a href="#chapter-38/section/topic-18">18. Replay Buffer</a> <a href="#chapter-38/section/topic-19">19. Target Network</a> <a href="#chapter-38/section/topic-20">20. DQN Loss</a> <a href="#chapter-38/section/topic-21">21. Double DQN Preview</a> <a href="#chapter-38/section/topic-22">22. Policy Gradient</a> <a href="#chapter-38/section/topic-23">23. Why log-probability?</a> <a href="#chapter-38/section/topic-24">24. Baseline</a> <a href="#chapter-38/section/topic-25">25. Advantage</a> <a href="#chapter-38/section/topic-26">26. Actor-Critic</a> <a href="#chapter-38/section/topic-27">27. Generalized Advantage Estimation</a> <a href="#chapter-38/section/topic-28">28. PPO</a> <a href="#chapter-38/section/topic-29">29. Why Clipping?</a> <a href="#chapter-38/section/topic-30">30. Entropy Bonus</a> <a href="#chapter-38/section/topic-31">31. On-Policy vs Off-Policy</a> <a href="#chapter-38/section/topic-32">32. Reward Design</a> <a href="#chapter-38/section/topic-33">33. Evaluation</a> <a href="#chapter-38/section/topic-34">34. From Scratch</a> <a href="#chapter-38/section/topic-35">35. Common Mistakes</a> <a href="#chapter-38/section/topic-36">36. Exercises / Mini Project</a> <a href="#chapter-38/section/topic-37">37. Checklist</a> <a href="#chapter-38/section/topic-38">38. What&#x27;s Next</a> </nav><section id="topic-1" class="source-topic"><span id="source-38-reinforcement-learning-canonical-chapter-38-reinforcement-learning" class="legacy-anchor"></span><span id="source-38-reinforcement-learning-canonical-1-what-is-reinforcement-learning" class="legacy-anchor"></span><h3>1. What Is Reinforcement Learning?</h3>
+<p>An agent repeatedly interacts with an environment:</p>
+<pre><code class="language-text">state
+↓
+agent chooses action
+↓
+environment
+↓
+reward + next state
+↓
+repeat
+</code></pre>
+<p>Unlike supervised learning, correct actions are not directly labeled.</p>
+<p>The learning signal comes from rewards over time.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>1. What Is Reinforcement Learning?</h3>
+<p>An agent repeatedly interacts with an environment:</p>
+<pre><code class="language-text">state
+↓
+agent chooses action
+↓
+environment
+↓
+reward + next state
+↓
+repeat
+</code></pre>
+<p>Unlike supervised learning, correct actions are not directly labeled.</p>
+<p>The learning signal comes from rewards over time.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-1-equation"><summary>สมการ</summary><h3>1. What Is Reinforcement Learning?</h3>
+<p>An agent repeatedly interacts with an environment:</p>
+<pre><code class="language-text">state
+↓
+agent chooses action
+↓
+environment
+↓
+reward + next state
+↓
+repeat
+</code></pre>
+<p>Unlike supervised learning, correct actions are not directly labeled.</p>
+<p>The learning signal comes from rewards over time.</p></details><details id="help-topic-1-visual"><summary>ภาพและ shape</summary><h3>1. What Is Reinforcement Learning?</h3>
+<p>An agent repeatedly interacts with an environment:</p>
+<pre><code class="language-text">state
+↓
+agent chooses action
+↓
+environment
+↓
+reward + next state
+↓
+repeat
+</code></pre>
+<p>Unlike supervised learning, correct actions are not directly labeled.</p>
+<p>The learning signal comes from rewards over time.</p></details><details id="help-topic-1-code"><summary>โค้ด</summary><h3>1. What Is Reinforcement Learning?</h3>
+<p>An agent repeatedly interacts with an environment:</p>
+<pre><code class="language-text">state
+↓
+agent chooses action
+↓
+environment
+↓
+reward + next state
+↓
+repeat
+</code></pre>
+<p>Unlike supervised learning, correct actions are not directly labeled.</p>
+<p>The learning signal comes from rewards over time.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-1-result"><summary>ผลการทดลอง</summary><h3>1. What Is Reinforcement Learning?</h3>
+<p>An agent repeatedly interacts with an environment:</p>
+<pre><code class="language-text">state
+↓
+agent chooses action
+↓
+environment
+↓
+reward + next state
+↓
+repeat
+</code></pre>
+<p>Unlike supervised learning, correct actions are not directly labeled.</p>
+<p>The learning signal comes from rewards over time.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-1"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-2" class="source-topic"><span id="source-38-reinforcement-learning-canonical-2-learning-objectives" class="legacy-anchor"></span><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>define an MDP</li>
+<li>explain state/action/reward/transition</li>
+<li>explain return and discounting</li>
+<li>derive Bellman expectation/optimality equations</li>
+<li>implement tabular value iteration</li>
+<li>implement Q-Learning</li>
+<li>explain exploration vs exploitation</li>
+<li>explain replay buffers</li>
+<li>explain target networks</li>
+<li>understand DQN</li>
+<li>derive REINFORCE</li>
+<li>explain advantage functions</li>
+<li>understand actor-critic</li>
+<li>explain PPO clipped objective</li>
+<li>build a tiny PyTorch RL agent</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>define an MDP</li>
+<li>explain state/action/reward/transition</li>
+<li>explain return and discounting</li>
+<li>derive Bellman expectation/optimality equations</li>
+<li>implement tabular value iteration</li>
+<li>implement Q-Learning</li>
+<li>explain exploration vs exploitation</li>
+<li>explain replay buffers</li>
+<li>explain target networks</li>
+<li>understand DQN</li>
+<li>derive REINFORCE</li>
+<li>explain advantage functions</li>
+<li>understand actor-critic</li>
+<li>explain PPO clipped objective</li>
+<li>build a tiny PyTorch RL agent</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-2-equation"><summary>สมการ</summary><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>define an MDP</li>
+<li>explain state/action/reward/transition</li>
+<li>explain return and discounting</li>
+<li>derive Bellman expectation/optimality equations</li>
+<li>implement tabular value iteration</li>
+<li>implement Q-Learning</li>
+<li>explain exploration vs exploitation</li>
+<li>explain replay buffers</li>
+<li>explain target networks</li>
+<li>understand DQN</li>
+<li>derive REINFORCE</li>
+<li>explain advantage functions</li>
+<li>understand actor-critic</li>
+<li>explain PPO clipped objective</li>
+<li>build a tiny PyTorch RL agent</li>
+</ul></details><details id="help-topic-2-visual"><summary>ภาพและ shape</summary><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>define an MDP</li>
+<li>explain state/action/reward/transition</li>
+<li>explain return and discounting</li>
+<li>derive Bellman expectation/optimality equations</li>
+<li>implement tabular value iteration</li>
+<li>implement Q-Learning</li>
+<li>explain exploration vs exploitation</li>
+<li>explain replay buffers</li>
+<li>explain target networks</li>
+<li>understand DQN</li>
+<li>derive REINFORCE</li>
+<li>explain advantage functions</li>
+<li>understand actor-critic</li>
+<li>explain PPO clipped objective</li>
+<li>build a tiny PyTorch RL agent</li>
+</ul></details><details id="help-topic-2-code"><summary>โค้ด</summary><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>define an MDP</li>
+<li>explain state/action/reward/transition</li>
+<li>explain return and discounting</li>
+<li>derive Bellman expectation/optimality equations</li>
+<li>implement tabular value iteration</li>
+<li>implement Q-Learning</li>
+<li>explain exploration vs exploitation</li>
+<li>explain replay buffers</li>
+<li>explain target networks</li>
+<li>understand DQN</li>
+<li>derive REINFORCE</li>
+<li>explain advantage functions</li>
+<li>understand actor-critic</li>
+<li>explain PPO clipped objective</li>
+<li>build a tiny PyTorch RL agent</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-2-result"><summary>ผลการทดลอง</summary><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>define an MDP</li>
+<li>explain state/action/reward/transition</li>
+<li>explain return and discounting</li>
+<li>derive Bellman expectation/optimality equations</li>
+<li>implement tabular value iteration</li>
+<li>implement Q-Learning</li>
+<li>explain exploration vs exploitation</li>
+<li>explain replay buffers</li>
+<li>explain target networks</li>
+<li>understand DQN</li>
+<li>derive REINFORCE</li>
+<li>explain advantage functions</li>
+<li>understand actor-critic</li>
+<li>explain PPO clipped objective</li>
+<li>build a tiny PyTorch RL agent</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-2"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-3" class="source-topic"><span id="source-38-reinforcement-learning-canonical-3-markov-decision-process" class="legacy-anchor"></span><h3>3. Markov Decision Process</h3>
+<p>An MDP contains:</p>
+<pre><code class="language-text">(S, A, P, R, gamma)
+</code></pre>
+<p>where:
+- S: states
+- A: actions
+- P: transition dynamics
+- R: reward
+- gamma: discount factor</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>3. Markov Decision Process</h3>
+<p>An MDP contains:</p>
+<pre><code class="language-text">(S, A, P, R, gamma)
+</code></pre>
+<p>where:
+- S: states
+- A: actions
+- P: transition dynamics
+- R: reward
+- gamma: discount factor</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-3-equation"><summary>สมการ</summary><h3>3. Markov Decision Process</h3>
+<p>An MDP contains:</p>
+<pre><code class="language-text">(S, A, P, R, gamma)
+</code></pre>
+<p>where:
+- S: states
+- A: actions
+- P: transition dynamics
+- R: reward
+- gamma: discount factor</p></details><details id="help-topic-3-visual"><summary>ภาพและ shape</summary><h3>3. Markov Decision Process</h3>
+<p>An MDP contains:</p>
+<pre><code class="language-text">(S, A, P, R, gamma)
+</code></pre>
+<p>where:
+- S: states
+- A: actions
+- P: transition dynamics
+- R: reward
+- gamma: discount factor</p></details><details id="help-topic-3-code"><summary>โค้ด</summary><h3>3. Markov Decision Process</h3>
+<p>An MDP contains:</p>
+<pre><code class="language-text">(S, A, P, R, gamma)
+</code></pre>
+<p>where:
+- S: states
+- A: actions
+- P: transition dynamics
+- R: reward
+- gamma: discount factor</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-3-result"><summary>ผลการทดลอง</summary><h3>3. Markov Decision Process</h3>
+<p>An MDP contains:</p>
+<pre><code class="language-text">(S, A, P, R, gamma)
+</code></pre>
+<p>where:
+- S: states
+- A: actions
+- P: transition dynamics
+- R: reward
+- gamma: discount factor</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-3"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-4" class="source-topic"><span id="source-38-reinforcement-learning-canonical-4-markov-property" class="legacy-anchor"></span><h3>4. Markov Property</h3>
+<p>The next-state distribution depends on the current state/action rather than the entire history:</p>
+<pre><code class="language-text">P(s_(t+1) | history, a_t)
+=
+P(s_(t+1) | s_t, a_t)
+</code></pre>
+<p>If the observation does not contain enough state information, the problem may be partially observable.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-4-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>4. Markov Property</h3>
+<p>The next-state distribution depends on the current state/action rather than the entire history:</p>
+<pre><code class="language-text">P(s_(t+1) | history, a_t)
+=
+P(s_(t+1) | s_t, a_t)
+</code></pre>
+<p>If the observation does not contain enough state information, the problem may be partially observable.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-4-equation"><summary>สมการ</summary><h3>4. Markov Property</h3>
+<p>The next-state distribution depends on the current state/action rather than the entire history:</p>
+<pre><code class="language-text">P(s_(t+1) | history, a_t)
+=
+P(s_(t+1) | s_t, a_t)
+</code></pre>
+<p>If the observation does not contain enough state information, the problem may be partially observable.</p></details><details id="help-topic-4-visual"><summary>ภาพและ shape</summary><h3>4. Markov Property</h3>
+<p>The next-state distribution depends on the current state/action rather than the entire history:</p>
+<pre><code class="language-text">P(s_(t+1) | history, a_t)
+=
+P(s_(t+1) | s_t, a_t)
+</code></pre>
+<p>If the observation does not contain enough state information, the problem may be partially observable.</p></details><details id="help-topic-4-code"><summary>โค้ด</summary><h3>4. Markov Property</h3>
+<p>The next-state distribution depends on the current state/action rather than the entire history:</p>
+<pre><code class="language-text">P(s_(t+1) | history, a_t)
+=
+P(s_(t+1) | s_t, a_t)
+</code></pre>
+<p>If the observation does not contain enough state information, the problem may be partially observable.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-4-result"><summary>ผลการทดลอง</summary><h3>4. Markov Property</h3>
+<p>The next-state distribution depends on the current state/action rather than the entire history:</p>
+<pre><code class="language-text">P(s_(t+1) | history, a_t)
+=
+P(s_(t+1) | s_t, a_t)
+</code></pre>
+<p>If the observation does not contain enough state information, the problem may be partially observable.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-4"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-5" class="source-topic"><span id="source-38-reinforcement-learning-canonical-5-return" class="legacy-anchor"></span><h3>5. Return</h3>
+<p>Discounted return from time t:</p>
+<pre><code class="language-text">G_t
+=
+r_t
++
+gamma r_(t+1)
++
+gamma^2 r_(t+2)
++ ...
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>rewards[1,2,3],γ.5ให้G0=1+.5·2+.25·3=2.75,G1=3.5,G2=3; γdiscountอนาคตไม่ลดimmediatereward</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-5-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>rewards[1,2,3],γ.5ให้G0=1+.5·2+.25·3=2.75,G1=3.5,G2=3; γdiscountอนาคตไม่ลดimmediatereward</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-5-equation"><summary>สมการ</summary><p>rewards[1,2,3],γ.5ให้G0=1+.5·2+.25·3=2.75,G1=3.5,G2=3; γdiscountอนาคตไม่ลดimmediatereward</p></details><details id="help-topic-5-visual"><summary>ภาพและ shape</summary><p>rewards[1,2,3],γ.5ให้G0=1+.5·2+.25·3=2.75,G1=3.5,G2=3; γdiscountอนาคตไม่ลดimmediatereward</p></details><details id="help-topic-5-code"><summary>โค้ด</summary><p>rewards[1,2,3],γ.5ให้G0=1+.5·2+.25·3=2.75,G1=3.5,G2=3; γdiscountอนาคตไม่ลดimmediatereward</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-5-result"><summary>ผลการทดลอง</summary><p>rewards[1,2,3],γ.5ให้G0=1+.5·2+.25·3=2.75,G1=3.5,G2=3; γdiscountอนาคตไม่ลดimmediatereward</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-5"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-6" class="source-topic"><span id="source-38-reinforcement-learning-canonical-6-discount-factor" class="legacy-anchor"></span><h3>6. Discount Factor</h3>
+<pre><code class="language-text">0 &lt;= gamma &lt;= 1
+</code></pre>
+<p>Smaller gamma:
+- emphasizes near-term rewards</p>
+<p>Larger gamma:
+- values longer-term rewards</p>
+<p>The correct choice depends on task horizon/objective.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-6-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>6. Discount Factor</h3>
+<pre><code class="language-text">0 &lt;= gamma &lt;= 1
+</code></pre>
+<p>Smaller gamma:
+- emphasizes near-term rewards</p>
+<p>Larger gamma:
+- values longer-term rewards</p>
+<p>The correct choice depends on task horizon/objective.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-6-equation"><summary>สมการ</summary><h3>6. Discount Factor</h3>
+<pre><code class="language-text">0 &lt;= gamma &lt;= 1
+</code></pre>
+<p>Smaller gamma:
+- emphasizes near-term rewards</p>
+<p>Larger gamma:
+- values longer-term rewards</p>
+<p>The correct choice depends on task horizon/objective.</p></details><details id="help-topic-6-visual"><summary>ภาพและ shape</summary><h3>6. Discount Factor</h3>
+<pre><code class="language-text">0 &lt;= gamma &lt;= 1
+</code></pre>
+<p>Smaller gamma:
+- emphasizes near-term rewards</p>
+<p>Larger gamma:
+- values longer-term rewards</p>
+<p>The correct choice depends on task horizon/objective.</p></details><details id="help-topic-6-code"><summary>โค้ด</summary><h3>6. Discount Factor</h3>
+<pre><code class="language-text">0 &lt;= gamma &lt;= 1
+</code></pre>
+<p>Smaller gamma:
+- emphasizes near-term rewards</p>
+<p>Larger gamma:
+- values longer-term rewards</p>
+<p>The correct choice depends on task horizon/objective.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-6-result"><summary>ผลการทดลอง</summary><h3>6. Discount Factor</h3>
+<pre><code class="language-text">0 &lt;= gamma &lt;= 1
+</code></pre>
+<p>Smaller gamma:
+- emphasizes near-term rewards</p>
+<p>Larger gamma:
+- values longer-term rewards</p>
+<p>The correct choice depends on task horizon/objective.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-6"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-7" class="source-topic"><span id="source-38-reinforcement-learning-canonical-7-policy" class="legacy-anchor"></span><h3>7. Policy</h3>
+<p>A policy defines action selection:</p>
+<pre><code class="language-text">pi(a|s)
+</code></pre>
+<p>Deterministic:</p>
+<pre><code class="language-text">a = pi(s)
+</code></pre>
+<p>Stochastic:</p>
+<pre><code class="language-text">a ~ pi(.|s)
+</code></pre><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-7-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>7. Policy</h3>
+<p>A policy defines action selection:</p>
+<pre><code class="language-text">pi(a|s)
+</code></pre>
+<p>Deterministic:</p>
+<pre><code class="language-text">a = pi(s)
+</code></pre>
+<p>Stochastic:</p>
+<pre><code class="language-text">a ~ pi(.|s)
+</code></pre><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-7-equation"><summary>สมการ</summary><h3>7. Policy</h3>
+<p>A policy defines action selection:</p>
+<pre><code class="language-text">pi(a|s)
+</code></pre>
+<p>Deterministic:</p>
+<pre><code class="language-text">a = pi(s)
+</code></pre>
+<p>Stochastic:</p>
+<pre><code class="language-text">a ~ pi(.|s)
+</code></pre></details><details id="help-topic-7-visual"><summary>ภาพและ shape</summary><h3>7. Policy</h3>
+<p>A policy defines action selection:</p>
+<pre><code class="language-text">pi(a|s)
+</code></pre>
+<p>Deterministic:</p>
+<pre><code class="language-text">a = pi(s)
+</code></pre>
+<p>Stochastic:</p>
+<pre><code class="language-text">a ~ pi(.|s)
+</code></pre></details><details id="help-topic-7-code"><summary>โค้ด</summary><h3>7. Policy</h3>
+<p>A policy defines action selection:</p>
+<pre><code class="language-text">pi(a|s)
+</code></pre>
+<p>Deterministic:</p>
+<pre><code class="language-text">a = pi(s)
+</code></pre>
+<p>Stochastic:</p>
+<pre><code class="language-text">a ~ pi(.|s)
+</code></pre><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-7-result"><summary>ผลการทดลอง</summary><h3>7. Policy</h3>
+<p>A policy defines action selection:</p>
+<pre><code class="language-text">pi(a|s)
+</code></pre>
+<p>Deterministic:</p>
+<pre><code class="language-text">a = pi(s)
+</code></pre>
+<p>Stochastic:</p>
+<pre><code class="language-text">a ~ pi(.|s)
+</code></pre><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-7"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-8" class="source-topic"><span id="source-38-reinforcement-learning-canonical-8-state-value" class="legacy-anchor"></span><h3>8. State Value</h3>
+<pre><code class="language-text">V^pi(s)
+=
+E_pi[G_t | s_t=s]
+</code></pre>
+<p>Expected return when starting at state s and following policy pi.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-8-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>8. State Value</h3>
+<pre><code class="language-text">V^pi(s)
+=
+E_pi[G_t | s_t=s]
+</code></pre>
+<p>Expected return when starting at state s and following policy pi.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-8-equation"><summary>สมการ</summary><h3>8. State Value</h3>
+<pre><code class="language-text">V^pi(s)
+=
+E_pi[G_t | s_t=s]
+</code></pre>
+<p>Expected return when starting at state s and following policy pi.</p></details><details id="help-topic-8-visual"><summary>ภาพและ shape</summary><h3>8. State Value</h3>
+<pre><code class="language-text">V^pi(s)
+=
+E_pi[G_t | s_t=s]
+</code></pre>
+<p>Expected return when starting at state s and following policy pi.</p></details><details id="help-topic-8-code"><summary>โค้ด</summary><h3>8. State Value</h3>
+<pre><code class="language-text">V^pi(s)
+=
+E_pi[G_t | s_t=s]
+</code></pre>
+<p>Expected return when starting at state s and following policy pi.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-8-result"><summary>ผลการทดลอง</summary><h3>8. State Value</h3>
+<pre><code class="language-text">V^pi(s)
+=
+E_pi[G_t | s_t=s]
+</code></pre>
+<p>Expected return when starting at state s and following policy pi.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-8"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-9" class="source-topic"><span id="source-38-reinforcement-learning-canonical-9-action-value" class="legacy-anchor"></span><h3>9. Action Value</h3>
+<pre><code class="language-text">Q^pi(s,a)
+=
+E_pi[G_t | s_t=s,a_t=a]
+</code></pre><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-9-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>9. Action Value</h3>
+<pre><code class="language-text">Q^pi(s,a)
+=
+E_pi[G_t | s_t=s,a_t=a]
+</code></pre><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-9-equation"><summary>สมการ</summary><h3>9. Action Value</h3>
+<pre><code class="language-text">Q^pi(s,a)
+=
+E_pi[G_t | s_t=s,a_t=a]
+</code></pre></details><details id="help-topic-9-visual"><summary>ภาพและ shape</summary><h3>9. Action Value</h3>
+<pre><code class="language-text">Q^pi(s,a)
+=
+E_pi[G_t | s_t=s,a_t=a]
+</code></pre></details><details id="help-topic-9-code"><summary>โค้ด</summary><h3>9. Action Value</h3>
+<pre><code class="language-text">Q^pi(s,a)
+=
+E_pi[G_t | s_t=s,a_t=a]
+</code></pre><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-9-result"><summary>ผลการทดลอง</summary><h3>9. Action Value</h3>
+<pre><code class="language-text">Q^pi(s,a)
+=
+E_pi[G_t | s_t=s,a_t=a]
+</code></pre><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-9"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-10" class="source-topic"><span id="source-38-reinforcement-learning-canonical-10-bellman-expectation-equation" class="legacy-anchor"></span><h3>10. Bellman Expectation Equation</h3>
+<pre><code class="language-text">V^pi(s)
+=
+Σ_a pi(a|s)
+Σ_s' P(s'|s,a)
+[
+R(s,a,s')
++
+gamma V^pi(s')
+]
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>Vπ(s)=Σaπ(a|s)Σs'P(s'|s,a)[r+γVπ(s')]; V*(s)=maxaΣs'P[r+γV*(s')]; terminalcontinuation0</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-10-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Vπ(s)=Σaπ(a|s)Σs'P(s'|s,a)[r+γVπ(s')]; V*(s)=maxaΣs'P[r+γV*(s')]; terminalcontinuation0</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-10-equation"><summary>สมการ</summary><p>Vπ(s)=Σaπ(a|s)Σs'P(s'|s,a)[r+γVπ(s')]; V*(s)=maxaΣs'P[r+γV*(s')]; terminalcontinuation0</p></details><details id="help-topic-10-visual"><summary>ภาพและ shape</summary><p>Vπ(s)=Σaπ(a|s)Σs'P(s'|s,a)[r+γVπ(s')]; V*(s)=maxaΣs'P[r+γV*(s')]; terminalcontinuation0</p></details><details id="help-topic-10-code"><summary>โค้ด</summary><p>Vπ(s)=Σaπ(a|s)Σs'P(s'|s,a)[r+γVπ(s')]; V*(s)=maxaΣs'P[r+γV*(s')]; terminalcontinuation0</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-10-result"><summary>ผลการทดลอง</summary><p>Vπ(s)=Σaπ(a|s)Σs'P(s'|s,a)[r+γVπ(s')]; V*(s)=maxaΣs'P[r+γV*(s')]; terminalcontinuation0</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-10"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-11" class="source-topic"><span id="source-38-reinforcement-learning-canonical-11-bellman-optimality" class="legacy-anchor"></span><h3>11. Bellman Optimality</h3>
+<pre><code class="language-text">Q*(s,a)
+=
+E[
+r
++
+gamma max_a' Q*(s',a')
+]
+</code></pre>
+<p>This recursion motivates Q-Learning.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>Vπ(s)=Σaπ(a|s)Σs'P(s'|s,a)[r+γVπ(s')]; V*(s)=maxaΣs'P[r+γV*(s')]; terminalcontinuation0</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-11-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Vπ(s)=Σaπ(a|s)Σs'P(s'|s,a)[r+γVπ(s')]; V*(s)=maxaΣs'P[r+γV*(s')]; terminalcontinuation0</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-11-equation"><summary>สมการ</summary><p>Vπ(s)=Σaπ(a|s)Σs'P(s'|s,a)[r+γVπ(s')]; V*(s)=maxaΣs'P[r+γV*(s')]; terminalcontinuation0</p></details><details id="help-topic-11-visual"><summary>ภาพและ shape</summary><p>Vπ(s)=Σaπ(a|s)Σs'P(s'|s,a)[r+γVπ(s')]; V*(s)=maxaΣs'P[r+γV*(s')]; terminalcontinuation0</p></details><details id="help-topic-11-code"><summary>โค้ด</summary><p>Vπ(s)=Σaπ(a|s)Σs'P(s'|s,a)[r+γVπ(s')]; V*(s)=maxaΣs'P[r+γV*(s')]; terminalcontinuation0</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-11-result"><summary>ผลการทดลอง</summary><p>Vπ(s)=Σaπ(a|s)Σs'P(s'|s,a)[r+γVπ(s')]; V*(s)=maxaΣs'P[r+γV*(s')]; terminalcontinuation0</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-11"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-12" class="source-topic"><span id="source-38-reinforcement-learning-canonical-12-value-iteration" class="legacy-anchor"></span><h3>12. Value Iteration</h3>
+<p>Repeatedly apply:</p>
+<pre><code class="language-text">V_(k+1)(s)
+=
+max_a
+Σ_s'
+P(s'|s,a)
+[
+R + gamma V_k(s')
+]
+</code></pre>
+<p>until convergence for a finite known MDP.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>สองstates,s0actiongo→terminalr1,stay→s0r0,γ.9 เริ่มV0แล้วupdateได้V(s0)=1และคง1; iterateจนmaxabsdelta&lt;tolerance</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-12-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>สองstates,s0actiongo→terminalr1,stay→s0r0,γ.9 เริ่มV0แล้วupdateได้V(s0)=1และคง1; iterateจนmaxabsdelta&lt;tolerance</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-12-equation"><summary>สมการ</summary><p>สองstates,s0actiongo→terminalr1,stay→s0r0,γ.9 เริ่มV0แล้วupdateได้V(s0)=1และคง1; iterateจนmaxabsdelta&lt;tolerance</p></details><details id="help-topic-12-visual"><summary>ภาพและ shape</summary><p>สองstates,s0actiongo→terminalr1,stay→s0r0,γ.9 เริ่มV0แล้วupdateได้V(s0)=1และคง1; iterateจนmaxabsdelta&lt;tolerance</p></details><details id="help-topic-12-code"><summary>โค้ด</summary><p>สองstates,s0actiongo→terminalr1,stay→s0r0,γ.9 เริ่มV0แล้วupdateได้V(s0)=1และคง1; iterateจนmaxabsdelta&lt;tolerance</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-12-result"><summary>ผลการทดลอง</summary><p>สองstates,s0actiongo→terminalr1,stay→s0r0,γ.9 เริ่มV0แล้วupdateได้V(s0)=1และคง1; iterateจนmaxabsdelta&lt;tolerance</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-12"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-13" class="source-topic"><span id="source-38-reinforcement-learning-canonical-13-q-learning" class="legacy-anchor"></span><h3>13. Q-Learning</h3>
+<p>Model-free TD control:</p>
+<pre><code class="language-text">target
+=
+r
++
+gamma max_a' Q(s',a')
+</code></pre>
+<p>Update:</p>
+<pre><code class="language-text">Q(s,a)
+←
+Q(s,a)
++
+alpha
+[
+target - Q(s,a)
+]
+</code></pre>
+<p>For terminal transitions, do not bootstrap beyond terminal.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>Q(s,a)←Q+α[r+γmaxQ(s',·)−Q]; Q2,r1,nextmax4,γ.5,α.1ให้Q2.1; terminaltargetrเท่านั้น</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-13-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Q(s,a)←Q+α[r+γmaxQ(s',·)−Q]; Q2,r1,nextmax4,γ.5,α.1ให้Q2.1; terminaltargetrเท่านั้น</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-13-equation"><summary>สมการ</summary><p>Q(s,a)←Q+α[r+γmaxQ(s',·)−Q]; Q2,r1,nextmax4,γ.5,α.1ให้Q2.1; terminaltargetrเท่านั้น</p></details><details id="help-topic-13-visual"><summary>ภาพและ shape</summary><p>Q(s,a)←Q+α[r+γmaxQ(s',·)−Q]; Q2,r1,nextmax4,γ.5,α.1ให้Q2.1; terminaltargetrเท่านั้น</p></details><details id="help-topic-13-code"><summary>โค้ด</summary><p>Q(s,a)←Q+α[r+γmaxQ(s',·)−Q]; Q2,r1,nextmax4,γ.5,α.1ให้Q2.1; terminaltargetrเท่านั้น</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-13-result"><summary>ผลการทดลอง</summary><p>Q(s,a)←Q+α[r+γmaxQ(s',·)−Q]; Q2,r1,nextmax4,γ.5,α.1ให้Q2.1; terminaltargetrเท่านั้น</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-13"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-14" class="source-topic"><span id="source-38-reinforcement-learning-canonical-14-temporal-difference-error" class="legacy-anchor"></span><h3>14. Temporal-Difference Error</h3>
+<pre><code class="language-text">delta
+=
+r
++
+gamma V(s')
+-
+V(s)
+</code></pre>
+<p>It measures mismatch between current estimate and one-step bootstrapped target.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>assertterminaltargetไม่ขึ้นกับnextQ,transitionprobsต่อstateactionรวม1และvalueiterationtinyMDPได้V1; seedการsampleactionแยกenvseed</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-14-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>assertterminaltargetไม่ขึ้นกับnextQ,transitionprobsต่อstateactionรวม1และvalueiterationtinyMDPได้V1; seedการsampleactionแยกenvseed</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-14-equation"><summary>สมการ</summary><p>assertterminaltargetไม่ขึ้นกับnextQ,transitionprobsต่อstateactionรวม1และvalueiterationtinyMDPได้V1; seedการsampleactionแยกenvseed</p></details><details id="help-topic-14-visual"><summary>ภาพและ shape</summary><p>assertterminaltargetไม่ขึ้นกับnextQ,transitionprobsต่อstateactionรวม1และvalueiterationtinyMDPได้V1; seedการsampleactionแยกenvseed</p></details><details id="help-topic-14-code"><summary>โค้ด</summary><p>assertterminaltargetไม่ขึ้นกับnextQ,transitionprobsต่อstateactionรวม1และvalueiterationtinyMDPได้V1; seedการsampleactionแยกenvseed</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-14-result"><summary>ผลการทดลอง</summary><p>assertterminaltargetไม่ขึ้นกับnextQ,transitionprobsต่อstateactionรวม1และvalueiterationtinyMDPได้V1; seedการsampleactionแยกenvseed</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-14"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-15" class="source-topic"><span id="source-38-reinforcement-learning-canonical-15-exploration-vs-exploitation" class="legacy-anchor"></span><h3>15. Exploration vs Exploitation</h3>
+<p>Greedy exploitation chooses the currently best action.</p>
+<p>Exploration tries alternatives.</p>
+<p>Common baseline:</p>
+<pre><code class="language-text">epsilon-greedy
+</code></pre>
+<p>With probability epsilon:
+- random action</p>
+<p>Otherwise:
+- argmax Q</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-15-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>15. Exploration vs Exploitation</h3>
+<p>Greedy exploitation chooses the currently best action.</p>
+<p>Exploration tries alternatives.</p>
+<p>Common baseline:</p>
+<pre><code class="language-text">epsilon-greedy
+</code></pre>
+<p>With probability epsilon:
+- random action</p>
+<p>Otherwise:
+- argmax Q</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-15-equation"><summary>สมการ</summary><h3>15. Exploration vs Exploitation</h3>
+<p>Greedy exploitation chooses the currently best action.</p>
+<p>Exploration tries alternatives.</p>
+<p>Common baseline:</p>
+<pre><code class="language-text">epsilon-greedy
+</code></pre>
+<p>With probability epsilon:
+- random action</p>
+<p>Otherwise:
+- argmax Q</p></details><details id="help-topic-15-visual"><summary>ภาพและ shape</summary><h3>15. Exploration vs Exploitation</h3>
+<p>Greedy exploitation chooses the currently best action.</p>
+<p>Exploration tries alternatives.</p>
+<p>Common baseline:</p>
+<pre><code class="language-text">epsilon-greedy
+</code></pre>
+<p>With probability epsilon:
+- random action</p>
+<p>Otherwise:
+- argmax Q</p></details><details id="help-topic-15-code"><summary>โค้ด</summary><h3>15. Exploration vs Exploitation</h3>
+<p>Greedy exploitation chooses the currently best action.</p>
+<p>Exploration tries alternatives.</p>
+<p>Common baseline:</p>
+<pre><code class="language-text">epsilon-greedy
+</code></pre>
+<p>With probability epsilon:
+- random action</p>
+<p>Otherwise:
+- argmax Q</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-15-result"><summary>ผลการทดลอง</summary><h3>15. Exploration vs Exploitation</h3>
+<p>Greedy exploitation chooses the currently best action.</p>
+<p>Exploration tries alternatives.</p>
+<p>Common baseline:</p>
+<pre><code class="language-text">epsilon-greedy
+</code></pre>
+<p>With probability epsilon:
+- random action</p>
+<p>Otherwise:
+- argmax Q</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-15"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-16" class="source-topic"><span id="source-38-reinforcement-learning-canonical-16-epsilon-schedule" class="legacy-anchor"></span><h3>16. Epsilon Schedule</h3>
+<p>Often start with more exploration and decay epsilon.</p>
+<p>Do not decay too quickly or the agent may stop discovering useful behavior.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>ε1สำรวจuniform,ε0greedy; decayเร็วเสี่ยงพลาดactionดี decayช้าสะสมregret; comparecumrewardและactioncoverageหลายseed</p><p>คงbandit/steps เปรียบε.1กับdecay1→.01; reportcumrewardและoptimalactionfractionเฉลี่ยหลายseedพร้อมinterval ไม่เลือกtrajectoryดีที่สุด</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-16-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>ε1สำรวจuniform,ε0greedy; decayเร็วเสี่ยงพลาดactionดี decayช้าสะสมregret; comparecumrewardและactioncoverageหลายseed</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-16-equation"><summary>สมการ</summary><p>ε1สำรวจuniform,ε0greedy; decayเร็วเสี่ยงพลาดactionดี decayช้าสะสมregret; comparecumrewardและactioncoverageหลายseed</p></details><details id="help-topic-16-visual"><summary>ภาพและ shape</summary><p>ε1สำรวจuniform,ε0greedy; decayเร็วเสี่ยงพลาดactionดี decayช้าสะสมregret; comparecumrewardและactioncoverageหลายseed</p></details><details id="help-topic-16-code"><summary>โค้ด</summary><p>ε1สำรวจuniform,ε0greedy; decayเร็วเสี่ยงพลาดactionดี decayช้าสะสมregret; comparecumrewardและactioncoverageหลายseed</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-16-result"><summary>ผลการทดลอง</summary><p>ε1สำรวจuniform,ε0greedy; decayเร็วเสี่ยงพลาดactionดี decayช้าสะสมregret; comparecumrewardและactioncoverageหลายseed</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-16"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-17" class="source-topic"><span id="source-38-reinforcement-learning-canonical-17-dqn" class="legacy-anchor"></span><h3>17. DQN</h3>
+<p>Replace tabular Q with neural network:</p>
+<pre><code class="language-text">state
+↓
+Q-network
+↓
+Q(s,a_1)...Q(s,a_k)
+</code></pre>
+<p>Training target:</p>
+<pre><code class="language-text">y =
+r
++
+gamma
+max_a' Q_target(s',a')
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>recordobs(B,d),action(B,)integer,Q(B,A),chosenQ(B,),rewards/dones(B,),episodereturnและTDerrorfinite</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-17-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>recordobs(B,d),action(B,)integer,Q(B,A),chosenQ(B,),rewards/dones(B,),episodereturnและTDerrorfinite</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-17-equation"><summary>สมการ</summary><p>recordobs(B,d),action(B,)integer,Q(B,A),chosenQ(B,),rewards/dones(B,),episodereturnและTDerrorfinite</p></details><details id="help-topic-17-visual"><summary>ภาพและ shape</summary><p>recordobs(B,d),action(B,)integer,Q(B,A),chosenQ(B,),rewards/dones(B,),episodereturnและTDerrorfinite</p></details><details id="help-topic-17-code"><summary>โค้ด</summary><p>recordobs(B,d),action(B,)integer,Q(B,A),chosenQ(B,),rewards/dones(B,),episodereturnและTDerrorfinite</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-17-result"><summary>ผลการทดลอง</summary><p>recordobs(B,d),action(B,)integer,Q(B,A),chosenQ(B,),rewards/dones(B,),episodereturnและTDerrorfinite</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-17"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-18" class="source-topic"><span id="source-38-reinforcement-learning-canonical-18-replay-buffer" class="legacy-anchor"></span><h3>18. Replay Buffer</h3>
+<p>Store transitions:</p>
+<pre><code class="language-text">(s,a,r,s',done)
+</code></pre>
+<p>Sample mini-batches later.</p>
+<p>Benefits:
+- breaks strong temporal correlation
+- reuses experience
+- improves data efficiency</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>ringbufferเก็บ(s,a,r,snext,terminated)capacity3ใส่4รายการเหลือ3ล่าสุด; samplewithoutreplacementbatch≤sizeและไม่แก้transitionหลังstore</p><p>tabularQO(SA)memory; DQNreplayO(capacity·obsdim),networkforwardO(BP)ตามlayers; envstepcostอาจdominantต้องวัดแยก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-18-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>ringbufferเก็บ(s,a,r,snext,terminated)capacity3ใส่4รายการเหลือ3ล่าสุด; samplewithoutreplacementbatch≤sizeและไม่แก้transitionหลังstore</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-18-equation"><summary>สมการ</summary><p>ringbufferเก็บ(s,a,r,snext,terminated)capacity3ใส่4รายการเหลือ3ล่าสุด; samplewithoutreplacementbatch≤sizeและไม่แก้transitionหลังstore</p></details><details id="help-topic-18-visual"><summary>ภาพและ shape</summary><p>ringbufferเก็บ(s,a,r,snext,terminated)capacity3ใส่4รายการเหลือ3ล่าสุด; samplewithoutreplacementbatch≤sizeและไม่แก้transitionหลังstore</p></details><details id="help-topic-18-code"><summary>โค้ด</summary><p>ringbufferเก็บ(s,a,r,snext,terminated)capacity3ใส่4รายการเหลือ3ล่าสุด; samplewithoutreplacementbatch≤sizeและไม่แก้transitionหลังstore</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-18-result"><summary>ผลการทดลอง</summary><p>ringbufferเก็บ(s,a,r,snext,terminated)capacity3ใส่4รายการเหลือ3ล่าสุด; samplewithoutreplacementbatch≤sizeและไม่แก้transitionหลังstore</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-18"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-19" class="source-topic"><span id="source-38-reinforcement-learning-canonical-19-target-network" class="legacy-anchor"></span><h3>19. Target Network</h3>
+<p>Using the same rapidly-changing network on both sides of the TD target can destabilize learning.</p>
+<p>Maintain:
+- online network
+- target network</p>
+<p>Periodically copy or softly update target parameters.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>tabularQO(SA)memory; DQNreplayO(capacity·obsdim),networkforwardO(BP)ตามlayers; envstepcostอาจdominantต้องวัดแยก</p><p>targetnetworkupdateperiod10→100คงreplay/batch/seed; reportTDvarianceและreturnหลายseedโดยequalenvironmentinteractions</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-19-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>tabularQO(SA)memory; DQNreplayO(capacity·obsdim),networkforwardO(BP)ตามlayers; envstepcostอาจdominantต้องวัดแยก</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-19-equation"><summary>สมการ</summary><p>tabularQO(SA)memory; DQNreplayO(capacity·obsdim),networkforwardO(BP)ตามlayers; envstepcostอาจdominantต้องวัดแยก</p></details><details id="help-topic-19-visual"><summary>ภาพและ shape</summary><p>tabularQO(SA)memory; DQNreplayO(capacity·obsdim),networkforwardO(BP)ตามlayers; envstepcostอาจdominantต้องวัดแยก</p></details><details id="help-topic-19-code"><summary>โค้ด</summary><p>tabularQO(SA)memory; DQNreplayO(capacity·obsdim),networkforwardO(BP)ตามlayers; envstepcostอาจdominantต้องวัดแยก</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-19-result"><summary>ผลการทดลอง</summary><p>tabularQO(SA)memory; DQNreplayO(capacity·obsdim),networkforwardO(BP)ตามlayers; envstepcostอาจdominantต้องวัดแยก</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-19"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-20" class="source-topic"><span id="source-38-reinforcement-learning-canonical-20-dqn-loss" class="legacy-anchor"></span><h3>20. DQN Loss</h3>
+<p>Common:</p>
+<pre><code class="language-text">Huber(
+Q_online(s,a),
+target
+)
+</code></pre>
+<p>Huber/SmoothL1 reduces sensitivity to large TD errors compared with pure squared loss.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>target=r+γ(1−terminated)maxQtarget(s'); r1,nextmax4,γ.5ให้3ถ้าnonterminalและ1ถ้าterminal; truncationไม่จำเป็นต้องterminalตามenvsemantics</p><p>Qtargetnonterminal3,current2,TDerror1,squaredloss1; terminaltarget1,TDerror−1; ข้อนี้ใช้แยกbootstrappingผิดที่terminal</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-20-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>target=r+γ(1−terminated)maxQtarget(s'); r1,nextmax4,γ.5ให้3ถ้าnonterminalและ1ถ้าterminal; truncationไม่จำเป็นต้องterminalตามenvsemantics</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-20-equation"><summary>สมการ</summary><p>target=r+γ(1−terminated)maxQtarget(s'); r1,nextmax4,γ.5ให้3ถ้าnonterminalและ1ถ้าterminal; truncationไม่จำเป็นต้องterminalตามenvsemantics</p></details><details id="help-topic-20-visual"><summary>ภาพและ shape</summary><p>target=r+γ(1−terminated)maxQtarget(s'); r1,nextmax4,γ.5ให้3ถ้าnonterminalและ1ถ้าterminal; truncationไม่จำเป็นต้องterminalตามenvsemantics</p></details><details id="help-topic-20-code"><summary>โค้ด</summary><p>target=r+γ(1−terminated)maxQtarget(s'); r1,nextmax4,γ.5ให้3ถ้าnonterminalและ1ถ้าterminal; truncationไม่จำเป็นต้องterminalตามenvsemantics</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-20-result"><summary>ผลการทดลอง</summary><p>target=r+γ(1−terminated)maxQtarget(s'); r1,nextmax4,γ.5ให้3ถ้าnonterminalและ1ถ้าterminal; truncationไม่จำเป็นต้องterminalตามenvsemantics</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-20"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-21" class="source-topic"><span id="source-38-reinforcement-learning-canonical-21-double-dqn-preview" class="legacy-anchor"></span><h3>21. Double DQN Preview</h3>
+<p>Standard DQN uses max over target values and can overestimate.</p>
+<p>Double DQN separates:
+- action selection by online network
+- action evaluation by target network</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>ทดลอง“doubleDQNลดQoverestimationในnoisybandit”; baselineDQN,เปลี่ยนactionselectiontarget,วัดQbiasต่อtruevalueและreturnfixedseeds</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-21-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>ทดลอง“doubleDQNลดQoverestimationในnoisybandit”; baselineDQN,เปลี่ยนactionselectiontarget,วัดQbiasต่อtruevalueและreturnfixedseeds</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-21-equation"><summary>สมการ</summary><p>ทดลอง“doubleDQNลดQoverestimationในnoisybandit”; baselineDQN,เปลี่ยนactionselectiontarget,วัดQbiasต่อtruevalueและreturnfixedseeds</p></details><details id="help-topic-21-visual"><summary>ภาพและ shape</summary><p>ทดลอง“doubleDQNลดQoverestimationในnoisybandit”; baselineDQN,เปลี่ยนactionselectiontarget,วัดQbiasต่อtruevalueและreturnfixedseeds</p></details><details id="help-topic-21-code"><summary>โค้ด</summary><p>ทดลอง“doubleDQNลดQoverestimationในnoisybandit”; baselineDQN,เปลี่ยนactionselectiontarget,วัดQbiasต่อtruevalueและreturnfixedseeds</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-21-result"><summary>ผลการทดลอง</summary><p>ทดลอง“doubleDQNลดQoverestimationในnoisybandit”; baselineDQN,เปลี่ยนactionselectiontarget,วัดQbiasต่อtruevalueและreturnfixedseeds</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-21"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-22" class="source-topic"><span id="source-38-reinforcement-learning-canonical-22-policy-gradient" class="legacy-anchor"></span><h3>22. Policy Gradient</h3>
+<p>Instead of learning Q then choosing argmax, optimize policy directly.</p>
+<p>REINFORCE objective gradient:</p>
+<pre><code class="language-text">grad J(theta)
+=
+E[
+G_t
+grad log pi_theta(a_t|s_t)
+]
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>REINFORCE gradientloss=−R·logπ(a); banditR1,π[a].25ให้loss1.386294; sampleactionแล้วoptimizerเพิ่มprobactionที่rewardเหนือbaseline</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-22-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>REINFORCE gradientloss=−R·logπ(a); banditR1,π[a].25ให้loss1.386294; sampleactionแล้วoptimizerเพิ่มprobactionที่rewardเหนือbaseline</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-22-equation"><summary>สมการ</summary><p>REINFORCE gradientloss=−R·logπ(a); banditR1,π[a].25ให้loss1.386294; sampleactionแล้วoptimizerเพิ่มprobactionที่rewardเหนือbaseline</p></details><details id="help-topic-22-visual"><summary>ภาพและ shape</summary><p>REINFORCE gradientloss=−R·logπ(a); banditR1,π[a].25ให้loss1.386294; sampleactionแล้วoptimizerเพิ่มprobactionที่rewardเหนือbaseline</p></details><details id="help-topic-22-code"><summary>โค้ด</summary><p>REINFORCE gradientloss=−R·logπ(a); banditR1,π[a].25ให้loss1.386294; sampleactionแล้วoptimizerเพิ่มprobactionที่rewardเหนือbaseline</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-22-result"><summary>ผลการทดลอง</summary><p>REINFORCE gradientloss=−R·logπ(a); banditR1,π[a].25ให้loss1.386294; sampleactionแล้วoptimizerเพิ่มprobactionที่rewardเหนือbaseline</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-22"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-23" class="source-topic"><span id="source-38-reinforcement-learning-canonical-23-why-log-probability" class="legacy-anchor"></span><h3>23. Why log-probability?</h3>
+<p>For sampled action:</p>
+<pre><code class="language-text">log pi(a|s)
+</code></pre>
+<p>gives a differentiable surrogate.</p>
+<p>Positive return:
+- increase probability</p>
+<p>Negative/low advantage:
+- decrease probability</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>REINFORCE gradientloss=−R·logπ(a); banditR1,π[a].25ให้loss1.386294; sampleactionแล้วoptimizerเพิ่มprobactionที่rewardเหนือbaseline</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-23-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>REINFORCE gradientloss=−R·logπ(a); banditR1,π[a].25ให้loss1.386294; sampleactionแล้วoptimizerเพิ่มprobactionที่rewardเหนือbaseline</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-23-equation"><summary>สมการ</summary><p>REINFORCE gradientloss=−R·logπ(a); banditR1,π[a].25ให้loss1.386294; sampleactionแล้วoptimizerเพิ่มprobactionที่rewardเหนือbaseline</p></details><details id="help-topic-23-visual"><summary>ภาพและ shape</summary><p>REINFORCE gradientloss=−R·logπ(a); banditR1,π[a].25ให้loss1.386294; sampleactionแล้วoptimizerเพิ่มprobactionที่rewardเหนือbaseline</p></details><details id="help-topic-23-code"><summary>โค้ด</summary><p>REINFORCE gradientloss=−R·logπ(a); banditR1,π[a].25ให้loss1.386294; sampleactionแล้วoptimizerเพิ่มprobactionที่rewardเหนือbaseline</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-23-result"><summary>ผลการทดลอง</summary><p>REINFORCE gradientloss=−R·logπ(a); banditR1,π[a].25ให้loss1.386294; sampleactionแล้วoptimizerเพิ่มprobactionที่rewardเหนือbaseline</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-23"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-24" class="source-topic"><span id="source-38-reinforcement-learning-canonical-24-baseline" class="legacy-anchor"></span><h3>24. Baseline</h3>
+<p>Subtract a baseline b(s):</p>
+<pre><code class="language-text">G_t - b(s_t)
+</code></pre>
+<p>This can reduce gradient variance without changing the expected policy-gradient direction when used correctly.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>advantageA=G−Vφ(s),policyใช้stopgradient(A); valueloss(MSE(V,G))ฝึกbaselineแยกและไม่backproppolicylossเข้าGหรือbaselineโดยผิดตั้งใจ</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-24-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>advantageA=G−Vφ(s),policyใช้stopgradient(A); valueloss(MSE(V,G))ฝึกbaselineแยกและไม่backproppolicylossเข้าGหรือbaselineโดยผิดตั้งใจ</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-24-equation"><summary>สมการ</summary><p>advantageA=G−Vφ(s),policyใช้stopgradient(A); valueloss(MSE(V,G))ฝึกbaselineแยกและไม่backproppolicylossเข้าGหรือbaselineโดยผิดตั้งใจ</p></details><details id="help-topic-24-visual"><summary>ภาพและ shape</summary><p>advantageA=G−Vφ(s),policyใช้stopgradient(A); valueloss(MSE(V,G))ฝึกbaselineแยกและไม่backproppolicylossเข้าGหรือbaselineโดยผิดตั้งใจ</p></details><details id="help-topic-24-code"><summary>โค้ด</summary><p>advantageA=G−Vφ(s),policyใช้stopgradient(A); valueloss(MSE(V,G))ฝึกbaselineแยกและไม่backproppolicylossเข้าGหรือbaselineโดยผิดตั้งใจ</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-24-result"><summary>ผลการทดลอง</summary><p>advantageA=G−Vφ(s),policyใช้stopgradient(A); valueloss(MSE(V,G))ฝึกbaselineแยกและไม่backproppolicylossเข้าGหรือbaselineโดยผิดตั้งใจ</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-24"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-25" class="source-topic"><span id="source-38-reinforcement-learning-canonical-25-advantage" class="legacy-anchor"></span><h3>25. Advantage</h3>
+<pre><code class="language-text">A(s,a)
+=
+Q(s,a)
+-
+V(s)
+</code></pre>
+<p>Actor-critic methods estimate how much better an action was than the state's baseline expectation.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>advantageA=G−Vφ(s),policyใช้stopgradient(A); valueloss(MSE(V,G))ฝึกbaselineแยกและไม่backproppolicylossเข้าGหรือbaselineโดยผิดตั้งใจ</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-25-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>advantageA=G−Vφ(s),policyใช้stopgradient(A); valueloss(MSE(V,G))ฝึกbaselineแยกและไม่backproppolicylossเข้าGหรือbaselineโดยผิดตั้งใจ</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-25-equation"><summary>สมการ</summary><p>advantageA=G−Vφ(s),policyใช้stopgradient(A); valueloss(MSE(V,G))ฝึกbaselineแยกและไม่backproppolicylossเข้าGหรือbaselineโดยผิดตั้งใจ</p></details><details id="help-topic-25-visual"><summary>ภาพและ shape</summary><p>advantageA=G−Vφ(s),policyใช้stopgradient(A); valueloss(MSE(V,G))ฝึกbaselineแยกและไม่backproppolicylossเข้าGหรือbaselineโดยผิดตั้งใจ</p></details><details id="help-topic-25-code"><summary>โค้ด</summary><p>advantageA=G−Vφ(s),policyใช้stopgradient(A); valueloss(MSE(V,G))ฝึกbaselineแยกและไม่backproppolicylossเข้าGหรือbaselineโดยผิดตั้งใจ</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-25-result"><summary>ผลการทดลอง</summary><p>advantageA=G−Vφ(s),policyใช้stopgradient(A); valueloss(MSE(V,G))ฝึกbaselineแยกและไม่backproppolicylossเข้าGหรือbaselineโดยผิดตั้งใจ</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-25"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-26" class="source-topic"><span id="source-38-reinforcement-learning-canonical-26-actor-critic" class="legacy-anchor"></span><h3>26. Actor-Critic</h3>
+<p>Actor:
+- policy pi(a|s)</p>
+<p>Critic:
+- V(s) or Q(s,a)</p>
+<p>Critic provides lower-variance learning signal.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-26-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>26. Actor-Critic</h3>
+<p>Actor:
+- policy pi(a|s)</p>
+<p>Critic:
+- V(s) or Q(s,a)</p>
+<p>Critic provides lower-variance learning signal.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-26-equation"><summary>สมการ</summary><h3>26. Actor-Critic</h3>
+<p>Actor:
+- policy pi(a|s)</p>
+<p>Critic:
+- V(s) or Q(s,a)</p>
+<p>Critic provides lower-variance learning signal.</p></details><details id="help-topic-26-visual"><summary>ภาพและ shape</summary><h3>26. Actor-Critic</h3>
+<p>Actor:
+- policy pi(a|s)</p>
+<p>Critic:
+- V(s) or Q(s,a)</p>
+<p>Critic provides lower-variance learning signal.</p></details><details id="help-topic-26-code"><summary>โค้ด</summary><h3>26. Actor-Critic</h3>
+<p>Actor:
+- policy pi(a|s)</p>
+<p>Critic:
+- V(s) or Q(s,a)</p>
+<p>Critic provides lower-variance learning signal.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-26-result"><summary>ผลการทดลอง</summary><h3>26. Actor-Critic</h3>
+<p>Actor:
+- policy pi(a|s)</p>
+<p>Critic:
+- V(s) or Q(s,a)</p>
+<p>Critic provides lower-variance learning signal.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-26"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-27" class="source-topic"><span id="source-38-reinforcement-learning-canonical-27-generalized-advantage-estimation" class="legacy-anchor"></span><h3>27. Generalized Advantage Estimation</h3>
+<p>GAE combines TD residuals across time:</p>
+<pre><code class="language-text">A_t^GAE
+=
+delta_t
++
+gamma lambda delta_(t+1)
++ ...
+</code></pre>
+<p>lambda controls bias/variance trade-off.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-27-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>27. Generalized Advantage Estimation</h3>
+<p>GAE combines TD residuals across time:</p>
+<pre><code class="language-text">A_t^GAE
+=
+delta_t
++
+gamma lambda delta_(t+1)
++ ...
+</code></pre>
+<p>lambda controls bias/variance trade-off.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-27-equation"><summary>สมการ</summary><h3>27. Generalized Advantage Estimation</h3>
+<p>GAE combines TD residuals across time:</p>
+<pre><code class="language-text">A_t^GAE
+=
+delta_t
++
+gamma lambda delta_(t+1)
++ ...
+</code></pre>
+<p>lambda controls bias/variance trade-off.</p></details><details id="help-topic-27-visual"><summary>ภาพและ shape</summary><h3>27. Generalized Advantage Estimation</h3>
+<p>GAE combines TD residuals across time:</p>
+<pre><code class="language-text">A_t^GAE
+=
+delta_t
++
+gamma lambda delta_(t+1)
++ ...
+</code></pre>
+<p>lambda controls bias/variance trade-off.</p></details><details id="help-topic-27-code"><summary>โค้ด</summary><h3>27. Generalized Advantage Estimation</h3>
+<p>GAE combines TD residuals across time:</p>
+<pre><code class="language-text">A_t^GAE
+=
+delta_t
++
+gamma lambda delta_(t+1)
++ ...
+</code></pre>
+<p>lambda controls bias/variance trade-off.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-27-result"><summary>ผลการทดลอง</summary><h3>27. Generalized Advantage Estimation</h3>
+<p>GAE combines TD residuals across time:</p>
+<pre><code class="language-text">A_t^GAE
+=
+delta_t
++
+gamma lambda delta_(t+1)
++ ...
+</code></pre>
+<p>lambda controls bias/variance trade-off.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-27"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-28" class="source-topic"><span id="source-38-reinforcement-learning-canonical-28-ppo" class="legacy-anchor"></span><h3>28. PPO</h3>
+<p>PPO reuses sampled trajectories while constraining large policy updates.</p>
+<p>Probability ratio:</p>
+<pre><code class="language-text">r_t(theta)
+=
+pi_theta(a_t|s_t)
+/
+pi_old(a_t|s_t)
+</code></pre>
+<p>Clipped objective:</p>
+<pre><code class="language-text">min(
+r_t A_t,
+clip(r_t,1-epsilon,1+epsilon) A_t
+)
+</code></pre>
+<p>Maximize this surrogate.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>A2,ratio1.3,ε.2 surrogate=min(2.6,2.4)=2.4; A−2,ratio.7ได้min(−1.4,−1.6)=−1.6; lossคือลบmean</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-28-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>A2,ratio1.3,ε.2 surrogate=min(2.6,2.4)=2.4; A−2,ratio.7ได้min(−1.4,−1.6)=−1.6; lossคือลบmean</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-28-equation"><summary>สมการ</summary><p>A2,ratio1.3,ε.2 surrogate=min(2.6,2.4)=2.4; A−2,ratio.7ได้min(−1.4,−1.6)=−1.6; lossคือลบmean</p></details><details id="help-topic-28-visual"><summary>ภาพและ shape</summary><p>A2,ratio1.3,ε.2 surrogate=min(2.6,2.4)=2.4; A−2,ratio.7ได้min(−1.4,−1.6)=−1.6; lossคือลบmean</p></details><details id="help-topic-28-code"><summary>โค้ด</summary><p>A2,ratio1.3,ε.2 surrogate=min(2.6,2.4)=2.4; A−2,ratio.7ได้min(−1.4,−1.6)=−1.6; lossคือลบmean</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-28-result"><summary>ผลการทดลอง</summary><p>A2,ratio1.3,ε.2 surrogate=min(2.6,2.4)=2.4; A−2,ratio.7ได้min(−1.4,−1.6)=−1.6; lossคือลบmean</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-28"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-29" class="source-topic"><span id="source-38-reinforcement-learning-canonical-29-why-clipping" class="legacy-anchor"></span><h3>29. Why Clipping?</h3>
+<p>Large policy changes can destroy behavior learned from the data that generated the trajectory.</p>
+<p>Clipping limits incentive to move the action probability ratio too far.</p>
+<p>It is not a hard guarantee that the policy changes by a fixed amount.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>A2,ratio1.3,ε.2 surrogate=min(2.6,2.4)=2.4; A−2,ratio.7ได้min(−1.4,−1.6)=−1.6; lossคือลบmean</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-29-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>A2,ratio1.3,ε.2 surrogate=min(2.6,2.4)=2.4; A−2,ratio.7ได้min(−1.4,−1.6)=−1.6; lossคือลบmean</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-29-equation"><summary>สมการ</summary><p>A2,ratio1.3,ε.2 surrogate=min(2.6,2.4)=2.4; A−2,ratio.7ได้min(−1.4,−1.6)=−1.6; lossคือลบmean</p></details><details id="help-topic-29-visual"><summary>ภาพและ shape</summary><p>A2,ratio1.3,ε.2 surrogate=min(2.6,2.4)=2.4; A−2,ratio.7ได้min(−1.4,−1.6)=−1.6; lossคือลบmean</p></details><details id="help-topic-29-code"><summary>โค้ด</summary><p>A2,ratio1.3,ε.2 surrogate=min(2.6,2.4)=2.4; A−2,ratio.7ได้min(−1.4,−1.6)=−1.6; lossคือลบmean</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-29-result"><summary>ผลการทดลอง</summary><p>A2,ratio1.3,ε.2 surrogate=min(2.6,2.4)=2.4; A−2,ratio.7ได้min(−1.4,−1.6)=−1.6; lossคือลบmean</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-29"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-30" class="source-topic"><span id="source-38-reinforcement-learning-canonical-30-entropy-bonus" class="legacy-anchor"></span><h3>30. Entropy Bonus</h3>
+<p>Policy entropy:</p>
+<pre><code class="language-text">H(pi(.|s))
+</code></pre>
+<p>can encourage exploration.</p>
+<p>Too much entropy pressure prevents policy concentration.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-30-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>30. Entropy Bonus</h3>
+<p>Policy entropy:</p>
+<pre><code class="language-text">H(pi(.|s))
+</code></pre>
+<p>can encourage exploration.</p>
+<p>Too much entropy pressure prevents policy concentration.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-30-equation"><summary>สมการ</summary><h3>30. Entropy Bonus</h3>
+<p>Policy entropy:</p>
+<pre><code class="language-text">H(pi(.|s))
+</code></pre>
+<p>can encourage exploration.</p>
+<p>Too much entropy pressure prevents policy concentration.</p></details><details id="help-topic-30-visual"><summary>ภาพและ shape</summary><h3>30. Entropy Bonus</h3>
+<p>Policy entropy:</p>
+<pre><code class="language-text">H(pi(.|s))
+</code></pre>
+<p>can encourage exploration.</p>
+<p>Too much entropy pressure prevents policy concentration.</p></details><details id="help-topic-30-code"><summary>โค้ด</summary><h3>30. Entropy Bonus</h3>
+<p>Policy entropy:</p>
+<pre><code class="language-text">H(pi(.|s))
+</code></pre>
+<p>can encourage exploration.</p>
+<p>Too much entropy pressure prevents policy concentration.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-30-result"><summary>ผลการทดลอง</summary><h3>30. Entropy Bonus</h3>
+<p>Policy entropy:</p>
+<pre><code class="language-text">H(pi(.|s))
+</code></pre>
+<p>can encourage exploration.</p>
+<p>Too much entropy pressure prevents policy concentration.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-30"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-31" class="source-topic"><span id="source-38-reinforcement-learning-canonical-31-on-policy-vs-off-policy" class="legacy-anchor"></span><h3>31. On-Policy vs Off-Policy</h3>
+<p>On-policy:
+- train mainly from data collected by current/recent policy
+- examples: REINFORCE, PPO</p>
+<p>Off-policy:
+- can learn from data generated by different behavior policy
+- examples: Q-Learning, DQN</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-31-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>31. On-Policy vs Off-Policy</h3>
+<p>On-policy:
+- train mainly from data collected by current/recent policy
+- examples: REINFORCE, PPO</p>
+<p>Off-policy:
+- can learn from data generated by different behavior policy
+- examples: Q-Learning, DQN</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-31-equation"><summary>สมการ</summary><h3>31. On-Policy vs Off-Policy</h3>
+<p>On-policy:
+- train mainly from data collected by current/recent policy
+- examples: REINFORCE, PPO</p>
+<p>Off-policy:
+- can learn from data generated by different behavior policy
+- examples: Q-Learning, DQN</p></details><details id="help-topic-31-visual"><summary>ภาพและ shape</summary><h3>31. On-Policy vs Off-Policy</h3>
+<p>On-policy:
+- train mainly from data collected by current/recent policy
+- examples: REINFORCE, PPO</p>
+<p>Off-policy:
+- can learn from data generated by different behavior policy
+- examples: Q-Learning, DQN</p></details><details id="help-topic-31-code"><summary>โค้ด</summary><h3>31. On-Policy vs Off-Policy</h3>
+<p>On-policy:
+- train mainly from data collected by current/recent policy
+- examples: REINFORCE, PPO</p>
+<p>Off-policy:
+- can learn from data generated by different behavior policy
+- examples: Q-Learning, DQN</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-31-result"><summary>ผลการทดลอง</summary><h3>31. On-Policy vs Off-Policy</h3>
+<p>On-policy:
+- train mainly from data collected by current/recent policy
+- examples: REINFORCE, PPO</p>
+<p>Off-policy:
+- can learn from data generated by different behavior policy
+- examples: Q-Learning, DQN</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-31"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-32" class="source-topic"><span id="source-38-reinforcement-learning-canonical-32-reward-design" class="legacy-anchor"></span><h3>32. Reward Design</h3>
+<p>Bad rewards can produce unintended policies.</p>
+<p>Always inspect behavior, not only aggregate reward.</p>
+<p>Reward hacking/specification gaming becomes increasingly important in alignment chapters.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>manifestเก็บenvversion/reward/terminationpolicy/γ/α/εschedule/seeds/replay/targetperiod/steps/checkpointและevaluationepisodes</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-32-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>manifestเก็บenvversion/reward/terminationpolicy/γ/α/εschedule/seeds/replay/targetperiod/steps/checkpointและevaluationepisodes</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-32-equation"><summary>สมการ</summary><p>manifestเก็บenvversion/reward/terminationpolicy/γ/α/εschedule/seeds/replay/targetperiod/steps/checkpointและevaluationepisodes</p></details><details id="help-topic-32-visual"><summary>ภาพและ shape</summary><p>manifestเก็บenvversion/reward/terminationpolicy/γ/α/εschedule/seeds/replay/targetperiod/steps/checkpointและevaluationepisodes</p></details><details id="help-topic-32-code"><summary>โค้ด</summary><p>manifestเก็บenvversion/reward/terminationpolicy/γ/α/εschedule/seeds/replay/targetperiod/steps/checkpointและevaluationepisodes</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-32-result"><summary>ผลการทดลอง</summary><p>manifestเก็บenvversion/reward/terminationpolicy/γ/α/εschedule/seeds/replay/targetperiod/steps/checkpointและevaluationepisodes</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-32"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-33" class="source-topic"><span id="source-38-reinforcement-learning-canonical-33-evaluation" class="legacy-anchor"></span><h3>33. Evaluation</h3>
+<p>Separate:
+- training exploration returns
+- deterministic/stochastic evaluation returns</p>
+<p>Use multiple seeds because RL variance can be high.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>evalยังเปิดεสูงทำmetricปนexploration; train/testenvironmentseedsแยกและreportevaluationpolicyε; tunedrewardไม่แทนrealobjectiveอัตโนมัติ</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-33-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>evalยังเปิดεสูงทำmetricปนexploration; train/testenvironmentseedsแยกและreportevaluationpolicyε; tunedrewardไม่แทนrealobjectiveอัตโนมัติ</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-33-equation"><summary>สมการ</summary><p>evalยังเปิดεสูงทำmetricปนexploration; train/testenvironmentseedsแยกและreportevaluationpolicyε; tunedrewardไม่แทนrealobjectiveอัตโนมัติ</p></details><details id="help-topic-33-visual"><summary>ภาพและ shape</summary><p>evalยังเปิดεสูงทำmetricปนexploration; train/testenvironmentseedsแยกและreportevaluationpolicyε; tunedrewardไม่แทนrealobjectiveอัตโนมัติ</p></details><details id="help-topic-33-code"><summary>โค้ด</summary><p>evalยังเปิดεสูงทำmetricปนexploration; train/testenvironmentseedsแยกและreportevaluationpolicyε; tunedrewardไม่แทนrealobjectiveอัตโนมัติ</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-33-result"><summary>ผลการทดลอง</summary><p>evalยังเปิดεสูงทำmetricปนexploration; train/testenvironmentseedsแยกและreportevaluationpolicyε; tunedrewardไม่แทนrealobjectiveอัตโนมัติ</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-33"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-34" class="source-topic"><span id="source-38-reinforcement-learning-canonical-34-from-scratch" class="legacy-anchor"></span><h3>34. From Scratch</h3>
+<p>src/rl_numpy.py includes:</p>
+<ul>
+<li>discounted_returns</li>
+<li>bellman_optimality_backup</li>
+<li>q_learning_update</li>
+<li>epsilon_greedy</li>
+<li>ppo_clipped_surrogate</li>
+</ul><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>NumPyBellmanbackupเทียบexplicitenumerationบนtransitiontable; DQNtargettorch.no_gradต้องตรงtinyfixtureรวมterminalmask</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-34-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>NumPyBellmanbackupเทียบexplicitenumerationบนtransitiontable; DQNtargettorch.no_gradต้องตรงtinyfixtureรวมterminalmask</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-34-equation"><summary>สมการ</summary><p>NumPyBellmanbackupเทียบexplicitenumerationบนtransitiontable; DQNtargettorch.no_gradต้องตรงtinyfixtureรวมterminalmask</p></details><details id="help-topic-34-visual"><summary>ภาพและ shape</summary><p>NumPyBellmanbackupเทียบexplicitenumerationบนtransitiontable; DQNtargettorch.no_gradต้องตรงtinyfixtureรวมterminalmask</p></details><details id="help-topic-34-code"><summary>โค้ด</summary><p>NumPyBellmanbackupเทียบexplicitenumerationบนtransitiontable; DQNtargettorch.no_gradต้องตรงtinyfixtureรวมterminalmask</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-34-result"><summary>ผลการทดลอง</summary><p>NumPyBellmanbackupเทียบexplicitenumerationบนtransitiontable; DQNtargettorch.no_gradต้องตรงtinyfixtureรวมterminalmask</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-34"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-35" class="source-topic"><span id="source-38-reinforcement-learning-canonical-35-common-mistakes" class="legacy-anchor"></span><h3>35. Common Mistakes</h3>
+<ol>
+<li>bootstrapping terminal states</li>
+<li>mixing reward and return</li>
+<li>epsilon never decays or decays too fast</li>
+<li>replay target with wrong done mask</li>
+<li>target network never updated</li>
+<li>action tensor used with wrong Q dimension</li>
+<li>policy loss sign reversed</li>
+<li>advantage not detached when intended</li>
+<li>PPO ratio built from wrong old log-probabilities</li>
+<li>reporting one lucky random seed</li>
+</ol><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-35-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>35. Common Mistakes</h3>
+<ol>
+<li>bootstrapping terminal states</li>
+<li>mixing reward and return</li>
+<li>epsilon never decays or decays too fast</li>
+<li>replay target with wrong done mask</li>
+<li>target network never updated</li>
+<li>action tensor used with wrong Q dimension</li>
+<li>policy loss sign reversed</li>
+<li>advantage not detached when intended</li>
+<li>PPO ratio built from wrong old log-probabilities</li>
+<li>reporting one lucky random seed</li>
+</ol><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-35-equation"><summary>สมการ</summary><h3>35. Common Mistakes</h3>
+<ol>
+<li>bootstrapping terminal states</li>
+<li>mixing reward and return</li>
+<li>epsilon never decays or decays too fast</li>
+<li>replay target with wrong done mask</li>
+<li>target network never updated</li>
+<li>action tensor used with wrong Q dimension</li>
+<li>policy loss sign reversed</li>
+<li>advantage not detached when intended</li>
+<li>PPO ratio built from wrong old log-probabilities</li>
+<li>reporting one lucky random seed</li>
+</ol></details><details id="help-topic-35-visual"><summary>ภาพและ shape</summary><h3>35. Common Mistakes</h3>
+<ol>
+<li>bootstrapping terminal states</li>
+<li>mixing reward and return</li>
+<li>epsilon never decays or decays too fast</li>
+<li>replay target with wrong done mask</li>
+<li>target network never updated</li>
+<li>action tensor used with wrong Q dimension</li>
+<li>policy loss sign reversed</li>
+<li>advantage not detached when intended</li>
+<li>PPO ratio built from wrong old log-probabilities</li>
+<li>reporting one lucky random seed</li>
+</ol></details><details id="help-topic-35-code"><summary>โค้ด</summary><h3>35. Common Mistakes</h3>
+<ol>
+<li>bootstrapping terminal states</li>
+<li>mixing reward and return</li>
+<li>epsilon never decays or decays too fast</li>
+<li>replay target with wrong done mask</li>
+<li>target network never updated</li>
+<li>action tensor used with wrong Q dimension</li>
+<li>policy loss sign reversed</li>
+<li>advantage not detached when intended</li>
+<li>PPO ratio built from wrong old log-probabilities</li>
+<li>reporting one lucky random seed</li>
+</ol><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-35-result"><summary>ผลการทดลอง</summary><h3>35. Common Mistakes</h3>
+<ol>
+<li>bootstrapping terminal states</li>
+<li>mixing reward and return</li>
+<li>epsilon never decays or decays too fast</li>
+<li>replay target with wrong done mask</li>
+<li>target network never updated</li>
+<li>action tensor used with wrong Q dimension</li>
+<li>policy loss sign reversed</li>
+<li>advantage not detached when intended</li>
+<li>PPO ratio built from wrong old log-probabilities</li>
+<li>reporting one lucky random seed</li>
+</ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-35"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-36" class="source-topic"><span id="source-38-reinforcement-learning-canonical-36-exercises-mini-project" class="legacy-anchor"></span><h3>36. Exercises / Mini Project</h3>
+<ul>
+<li><a href="../38-reinforcement-learning/exercises/README.md">Exercises</a></li>
+<li><a href="../38-reinforcement-learning/solutions/README.md">Solutions</a></li>
+<li><a href="../38-reinforcement-learning/mini-project/README.md">Mini Project</a></li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-36-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>36. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-36-equation"><summary>สมการ</summary><h3>36. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-36-visual"><summary>ภาพและ shape</summary><h3>36. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-36-code"><summary>โค้ด</summary><h3>36. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-36-result"><summary>ผลการทดลอง</summary><h3>36. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-36"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-37" class="source-topic"><span id="source-38-reinforcement-learning-canonical-37-checklist" class="legacy-anchor"></span><h3>37. Checklist</h3>
+<ul>
+<li>[ ] MDP</li>
+<li>[ ] return / gamma</li>
+<li>[ ] V / Q</li>
+<li>[ ] Bellman equations</li>
+<li>[ ] Q-Learning</li>
+<li>[ ] epsilon-greedy</li>
+<li>[ ] DQN</li>
+<li>[ ] replay / target network</li>
+<li>[ ] REINFORCE</li>
+<li>[ ] advantage</li>
+<li>[ ] actor-critic</li>
+<li>[ ] PPO clipping</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-37-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>37. Checklist</h3>
+<ul>
+<li>[ ] MDP</li>
+<li>[ ] return / gamma</li>
+<li>[ ] V / Q</li>
+<li>[ ] Bellman equations</li>
+<li>[ ] Q-Learning</li>
+<li>[ ] epsilon-greedy</li>
+<li>[ ] DQN</li>
+<li>[ ] replay / target network</li>
+<li>[ ] REINFORCE</li>
+<li>[ ] advantage</li>
+<li>[ ] actor-critic</li>
+<li>[ ] PPO clipping</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-37-equation"><summary>สมการ</summary><h3>37. Checklist</h3>
+<ul>
+<li>[ ] MDP</li>
+<li>[ ] return / gamma</li>
+<li>[ ] V / Q</li>
+<li>[ ] Bellman equations</li>
+<li>[ ] Q-Learning</li>
+<li>[ ] epsilon-greedy</li>
+<li>[ ] DQN</li>
+<li>[ ] replay / target network</li>
+<li>[ ] REINFORCE</li>
+<li>[ ] advantage</li>
+<li>[ ] actor-critic</li>
+<li>[ ] PPO clipping</li>
+</ul></details><details id="help-topic-37-visual"><summary>ภาพและ shape</summary><h3>37. Checklist</h3>
+<ul>
+<li>[ ] MDP</li>
+<li>[ ] return / gamma</li>
+<li>[ ] V / Q</li>
+<li>[ ] Bellman equations</li>
+<li>[ ] Q-Learning</li>
+<li>[ ] epsilon-greedy</li>
+<li>[ ] DQN</li>
+<li>[ ] replay / target network</li>
+<li>[ ] REINFORCE</li>
+<li>[ ] advantage</li>
+<li>[ ] actor-critic</li>
+<li>[ ] PPO clipping</li>
+</ul></details><details id="help-topic-37-code"><summary>โค้ด</summary><h3>37. Checklist</h3>
+<ul>
+<li>[ ] MDP</li>
+<li>[ ] return / gamma</li>
+<li>[ ] V / Q</li>
+<li>[ ] Bellman equations</li>
+<li>[ ] Q-Learning</li>
+<li>[ ] epsilon-greedy</li>
+<li>[ ] DQN</li>
+<li>[ ] replay / target network</li>
+<li>[ ] REINFORCE</li>
+<li>[ ] advantage</li>
+<li>[ ] actor-critic</li>
+<li>[ ] PPO clipping</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-37-result"><summary>ผลการทดลอง</summary><h3>37. Checklist</h3>
+<ul>
+<li>[ ] MDP</li>
+<li>[ ] return / gamma</li>
+<li>[ ] V / Q</li>
+<li>[ ] Bellman equations</li>
+<li>[ ] Q-Learning</li>
+<li>[ ] epsilon-greedy</li>
+<li>[ ] DQN</li>
+<li>[ ] replay / target network</li>
+<li>[ ] REINFORCE</li>
+<li>[ ] advantage</li>
+<li>[ ] actor-critic</li>
+<li>[ ] PPO clipping</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-37"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-38" class="source-topic"><span id="source-38-reinforcement-learning-canonical-38-whats-next" class="legacy-anchor"></span><span id="source-38-reinforcement-learning-canonical-38-reinforcement-learning-reinforcement-learning" class="legacy-anchor"></span><h3>38. What's Next</h3>
+<p>Chapter 39 unifies the major families of generative modeling before the dedicated diffusion chapter.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-38-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>38. What's Next</h3>
+<p>Chapter 39 unifies the major families of generative modeling before the dedicated diffusion chapter.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-38-equation"><summary>สมการ</summary><h3>38. What's Next</h3>
+<p>Chapter 39 unifies the major families of generative modeling before the dedicated diffusion chapter.</p></details><details id="help-topic-38-visual"><summary>ภาพและ shape</summary><h3>38. What's Next</h3>
+<p>Chapter 39 unifies the major families of generative modeling before the dedicated diffusion chapter.</p></details><details id="help-topic-38-code"><summary>โค้ด</summary><h3>38. What's Next</h3>
+<p>Chapter 39 unifies the major families of generative modeling before the dedicated diffusion chapter.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-38-result"><summary>ผลการทดลอง</summary><h3>38. What's Next</h3>
+<p>Chapter 39 unifies the major families of generative modeling before the dedicated diffusion chapter.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-38"> อ่านหัวข้อนี้แล้ว</label></section><details><summary>รายละเอียดเพิ่มเติมและข้อกำหนดของ local lab</summary><h3>38-reinforcement-learning — Reinforcement Learning</h3>
+<p><strong>Prerequisites:</strong> Complete 37-graph-neural-networks; be able to trace array/tensor shapes, separate train/validation/test data, and explain the core objective of the current chapter.</p>
+<p><strong>Mental model:</strong> Treat Reinforcement Learning as a pipeline: input representation → central mechanism → objective/state update → observable output. At every boundary, state shape/state, allowed information flow, and the invariant that should remain true.</p>
+<p><strong>Code walkthrough:</strong> Read public API first, then input checks, state/shape transformations, numerical core, returned values and tests. Connect each important code block to the equation or algorithm in the chapter README.</p>
+<p><strong>Visualization / inspection:</strong> Use a tiny case. Inspect intermediate values, distributions, norms, scores, states or trajectories appropriate to Reinforcement Learning; do not rely only on the final metric.</p>
+<p><strong>Experiment:</strong> Run a baseline, one controlled parameter change, one edge case and one repeated seeded comparison. Record seed, environment, data version, configuration and metric.</p>
+<p><strong>Limitations:</strong> List at least one assumption, one data-related limitation, one numerical/optimization limitation and one scaling limitation for Reinforcement Learning.</p>
+<p><strong>Analysis workflow:</strong> Check inputs → preprocessing → shapes/state → finite numerical values → objective/update → evaluation protocol. The earliest unexpected state is more informative than a downstream metric.</p>
+<p><strong>Performance:</strong> Identify the dominant time and memory terms and measure them on the local learning run before attempting optimization.</p>
+<p><strong>Production perspective:</strong> Define input validation, artifact/configuration versioning, quality and resource measurements, staged release criteria and a way to return to the previous known-good artifact.</p>
+<p><strong>Research perspective:</strong> State a falsifiable hypothesis, baseline, one-factor change, metric, repeated-run plan when stochastic, and how negative results will be recorded.</p>
+<p><strong>Interview questions:</strong>
+1. Explain Reinforcement Learning from first principles without naming a library API.
+2. Trace one input through the central mechanism and give the important intermediate shapes/state.
+3. Name the strongest assumption and a case where it fails.
+4. State the dominant compute/memory cost.
+5. Describe how you would validate a new implementation against a trusted baseline.</p>
+<p><strong>Summary / exit condition:</strong> You may move on when you can explain, derive or trace, implement, test, analyze, measure and evaluate Reinforcement Learning, and when the chapter mini-project plus twenty total exercises are complete.</p></details></section><section id="objective-evidence" class="canonical-section"><h2>พิสูจน์ความสามารถทีละ objective</h2><p>ทำกรณีใหม่ก่อนเปิด reference แล้วบันทึกงานด้านล่าง ให้ผู้ตรวจใช้ rubric ตรวจคำอธิบาย ผลคำนวณ โค้ด และข้อจำกัด บันทึกเก็บในเบราว์เซอร์เครื่องนี้ กดส่งออกเพื่อสำรองหรือส่งให้ผู้ตรวจ เว็บไม่ได้รันโค้ดหรือตัดสินผลงานแทนผู้ตรวจ</p><button type="button" class="secondary-button" data-export-evidence>ส่งออกหลักฐานบทนี้เป็น JSON</button><p role="status" id="evidence-export-status"></p><details id="ch38-objective-01" class="objective-proof"><summary>define an MDP</summary><p>define an MDP: ใช้กรณีในหัวข้อ Markov Decision Process, Markov Property เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch38-evidence-01"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch38-evidence-01-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch38-evidence-01-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch38-evidence-01-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch38-evidence-01-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch38-evidence-01-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch38-evidence-01-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch38-evidence-01-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch38-evidence-01-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>3. Markov Decision Process</h3>
+<p>An MDP contains:</p>
+<pre><code class="language-text">(S, A, P, R, gamma)
+</code></pre>
+<p>where:
+- S: states
+- A: actions
+- P: transition dynamics
+- R: reward
+- gamma: discount factor</p>
+<h3>4. Markov Property</h3>
+<p>The next-state distribution depends on the current state/action rather than the entire history:</p>
+<pre><code class="language-text">P(s_(t+1) | history, a_t)
+=
+P(s_(t+1) | s_t, a_t)
+</code></pre>
+<p>If the observation does not contain enough state information, the problem may be partially observable.</p><h3>3. Markov Decision Process</h3>
+<p>An MDP contains:</p>
+<pre><code class="language-text">(S, A, P, R, gamma)
+</code></pre>
+<p>where:
+- S: states
+- A: actions
+- P: transition dynamics
+- R: reward
+- gamma: discount factor</p>
+<h3>4. Markov Property</h3>
+<p>The next-state distribution depends on the current state/action rather than the entire history:</p>
+<pre><code class="language-text">P(s_(t+1) | history, a_t)
+=
+P(s_(t+1) | s_t, a_t)
+</code></pre>
+<p>If the observation does not contain enough state information, the problem may be partially observable.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch38-objective-02" class="objective-proof"><summary>explain state/action/reward/transition</summary><p>explain state/action/reward/transition: ใช้กรณีในหัวข้อ Markov Decision Process เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch38-evidence-02"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch38-evidence-02-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch38-evidence-02-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch38-evidence-02-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch38-evidence-02-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch38-evidence-02-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch38-evidence-02-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch38-evidence-02-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch38-evidence-02-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>3. Markov Decision Process</h3>
+<p>An MDP contains:</p>
+<pre><code class="language-text">(S, A, P, R, gamma)
+</code></pre>
+<p>where:
+- S: states
+- A: actions
+- P: transition dynamics
+- R: reward
+- gamma: discount factor</p>
+<h3>4. Markov Property</h3>
+<p>The next-state distribution depends on the current state/action rather than the entire history:</p>
+<pre><code class="language-text">P(s_(t+1) | history, a_t)
+=
+P(s_(t+1) | s_t, a_t)
+</code></pre>
+<p>If the observation does not contain enough state information, the problem may be partially observable.</p><h3>3. Markov Decision Process</h3>
+<p>An MDP contains:</p>
+<pre><code class="language-text">(S, A, P, R, gamma)
+</code></pre>
+<p>where:
+- S: states
+- A: actions
+- P: transition dynamics
+- R: reward
+- gamma: discount factor</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch38-objective-03" class="objective-proof"><summary>explain return and discounting</summary><p>explain return and discounting: ใช้กรณีในหัวข้อ Return, Discount Factor เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch38-evidence-03"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch38-evidence-03-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch38-evidence-03-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch38-evidence-03-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch38-evidence-03-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch38-evidence-03-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch38-evidence-03-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch38-evidence-03-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch38-evidence-03-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>rewards[1,2,3],γ.5ให้G0=1+.5·2+.25·3=2.75,G1=3.5,G2=3; γdiscountอนาคตไม่ลดimmediatereward</p><h3>5. Return</h3>
+<p>Discounted return from time t:</p>
+<pre><code class="language-text">G_t
+=
+r_t
++
+gamma r_(t+1)
++
+gamma^2 r_(t+2)
++ ...
+</code></pre>
+<h3>6. Discount Factor</h3>
+<pre><code class="language-text">0 &lt;= gamma &lt;= 1
+</code></pre>
+<p>Smaller gamma:
+- emphasizes near-term rewards</p>
+<p>Larger gamma:
+- values longer-term rewards</p>
+<p>The correct choice depends on task horizon/objective.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch38-objective-04" class="objective-proof"><summary>derive Bellman expectation/optimality equations</summary><p>derive Bellman expectation/optimality equations: ใช้กรณีในหัวข้อ Bellman Expectation Equation, Bellman Optimality เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch38-evidence-04"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch38-evidence-04-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch38-evidence-04-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch38-evidence-04-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch38-evidence-04-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch38-evidence-04-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch38-evidence-04-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch38-evidence-04-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch38-evidence-04-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>Vπ(s)=Σaπ(a|s)Σs'P(s'|s,a)[r+γVπ(s')]; V*(s)=maxaΣs'P[r+γV*(s')]; terminalcontinuation0</p><h3>10. Bellman Expectation Equation</h3>
+<pre><code class="language-text">V^pi(s)
+=
+Σ_a pi(a|s)
+Σ_s' P(s'|s,a)
+[
+R(s,a,s')
++
+gamma V^pi(s')
+]
+</code></pre>
+<h3>11. Bellman Optimality</h3>
+<pre><code class="language-text">Q*(s,a)
+=
+E[
+r
++
+gamma max_a' Q*(s',a')
+]
+</code></pre>
+<p>This recursion motivates Q-Learning.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch38-objective-05" class="objective-proof"><summary>implement tabular value iteration</summary><p>implement tabular value iteration: ใช้กรณีในหัวข้อ Value Iteration เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch38-evidence-05"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch38-evidence-05-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch38-evidence-05-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch38-evidence-05-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch38-evidence-05-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch38-evidence-05-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch38-evidence-05-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch38-evidence-05-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch38-evidence-05-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>สองstates,s0actiongo→terminalr1,stay→s0r0,γ.9 เริ่มV0แล้วupdateได้V(s0)=1และคง1; iterateจนmaxabsdelta&lt;tolerance</p><h3>12. Value Iteration</h3>
+<p>Repeatedly apply:</p>
+<pre><code class="language-text">V_(k+1)(s)
+=
+max_a
+Σ_s'
+P(s'|s,a)
+[
+R + gamma V_k(s')
+]
+</code></pre>
+<p>until convergence for a finite known MDP.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch38-objective-06" class="objective-proof"><summary>implement Q-Learning</summary><p>implement Q-Learning: ใช้กรณีในหัวข้อ Q-Learning, Temporal-Difference Error เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch38-evidence-06"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch38-evidence-06-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch38-evidence-06-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch38-evidence-06-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch38-evidence-06-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch38-evidence-06-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch38-evidence-06-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch38-evidence-06-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch38-evidence-06-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>Q(s,a)←Q+α[r+γmaxQ(s',·)−Q]; Q2,r1,nextmax4,γ.5,α.1ให้Q2.1; terminaltargetrเท่านั้น</p><h3>13. Q-Learning</h3>
+<p>Model-free TD control:</p>
+<pre><code class="language-text">target
+=
+r
++
+gamma max_a' Q(s',a')
+</code></pre>
+<p>Update:</p>
+<pre><code class="language-text">Q(s,a)
+←
+Q(s,a)
++
+alpha
+[
+target - Q(s,a)
+]
+</code></pre>
+<p>For terminal transitions, do not bootstrap beyond terminal.</p>
+<h3>14. Temporal-Difference Error</h3>
+<pre><code class="language-text">delta
+=
+r
++
+gamma V(s')
+-
+V(s)
+</code></pre>
+<p>It measures mismatch between current estimate and one-step bootstrapped target.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch38-objective-07" class="objective-proof"><summary>explain exploration vs exploitation</summary><p>explain exploration vs exploitation: ใช้กรณีในหัวข้อ Exploration vs Exploitation, Epsilon Schedule เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch38-evidence-07"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch38-evidence-07-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch38-evidence-07-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch38-evidence-07-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch38-evidence-07-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch38-evidence-07-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch38-evidence-07-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch38-evidence-07-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch38-evidence-07-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>ε1สำรวจuniform,ε0greedy; decayเร็วเสี่ยงพลาดactionดี decayช้าสะสมregret; comparecumrewardและactioncoverageหลายseed</p><h3>15. Exploration vs Exploitation</h3>
+<p>Greedy exploitation chooses the currently best action.</p>
+<p>Exploration tries alternatives.</p>
+<p>Common baseline:</p>
+<pre><code class="language-text">epsilon-greedy
+</code></pre>
+<p>With probability epsilon:
+- random action</p>
+<p>Otherwise:
+- argmax Q</p>
+<h3>16. Epsilon Schedule</h3>
+<p>Often start with more exploration and decay epsilon.</p>
+<p>Do not decay too quickly or the agent may stop discovering useful behavior.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch38-objective-08" class="objective-proof"><summary>explain replay buffers</summary><p>explain replay buffers: ใช้กรณีในหัวข้อ Replay Buffer เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch38-evidence-08"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch38-evidence-08-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch38-evidence-08-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch38-evidence-08-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch38-evidence-08-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch38-evidence-08-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch38-evidence-08-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch38-evidence-08-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch38-evidence-08-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>ringbufferเก็บ(s,a,r,snext,terminated)capacity3ใส่4รายการเหลือ3ล่าสุด; samplewithoutreplacementbatch≤sizeและไม่แก้transitionหลังstore</p><h3>18. Replay Buffer</h3>
+<p>Store transitions:</p>
+<pre><code class="language-text">(s,a,r,s',done)
+</code></pre>
+<p>Sample mini-batches later.</p>
+<p>Benefits:
+- breaks strong temporal correlation
+- reuses experience
+- improves data efficiency</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch38-objective-09" class="objective-proof"><summary>explain target networks</summary><p>explain target networks: ใช้กรณีในหัวข้อ Target Network เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch38-evidence-09"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch38-evidence-09-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch38-evidence-09-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch38-evidence-09-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch38-evidence-09-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch38-evidence-09-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch38-evidence-09-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch38-evidence-09-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch38-evidence-09-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>tabularQO(SA)memory; DQNreplayO(capacity·obsdim),networkforwardO(BP)ตามlayers; envstepcostอาจdominantต้องวัดแยก</p><h3>19. Target Network</h3>
+<p>Using the same rapidly-changing network on both sides of the TD target can destabilize learning.</p>
+<p>Maintain:
+- online network
+- target network</p>
+<p>Periodically copy or softly update target parameters.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch38-objective-10" class="objective-proof"><summary>understand DQN</summary><p>understand DQN: ใช้กรณีในหัวข้อ DQN, DQN Loss, Double DQN Preview เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch38-evidence-10"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch38-evidence-10-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch38-evidence-10-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch38-evidence-10-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch38-evidence-10-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch38-evidence-10-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch38-evidence-10-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch38-evidence-10-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch38-evidence-10-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>target=r+γ(1−terminated)maxQtarget(s'); r1,nextmax4,γ.5ให้3ถ้าnonterminalและ1ถ้าterminal; truncationไม่จำเป็นต้องterminalตามenvsemantics</p><h3>17. DQN</h3>
+<p>Replace tabular Q with neural network:</p>
+<pre><code class="language-text">state
+↓
+Q-network
+↓
+Q(s,a_1)...Q(s,a_k)
+</code></pre>
+<p>Training target:</p>
+<pre><code class="language-text">y =
+r
++
+gamma
+max_a' Q_target(s',a')
+</code></pre>
+<h3>20. DQN Loss</h3>
+<p>Common:</p>
+<pre><code class="language-text">Huber(
+Q_online(s,a),
+target
+)
+</code></pre>
+<p>Huber/SmoothL1 reduces sensitivity to large TD errors compared with pure squared loss.</p>
+<h3>21. Double DQN Preview</h3>
+<p>Standard DQN uses max over target values and can overestimate.</p>
+<p>Double DQN separates:
+- action selection by online network
+- action evaluation by target network</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch38-objective-11" class="objective-proof"><summary>derive REINFORCE</summary><p>derive REINFORCE: ใช้กรณีในหัวข้อ Policy Gradient, Why log-probability? เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch38-evidence-11"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch38-evidence-11-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch38-evidence-11-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch38-evidence-11-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch38-evidence-11-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch38-evidence-11-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch38-evidence-11-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch38-evidence-11-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch38-evidence-11-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>REINFORCE gradientloss=−R·logπ(a); banditR1,π[a].25ให้loss1.386294; sampleactionแล้วoptimizerเพิ่มprobactionที่rewardเหนือbaseline</p><h3>22. Policy Gradient</h3>
+<p>Instead of learning Q then choosing argmax, optimize policy directly.</p>
+<p>REINFORCE objective gradient:</p>
+<pre><code class="language-text">grad J(theta)
+=
+E[
+G_t
+grad log pi_theta(a_t|s_t)
+]
+</code></pre>
+<h3>23. Why log-probability?</h3>
+<p>For sampled action:</p>
+<pre><code class="language-text">log pi(a|s)
+</code></pre>
+<p>gives a differentiable surrogate.</p>
+<p>Positive return:
+- increase probability</p>
+<p>Negative/low advantage:
+- decrease probability</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch38-objective-12" class="objective-proof"><summary>explain advantage functions</summary><p>explain advantage functions: ใช้กรณีในหัวข้อ Advantage เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch38-evidence-12"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch38-evidence-12-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch38-evidence-12-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch38-evidence-12-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch38-evidence-12-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch38-evidence-12-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch38-evidence-12-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch38-evidence-12-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch38-evidence-12-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>advantageA=G−Vφ(s),policyใช้stopgradient(A); valueloss(MSE(V,G))ฝึกbaselineแยกและไม่backproppolicylossเข้าGหรือbaselineโดยผิดตั้งใจ</p><h3>25. Advantage</h3>
+<pre><code class="language-text">A(s,a)
+=
+Q(s,a)
+-
+V(s)
+</code></pre>
+<p>Actor-critic methods estimate how much better an action was than the state's baseline expectation.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch38-objective-13" class="objective-proof"><summary>understand actor-critic</summary><p>understand actor-critic: ใช้กรณีในหัวข้อ Baseline, Actor-Critic, Generalized Advantage Estimation เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch38-evidence-13"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch38-evidence-13-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch38-evidence-13-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch38-evidence-13-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch38-evidence-13-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch38-evidence-13-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch38-evidence-13-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch38-evidence-13-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch38-evidence-13-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>advantageA=G−Vφ(s),policyใช้stopgradient(A); valueloss(MSE(V,G))ฝึกbaselineแยกและไม่backproppolicylossเข้าGหรือbaselineโดยผิดตั้งใจ</p><h3>24. Baseline</h3>
+<p>Subtract a baseline b(s):</p>
+<pre><code class="language-text">G_t - b(s_t)
+</code></pre>
+<p>This can reduce gradient variance without changing the expected policy-gradient direction when used correctly.</p>
+<h3>26. Actor-Critic</h3>
+<p>Actor:
+- policy pi(a|s)</p>
+<p>Critic:
+- V(s) or Q(s,a)</p>
+<p>Critic provides lower-variance learning signal.</p>
+<h3>27. Generalized Advantage Estimation</h3>
+<p>GAE combines TD residuals across time:</p>
+<pre><code class="language-text">A_t^GAE
+=
+delta_t
++
+gamma lambda delta_(t+1)
++ ...
+</code></pre>
+<p>lambda controls bias/variance trade-off.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch38-objective-14" class="objective-proof"><summary>explain PPO clipped objective</summary><p>explain PPO clipped objective: ใช้กรณีในหัวข้อ PPO, Why Clipping?, Entropy Bonus เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch38-evidence-14"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch38-evidence-14-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch38-evidence-14-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch38-evidence-14-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch38-evidence-14-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch38-evidence-14-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch38-evidence-14-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch38-evidence-14-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch38-evidence-14-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>A2,ratio1.3,ε.2 surrogate=min(2.6,2.4)=2.4; A−2,ratio.7ได้min(−1.4,−1.6)=−1.6; lossคือลบmean</p><h3>28. PPO</h3>
+<p>PPO reuses sampled trajectories while constraining large policy updates.</p>
+<p>Probability ratio:</p>
+<pre><code class="language-text">r_t(theta)
+=
+pi_theta(a_t|s_t)
+/
+pi_old(a_t|s_t)
+</code></pre>
+<p>Clipped objective:</p>
+<pre><code class="language-text">min(
+r_t A_t,
+clip(r_t,1-epsilon,1+epsilon) A_t
+)
+</code></pre>
+<p>Maximize this surrogate.</p>
+<h3>29. Why Clipping?</h3>
+<p>Large policy changes can destroy behavior learned from the data that generated the trajectory.</p>
+<p>Clipping limits incentive to move the action probability ratio too far.</p>
+<p>It is not a hard guarantee that the policy changes by a fixed amount.</p>
+<h3>30. Entropy Bonus</h3>
+<p>Policy entropy:</p>
+<pre><code class="language-text">H(pi(.|s))
+</code></pre>
+<p>can encourage exploration.</p>
+<p>Too much entropy pressure prevents policy concentration.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch38-objective-15" class="objective-proof"><summary>build a tiny PyTorch RL agent</summary><p>build a tiny PyTorch RL agent: ใช้กรณีในหัวข้อ On-Policy vs Off-Policy, Reward Design, Evaluation, From Scratch เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch38-evidence-15"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch38-evidence-15-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch38-evidence-15-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch38-evidence-15-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch38-evidence-15-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch38-evidence-15-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch38-evidence-15-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch38-evidence-15-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch38-evidence-15-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>evalยังเปิดεสูงทำmetricปนexploration; train/testenvironmentseedsแยกและreportevaluationpolicyε; tunedrewardไม่แทนrealobjectiveอัตโนมัติ</p><h3>31. On-Policy vs Off-Policy</h3>
+<p>On-policy:
+- train mainly from data collected by current/recent policy
+- examples: REINFORCE, PPO</p>
+<p>Off-policy:
+- can learn from data generated by different behavior policy
+- examples: Q-Learning, DQN</p>
+<h3>32. Reward Design</h3>
+<p>Bad rewards can produce unintended policies.</p>
+<p>Always inspect behavior, not only aggregate reward.</p>
+<p>Reward hacking/specification gaming becomes increasingly important in alignment chapters.</p>
+<h3>33. Evaluation</h3>
+<p>Separate:
+- training exploration returns
+- deterministic/stochastic evaluation returns</p>
+<p>Use multiple seeds because RL variance can be high.</p>
+<h3>34. From Scratch</h3>
+<p>src/rl_numpy.py includes:</p>
+<ul>
+<li>discounted_returns</li>
+<li>bellman_optimality_backup</li>
+<li>q_learning_update</li>
+<li>epsilon_greedy</li>
+<li>ppo_clipped_surrogate</li>
+</ul></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details></section><section id="implementation" class="canonical-section"><h2>Implementation และ tests ที่รันบนเครื่องได้</h2><details><summary>38-reinforcement-learning/src/rl_numpy.py</summary><pre><code>&quot;&quot;&quot;Reinforcement-learning mathematical primitives implemented with NumPy.&quot;&quot;&quot;
+
+from __future__ import annotations
+
+import numpy as np
+
+
+def discounted_returns(
+    rewards: list[float] | np.ndarray,
+    gamma: float,
+) -&gt; np.ndarray:
+    if not 0.0 &lt;= gamma &lt;= 1.0:
+        raise ValueError(&quot;gamma must lie in [0,1]&quot;)
+
+    r = np.asarray(rewards, dtype=float)
+    returns = np.zeros_like(r)
+    running = 0.0
+
+    for index in range(len(r) - 1, -1, -1):
+        running = r[index] + gamma * running
+        returns[index] = running
+
+    return returns
+
+
+def bellman_optimality_backup(
+    reward: float,
+    next_q_values: np.ndarray,
+    *,
+    gamma: float,
+    done: bool,
+) -&gt; float:
+    if not 0.0 &lt;= gamma &lt;= 1.0:
+        raise ValueError(&quot;gamma must lie in [0,1]&quot;)
+
+    next_q = np.asarray(next_q_values, dtype=float)
+
+    if done:
+        return float(reward)
+
+    if next_q.ndim != 1 or len(next_q) == 0:
+        raise ValueError(&quot;next_q_values must be a non-empty vector&quot;)
+
+    return float(reward + gamma * np.max(next_q))
+
+
+def q_learning_update(
+    q_value: float,
+    reward: float,
+    next_q_values: np.ndarray,
+    *,
+    alpha: float,
+    gamma: float,
+    done: bool,
+) -&gt; tuple[float, float]:
+    if not 0.0 &lt; alpha &lt;= 1.0:
+        raise ValueError(&quot;alpha must lie in (0,1]&quot;)
+
+    target = bellman_optimality_backup(
+        reward,
+        next_q_values,
+        gamma=gamma,
+        done=done,
+    )
+    td_error = target - q_value
+    updated = q_value + alpha * td_error
+    return float(updated), float(td_error)
+
+
+def epsilon_greedy(
+    q_values: np.ndarray,
+    *,
+    epsilon: float,
+    rng: np.random.Generator,
+) -&gt; int:
+    q = np.asarray(q_values, dtype=float)
+
+    if q.ndim != 1 or len(q) == 0:
+        raise ValueError(&quot;q_values must be a non-empty vector&quot;)
+    if not 0.0 &lt;= epsilon &lt;= 1.0:
+        raise ValueError(&quot;epsilon must lie in [0,1]&quot;)
+
+    if rng.random() &lt; epsilon:
+        return int(rng.integers(0, len(q)))
+
+    maxima = np.flatnonzero(q == np.max(q))
+    return int(rng.choice(maxima))
+
+
+def ppo_clipped_surrogate(
+    new_log_prob: np.ndarray,
+    old_log_prob: np.ndarray,
+    advantage: np.ndarray,
+    *,
+    clip_epsilon: float = 0.2,
+) -&gt; np.ndarray:
+    new_lp = np.asarray(new_log_prob, dtype=float)
+    old_lp = np.asarray(old_log_prob, dtype=float)
+    adv = np.asarray(advantage, dtype=float)
+
+    if new_lp.shape != old_lp.shape or new_lp.shape != adv.shape:
+        raise ValueError(&quot;inputs must have equal shapes&quot;)
+    if clip_epsilon &lt;= 0:
+        raise ValueError(&quot;clip_epsilon must be positive&quot;)
+
+    ratio = np.exp(new_lp - old_lp)
+    clipped = np.clip(
+        ratio,
+        1.0 - clip_epsilon,
+        1.0 + clip_epsilon,
+    )
+
+    return np.minimum(
+        ratio * adv,
+        clipped * adv,
+    )
+</code></pre></details><details><summary>38-reinforcement-learning/tests/test_rl_numpy.py</summary><pre><code>from pathlib import Path
+import importlib.util
+
+import numpy as np
+
+
+MODULE_PATH = Path(__file__).parents[1] / &quot;src&quot; / &quot;rl_numpy.py&quot;
+SPEC = importlib.util.spec_from_file_location(&quot;rl_numpy_course&quot;, MODULE_PATH)
+assert SPEC and SPEC.loader
+mod = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(mod)
+
+
+def test_discounted_returns() -&gt; None:
+    result = mod.discounted_returns([1.0, 1.0, 1.0], gamma=0.5)
+    np.testing.assert_allclose(result, [1.75, 1.5, 1.0])
+
+
+def test_terminal_bellman_does_not_bootstrap() -&gt; None:
+    target = mod.bellman_optimality_backup(
+        2.0,
+        np.array([100.0, 200.0]),
+        gamma=0.99,
+        done=True,
+    )
+    assert target == 2.0
+
+
+def test_q_learning_update_moves_toward_target() -&gt; None:
+    updated, td = mod.q_learning_update(
+        0.0,
+        1.0,
+        np.array([2.0, 3.0]),
+        alpha=0.5,
+        gamma=0.9,
+        done=False,
+    )
+    assert td &gt; 0.0
+    assert updated &gt; 0.0
+
+
+def test_epsilon_zero_is_greedy() -&gt; None:
+    action = mod.epsilon_greedy(
+        np.array([1.0, 4.0, 2.0]),
+        epsilon=0.0,
+        rng=np.random.default_rng(3),
+    )
+    assert action == 1
+
+
+def test_ppo_clipping_positive_advantage() -&gt; None:
+    old = np.log(np.array([0.5]))
+    new = np.log(np.array([0.9]))
+    adv = np.array([2.0])
+
+    surrogate = mod.ppo_clipped_surrogate(
+        new,
+        old,
+        adv,
+        clip_epsilon=0.2,
+    )
+    np.testing.assert_allclose(surrogate, [2.4])
+</code></pre></details></section><section id="glossary" class="canonical-section"><h2>อภิธานศัพท์ — คำไทย ความหมาย และข้อควรตรวจ</h2><dl><dt>tensor</dt><dd>เทนเซอร์: ชุดตัวเลขที่มีแกน เช่น scalar ไม่มีแกน, vector หนึ่งแกน, matrix สองแกน; shape บอกขนาดแต่ละแกน ไม่บอกความหมายของแกนจนกว่าจะระบุ</dd><dt>shape</dt><dd>รูปทรงข้อมูล: (B,T,d) หมายถึง batch × เวลา/ตำแหน่ง × features; ใช้ชื่อแกนกำกับเสมอ การ transpose เปลี่ยนแกนแต่ไม่ใช่แค่เปลี่ยนชื่อ</dd><dt>batch</dt><dd>กลุ่มตัวอย่างที่คำนวณร่วมกันหนึ่งครั้ง; B คือจำนวนตัวอย่าง ไม่ใช่จำนวน features หรือจำนวน optimizer updates</dd><dt>weight w / θ</dt><dd>น้ำหนักหรือพารามิเตอร์ที่โมเดลใช้คำนวณ; แก้ด้วยมือทำ forward ใหม่ ส่วน optimizer ต้องรับ gradient แล้วกด update จึงแก้ state</dd><dt>bias b</dt><dd>ค่าคงที่ที่บวกกับผลเชิงเส้น; regression scalar bias เพิ่ม Δ ทำให้ prediction ทุกจุดเพิ่ม Δ เท่ากัน</dd><dt>prediction ŷ</dt><dd>ค่าที่โมเดลทำนายจาก input และพารามิเตอร์ปัจจุบัน; เครื่องหมายหมวกแยกจาก target y ที่มาจากข้อมูล</dd><dt>residual e</dt><dd>ความคลาดเคลื่อน ในเว็บนี้นิยาม prediction − target; บางตำราใช้เครื่องหมายกลับกัน จึงต้องตรวจนิยามก่อนเทียบสูตร gradient</dd><dt>MSE</dt><dd>mean squared error = ผลรวม residual กำลังสองหารจำนวนรายการที่ระบุ; มีหน่วยเป็น target ยกกำลังสอง และการใช้ sum แทน mean เปลี่ยน scale gradient</dd><dt>loss L / objective J</dt><dd>จำนวนที่ optimizer ต้องการลด; objective อาจรวม data loss และ regularization จึงต้องดูองค์ประกอบและ reduction ให้ตรง implementation</dd><dt>gradient ∇ / ∂</dt><dd>เวกเตอร์ของ partial derivatives บอกอัตราเปลี่ยน loss ต่อพารามิเตอร์แต่ละตัว; ∂ ใช้เมื่อเปลี่ยนตัวหนึ่งโดยตรึงตัวอื่น</dd><dt>chain rule</dt><dd>กฎลูกโซ่: คูณอนุพันธ์ตามเส้นทาง และบวก contribution จากทุกเส้นทางที่มารวมกัน ใช้ย้อนจาก loss ถึง weights</dd><dt>learning rate η</dt><dd>ขนาดตัวคูณ gradient ใน update θnew=θ−ηg; η≥0, ศูนย์หมายถึงไม่มีการขยับพารามิเตอร์ ก้าวใหญ่เกินอาจ diverge</dd><dt>regularization λ</dt><dd>ตัวคูณค่าลงโทษ ต้อง λ≥0 ตามนิยามการลงโทษ; Ridge λΣw² เพิ่ม gradient 2λw โดยบท Regression นี้ไม่ลงโทษ bias</dd><dt>baseline</dt><dd>สถานะอ้างอิงที่ตรึงไว้สำหรับเทียบ; ต้องเก็บ snapshot ไม่อ้าง object ปัจจุบันที่แก้ตามไปด้วย</dd><dt>invariant</dt><dd>คุณสมบัติที่กลไกต้องรักษา เช่น probability รวม1, shape สอดคล้อง, queue ไม่เกิน capacity; ใช้ tests ตรวจได้มากกว่าดูภาพสวย</dd><dt>optimizer state</dt><dd>ความจำของอัลกอริทึม เช่น velocity, moments และ completed updates; คืนเฉพาะ weights ยังไม่เท่ากับเริ่มการฝึกใหม่ทั้งหมด</dd><dt>finite difference</dt><dd>ประมาณ derivative ด้วย [f(x+h)−f(x−h)]/(2h); h&gt;0, ใช้ smooth point และลองหลาย h เพื่อแยก truncation error จาก roundoff</dd><dt>softmax</dt><dd>แปลง logits เป็นความน่าจะเป็นตามแกนที่กำหนด; ลบ max ก่อน exp เพื่อความเสถียร และ fully masked row ต้องมีนโยบายชัดเจน</dd><dt>logit</dt><dd>คะแนนก่อน sigmoid/softmax ไม่ใช่ probability; อาจเป็นจำนวนจริงติดลบหรือเกิน1ได้ จึงห้ามส่งให้ loss ที่คาด probability โดยไม่แปลง</dd><dt>temperature τ / T</dt><dd>ตัวหาร logits ก่อน softmax; ต้องเป็นบวก ค่าเล็กทำ distribution แหลมขึ้น โดยไม่เท่ากับ retrain weights</dd><dt>mask</dt><dd>ตัวกำหนดตำแหน่งที่อ่านหรือคิด loss ได้; causal mask ปิดอนาคต, padding mask ปิดข้อมูลเติม, loss mask เลือก target แต่ละอย่างคนละหน้าที่</dd><dt>Q / K / V</dt><dd>query ใช้ค้นข้อมูล, key ใช้จับคู่ query, value เป็นข้อมูลที่ถูกถัวเฉลี่ย; เป็น learned projections ของ representation ไม่ใช่ป้ายความหมายตายตัว</dd><dt>head</dt><dd>ส่วนของ feature representation ที่ทำ attention แยกกัน แล้ว concat/project กลับ; ต้องตรวจ d_model หารจำนวน heads ลงตัว</dd><dt>ε-neighborhood</dt><dd>เพื่อนบ้านทั้งหมดที่มีระยะไม่เกิน ε รวมจุดตัวเองใน DBSCAN นี้; ε มีหน่วยเดียวกับพิกัด ไม่ใช่จำนวน k ที่ใช้โหวต</dd><dt>core / border / noise</dt><dd>DBSCAN core มีเพื่อนบ้านรวมตัวเองถึง min_samples; border อยู่ใกล้ core แต่เพื่อนบ้านไม่ถึง; noise ไม่ถูกเชื่อมกับ core cluster ใด</dd><dt>bootstrap</dt><dd>สุ่ม observations แบบ replacement ขนาดเท่าเดิมซ้ำหลายครั้งแล้วคำนวณ statistic ใหม่; seed ทำให้ตรวจซ้ำได้ แต่ไม่แก้สมมติฐาน IID ที่ผิด</dd><dt>confidence interval</dt><dd>ช่วงที่สร้างด้วย procedure ที่มี coverage ตามสมมติฐาน; ช่วงหนึ่งที่ได้แล้วไม่ใช่ posterior probability ของ parameter และ sample เล็กยังไม่แน่นอนมาก</dd><dt>validation / test</dt><dd>validation ใช้เลือกโมเดล/ค่าตั้ง ส่วน test ใช้ประเมินหลัง freeze การตัดสินใจ; fit preprocessing/tokenizer จาก test เป็น leakage</dd><dt>leakage</dt><dd>ข้อมูลที่ควรยังไม่รู้ไหลเข้า training/การเลือกโมเดล เช่น future feature หรือเอกสารซ้ำข้าม split ทำให้ metric ดูดีเกินการใช้งานจริง</dd><dt>queue / capacity</dt><dd>queue คือรายการรอ, capacity การให้บริการรวม = workers × service rate ตามแบบจำลอง; เพิ่ม timeout ไม่เพิ่มกำลังประมวลผล</dd><dt>state transition</dt><dd>การเปลี่ยนสถานะเมื่อเกิดเหตุการณ์ที่อนุญาต เช่น queued→active→done; ต้องระบุ guard, side effect และเหตุผลเมื่อ transition ถูกปฏิเสธ</dd><dt>latency / throughput</dt><dd>latency คือเวลาต่อคำขอ, throughput คือปริมาณงานต่อหน่วยเวลา; batching อาจเพิ่ม throughput แต่เพิ่มเวลารอ จึงต้องวัดทั้งคู่</dd><dt>idempotency</dt><dd>ทำคำขอ business operation เดิมซ้ำแล้ว side effect เกิดครั้งเดียวตาม key และ transaction protocol; ไม่ได้รับประกันจากการใช้ UUID ใหม่ทุก attempt</dd><dt>local lab</dt><dd>โปรแกรม Python และ tests ที่ผู้เรียนรันบนเครื่อง; เว็บเก็บเพียงคำยืนยันของผู้เรียน การผ่าน tests ของโค้ดต้นแบบไม่ใช่ผลตรวจโค้ดผู้เรียน</dd></dl></section></article>
+<section id="practice" class="practice-section"><span class="eyebrow">PRACTICE · DEBUG · BUILD</span><h2>พิสูจน์ด้วยการลงมือทำ</h2><div id="web-checks"></div><div class="retry-actions"><button class="secondary-button" id="retry-checks">เริ่มทำโจทย์ในเว็บใหม่</button><button class="text-button" id="undo-retry" hidden>คืนผลก่อนเริ่มใหม่</button></div><div id="exercise-content"><h2>แบบฝึก 20 ข้อ — เฉลยเฉพาะข้อ</h2><p>ทำคำตอบก่อนเปิด hints; โจทย์ปลายเปิดให้ใช้ตัวอย่างคำตอบและหลักฐานราย objective ตรวจงานจริง</p><section id="exercise-1" class="exercise-item"><h3>ข้อ 1</h3><p>Calculate discounted returns by hand.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Return: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): rewards[1,2,3],γ.5ให้G0=1+.5·2+.25·…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: rewards[1,2,3],γ.5ให้G0=1+.5·2+.25·3=2.75,G1=3.5,G2=3; γdiscount…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>rewards[1,2,3],γ.5ให้G0=1+.5·2+.25·3=2.75,G1=3.5,G2=3; γdiscountอนาคตไม่ลดimmediatereward</p><p>อ้างอิง: <a href="#chapter-38/section/topic-5">Return</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch38-exercise-01"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-2" class="exercise-item"><h3>ข้อ 2</h3><p>Derive Bellman expectation and optimality equations.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Bellman Expectation Equation, Bellman Optimality: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): Vπ(s)=Σaπ(a|s)Σs'P(s'|s,a)[r+γVπ(s…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: Vπ(s)=Σaπ(a|s)Σs'P(s'|s,a)[r+γVπ(s')]; V*(s)=maxaΣs'P[r+γV*(s'…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>Vπ(s)=Σaπ(a|s)Σs'P(s'|s,a)[r+γVπ(s')]; V*(s)=maxaΣs'P[r+γV*(s')]; terminalcontinuation0</p><p>อ้างอิง: <a href="#chapter-38/section/topic-10">Bellman Expectation Equation</a>, <a href="#chapter-38/section/topic-11">Bellman Optimality</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch38-exercise-02"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-3" class="exercise-item"><h3>ข้อ 3</h3><p>Implement value iteration on a tiny MDP.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Value Iteration: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): สองstates,s0actiongo→terminalr1,stay→s0r0,γ.…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: สองstates,s0actiongo→terminalr1,stay→s0r0,γ.9 เริ่มV0แล้วupdateได้V(s0)=1และคง1…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>สองstates,s0actiongo→terminalr1,stay→s0r0,γ.9 เริ่มV0แล้วupdateได้V(s0)=1และคง1; iterateจนmaxabsdelta&lt;tolerance</p><p>อ้างอิง: <a href="#chapter-38/section/topic-12">Value Iteration</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch38-exercise-03"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-4" class="exercise-item"><h3>ข้อ 4</h3><p>Implement tabular Q-Learning.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Q-Learning: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): Q(s,a)←Q+α[r+γmaxQ(s',·)−Q]; Q2,r…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: Q(s,a)←Q+α[r+γmaxQ(s',·)−Q]; Q2,r1,nextmax4,γ.5,α.1ให้Q2.1;…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>Q(s,a)←Q+α[r+γmaxQ(s',·)−Q]; Q2,r1,nextmax4,γ.5,α.1ให้Q2.1; terminaltargetrเท่านั้น</p><p>อ้างอิง: <a href="#chapter-38/section/topic-13">Q-Learning</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch38-exercise-04"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-5" class="exercise-item"><h3>ข้อ 5</h3><p>Compare epsilon schedules.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Epsilon Schedule: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ε1สำรวจuniform,ε0greedy; decayเร็วเสี่ยงพลาดa…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ε1สำรวจuniform,ε0greedy; decayเร็วเสี่ยงพลาดactionดี decayช้าสะสมregret; comparecu…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ε1สำรวจuniform,ε0greedy; decayเร็วเสี่ยงพลาดactionดี decayช้าสะสมregret; comparecumrewardและactioncoverageหลายseed</p><p>อ้างอิง: <a href="#chapter-38/section/topic-16">Epsilon Schedule</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch38-exercise-05"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-6" class="exercise-item"><h3>ข้อ 6</h3><p>Build a replay buffer.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Replay Buffer: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ringbufferเก็บ(s,a,r,snext,terminated)capacity3ใส่4รา…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ringbufferเก็บ(s,a,r,snext,terminated)capacity3ใส่4รายการเหลือ3ล่าสุด; samplewithoutreplacement…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ringbufferเก็บ(s,a,r,snext,terminated)capacity3ใส่4รายการเหลือ3ล่าสุด; samplewithoutreplacementbatch≤sizeและไม่แก้transitionหลังstore</p><p>อ้างอิง: <a href="#chapter-38/section/topic-18">Replay Buffer</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch38-exercise-06"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-7" class="exercise-item"><h3>ข้อ 7</h3><p>Implement a DQN TD target with terminal masking.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ DQN Loss: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): target=r+γ(1−terminated)maxQtarget(s'); r1,nextmax4,γ.…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: target=r+γ(1−terminated)maxQtarget(s'); r1,nextmax4,γ.5ให้3ถ้าnonterminalและ1ถ้าterminal; truncat…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>target=r+γ(1−terminated)maxQtarget(s'); r1,nextmax4,γ.5ให้3ถ้าnonterminalและ1ถ้าterminal; truncationไม่จำเป็นต้องterminalตามenvsemantics</p><p>อ้างอิง: <a href="#chapter-38/section/topic-20">DQN Loss</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch38-exercise-07"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-8" class="exercise-item"><h3>ข้อ 8</h3><p>Implement REINFORCE on a two-action bandit.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Policy Gradient, Why log-probability?: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): REINFORCE gradientloss=−R·logπ(a); banditR1,π[a].25ใ…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: REINFORCE gradientloss=−R·logπ(a); banditR1,π[a].25ให้loss1.386294; sampleactionแล้วoptimizer…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>REINFORCE gradientloss=−R·logπ(a); banditR1,π[a].25ให้loss1.386294; sampleactionแล้วoptimizerเพิ่มprobactionที่rewardเหนือbaseline</p><p>อ้างอิง: <a href="#chapter-38/section/topic-22">Policy Gradient</a>, <a href="#chapter-38/section/topic-23">Why log-probability?</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch38-exercise-08"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-9" class="exercise-item"><h3>ข้อ 9</h3><p>Add a learned value baseline.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Baseline, Advantage: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): advantageA=G−Vφ(s),policyใช้stopgradient(A); valuelo…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: advantageA=G−Vφ(s),policyใช้stopgradient(A); valueloss(MSE(V,G))ฝึกbaselineแยกและไม่backproppo…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>advantageA=G−Vφ(s),policyใช้stopgradient(A); valueloss(MSE(V,G))ฝึกbaselineแยกและไม่backproppolicylossเข้าGหรือbaselineโดยผิดตั้งใจ</p><p>อ้างอิง: <a href="#chapter-38/section/topic-24">Baseline</a>, <a href="#chapter-38/section/topic-25">Advantage</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch38-exercise-09"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-10" class="exercise-item"><h3>ข้อ 10</h3><p>Compute PPO clipped surrogate values manually.</p>
+<p>Challenge:
+- build DQN on a tiny chain environment
+- build PPO on a synthetic discrete-control environment</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ PPO, Why Clipping?: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): A2,ratio1.3,ε.2 surrogate=min(2.6,2.…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: A2,ratio1.3,ε.2 surrogate=min(2.6,2.4)=2.4; A−2,ratio.7ได้min(−1.4…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>A2,ratio1.3,ε.2 surrogate=min(2.6,2.4)=2.4; A−2,ratio.7ได้min(−1.4,−1.6)=−1.6; lossคือลบmean</p><p>อ้างอิง: <a href="#chapter-38/section/topic-28">PPO</a>, <a href="#chapter-38/section/topic-29">Why Clipping?</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch38-exercise-10"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-11" class="exercise-item"><h3>ข้อ 11</h3><p>Reproduce one central calculation from Reinforcement Learning using a tiny hand-checkable input.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ DQN Loss: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): Qtargetnonterminal3,current2,TDerror1,squaredlo…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: Qtargetnonterminal3,current2,TDerror1,squaredloss1; terminaltarget1,TDerror−1; ข้อนี…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>Qtargetnonterminal3,current2,TDerror1,squaredloss1; terminaltarget1,TDerror−1; ข้อนี้ใช้แยกbootstrappingผิดที่terminal</p><p>อ้างอิง: <a href="#chapter-38/section/topic-20">DQN Loss</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch38-exercise-11"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-12" class="exercise-item"><h3>ข้อ 12</h3><p>Write a deterministic test that verifies the most important invariant in Reinforcement Learning.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Temporal-Difference Error: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): assertterminaltargetไม่ขึ้นกับnextQ,transitionprobs…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: assertterminaltargetไม่ขึ้นกับnextQ,transitionprobsต่อstateactionรวม1และvalueiterationtinyMD…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>assertterminaltargetไม่ขึ้นกับnextQ,transitionprobsต่อstateactionรวม1และvalueiterationtinyMDPได้V1; seedการsampleactionแยกenvseed</p><p>อ้างอิง: <a href="#chapter-38/section/topic-14">Temporal-Difference Error</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch38-exercise-12"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-13" class="exercise-item"><h3>ข้อ 13</h3><p>Compare two meaningful configurations while keeping data and seed fixed.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Epsilon Schedule: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): คงbandit/steps เปรียบε.1กับdecay1→.01; reportcumrewa…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: คงbandit/steps เปรียบε.1กับdecay1→.01; reportcumrewardและoptimalactionfractionเฉลี่ยหลายseedพร้…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>คงbandit/steps เปรียบε.1กับdecay1→.01; reportcumrewardและoptimalactionfractionเฉลี่ยหลายseedพร้อมinterval ไม่เลือกtrajectoryดีที่สุด</p><p>อ้างอิง: <a href="#chapter-38/section/topic-16">Epsilon Schedule</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch38-exercise-13"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-14" class="exercise-item"><h3>ข้อ 14</h3><p>Record intermediate shapes, ranges, and one quality metric for a tiny end-to-end run.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ DQN, DQN Loss: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): recordobs(B,d),action(B,)integer,Q(B,A)…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: recordobs(B,d),action(B,)integer,Q(B,A),chosenQ(B,),rewards/dones(B,),e…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>recordobs(B,d),action(B,)integer,Q(B,A),chosenQ(B,),rewards/dones(B,),episodereturnและTDerrorfinite</p><p>อ้างอิง: <a href="#chapter-38/section/topic-17">DQN</a>, <a href="#chapter-38/section/topic-20">DQN Loss</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch38-exercise-14"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-15" class="exercise-item"><h3>ข้อ 15</h3><p>Explain one evaluation mistake that could make a Reinforcement Learning result look better than it really is.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Evaluation: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): evalยังเปิดεสูงทำmetricปนexploration; train/testenvir…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: evalยังเปิดεสูงทำmetricปนexploration; train/testenvironmentseedsแยกและreportevaluationpolicyε; t…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>evalยังเปิดεสูงทำmetricปนexploration; train/testenvironmentseedsแยกและreportevaluationpolicyε; tunedrewardไม่แทนrealobjectiveอัตโนมัติ</p><p>อ้างอิง: <a href="#chapter-38/section/topic-33">Evaluation</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch38-exercise-15"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-16" class="exercise-item"><h3>ข้อ 16</h3><p>State the dominant time and memory complexity for the main operation in Reinforcement Learning.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Replay Buffer, Target Network: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): tabularQO(SA)memory; DQNreplayO(capacity·obs…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: tabularQO(SA)memory; DQNreplayO(capacity·obsdim),networkforwardO(BP)ตามlayers; …</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>tabularQO(SA)memory; DQNreplayO(capacity·obsdim),networkforwardO(BP)ตามlayers; envstepcostอาจdominantต้องวัดแยก</p><p>อ้างอิง: <a href="#chapter-38/section/topic-18">Replay Buffer</a>, <a href="#chapter-38/section/topic-19">Target Network</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch38-exercise-16"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-17" class="exercise-item"><h3>ข้อ 17</h3><p>Compare a from-scratch result with a trusted implementation using identical inputs and settings.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ From Scratch: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): NumPyBellmanbackupเทียบexplicitenumerationบนtr…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: NumPyBellmanbackupเทียบexplicitenumerationบนtransitiontable; DQNtargettorch.no_grad…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>NumPyBellmanbackupเทียบexplicitenumerationบนtransitiontable; DQNtargettorch.no_gradต้องตรงtinyfixtureรวมterminalmask</p><p>อ้างอิง: <a href="#chapter-38/section/topic-34">From Scratch</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch38-exercise-17"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-18" class="exercise-item"><h3>ข้อ 18</h3><p>Run a one-factor ablation and report the measured change over repeated runs when randomness matters.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Target Network: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): targetnetworkupdateperiod10→100คงreplay/batch/…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: targetnetworkupdateperiod10→100คงreplay/batch/seed; reportTDvarianceและreturnหลายse…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>targetnetworkupdateperiod10→100คงreplay/batch/seed; reportTDvarianceและreturnหลายseedโดยequalenvironmentinteractions</p><p>อ้างอิง: <a href="#chapter-38/section/topic-19">Target Network</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch38-exercise-18"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-19" class="exercise-item"><h3>ข้อ 19</h3><p>Design a small reproducibility record containing seed, code version, data version, configuration, and metric.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Reward Design: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): manifestเก็บenvversion/reward/terminationpolicy/γ/…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: manifestเก็บenvversion/reward/terminationpolicy/γ/α/εschedule/seeds/replay/targetperiod/st…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>manifestเก็บenvversion/reward/terminationpolicy/γ/α/εschedule/seeds/replay/targetperiod/steps/checkpointและevaluationepisodes</p><p>อ้างอิง: <a href="#chapter-38/section/topic-32">Reward Design</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch38-exercise-19"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-20" class="exercise-item"><h3>ข้อ 20</h3><p>Propose one falsifiable research question for Reinforcement Learning and specify the baseline, changed factor, and acceptance metric.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Double DQN Preview: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ทดลอง“doubleDQNลดQoverestimationในnoisybandit”; bas…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ทดลอง“doubleDQNลดQoverestimationในnoisybandit”; baselineDQN,เปลี่ยนactionselectiontarget,วัด…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ทดลอง“doubleDQNลดQoverestimationในnoisybandit”; baselineDQN,เปลี่ยนactionselectiontarget,วัดQbiasต่อtruevalueและreturnfixedseeds</p><p>อ้างอิง: <a href="#chapter-38/section/topic-21">Double DQN Preview</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch38-exercise-20"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section></div><div id="local-lab-content"><section id="local-lab"><h2>Local lab: Python 3.12 บน CPU</h2><p>รันจาก repository root; ใช้ Python 3.12 แยก environment สำหรับ framework ตาม requirements ของชุดบท</p><pre><code>python3.12 -m venv .venv-course
+source .venv-course/bin/activate
+python -m pip install -r requirements-batch13.txt pytest
+(cd 38-reinforcement-learning &amp;&amp; python -m pytest tests -q -rs)</code></pre><p>ผลที่คาดหวัง: required tests ผ่านและไม่มี required test ถูก skip; GPU/integrations ที่ยังไม่รันต้องระบุแยก Python 3.15 ที่มากับเครื่องอาจใช้กับ framework wheels เหล่านี้ไม่ได้</p><h2>Mini Project — Tiny Chain Control</h2>
+<p>Create a 1D chain environment.</p>
+<p>Goal:
+- start at left
+- reach terminal goal on right
+- small step penalty
+- positive terminal reward</p>
+<p>Compare:
+- random policy
+- tabular Q-Learning
+- DQN
+- REINFORCE or actor-critic extension</p>
+<p>Track:
+- episode return
+- success rate
+- steps to goal
+- epsilon/entropy
+- multiple random seeds</p><h2>Batch 13 Integration Project — Graph, Control &amp; Generative Lab</h2>
+<p>Batch 13 contains three experiments.</p>
+<h3>Part A — Tiny GCN</h3>
+<p>Synthetic homophilous communities:</p>
+<pre><code class="language-text">node features + graph
+↓
+GCN layer
+↓
+GCN layer
+↓
+node logits
+</code></pre>
+<p>Tracks:
+- node/edge counts
+- parameter count
+- validation accuracy
+- final test accuracy</p>
+<h3>Part B — Tiny DQN</h3>
+<p>Chain-control environment:</p>
+<pre><code class="language-text">state
+↓
+Q-network
+↓
+left / right action
+↓
+reward + next state
+</code></pre>
+<p>Uses:
+- replay buffer
+- target network
+- epsilon-greedy exploration
+- Huber TD loss
+- terminal masking</p>
+<p>Tracks:
+- success rate
+- recent return
+- replay size</p>
+<h3>Part C — Generative Distribution Diagnostics</h3>
+<p>Synthetic four-mode 2D data.</p>
+<p>Fit a single Gaussian explicit density and compare:
+- fitted mean/covariance
+- NLL
+- generated sample moments</p>
+<p>Also inspect forward Gaussian noising at several alpha_bar values as preparation for Chapter 40 Diffusion.</p>
+<h3>Run</h3>
+<pre><code class="language-bash">python integration-project-batch13/src/graph_rl_generative_lab.py --mode gnn --steps 30
+python integration-project-batch13/src/graph_rl_generative_lab.py --mode dqn --steps 30
+python integration-project-batch13/src/graph_rl_generative_lab.py --mode generative
+</code></pre>
+<h3>Required Extensions</h3>
+<ol>
+<li>GraphSAGE edge-list model</li>
+<li>GAT implementation</li>
+<li>heterophily stress test</li>
+<li>DQN Double-DQN target</li>
+<li>prioritized replay concept experiment</li>
+<li>REINFORCE chain agent</li>
+<li>PPO discrete-control agent</li>
+<li>Gaussian-mixture explicit density</li>
+<li>GAN comparison from Batch 10</li>
+<li>diffusion denoiser in Chapter 40</li>
+</ol></section></div><label class="local-confirm"><input type="checkbox" id="local-lab-confirm"> ฉันรัน local lab และตรวจผลตาม rubric ด้วยตัวเองแล้ว</label><p class="local-note">สถานะนี้เป็นคำยืนยันของผู้เรียน เว็บไม่ได้รันหรือตรวจ Python บนเครื่องแทนคุณ</p></section>
+<section id="mastery-review" class="practice-section"><h2>หลักฐานตามเกณฑ์การเรียนรู้</h2><p>ทุก objective ต้องแสดงหลักฐานอธิบาย ทำนาย คำนวณ อ่าน shape/state debug และประยุกต์ พร้อมกรณีใหม่ ผลรัน source ผู้เรียนจริง และการประเมินซ้ำ เกณฑ์นี้ไม่รับประกันความเข้าใจทุกสถานการณ์ เปิด JavaScript เพื่อดูรายการที่ยังขาดและนำเข้ารายงานผู้ตรวจ</p></section><section class="coverage-section"><h2>แผนที่สิ่งที่เรียน → สิ่งที่ต้องแสดงให้ได้</h2><div id="coverage-table"></div></section><footer><span>ZERO TO ELITE AI ENGINEER · LEARNING STUDIO</span><span>อ่าน · derive · implement · debug · experiment · build</span></footer></div></main><noscript><style>.workbench,.sidebar,.reading-route,.lesson-toc,.mastery-status,#web-checks{display:none}main{margin-left:0}</style>อ่านเนื้อหา HTML ได้ตามปกติ เปิด JavaScript เพื่อใช้ห้องทดลองและตรวจคำตอบ</noscript></body></html>

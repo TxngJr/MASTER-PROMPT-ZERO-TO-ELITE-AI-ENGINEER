@@ -1,0 +1,1384 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="บทเรียน AI Engineer ภาษาไทย พร้อมคณิตศาสตร์ทีละขั้นและห้องทดลองที่คำนวณจริง"><title>Clustering: assign → update แล้วตรวจโครงสร้าง · AI Engineer Studio</title><link rel="stylesheet" href="../visual-lab/assets/styles.css"><link rel="stylesheet" href="../visual-lab/assets/course.css"><script defer src="../visual-lab/assets/lessons.js"></script><script defer src="../visual-lab/assets/chapter-meta.js"></script><script defer src="../visual-lab/assets/course-math.js"></script><script defer src="../visual-lab/assets/course-models.js"></script><script defer src="../visual-lab/assets/course-models-v3.js"></script><script defer src="../visual-lab/assets/course-assessment.js"></script><script defer src="../visual-lab/assets/course-mastery.js"></script><script defer src="../visual-lab/assets/course-catalog.js"></script><script defer src="../visual-lab/assets/book-content.js"></script><script defer src="../visual-lab/assets/course-render.js"></script><script defer src="../visual-lab/assets/course-mastery-panel.js"></script><script defer src="../visual-lab/assets/quality-report.js"></script><script defer src="../visual-lab/assets/course-app.js"></script></head>
+<body data-chapter="14" data-root="../"><a class="skip-link" href="#main">ข้ามไปบทเรียน</a>
+<aside class="sidebar" id="sidebar" aria-label="เลือกบทเรียน"><a class="brand" href="../visual-lab/index.html"><span class="brand-mark">ai</span><span>AI ENGINEER<small>LEARN · DERIVE · BUILD</small></span></a><div class="sidebar-intro">อ่านให้เข้าใจ · คำนวณให้เห็น · เขียนให้เป็น</div><label class="search-box"><input id="search" type="search" placeholder="ค้นหาบท / attention" aria-label="ค้นหาบทเรียน"></label><label class="filter-label" for="phase-filter">เส้นทางการเรียน <span id="nav-count"></span></label><select id="phase-filter"><option value="">ทุก Phase</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option></select><nav id="chapter-list" class="chapter-list" aria-label="รายชื่อบท"></nav><div class="course-progress"><div><span>ผ่านโจทย์ในเว็บ</span><strong id="progress-count">0 / 80</strong></div><progress id="course-progress" max="80" value="0" aria-label="บทที่ผ่านโจทย์"></progress><a id="resume-link" href="#chapter-1">อ่านต่อจากเดิม →</a></div></aside>
+<button class="nav-backdrop" id="nav-backdrop" aria-label="ปิดเมนู" hidden></button>
+<main id="main" tabindex="-1"><header class="topbar"><div><button id="nav-toggle" class="icon-button mobile-menu" aria-label="เปิดเมนูบทเรียน" aria-expanded="false" aria-controls="sidebar">☰</button><span id="breadcrumb"></span></div><span class="local-badge"><i></i> คำนวณในเครื่อง · ไม่มี API</span></header><div class="content">
+<div class="chapter-navigation"><label for="chapter-select" class="sr-only">เลือกบทเรียน</label><select id="chapter-select"></select><div class="chapter-arrows"><button id="prev-chapter" class="icon-button" aria-label="บทก่อนหน้า">←</button><button id="next-chapter" class="icon-button" aria-label="บทถัดไป">→</button></div></div>
+<section class="chapter-hero"><div><p id="chapter-kicker" class="eyebrow"></p><h1 id="chapter-title">Clustering: assign → update แล้วตรวจโครงสร้าง</h1><p class="english-title" id="chapter-english"></p></div><span class="hero-symbol">f(x) ↗</span></section>
+<p id="quality-status" class="quality-status"></p><div id="mastery-status" class="mastery-status"></div><div class="reading-route"><a href="#chapter-14/section/overview">01 อ่านบทเรียน</a><a href="#workbench">02 ทดลองสมการ</a><a href="#practice">03 ฝึกและตรวจงาน</a><a href="#mastery-review">04 หลักฐานตามเกณฑ์</a></div>
+<nav id="lesson-toc" class="lesson-toc" aria-label="สารบัญบท"></nav>
+<section id="overview" class="course-overview"><span class="eyebrow">THE LEARNING CONTRACT</span><h2>เรียนบทนี้แล้วต้องทำอะไรได้</h2><p id="chapter-purpose"></p><div id="chapter-objectives"></div><div class="learning-hint">ทำนาย → เปลี่ยนทีละค่า → ตรวจตัวเลข → อธิบายเหตุผล → เขียนด้วย Python เอง</div></section>
+<section class="workbench lab-card" id="workbench" aria-label="ห้องทดลองคำนวณจริง"><div class="card-header"><div><span class="live-dot"></span><span class="eyebrow">COMPUTATION WORKBENCH</span></div><span class="simulation-label">ทุกภาพใช้ผลคำนวณชุดเดียวกัน</span></div><div class="lab-top"><label for="lab-select">เลือกกลไกที่ต้องการทดลอง</label><select id="lab-select"></select><p id="lab-question"></p></div><div class="workbench-grid"><div class="viz-column"><div class="compare-labels"><span>เส้นทึบ: ปัจจุบัน</span><span>เส้นประ: baseline ที่ตรึงไว้</span></div><div id="simulation" class="simulation"></div><div id="metrics" class="metrics"></div><div id="baseline-diff" class="baseline-diff"></div><div class="playback"><div class="playback-buttons"><button class="primary-button" id="update-once">อัปเดตหนึ่งก้าว</button><button class="secondary-button" id="train-many">▶ ฝึก 30 ก้าว</button><button class="icon-button" id="back-state" aria-label="ย้อนประวัติ">↶</button><button class="icon-button" id="forward-state" aria-label="ประวัติถัดไป">↷</button></div></div><div class="lab-secondary-actions"><button id="pin-baseline" class="text-button">ตรึง baseline ปัจจุบัน</button><button id="reset-lab" class="text-button">คืนค่าเริ่มต้น</button><button id="download-state" class="text-button">บันทึกผล JSON</button><span id="history-status"></span></div><p id="simulation-note" class="simulation-note"></p><p class="lab-error" id="lab-error" role="alert" hidden></p></div><div class="controls-column"><h3>เปลี่ยนทีละตัว แล้วสังเกตผล</h3><div id="lab-controls"></div><p class="control-note">แก้ weight ด้วยมือจะคำนวณ forward ใหม่; optimizer เปลี่ยน weights เมื่อกดอัปเดตเท่านั้น</p></div></div>
+<div class="trace-section"><div class="trace-toolbar"><h3>เดินสมการทีละ operation</h3><div><button id="trace-prev" class="icon-button" aria-label="operation ก่อนหน้า">←</button><button id="play-trace" class="secondary-button" aria-pressed="false">▶ เล่น flow</button><button id="trace-next" class="icon-button" aria-label="operation ถัดไป">→</button><span id="stage-counter"></span></div></div><label class="motion-control"><input id="reduce-motion" type="checkbox"> ลดภาพเคลื่อนไหว (หยุดการเล่นที่ค้างอยู่)</label><div id="operation-steps" class="operation-steps"></div><div id="flow-diagram" class="flow-diagram"></div><div id="active-operation" class="active-operation" aria-live="polite"></div><p class="control-note">ตัวเลขบนภาพปัดเศษเพื่อให้อ่านง่าย; บันทึก JSON เพื่อดูค่าที่ใช้คำนวณเต็ม precision</p><details open><summary>ตารางค่าระหว่างทาง — ตรวจด้วยมือได้</summary><div id="result-table"></div></details><div id="tensor-tables" class="tensor-tables"></div><details id="surface-details"><summary>ดู loss surface และเส้นทางของ w₁,b (ตรึง controls อื่น)</summary><div id="surface-chart"></div><p>surface คำนวณ objective ปัจจุบันโดยตรึง degree, penalty, ข้อมูล และ weights อื่น เส้นทางแสดงเฉพาะ snapshots ที่ค่าเหล่านี้ตรงกัน; นอกช่วง w=[−1,5], b=[−2,4] ให้ตรวจค่าจริงใน history</p></details><details><summary>ประวัติการเปลี่ยนค่า</summary><div id="history-table"></div></details></div></section>
+<article id="chapter-article" class="chapter-article"><section id="mechanism-1" class="teaching-section"><span class="section-kicker">CHAPTER 14 · ภาพ → สมการ → โค้ด</span><h2>1. K-Means แก้ทีละส่วน</h2><h3>โจทย์และเหตุผล</h3><p>เมื่อ centers คงที่ assign ให้จุดใกล้ที่สุด เมื่อ labels คงที่ ค่าเฉลี่ยเป็น center ที่ลด squared distances ทำซ้ำจึงทำให้ inertia ไม่เพิ่มสำหรับข้อมูลเดิม</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Implement a small from-scratch example of K-Means.</p><p>X=[0,2,10,12], เริ่ม μ=[0,10]: assign=[0,0,1,1], update=[1,11], inertia=4; ทำซ้ำจน labels คงที่ และกำหนดนโยบาย empty cluster</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>c1x: centroid 1 x,initial=0; c1y: centroid 1 y,initial=4; c2x: centroid 2 x,initial=4; c2y: centroid 2 y,initial=0</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>μ₀, μ₁ = [[0, 4], [4, 0]]; เริ่มต่างกันอาจนำไป local optimum ต่างกัน</li><li>cᵢ=argmin ||xᵢ−μ_k||² = [0, 1, 0, 0, 1, 0]; เลือกศูนย์ใกล้ที่สุดจาก squared distances</li><li>μ_k=mean(points assigned to k) = [[1.725, 2], [2.5, 1.9]]; กดอัปเดตหนึ่งก้าวจึงย้าย centroids; empty cluster คงศูนย์เดิม</li><li>J=Σmin distance² = 67.59; หลัง Lloyd step ไม่ควรเพิ่ม J สำหรับข้อมูลเดิม</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="kmeans-lloyd-iteration--จ-ดกล--">เปิดการทดลองนี้</a><p class="failure-box">คำนวณระยะหลัง scale และใช้ float64 บน tiny oracle; empty cluster mean ให้ NaN ต้อง reinitialize ด้วยจุดไกลที่สุดหรือตรึงค่าเดิมตามนโยบาย; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>X=[0,2,10,12], เริ่ม μ=[0,10]: assign=[0,0,1,1], update=[1,11], inertia=4; ทำซ้ำจน labels คงที่ และกำหนดนโยบาย empty cluster</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-1-equation"><summary>สมการ</summary><ol><li><code>μ₀, μ₁</code> = [[0, 4], [4, 0]]<p>เริ่มต่างกันอาจนำไป local optimum ต่างกัน</p></li><li><code>cᵢ=argmin ||xᵢ−μ_k||²</code> = [0, 1, 0, 0, 1, 0]<p>เลือกศูนย์ใกล้ที่สุดจาก squared distances</p></li><li><code>μ_k=mean(points assigned to k)</code> = [[1.725, 2], [2.5, 1.9]]<p>กดอัปเดตหนึ่งก้าวจึงย้าย centroids; empty cluster คงศูนย์เดิม</p></li><li><code>J=Σmin distance²</code> = 67.59<p>หลัง Lloyd step ไม่ควรเพิ่ม J สำหรับข้อมูลเดิม</p></li></ol></details><details id="help-mechanism-1-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>μ₀, μ₁</code> = [[0, 4], [4, 0]]<p>เริ่มต่างกันอาจนำไป local optimum ต่างกัน</p></li><li><code>cᵢ=argmin ||xᵢ−μ_k||²</code> = [0, 1, 0, 0, 1, 0]<p>เลือกศูนย์ใกล้ที่สุดจาก squared distances</p></li><li><code>μ_k=mean(points assigned to k)</code> = [[1.725, 2], [2.5, 1.9]]<p>กดอัปเดตหนึ่งก้าวจึงย้าย centroids; empty cluster คงศูนย์เดิม</p></li><li><code>J=Σmin distance²</code> = 67.59<p>หลัง Lloyd step ไม่ควรเพิ่ม J สำหรับข้อมูลเดิม</p></li></ol></details><details id="help-mechanism-1-code"><summary>โค้ด</summary><p>X=[0,2,10,12], เริ่ม μ=[0,10]: assign=[0,0,1,1], update=[1,11], inertia=4; ทำซ้ำจน labels คงที่ และกำหนดนโยบาย empty cluster</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-1-result"><summary>ผลการทดลอง</summary><ol><li><code>μ₀, μ₁</code> = [[0, 4], [4, 0]]<p>เริ่มต่างกันอาจนำไป local optimum ต่างกัน</p></li><li><code>cᵢ=argmin ||xᵢ−μ_k||²</code> = [0, 1, 0, 0, 1, 0]<p>เลือกศูนย์ใกล้ที่สุดจาก squared distances</p></li><li><code>μ_k=mean(points assigned to k)</code> = [[1.725, 2], [2.5, 1.9]]<p>กดอัปเดตหนึ่งก้าวจึงย้าย centroids; empty cluster คงศูนย์เดิม</p></li><li><code>J=Σmin distance²</code> = 67.59<p>หลัง Lloyd step ไม่ควรเพิ่ม J สำหรับข้อมูลเดิม</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-1"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-2" class="teaching-section"><span class="section-kicker">CHAPTER 14 · ภาพ → สมการ → โค้ด</span><h2>2. initialization และ scale เป็นส่วนของผลลัพธ์</h2><h3>โจทย์และเหตุผล</h3><p>ไม่มี label ให้ตรวจ class accuracy โดยตรง ให้ทดลองหลาย seed และดู shape ของกลุ่ม K-Means ชอบก้อนทรงใกล้กลมและอาจล้มเหลวกับวงแหวนหรือ density ต่างกัน</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Add deterministic tests for Exercise 9.</p><p>assert centroids [1,11], inertia4; permutation cluster IDs ต้องเทียบ partition ไม่เทียบเลข label; k&gt;n reject และจุดเหมือนกันไม่ควรสร้าง NaN</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>c1x: centroid 1 x,initial=1; c1y: centroid 1 y,initial=1; c2x: centroid 2 x,initial=3; c2y: centroid 2 y,initial=3</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>μ₀, μ₁ = [[1, 1], [3, 3]]; เริ่มต่างกันอาจนำไป local optimum ต่างกัน</li><li>cᵢ=argmin ||xᵢ−μ_k||² = [0, 0, 0, 1, 1, 1]; เลือกศูนย์ใกล้ที่สุดจาก squared distances</li><li>μ_k=mean(points assigned to k) = [[0.5333333333333333, 0.43333333333333335], [3.4333333333333336, 3.5]]; กดอัปเดตหนึ่งก้าวจึงย้าย centroids; empty cluster คงศูนย์เดิม</li><li>J=Σmin distance² = 4.99; หลัง Lloyd step ไม่ควรเพิ่ม J สำหรับข้อมูลเดิม</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="kmeans-initialization-ทำให-คำตอ">เปิดการทดลองนี้</a><p class="failure-box">คำนวณระยะหลัง scale และใช้ float64 บน tiny oracle; empty cluster mean ให้ NaN ต้อง reinitialize ด้วยจุดไกลที่สุดหรือตรึงค่าเดิมตามนโยบาย; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>assert centroids [1,11], inertia4; permutation cluster IDs ต้องเทียบ partition ไม่เทียบเลข label; k&gt;n reject และจุดเหมือนกันไม่ควรสร้าง NaN</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-2-equation"><summary>สมการ</summary><ol><li><code>μ₀, μ₁</code> = [[1, 1], [3, 3]]<p>เริ่มต่างกันอาจนำไป local optimum ต่างกัน</p></li><li><code>cᵢ=argmin ||xᵢ−μ_k||²</code> = [0, 0, 0, 1, 1, 1]<p>เลือกศูนย์ใกล้ที่สุดจาก squared distances</p></li><li><code>μ_k=mean(points assigned to k)</code> = [[0.5333333333333333, 0.43333333333333335], [3.4333333333333336, 3.5]]<p>กดอัปเดตหนึ่งก้าวจึงย้าย centroids; empty cluster คงศูนย์เดิม</p></li><li><code>J=Σmin distance²</code> = 4.99<p>หลัง Lloyd step ไม่ควรเพิ่ม J สำหรับข้อมูลเดิม</p></li></ol></details><details id="help-mechanism-2-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>μ₀, μ₁</code> = [[1, 1], [3, 3]]<p>เริ่มต่างกันอาจนำไป local optimum ต่างกัน</p></li><li><code>cᵢ=argmin ||xᵢ−μ_k||²</code> = [0, 0, 0, 1, 1, 1]<p>เลือกศูนย์ใกล้ที่สุดจาก squared distances</p></li><li><code>μ_k=mean(points assigned to k)</code> = [[0.5333333333333333, 0.43333333333333335], [3.4333333333333336, 3.5]]<p>กดอัปเดตหนึ่งก้าวจึงย้าย centroids; empty cluster คงศูนย์เดิม</p></li><li><code>J=Σmin distance²</code> = 4.99<p>หลัง Lloyd step ไม่ควรเพิ่ม J สำหรับข้อมูลเดิม</p></li></ol></details><details id="help-mechanism-2-code"><summary>โค้ด</summary><p>assert centroids [1,11], inertia4; permutation cluster IDs ต้องเทียบ partition ไม่เทียบเลข label; k&gt;n reject และจุดเหมือนกันไม่ควรสร้าง NaN</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-2-result"><summary>ผลการทดลอง</summary><ol><li><code>μ₀, μ₁</code> = [[1, 1], [3, 3]]<p>เริ่มต่างกันอาจนำไป local optimum ต่างกัน</p></li><li><code>cᵢ=argmin ||xᵢ−μ_k||²</code> = [0, 0, 0, 1, 1, 1]<p>เลือกศูนย์ใกล้ที่สุดจาก squared distances</p></li><li><code>μ_k=mean(points assigned to k)</code> = [[0.5333333333333333, 0.43333333333333335], [3.4333333333333336, 3.5]]<p>กดอัปเดตหนึ่งก้าวจึงย้าย centroids; empty cluster คงศูนย์เดิม</p></li><li><code>J=Σmin distance²</code> = 4.99<p>หลัง Lloyd step ไม่ควรเพิ่ม J สำหรับข้อมูลเดิม</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-2"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-3" class="teaching-section"><span class="section-kicker">CHAPTER 14 · ภาพ → สมการ → โค้ด</span><h2>3. density กับ centroid เป็นสมมติฐานต่างกัน</h2><h3>โจทย์และเหตุผล</h3><p>DBSCAN ใช้ ε และ min_samples แบ่ง core/border/noise ส่วน hierarchical สร้างลำดับการรวม ต้องอธิบายความสัมพันธ์ของ neighbors ใน local lab ก่อนเทียบ silhouette เพียงตัวเดียว</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Explain DBSCAN.</p><p>DBSCAN ใช้ ε-neighborhood และ min_samples รวมตัวเอง; core ขยาย connectivity, border เชื่อม core แต่ไม่ขยายต่อ, noise ไม่ถึง core ใด ไม่มีการโหวต label แบบ KNN</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>epsilon: ε ระยะเพื่อนบ้าน,initial=0.35; minSamples: min_samples (นับตัวเองด้วย),initial=3; selected: จุดที่ต้องการตรวจ,initial=0</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>D_ij=√((x_i−x_j)²+(y_i−y_j)²) = [0, 0.2, 0.2, 0.5, 4.242640687119286, 4.386342439892262, 4.386342439892262, 11.313708498984761]; ใช้ Euclidean distance; ε มีหน่วยเดียวกับพิกัด</li><li>Nε(i)={j:D_ij≤ε} = [0, 1, 2]; รวมจุดตัวเองเพราะระยะเป็นศูนย์</li><li>core_i = |Nε(i)| ≥ min_samples = [true, true, true, false, true, true, true, false]; min_samples เป็นจำนวนสมาชิก ไม่ใช่ k ในการโหวต class</li><li>BFS ผ่าน core neighbors; border รับ label แต่ไม่ขยาย = [0, 0, 0, 0, 1, 1, 1, -1]; เมื่อ border เชื่อมได้หลาย cluster ตัวอย่างนี้ให้ cluster ที่ค้นเจอก่อน</li><li>unassigned→noise; assigned non-core→border = [&quot;core&quot;, &quot;core&quot;, &quot;core&quot;, &quot;border&quot;, &quot;core&quot;, &quot;core&quot;, &quot;core&quot;, &quot;noise&quot;]; noise ใช้ label −1; ไม่มี class label ให้โหวต</li></ol><p>ทำนายจุด3ที่ไม่ใช่coreก่อนเพิ่ม ε; neighborhood รวมตัวเอง และ border ไม่ขยาย cluster</p><a href="#workbench" data-open-lab="neighbors-density-neighborhood-ท--">เปิดการทดลองนี้</a><p class="failure-box">คำนวณระยะหลัง scale และใช้ float64 บน tiny oracle; empty cluster mean ให้ NaN ต้อง reinitialize ด้วยจุดไกลที่สุดหรือตรึงค่าเดิมตามนโยบาย; ข้อมูล 8 จุดตายตัวเพื่อคำนวณมือ; ε=.35,min_samples=3 ได้ 2 clusters, core 6, border 1, noise 1; border ใช้ first-reached policy</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>DBSCAN ใช้ ε-neighborhood และ min_samples รวมตัวเอง; core ขยาย connectivity, border เชื่อม core แต่ไม่ขยายต่อ, noise ไม่ถึง core ใด ไม่มีการโหวต label แบบ KNN</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-3-equation"><summary>สมการ</summary><ol><li><code>D_ij=√((x_i−x_j)²+(y_i−y_j)²)</code> = [0, 0.2, 0.2, 0.5, 4.242640687119286, 4.386342439892262, 4.386342439892262, 11.313708498984761]<p>ใช้ Euclidean distance; ε มีหน่วยเดียวกับพิกัด</p></li><li><code>Nε(i)={j:D_ij≤ε}</code> = [0, 1, 2]<p>รวมจุดตัวเองเพราะระยะเป็นศูนย์</p></li><li><code>core_i = |Nε(i)| ≥ min_samples</code> = [true, true, true, false, true, true, true, false]<p>min_samples เป็นจำนวนสมาชิก ไม่ใช่ k ในการโหวต class</p></li><li><code>BFS ผ่าน core neighbors; border รับ label แต่ไม่ขยาย</code> = [0, 0, 0, 0, 1, 1, 1, -1]<p>เมื่อ border เชื่อมได้หลาย cluster ตัวอย่างนี้ให้ cluster ที่ค้นเจอก่อน</p></li><li><code>unassigned→noise; assigned non-core→border</code> = [&quot;core&quot;, &quot;core&quot;, &quot;core&quot;, &quot;border&quot;, &quot;core&quot;, &quot;core&quot;, &quot;core&quot;, &quot;noise&quot;]<p>noise ใช้ label −1; ไม่มี class label ให้โหวต</p></li></ol></details><details id="help-mechanism-3-visual"><summary>ภาพและ shape</summary><p>ข้อมูล 8 จุดตายตัวเพื่อคำนวณมือ; ε=.35,min_samples=3 ได้ 2 clusters, core 6, border 1, noise 1; border ใช้ first-reached policy</p><ol><li><code>D_ij=√((x_i−x_j)²+(y_i−y_j)²)</code> = [0, 0.2, 0.2, 0.5, 4.242640687119286, 4.386342439892262, 4.386342439892262, 11.313708498984761]<p>ใช้ Euclidean distance; ε มีหน่วยเดียวกับพิกัด</p></li><li><code>Nε(i)={j:D_ij≤ε}</code> = [0, 1, 2]<p>รวมจุดตัวเองเพราะระยะเป็นศูนย์</p></li><li><code>core_i = |Nε(i)| ≥ min_samples</code> = [true, true, true, false, true, true, true, false]<p>min_samples เป็นจำนวนสมาชิก ไม่ใช่ k ในการโหวต class</p></li><li><code>BFS ผ่าน core neighbors; border รับ label แต่ไม่ขยาย</code> = [0, 0, 0, 0, 1, 1, 1, -1]<p>เมื่อ border เชื่อมได้หลาย cluster ตัวอย่างนี้ให้ cluster ที่ค้นเจอก่อน</p></li><li><code>unassigned→noise; assigned non-core→border</code> = [&quot;core&quot;, &quot;core&quot;, &quot;core&quot;, &quot;border&quot;, &quot;core&quot;, &quot;core&quot;, &quot;core&quot;, &quot;noise&quot;]<p>noise ใช้ label −1; ไม่มี class label ให้โหวต</p></li></ol></details><details id="help-mechanism-3-code"><summary>โค้ด</summary><p>DBSCAN ใช้ ε-neighborhood และ min_samples รวมตัวเอง; core ขยาย connectivity, border เชื่อม core แต่ไม่ขยายต่อ, noise ไม่ถึง core ใด ไม่มีการโหวต label แบบ KNN</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-3-result"><summary>ผลการทดลอง</summary><ol><li><code>D_ij=√((x_i−x_j)²+(y_i−y_j)²)</code> = [0, 0.2, 0.2, 0.5, 4.242640687119286, 4.386342439892262, 4.386342439892262, 11.313708498984761]<p>ใช้ Euclidean distance; ε มีหน่วยเดียวกับพิกัด</p></li><li><code>Nε(i)={j:D_ij≤ε}</code> = [0, 1, 2]<p>รวมจุดตัวเองเพราะระยะเป็นศูนย์</p></li><li><code>core_i = |Nε(i)| ≥ min_samples</code> = [true, true, true, false, true, true, true, false]<p>min_samples เป็นจำนวนสมาชิก ไม่ใช่ k ในการโหวต class</p></li><li><code>BFS ผ่าน core neighbors; border รับ label แต่ไม่ขยาย</code> = [0, 0, 0, 0, 1, 1, 1, -1]<p>เมื่อ border เชื่อมได้หลาย cluster ตัวอย่างนี้ให้ cluster ที่ค้นเจอก่อน</p></li><li><code>unassigned→noise; assigned non-core→border</code> = [&quot;core&quot;, &quot;core&quot;, &quot;core&quot;, &quot;border&quot;, &quot;core&quot;, &quot;core&quot;, &quot;core&quot;, &quot;noise&quot;]<p>noise ใช้ label −1; ไม่มี class label ให้โหวต</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-3"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="reference" class="canonical-section"><h2>เนื้อหาครบทุกหัวข้อ พร้อมแผนที่ objective</h2><nav class="source-toc"><a href="#chapter-14/section/topic-1">1. Why This Matters</a> <a href="#chapter-14/section/topic-2">2. Learning Objectives</a> <a href="#chapter-14/section/topic-3">3. Clustering Is Not Ground Truth</a> <a href="#chapter-14/section/topic-4">4. Scaling</a> <a href="#chapter-14/section/topic-5">5. K-Means Objective</a> <a href="#chapter-14/section/topic-6">6. Lloyd Algorithm</a> <a href="#chapter-14/section/topic-7">7. Why Initialization Matters</a> <a href="#chapter-14/section/topic-8">8. K-Means++</a> <a href="#chapter-14/section/topic-9">9. Choosing K</a> <a href="#chapter-14/section/topic-10">10. K-Means Failure Cases</a> <a href="#chapter-14/section/topic-11">11. DBSCAN</a> <a href="#chapter-14/section/topic-12">12. Core / Border / Noise</a> <a href="#chapter-14/section/topic-13">13. Density Reachability</a> <a href="#chapter-14/section/topic-14">14. DBSCAN Memory Note</a> <a href="#chapter-14/section/topic-15">15. Hierarchical Clustering</a> <a href="#chapter-14/section/topic-16">16. Linkage</a> <a href="#chapter-14/section/topic-17">17. Dendrogram</a> <a href="#chapter-14/section/topic-18">18. Gaussian Mixture Model</a> <a href="#chapter-14/section/topic-19">19. Responsibilities</a> <a href="#chapter-14/section/topic-20">20. EM Algorithm</a> <a href="#chapter-14/section/topic-21">21. K-Means vs GMM</a> <a href="#chapter-14/section/topic-22">22. Number of GMM Components</a> <a href="#chapter-14/section/topic-23">23. From Scratch</a> <a href="#chapter-14/section/topic-24">24. scikit-learn</a> <a href="#chapter-14/section/topic-25">25. Cluster Evaluation</a> <a href="#chapter-14/section/topic-26">26. Common Mistakes</a> <a href="#chapter-14/section/topic-27">27. Exercises / Project</a> <a href="#chapter-14/section/topic-28">28. Checklist</a> <a href="#chapter-14/section/topic-29">29. What&#x27;s Next</a> </nav><section id="topic-1" class="source-topic"><span id="source-14-clustering-canonical-chapter-14-clustering-k-means-dbscan-hierarchical-gaussian-mixtures" class="legacy-anchor"></span><span id="source-14-clustering-canonical-1-why-this-matters" class="legacy-anchor"></span><h3>1. Why This Matters</h3>
+<p>Clustering เป็น unsupervised learning:</p>
+<pre><code class="language-text">X
+↓
+ไม่มี target y
+↓
+หา structure / groups จากข้อมูลเอง
+</code></pre>
+<p>แต่ “cluster” ไม่มี definition เดียว</p>
+<p>แต่ละ algorithm นิยาม cluster ต่างกัน:</p>
+<ul>
+<li>K-Means → compact groups around centroids</li>
+<li>DBSCAN → dense connected regions</li>
+<li>Hierarchical → nested merge/split structure</li>
+<li>Gaussian Mixture → probabilistic mixture components</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>1. Why This Matters</h3>
+<p>Clustering เป็น unsupervised learning:</p>
+<pre><code class="language-text">X
+↓
+ไม่มี target y
+↓
+หา structure / groups จากข้อมูลเอง
+</code></pre>
+<p>แต่ “cluster” ไม่มี definition เดียว</p>
+<p>แต่ละ algorithm นิยาม cluster ต่างกัน:</p>
+<ul>
+<li>K-Means → compact groups around centroids</li>
+<li>DBSCAN → dense connected regions</li>
+<li>Hierarchical → nested merge/split structure</li>
+<li>Gaussian Mixture → probabilistic mixture components</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-1-equation"><summary>สมการ</summary><h3>1. Why This Matters</h3>
+<p>Clustering เป็น unsupervised learning:</p>
+<pre><code class="language-text">X
+↓
+ไม่มี target y
+↓
+หา structure / groups จากข้อมูลเอง
+</code></pre>
+<p>แต่ “cluster” ไม่มี definition เดียว</p>
+<p>แต่ละ algorithm นิยาม cluster ต่างกัน:</p>
+<ul>
+<li>K-Means → compact groups around centroids</li>
+<li>DBSCAN → dense connected regions</li>
+<li>Hierarchical → nested merge/split structure</li>
+<li>Gaussian Mixture → probabilistic mixture components</li>
+</ul></details><details id="help-topic-1-visual"><summary>ภาพและ shape</summary><h3>1. Why This Matters</h3>
+<p>Clustering เป็น unsupervised learning:</p>
+<pre><code class="language-text">X
+↓
+ไม่มี target y
+↓
+หา structure / groups จากข้อมูลเอง
+</code></pre>
+<p>แต่ “cluster” ไม่มี definition เดียว</p>
+<p>แต่ละ algorithm นิยาม cluster ต่างกัน:</p>
+<ul>
+<li>K-Means → compact groups around centroids</li>
+<li>DBSCAN → dense connected regions</li>
+<li>Hierarchical → nested merge/split structure</li>
+<li>Gaussian Mixture → probabilistic mixture components</li>
+</ul></details><details id="help-topic-1-code"><summary>โค้ด</summary><h3>1. Why This Matters</h3>
+<p>Clustering เป็น unsupervised learning:</p>
+<pre><code class="language-text">X
+↓
+ไม่มี target y
+↓
+หา structure / groups จากข้อมูลเอง
+</code></pre>
+<p>แต่ “cluster” ไม่มี definition เดียว</p>
+<p>แต่ละ algorithm นิยาม cluster ต่างกัน:</p>
+<ul>
+<li>K-Means → compact groups around centroids</li>
+<li>DBSCAN → dense connected regions</li>
+<li>Hierarchical → nested merge/split structure</li>
+<li>Gaussian Mixture → probabilistic mixture components</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-1-result"><summary>ผลการทดลอง</summary><h3>1. Why This Matters</h3>
+<p>Clustering เป็น unsupervised learning:</p>
+<pre><code class="language-text">X
+↓
+ไม่มี target y
+↓
+หา structure / groups จากข้อมูลเอง
+</code></pre>
+<p>แต่ “cluster” ไม่มี definition เดียว</p>
+<p>แต่ละ algorithm นิยาม cluster ต่างกัน:</p>
+<ul>
+<li>K-Means → compact groups around centroids</li>
+<li>DBSCAN → dense connected regions</li>
+<li>Hierarchical → nested merge/split structure</li>
+<li>Gaussian Mixture → probabilistic mixture components</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-1"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-2" class="source-topic"><span id="source-14-clustering-canonical-2-learning-objectives" class="legacy-anchor"></span><h3>2. Learning Objectives</h3>
+<p>เมื่อจบบทนี้คุณควร:</p>
+<ul>
+<li>derive K-Means objective</li>
+<li>implement Lloyd algorithm</li>
+<li>implement K-Means++ initialization</li>
+<li>explain inertia</li>
+<li>use silhouette score carefully</li>
+<li>implement DBSCAN core/border/noise logic</li>
+<li>explain eps / min_samples</li>
+<li>explain agglomerative linkage</li>
+<li>understand dendrogram</li>
+<li>derive Gaussian Mixture likelihood concept</li>
+<li>understand EM: responsibility → parameter update</li>
+<li>compare hard vs soft clustering</li>
+<li>detect when clustering output is not meaningful</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>2. Learning Objectives</h3>
+<p>เมื่อจบบทนี้คุณควร:</p>
+<ul>
+<li>derive K-Means objective</li>
+<li>implement Lloyd algorithm</li>
+<li>implement K-Means++ initialization</li>
+<li>explain inertia</li>
+<li>use silhouette score carefully</li>
+<li>implement DBSCAN core/border/noise logic</li>
+<li>explain eps / min_samples</li>
+<li>explain agglomerative linkage</li>
+<li>understand dendrogram</li>
+<li>derive Gaussian Mixture likelihood concept</li>
+<li>understand EM: responsibility → parameter update</li>
+<li>compare hard vs soft clustering</li>
+<li>detect when clustering output is not meaningful</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-2-equation"><summary>สมการ</summary><h3>2. Learning Objectives</h3>
+<p>เมื่อจบบทนี้คุณควร:</p>
+<ul>
+<li>derive K-Means objective</li>
+<li>implement Lloyd algorithm</li>
+<li>implement K-Means++ initialization</li>
+<li>explain inertia</li>
+<li>use silhouette score carefully</li>
+<li>implement DBSCAN core/border/noise logic</li>
+<li>explain eps / min_samples</li>
+<li>explain agglomerative linkage</li>
+<li>understand dendrogram</li>
+<li>derive Gaussian Mixture likelihood concept</li>
+<li>understand EM: responsibility → parameter update</li>
+<li>compare hard vs soft clustering</li>
+<li>detect when clustering output is not meaningful</li>
+</ul></details><details id="help-topic-2-visual"><summary>ภาพและ shape</summary><h3>2. Learning Objectives</h3>
+<p>เมื่อจบบทนี้คุณควร:</p>
+<ul>
+<li>derive K-Means objective</li>
+<li>implement Lloyd algorithm</li>
+<li>implement K-Means++ initialization</li>
+<li>explain inertia</li>
+<li>use silhouette score carefully</li>
+<li>implement DBSCAN core/border/noise logic</li>
+<li>explain eps / min_samples</li>
+<li>explain agglomerative linkage</li>
+<li>understand dendrogram</li>
+<li>derive Gaussian Mixture likelihood concept</li>
+<li>understand EM: responsibility → parameter update</li>
+<li>compare hard vs soft clustering</li>
+<li>detect when clustering output is not meaningful</li>
+</ul></details><details id="help-topic-2-code"><summary>โค้ด</summary><h3>2. Learning Objectives</h3>
+<p>เมื่อจบบทนี้คุณควร:</p>
+<ul>
+<li>derive K-Means objective</li>
+<li>implement Lloyd algorithm</li>
+<li>implement K-Means++ initialization</li>
+<li>explain inertia</li>
+<li>use silhouette score carefully</li>
+<li>implement DBSCAN core/border/noise logic</li>
+<li>explain eps / min_samples</li>
+<li>explain agglomerative linkage</li>
+<li>understand dendrogram</li>
+<li>derive Gaussian Mixture likelihood concept</li>
+<li>understand EM: responsibility → parameter update</li>
+<li>compare hard vs soft clustering</li>
+<li>detect when clustering output is not meaningful</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-2-result"><summary>ผลการทดลอง</summary><h3>2. Learning Objectives</h3>
+<p>เมื่อจบบทนี้คุณควร:</p>
+<ul>
+<li>derive K-Means objective</li>
+<li>implement Lloyd algorithm</li>
+<li>implement K-Means++ initialization</li>
+<li>explain inertia</li>
+<li>use silhouette score carefully</li>
+<li>implement DBSCAN core/border/noise logic</li>
+<li>explain eps / min_samples</li>
+<li>explain agglomerative linkage</li>
+<li>understand dendrogram</li>
+<li>derive Gaussian Mixture likelihood concept</li>
+<li>understand EM: responsibility → parameter update</li>
+<li>compare hard vs soft clustering</li>
+<li>detect when clustering output is not meaningful</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-2"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-3" class="source-topic"><span id="source-14-clustering-canonical-3-clustering-is-not-ground-truth" class="legacy-anchor"></span><h3>3. Clustering Is Not Ground Truth</h3>
+<p>ถ้า algorithm สร้าง 4 clusters ไม่ได้แปลว่าโลก “มี 4 กลุ่มจริง”</p>
+<p>ผลขึ้นกับ:</p>
+<ul>
+<li>representation</li>
+<li>scaling</li>
+<li>metric</li>
+<li>hyperparameters</li>
+<li>sampling</li>
+<li>algorithm assumptions</li>
+</ul><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>fit scaler/centroid บน train แล้วประเมิน holdout distances; เลือก k/ε ด้วย validation+ความหมาย domain; DBSCAN ไม่มี predict มาตรฐานจึงต้องระบุนโยบายสำหรับจุดใหม่</p><p>ผ่านเมื่อบันทึก X/scale/metric/k/ε/min_samples/seed และตรวจความหมายกลุ่มกับ domain; ไม่ผ่านถ้าอ้าง cluster ID เป็น label จริง; ทดลอง “complete linkage ลด chaining บน bridge data” เทียบ linkage เดิม</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>fit scaler/centroid บน train แล้วประเมิน holdout distances; เลือก k/ε ด้วย validation+ความหมาย domain; DBSCAN ไม่มี predict มาตรฐานจึงต้องระบุนโยบายสำหรับจุดใหม่</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-3-equation"><summary>สมการ</summary><p>fit scaler/centroid บน train แล้วประเมิน holdout distances; เลือก k/ε ด้วย validation+ความหมาย domain; DBSCAN ไม่มี predict มาตรฐานจึงต้องระบุนโยบายสำหรับจุดใหม่</p></details><details id="help-topic-3-visual"><summary>ภาพและ shape</summary><p>fit scaler/centroid บน train แล้วประเมิน holdout distances; เลือก k/ε ด้วย validation+ความหมาย domain; DBSCAN ไม่มี predict มาตรฐานจึงต้องระบุนโยบายสำหรับจุดใหม่</p></details><details id="help-topic-3-code"><summary>โค้ด</summary><p>fit scaler/centroid บน train แล้วประเมิน holdout distances; เลือก k/ε ด้วย validation+ความหมาย domain; DBSCAN ไม่มี predict มาตรฐานจึงต้องระบุนโยบายสำหรับจุดใหม่</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-3-result"><summary>ผลการทดลอง</summary><p>fit scaler/centroid บน train แล้วประเมิน holdout distances; เลือก k/ε ด้วย validation+ความหมาย domain; DBSCAN ไม่มี predict มาตรฐานจึงต้องระบุนโยบายสำหรับจุดใหม่</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-3"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-4" class="source-topic"><span id="source-14-clustering-canonical-4-scaling" class="legacy-anchor"></span><h3>4. Scaling</h3>
+<p>K-Means / DBSCAN ใช้ distance จึง scale sensitive</p>
+<pre><code class="language-text">StandardScaler
+↓
+clustering
+</code></pre>
+<p>แต่ถ้า units มี semantic importance การ scale แบบอัตโนมัติอาจทำลาย meaning ได้เช่นกัน</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-4-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>4. Scaling</h3>
+<p>K-Means / DBSCAN ใช้ distance จึง scale sensitive</p>
+<pre><code class="language-text">StandardScaler
+↓
+clustering
+</code></pre>
+<p>แต่ถ้า units มี semantic importance การ scale แบบอัตโนมัติอาจทำลาย meaning ได้เช่นกัน</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-4-equation"><summary>สมการ</summary><h3>4. Scaling</h3>
+<p>K-Means / DBSCAN ใช้ distance จึง scale sensitive</p>
+<pre><code class="language-text">StandardScaler
+↓
+clustering
+</code></pre>
+<p>แต่ถ้า units มี semantic importance การ scale แบบอัตโนมัติอาจทำลาย meaning ได้เช่นกัน</p></details><details id="help-topic-4-visual"><summary>ภาพและ shape</summary><h3>4. Scaling</h3>
+<p>K-Means / DBSCAN ใช้ distance จึง scale sensitive</p>
+<pre><code class="language-text">StandardScaler
+↓
+clustering
+</code></pre>
+<p>แต่ถ้า units มี semantic importance การ scale แบบอัตโนมัติอาจทำลาย meaning ได้เช่นกัน</p></details><details id="help-topic-4-code"><summary>โค้ด</summary><h3>4. Scaling</h3>
+<p>K-Means / DBSCAN ใช้ distance จึง scale sensitive</p>
+<pre><code class="language-text">StandardScaler
+↓
+clustering
+</code></pre>
+<p>แต่ถ้า units มี semantic importance การ scale แบบอัตโนมัติอาจทำลาย meaning ได้เช่นกัน</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-4-result"><summary>ผลการทดลอง</summary><h3>4. Scaling</h3>
+<p>K-Means / DBSCAN ใช้ distance จึง scale sensitive</p>
+<pre><code class="language-text">StandardScaler
+↓
+clustering
+</code></pre>
+<p>แต่ถ้า units มี semantic importance การ scale แบบอัตโนมัติอาจทำลาย meaning ได้เช่นกัน</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-4"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-5" class="source-topic"><span id="source-14-clustering-canonical-5-k-means-objective" class="legacy-anchor"></span><h3>5. K-Means Objective</h3>
+<p>มี K centroids:</p>
+<pre><code class="language-text">μ₁,...,μ_K
+</code></pre>
+<p>assignment:</p>
+<pre><code class="language-text">c_i ∈ {1,...,K}
+</code></pre>
+<p>objective:</p>
+<pre><code class="language-text">J = Σ_i ||x_i - μ_{c_i}||²
+</code></pre>
+<p>หรือ within-cluster sum of squares</p>
+<p>scikit-learn เรียก quantity นี้ว่า inertia</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>K-Means หา k centroid เพื่อลด Σᵢ‖xᵢ−μcᵢ‖²; input X(n,d), output labels(n,),centroids(k,d); label เป็นกลุ่ม ไม่ใช่คลาสที่รู้ล่วงหน้า</p><p>inertia คือผลรวม squared distances ถึง centroid ที่ถูก assign; X=[0,2,10,12], μ=[1,11] ได้ 1+1+1+1=4</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-5-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>K-Means หา k centroid เพื่อลด Σᵢ‖xᵢ−μcᵢ‖²; input X(n,d), output labels(n,),centroids(k,d); label เป็นกลุ่ม ไม่ใช่คลาสที่รู้ล่วงหน้า</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-5-equation"><summary>สมการ</summary><p>K-Means หา k centroid เพื่อลด Σᵢ‖xᵢ−μcᵢ‖²; input X(n,d), output labels(n,),centroids(k,d); label เป็นกลุ่ม ไม่ใช่คลาสที่รู้ล่วงหน้า</p></details><details id="help-topic-5-visual"><summary>ภาพและ shape</summary><p>K-Means หา k centroid เพื่อลด Σᵢ‖xᵢ−μcᵢ‖²; input X(n,d), output labels(n,),centroids(k,d); label เป็นกลุ่ม ไม่ใช่คลาสที่รู้ล่วงหน้า</p></details><details id="help-topic-5-code"><summary>โค้ด</summary><p>K-Means หา k centroid เพื่อลด Σᵢ‖xᵢ−μcᵢ‖²; input X(n,d), output labels(n,),centroids(k,d); label เป็นกลุ่ม ไม่ใช่คลาสที่รู้ล่วงหน้า</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-5-result"><summary>ผลการทดลอง</summary><p>K-Means หา k centroid เพื่อลด Σᵢ‖xᵢ−μcᵢ‖²; input X(n,d), output labels(n,),centroids(k,d); label เป็นกลุ่ม ไม่ใช่คลาสที่รู้ล่วงหน้า</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-5"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-6" class="source-topic"><span id="source-14-clustering-canonical-6-lloyd-algorithm" class="legacy-anchor"></span><h3>6. Lloyd Algorithm</h3>
+<p>repeat:</p>
+<ol>
+<li>Assignment step</li>
+</ol>
+<pre><code class="language-text">c_i ← argmin_k ||x_i-μ_k||²
+</code></pre>
+<ol start="2">
+<li>Update step</li>
+</ol>
+<pre><code class="language-text">μ_k ← mean of points assigned to cluster k
+</code></pre>
+<p>จน labels/centroids stabilize หรือถึง max iterations</p>
+<p>แต่ละ iteration ไม่เพิ่ม objective แต่ final solutionอาจเป็น local optimum</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>centroid คือค่าเฉลี่ยเวกเตอร์; จุด (0,0),(2,0),(4,3) มี centroid (2,1) ไม่จำเป็นต้องตรงกับจุดใดในชุด</p><p>K-Means คือกระบวนการ assign/update ส่วน centroid คือ parameter ของกลุ่ม; เปลี่ยนจุดหนึ่งมีผลต่อค่าเฉลี่ยและอาจเปลี่ยน assignment รอบถัดไป</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-6-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>centroid คือค่าเฉลี่ยเวกเตอร์; จุด (0,0),(2,0),(4,3) มี centroid (2,1) ไม่จำเป็นต้องตรงกับจุดใดในชุด</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-6-equation"><summary>สมการ</summary><p>centroid คือค่าเฉลี่ยเวกเตอร์; จุด (0,0),(2,0),(4,3) มี centroid (2,1) ไม่จำเป็นต้องตรงกับจุดใดในชุด</p></details><details id="help-topic-6-visual"><summary>ภาพและ shape</summary><p>centroid คือค่าเฉลี่ยเวกเตอร์; จุด (0,0),(2,0),(4,3) มี centroid (2,1) ไม่จำเป็นต้องตรงกับจุดใดในชุด</p></details><details id="help-topic-6-code"><summary>โค้ด</summary><p>centroid คือค่าเฉลี่ยเวกเตอร์; จุด (0,0),(2,0),(4,3) มี centroid (2,1) ไม่จำเป็นต้องตรงกับจุดใดในชุด</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-6-result"><summary>ผลการทดลอง</summary><p>centroid คือค่าเฉลี่ยเวกเตอร์; จุด (0,0),(2,0),(4,3) มี centroid (2,1) ไม่จำเป็นต้องตรงกับจุดใดในชุด</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-6"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-7" class="source-topic"><span id="source-14-clustering-canonical-7-why-initialization-matters" class="legacy-anchor"></span><h3>7. Why Initialization Matters</h3>
+<p>random centroids ต่างกัน → final clusters ต่างกัน</p>
+<p>จึง:
+- run multiple initializations
+- keep best inertia</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-7-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>7. Why Initialization Matters</h3>
+<p>random centroids ต่างกัน → final clusters ต่างกัน</p>
+<p>จึง:
+- run multiple initializations
+- keep best inertia</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-7-equation"><summary>สมการ</summary><h3>7. Why Initialization Matters</h3>
+<p>random centroids ต่างกัน → final clusters ต่างกัน</p>
+<p>จึง:
+- run multiple initializations
+- keep best inertia</p></details><details id="help-topic-7-visual"><summary>ภาพและ shape</summary><h3>7. Why Initialization Matters</h3>
+<p>random centroids ต่างกัน → final clusters ต่างกัน</p>
+<p>จึง:
+- run multiple initializations
+- keep best inertia</p></details><details id="help-topic-7-code"><summary>โค้ด</summary><h3>7. Why Initialization Matters</h3>
+<p>random centroids ต่างกัน → final clusters ต่างกัน</p>
+<p>จึง:
+- run multiple initializations
+- keep best inertia</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-7-result"><summary>ผลการทดลอง</summary><h3>7. Why Initialization Matters</h3>
+<p>random centroids ต่างกัน → final clusters ต่างกัน</p>
+<p>จึง:
+- run multiple initializations
+- keep best inertia</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-7"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-8" class="source-topic"><span id="source-14-clustering-canonical-8-k-means" class="legacy-anchor"></span><h3>8. K-Means++</h3>
+<p>แทนสุ่ม centroid uniform:</p>
+<ol>
+<li>เลือก center แรก</li>
+<li>คำนวณ squared distance ไป center ที่ใกล้ที่สุด</li>
+<li>sample center ใหม่โดย probability proportional ต่อ squared distance</li>
+<li>repeat</li>
+</ol>
+<p>ช่วยกระจาย initial centers และมัก convergence ดีขึ้น</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>assert centroids [1,11], inertia4; permutation cluster IDs ต้องเทียบ partition ไม่เทียบเลข label; k&gt;n reject และจุดเหมือนกันไม่ควรสร้าง NaN</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-8-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>assert centroids [1,11], inertia4; permutation cluster IDs ต้องเทียบ partition ไม่เทียบเลข label; k&gt;n reject และจุดเหมือนกันไม่ควรสร้าง NaN</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-8-equation"><summary>สมการ</summary><p>assert centroids [1,11], inertia4; permutation cluster IDs ต้องเทียบ partition ไม่เทียบเลข label; k&gt;n reject และจุดเหมือนกันไม่ควรสร้าง NaN</p></details><details id="help-topic-8-visual"><summary>ภาพและ shape</summary><p>assert centroids [1,11], inertia4; permutation cluster IDs ต้องเทียบ partition ไม่เทียบเลข label; k&gt;n reject และจุดเหมือนกันไม่ควรสร้าง NaN</p></details><details id="help-topic-8-code"><summary>โค้ด</summary><p>assert centroids [1,11], inertia4; permutation cluster IDs ต้องเทียบ partition ไม่เทียบเลข label; k&gt;n reject และจุดเหมือนกันไม่ควรสร้าง NaN</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-8-result"><summary>ผลการทดลอง</summary><p>assert centroids [1,11], inertia4; permutation cluster IDs ต้องเทียบ partition ไม่เทียบเลข label; k&gt;n reject และจุดเหมือนกันไม่ควรสร้าง NaN</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-8"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-9" class="source-topic"><span id="source-14-clustering-canonical-9-choosing-k" class="legacy-anchor"></span><span id="source-14-clustering-canonical-elbow" class="legacy-anchor"></span><span id="source-14-clustering-canonical-silhouette" class="legacy-anchor"></span><h3>9. Choosing K</h3>
+<p>ไม่มีวิธี universal</p>
+<h4>Elbow</h4>
+<p>plot K vs inertia</p>
+<h4>Silhouette</h4>
+<p>สำหรับ sample i:</p>
+<pre><code class="language-text">a(i) = mean distance within own cluster
+b(i) = minimum mean distance to another cluster
+
+s(i) = (b-a)/max(a,b)
+</code></pre>
+<p>ใกล้ 1 → separated<br />
+ใกล้ 0 → boundary/overlap<br />
+ติดลบ → possibly assigned poorly</p>
+<p>อย่าเลือก K จาก silhouette อย่างเดียวถ้า domain meaning สำคัญ</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-9-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>9. Choosing K</h3>
+<p>ไม่มีวิธี universal</p>
+<h4>Elbow</h4>
+<p>plot K vs inertia</p>
+<h4>Silhouette</h4>
+<p>สำหรับ sample i:</p>
+<pre><code class="language-text">a(i) = mean distance within own cluster
+b(i) = minimum mean distance to another cluster
+
+s(i) = (b-a)/max(a,b)
+</code></pre>
+<p>ใกล้ 1 → separated<br />
+ใกล้ 0 → boundary/overlap<br />
+ติดลบ → possibly assigned poorly</p>
+<p>อย่าเลือก K จาก silhouette อย่างเดียวถ้า domain meaning สำคัญ</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-9-equation"><summary>สมการ</summary><h3>9. Choosing K</h3>
+<p>ไม่มีวิธี universal</p>
+<h4>Elbow</h4>
+<p>plot K vs inertia</p>
+<h4>Silhouette</h4>
+<p>สำหรับ sample i:</p>
+<pre><code class="language-text">a(i) = mean distance within own cluster
+b(i) = minimum mean distance to another cluster
+
+s(i) = (b-a)/max(a,b)
+</code></pre>
+<p>ใกล้ 1 → separated<br />
+ใกล้ 0 → boundary/overlap<br />
+ติดลบ → possibly assigned poorly</p>
+<p>อย่าเลือก K จาก silhouette อย่างเดียวถ้า domain meaning สำคัญ</p></details><details id="help-topic-9-visual"><summary>ภาพและ shape</summary><h3>9. Choosing K</h3>
+<p>ไม่มีวิธี universal</p>
+<h4>Elbow</h4>
+<p>plot K vs inertia</p>
+<h4>Silhouette</h4>
+<p>สำหรับ sample i:</p>
+<pre><code class="language-text">a(i) = mean distance within own cluster
+b(i) = minimum mean distance to another cluster
+
+s(i) = (b-a)/max(a,b)
+</code></pre>
+<p>ใกล้ 1 → separated<br />
+ใกล้ 0 → boundary/overlap<br />
+ติดลบ → possibly assigned poorly</p>
+<p>อย่าเลือก K จาก silhouette อย่างเดียวถ้า domain meaning สำคัญ</p></details><details id="help-topic-9-code"><summary>โค้ด</summary><h3>9. Choosing K</h3>
+<p>ไม่มีวิธี universal</p>
+<h4>Elbow</h4>
+<p>plot K vs inertia</p>
+<h4>Silhouette</h4>
+<p>สำหรับ sample i:</p>
+<pre><code class="language-text">a(i) = mean distance within own cluster
+b(i) = minimum mean distance to another cluster
+
+s(i) = (b-a)/max(a,b)
+</code></pre>
+<p>ใกล้ 1 → separated<br />
+ใกล้ 0 → boundary/overlap<br />
+ติดลบ → possibly assigned poorly</p>
+<p>อย่าเลือก K จาก silhouette อย่างเดียวถ้า domain meaning สำคัญ</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-9-result"><summary>ผลการทดลอง</summary><h3>9. Choosing K</h3>
+<p>ไม่มีวิธี universal</p>
+<h4>Elbow</h4>
+<p>plot K vs inertia</p>
+<h4>Silhouette</h4>
+<p>สำหรับ sample i:</p>
+<pre><code class="language-text">a(i) = mean distance within own cluster
+b(i) = minimum mean distance to another cluster
+
+s(i) = (b-a)/max(a,b)
+</code></pre>
+<p>ใกล้ 1 → separated<br />
+ใกล้ 0 → boundary/overlap<br />
+ติดลบ → possibly assigned poorly</p>
+<p>อย่าเลือก K จาก silhouette อย่างเดียวถ้า domain meaning สำคัญ</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-9"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-10" class="source-topic"><span id="source-14-clustering-canonical-10-k-means-failure-cases" class="legacy-anchor"></span><h3>10. K-Means Failure Cases</h3>
+<ul>
+<li>non-spherical clusters</li>
+<li>unequal density/variance</li>
+<li>outliers</li>
+<li>high dimension</li>
+<li>irrelevant features</li>
+<li>categorical raw data</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-10-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>10. K-Means Failure Cases</h3>
+<ul>
+<li>non-spherical clusters</li>
+<li>unequal density/variance</li>
+<li>outliers</li>
+<li>high dimension</li>
+<li>irrelevant features</li>
+<li>categorical raw data</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-10-equation"><summary>สมการ</summary><h3>10. K-Means Failure Cases</h3>
+<ul>
+<li>non-spherical clusters</li>
+<li>unequal density/variance</li>
+<li>outliers</li>
+<li>high dimension</li>
+<li>irrelevant features</li>
+<li>categorical raw data</li>
+</ul></details><details id="help-topic-10-visual"><summary>ภาพและ shape</summary><h3>10. K-Means Failure Cases</h3>
+<ul>
+<li>non-spherical clusters</li>
+<li>unequal density/variance</li>
+<li>outliers</li>
+<li>high dimension</li>
+<li>irrelevant features</li>
+<li>categorical raw data</li>
+</ul></details><details id="help-topic-10-code"><summary>โค้ด</summary><h3>10. K-Means Failure Cases</h3>
+<ul>
+<li>non-spherical clusters</li>
+<li>unequal density/variance</li>
+<li>outliers</li>
+<li>high dimension</li>
+<li>irrelevant features</li>
+<li>categorical raw data</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-10-result"><summary>ผลการทดลอง</summary><h3>10. K-Means Failure Cases</h3>
+<ul>
+<li>non-spherical clusters</li>
+<li>unequal density/variance</li>
+<li>outliers</li>
+<li>high dimension</li>
+<li>irrelevant features</li>
+<li>categorical raw data</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-10"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-11" class="source-topic"><span id="source-14-clustering-canonical-11-dbscan" class="legacy-anchor"></span><h3>11. DBSCAN</h3>
+<p>DBSCAN ใช้ density ไม่ต้องกำหนด K</p>
+<p>parameters:</p>
+<ul>
+<li><code>eps</code> — neighborhood radius</li>
+<li><code>min_samples</code> — minimum neighborhood mass/count สำหรับ core point</li>
+</ul><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>DBSCAN ใช้ ε-neighborhood และ min_samples รวมตัวเอง; core ขยาย connectivity, border เชื่อม core แต่ไม่ขยายต่อ, noise ไม่ถึง core ใด ไม่มีการโหวต label แบบ KNN</p><p>ใช้จุด DBSCAN ใน lab seed7; sweep ε=.25/.35/.6 และ min_samples3; บันทึก core/border/noise และ silhouette เฉพาะเมื่อ valid อย่าแทน noise เป็นอีกคลัสเตอร์โดยไม่อธิบาย</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-11-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>DBSCAN ใช้ ε-neighborhood และ min_samples รวมตัวเอง; core ขยาย connectivity, border เชื่อม core แต่ไม่ขยายต่อ, noise ไม่ถึง core ใด ไม่มีการโหวต label แบบ KNN</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-11-equation"><summary>สมการ</summary><p>DBSCAN ใช้ ε-neighborhood และ min_samples รวมตัวเอง; core ขยาย connectivity, border เชื่อม core แต่ไม่ขยายต่อ, noise ไม่ถึง core ใด ไม่มีการโหวต label แบบ KNN</p></details><details id="help-topic-11-visual"><summary>ภาพและ shape</summary><p>DBSCAN ใช้ ε-neighborhood และ min_samples รวมตัวเอง; core ขยาย connectivity, border เชื่อม core แต่ไม่ขยายต่อ, noise ไม่ถึง core ใด ไม่มีการโหวต label แบบ KNN</p></details><details id="help-topic-11-code"><summary>โค้ด</summary><p>DBSCAN ใช้ ε-neighborhood และ min_samples รวมตัวเอง; core ขยาย connectivity, border เชื่อม core แต่ไม่ขยายต่อ, noise ไม่ถึง core ใด ไม่มีการโหวต label แบบ KNN</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-11-result"><summary>ผลการทดลอง</summary><p>DBSCAN ใช้ ε-neighborhood และ min_samples รวมตัวเอง; core ขยาย connectivity, border เชื่อม core แต่ไม่ขยายต่อ, noise ไม่ถึง core ใด ไม่มีการโหวต label แบบ KNN</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-11"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-12" class="source-topic"><span id="source-14-clustering-canonical-12-core-border-noise" class="legacy-anchor"></span><span id="source-14-clustering-canonical-core-point" class="legacy-anchor"></span><span id="source-14-clustering-canonical-border-point" class="legacy-anchor"></span><span id="source-14-clustering-canonical-noise" class="legacy-anchor"></span><h3>12. Core / Border / Noise</h3>
+<h4>Core point</h4>
+<p>มีอย่างน้อย min_samples points ภายใน eps-neighborhood โดยนับตัวมันเองตาม common implementation</p>
+<h4>Border point</h4>
+<p>ไม่เป็น core แต่ reachable จาก core cluster</p>
+<h4>Noise</h4>
+<p>ไม่ density-reachable จาก cluster</p>
+<p>scikit-learn ใช้ label:</p>
+<pre><code class="language-text">-1
+</code></pre>
+<p>สำหรับ noise</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>DBSCAN ใช้ ε-neighborhood และ min_samples รวมตัวเอง; core ขยาย connectivity, border เชื่อม core แต่ไม่ขยายต่อ, noise ไม่ถึง core ใด ไม่มีการโหวต label แบบ KNN</p><p>ε=.35,min_samples=3 กับจุดห้องทดลองให้ 2 กลุ่ม,6 core,1 border,1 noise; เพิ่ม ε อาจเชื่อมกลุ่มและลด noise แต่ไม่รับประกัน semantic ถูก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-12-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>DBSCAN ใช้ ε-neighborhood และ min_samples รวมตัวเอง; core ขยาย connectivity, border เชื่อม core แต่ไม่ขยายต่อ, noise ไม่ถึง core ใด ไม่มีการโหวต label แบบ KNN</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-12-equation"><summary>สมการ</summary><p>DBSCAN ใช้ ε-neighborhood และ min_samples รวมตัวเอง; core ขยาย connectivity, border เชื่อม core แต่ไม่ขยายต่อ, noise ไม่ถึง core ใด ไม่มีการโหวต label แบบ KNN</p></details><details id="help-topic-12-visual"><summary>ภาพและ shape</summary><p>DBSCAN ใช้ ε-neighborhood และ min_samples รวมตัวเอง; core ขยาย connectivity, border เชื่อม core แต่ไม่ขยายต่อ, noise ไม่ถึง core ใด ไม่มีการโหวต label แบบ KNN</p></details><details id="help-topic-12-code"><summary>โค้ด</summary><p>DBSCAN ใช้ ε-neighborhood และ min_samples รวมตัวเอง; core ขยาย connectivity, border เชื่อม core แต่ไม่ขยายต่อ, noise ไม่ถึง core ใด ไม่มีการโหวต label แบบ KNN</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-12-result"><summary>ผลการทดลอง</summary><p>DBSCAN ใช้ ε-neighborhood และ min_samples รวมตัวเอง; core ขยาย connectivity, border เชื่อม core แต่ไม่ขยายต่อ, noise ไม่ถึง core ใด ไม่มีการโหวต label แบบ KNN</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-12"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-13" class="source-topic"><span id="source-14-clustering-canonical-13-density-reachability" class="legacy-anchor"></span><h3>13. Density Reachability</h3>
+<p>DBSCAN สร้าง cluster ด้วยการ expand จาก core points ไปยัง neighbors และต่อไปยัง core neighbors</p>
+<p>ข้อดี:
+- cluster รูปร่าง arbitrary
+- detect noise</p>
+<p>ข้อเสีย:
+- eps เดียวลำบากเมื่อ densities ต่างมาก
+- scale/metric sensitive
+- high-dimensional distances มีปัญหา</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>ε=.35,min_samples=3 กับจุดห้องทดลองให้ 2 กลุ่ม,6 core,1 border,1 noise; เพิ่ม ε อาจเชื่อมกลุ่มและลด noise แต่ไม่รับประกัน semantic ถูก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-13-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>ε=.35,min_samples=3 กับจุดห้องทดลองให้ 2 กลุ่ม,6 core,1 border,1 noise; เพิ่ม ε อาจเชื่อมกลุ่มและลด noise แต่ไม่รับประกัน semantic ถูก</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-13-equation"><summary>สมการ</summary><p>ε=.35,min_samples=3 กับจุดห้องทดลองให้ 2 กลุ่ม,6 core,1 border,1 noise; เพิ่ม ε อาจเชื่อมกลุ่มและลด noise แต่ไม่รับประกัน semantic ถูก</p></details><details id="help-topic-13-visual"><summary>ภาพและ shape</summary><p>ε=.35,min_samples=3 กับจุดห้องทดลองให้ 2 กลุ่ม,6 core,1 border,1 noise; เพิ่ม ε อาจเชื่อมกลุ่มและลด noise แต่ไม่รับประกัน semantic ถูก</p></details><details id="help-topic-13-code"><summary>โค้ด</summary><p>ε=.35,min_samples=3 กับจุดห้องทดลองให้ 2 กลุ่ม,6 core,1 border,1 noise; เพิ่ม ε อาจเชื่อมกลุ่มและลด noise แต่ไม่รับประกัน semantic ถูก</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-13-result"><summary>ผลการทดลอง</summary><p>ε=.35,min_samples=3 กับจุดห้องทดลองให้ 2 กลุ่ม,6 core,1 border,1 noise; เพิ่ม ε อาจเชื่อมกลุ่มและลด noise แต่ไม่รับประกัน semantic ถูก</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-13"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-14" class="source-topic"><span id="source-14-clustering-canonical-14-dbscan-memory-note" class="legacy-anchor"></span><h3>14. DBSCAN Memory Note</h3>
+<p>scikit-learn implementation สามารถ bulk-compute neighborhoods และใช้ memory มากขึ้นตาม neighborhood density</p>
+<p>บน dataset ใหญ่ต้อง monitor memory และอาจใช้ sparse radius graph/OPTICS ตาม use case</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-14-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>14. DBSCAN Memory Note</h3>
+<p>scikit-learn implementation สามารถ bulk-compute neighborhoods และใช้ memory มากขึ้นตาม neighborhood density</p>
+<p>บน dataset ใหญ่ต้อง monitor memory และอาจใช้ sparse radius graph/OPTICS ตาม use case</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-14-equation"><summary>สมการ</summary><h3>14. DBSCAN Memory Note</h3>
+<p>scikit-learn implementation สามารถ bulk-compute neighborhoods และใช้ memory มากขึ้นตาม neighborhood density</p>
+<p>บน dataset ใหญ่ต้อง monitor memory และอาจใช้ sparse radius graph/OPTICS ตาม use case</p></details><details id="help-topic-14-visual"><summary>ภาพและ shape</summary><h3>14. DBSCAN Memory Note</h3>
+<p>scikit-learn implementation สามารถ bulk-compute neighborhoods และใช้ memory มากขึ้นตาม neighborhood density</p>
+<p>บน dataset ใหญ่ต้อง monitor memory และอาจใช้ sparse radius graph/OPTICS ตาม use case</p></details><details id="help-topic-14-code"><summary>โค้ด</summary><h3>14. DBSCAN Memory Note</h3>
+<p>scikit-learn implementation สามารถ bulk-compute neighborhoods และใช้ memory มากขึ้นตาม neighborhood density</p>
+<p>บน dataset ใหญ่ต้อง monitor memory และอาจใช้ sparse radius graph/OPTICS ตาม use case</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-14-result"><summary>ผลการทดลอง</summary><h3>14. DBSCAN Memory Note</h3>
+<p>scikit-learn implementation สามารถ bulk-compute neighborhoods และใช้ memory มากขึ้นตาม neighborhood density</p>
+<p>บน dataset ใหญ่ต้อง monitor memory และอาจใช้ sparse radius graph/OPTICS ตาม use case</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-14"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-15" class="source-topic"><span id="source-14-clustering-canonical-15-hierarchical-clustering" class="legacy-anchor"></span><h3>15. Hierarchical Clustering</h3>
+<p>Agglomerative:</p>
+<pre><code class="language-text">ทุก point เริ่มเป็น cluster
+↓
+merge closest pair
+↓
+repeat
+↓
+one hierarchy
+</code></pre>
+<p>จากนั้นตัด dendrogram ที่ระดับหนึ่งเพื่อได้จำนวน clusters</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>hierarchical clustering แบบ agglomerative รวมแล้วแยกคืนระหว่าง fit ไม่ได้; single linkage เกิด chaining ได้ ให้ดู dendrogram และลอง complete linkage บน bridge points</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-15-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>hierarchical clustering แบบ agglomerative รวมแล้วแยกคืนระหว่าง fit ไม่ได้; single linkage เกิด chaining ได้ ให้ดู dendrogram และลอง complete linkage บน bridge points</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-15-equation"><summary>สมการ</summary><p>hierarchical clustering แบบ agglomerative รวมแล้วแยกคืนระหว่าง fit ไม่ได้; single linkage เกิด chaining ได้ ให้ดู dendrogram และลอง complete linkage บน bridge points</p></details><details id="help-topic-15-visual"><summary>ภาพและ shape</summary><p>hierarchical clustering แบบ agglomerative รวมแล้วแยกคืนระหว่าง fit ไม่ได้; single linkage เกิด chaining ได้ ให้ดู dendrogram และลอง complete linkage บน bridge points</p></details><details id="help-topic-15-code"><summary>โค้ด</summary><p>hierarchical clustering แบบ agglomerative รวมแล้วแยกคืนระหว่าง fit ไม่ได้; single linkage เกิด chaining ได้ ให้ดู dendrogram และลอง complete linkage บน bridge points</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-15-result"><summary>ผลการทดลอง</summary><p>hierarchical clustering แบบ agglomerative รวมแล้วแยกคืนระหว่าง fit ไม่ได้; single linkage เกิด chaining ได้ ให้ดู dendrogram และลอง complete linkage บน bridge points</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-15"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-16" class="source-topic"><span id="source-14-clustering-canonical-16-linkage" class="legacy-anchor"></span><span id="source-14-clustering-canonical-single" class="legacy-anchor"></span><span id="source-14-clustering-canonical-complete" class="legacy-anchor"></span><span id="source-14-clustering-canonical-average" class="legacy-anchor"></span><span id="source-14-clustering-canonical-ward" class="legacy-anchor"></span><h3>16. Linkage</h3>
+<p>ระยะระหว่าง clusters นิยามได้หลายแบบ</p>
+<h4>Single</h4>
+<p>minimum pairwise distance</p>
+<p>ข้อดี: detect elongated structure<br />
+ข้อเสีย: chaining</p>
+<h4>Complete</h4>
+<p>maximum pairwise distance</p>
+<p>compact clusters มากขึ้น</p>
+<h4>Average</h4>
+<p>average pairwise distance</p>
+<h4>Ward</h4>
+<p>merge ที่เพิ่ม within-cluster variance น้อยที่สุด</p>
+<p>มักใช้กับ Euclidean geometry</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>hierarchical clustering แบบ agglomerative รวมแล้วแยกคืนระหว่าง fit ไม่ได้; single linkage เกิด chaining ได้ ให้ดู dendrogram และลอง complete linkage บน bridge points</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-16-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>hierarchical clustering แบบ agglomerative รวมแล้วแยกคืนระหว่าง fit ไม่ได้; single linkage เกิด chaining ได้ ให้ดู dendrogram และลอง complete linkage บน bridge points</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-16-equation"><summary>สมการ</summary><p>hierarchical clustering แบบ agglomerative รวมแล้วแยกคืนระหว่าง fit ไม่ได้; single linkage เกิด chaining ได้ ให้ดู dendrogram และลอง complete linkage บน bridge points</p></details><details id="help-topic-16-visual"><summary>ภาพและ shape</summary><p>hierarchical clustering แบบ agglomerative รวมแล้วแยกคืนระหว่าง fit ไม่ได้; single linkage เกิด chaining ได้ ให้ดู dendrogram และลอง complete linkage บน bridge points</p></details><details id="help-topic-16-code"><summary>โค้ด</summary><p>hierarchical clustering แบบ agglomerative รวมแล้วแยกคืนระหว่าง fit ไม่ได้; single linkage เกิด chaining ได้ ให้ดู dendrogram และลอง complete linkage บน bridge points</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-16-result"><summary>ผลการทดลอง</summary><p>hierarchical clustering แบบ agglomerative รวมแล้วแยกคืนระหว่าง fit ไม่ได้; single linkage เกิด chaining ได้ ให้ดู dendrogram และลอง complete linkage บน bridge points</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-16"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-17" class="source-topic"><span id="source-14-clustering-canonical-17-dendrogram" class="legacy-anchor"></span><h3>17. Dendrogram</h3>
+<p>tree ของการ merge:</p>
+<pre><code class="language-text">samples
+  /
+ cluster
+     /
+ bigger cluster
+    ...
+</code></pre>
+<p>ช่วย inspect multiscale structure</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>คง X,scale,distance เปลี่ยน single→complete linkage; bridge points ควรทำให้โครงสร้าง dendrogram ต่าง ตรวจ cophenetic distances และ silhouette แทนสมมติว่าต้องดีขึ้น</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-17-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>คง X,scale,distance เปลี่ยน single→complete linkage; bridge points ควรทำให้โครงสร้าง dendrogram ต่าง ตรวจ cophenetic distances และ silhouette แทนสมมติว่าต้องดีขึ้น</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-17-equation"><summary>สมการ</summary><p>คง X,scale,distance เปลี่ยน single→complete linkage; bridge points ควรทำให้โครงสร้าง dendrogram ต่าง ตรวจ cophenetic distances และ silhouette แทนสมมติว่าต้องดีขึ้น</p></details><details id="help-topic-17-visual"><summary>ภาพและ shape</summary><p>คง X,scale,distance เปลี่ยน single→complete linkage; bridge points ควรทำให้โครงสร้าง dendrogram ต่าง ตรวจ cophenetic distances และ silhouette แทนสมมติว่าต้องดีขึ้น</p></details><details id="help-topic-17-code"><summary>โค้ด</summary><p>คง X,scale,distance เปลี่ยน single→complete linkage; bridge points ควรทำให้โครงสร้าง dendrogram ต่าง ตรวจ cophenetic distances และ silhouette แทนสมมติว่าต้องดีขึ้น</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-17-result"><summary>ผลการทดลอง</summary><p>คง X,scale,distance เปลี่ยน single→complete linkage; bridge points ควรทำให้โครงสร้าง dendrogram ต่าง ตรวจ cophenetic distances และ silhouette แทนสมมติว่าต้องดีขึ้น</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-17"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-18" class="source-topic"><span id="source-14-clustering-canonical-18-gaussian-mixture-model" class="legacy-anchor"></span><h3>18. Gaussian Mixture Model</h3>
+<p>assume data generated from mixture:</p>
+<pre><code class="language-text">p(x)=Σ_k π_k N(x|μ_k,Σ_k)
+</code></pre>
+<ul>
+<li><code>π_k</code> mixture weight</li>
+<li><code>μ_k</code> mean</li>
+<li><code>Σ_k</code> covariance</li>
+</ul>
+<p>ต่างจาก K-Means เพราะ assignment เป็น probability</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>K-Means: initialize→distance→argmin→mean→repeat; DBSCAN: neighborhoods→core mask→core connectivity→border→noise; ห้ามใส่ centroid update ใน DBSCAN</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-18-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>K-Means: initialize→distance→argmin→mean→repeat; DBSCAN: neighborhoods→core mask→core connectivity→border→noise; ห้ามใส่ centroid update ใน DBSCAN</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-18-equation"><summary>สมการ</summary><p>K-Means: initialize→distance→argmin→mean→repeat; DBSCAN: neighborhoods→core mask→core connectivity→border→noise; ห้ามใส่ centroid update ใน DBSCAN</p></details><details id="help-topic-18-visual"><summary>ภาพและ shape</summary><p>K-Means: initialize→distance→argmin→mean→repeat; DBSCAN: neighborhoods→core mask→core connectivity→border→noise; ห้ามใส่ centroid update ใน DBSCAN</p></details><details id="help-topic-18-code"><summary>โค้ด</summary><p>K-Means: initialize→distance→argmin→mean→repeat; DBSCAN: neighborhoods→core mask→core connectivity→border→noise; ห้ามใส่ centroid update ใน DBSCAN</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-18-result"><summary>ผลการทดลอง</summary><p>K-Means: initialize→distance→argmin→mean→repeat; DBSCAN: neighborhoods→core mask→core connectivity→border→noise; ห้ามใส่ centroid update ใน DBSCAN</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-18"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-19" class="source-topic"><span id="source-14-clustering-canonical-19-responsibilities" class="legacy-anchor"></span><h3>19. Responsibilities</h3>
+<p>posterior membership:</p>
+<pre><code class="language-text">r_ik = P(z_i=k | x_i)
+</code></pre>
+<p>แต่ละ row:</p>
+<pre><code class="language-text">Σ_k r_ik = 1
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>K-Means: initialize→distance→argmin→mean→repeat; DBSCAN: neighborhoods→core mask→core connectivity→border→noise; ห้ามใส่ centroid update ใน DBSCAN</p><p>ใช้ sklearn KMeans(init=centroids,n_init=1,algorithm='lloyd') เทียบ inertia และ matched centroids; DBSCAN เทียบ core mask/partition โดยยอม cluster ID permutation</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-19-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>K-Means: initialize→distance→argmin→mean→repeat; DBSCAN: neighborhoods→core mask→core connectivity→border→noise; ห้ามใส่ centroid update ใน DBSCAN</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-19-equation"><summary>สมการ</summary><p>K-Means: initialize→distance→argmin→mean→repeat; DBSCAN: neighborhoods→core mask→core connectivity→border→noise; ห้ามใส่ centroid update ใน DBSCAN</p></details><details id="help-topic-19-visual"><summary>ภาพและ shape</summary><p>K-Means: initialize→distance→argmin→mean→repeat; DBSCAN: neighborhoods→core mask→core connectivity→border→noise; ห้ามใส่ centroid update ใน DBSCAN</p></details><details id="help-topic-19-code"><summary>โค้ด</summary><p>K-Means: initialize→distance→argmin→mean→repeat; DBSCAN: neighborhoods→core mask→core connectivity→border→noise; ห้ามใส่ centroid update ใน DBSCAN</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-19-result"><summary>ผลการทดลอง</summary><p>K-Means: initialize→distance→argmin→mean→repeat; DBSCAN: neighborhoods→core mask→core connectivity→border→noise; ห้ามใส่ centroid update ใน DBSCAN</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-19"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-20" class="source-topic"><span id="source-14-clustering-canonical-20-em-algorithm" class="legacy-anchor"></span><span id="source-14-clustering-canonical-e-step" class="legacy-anchor"></span><span id="source-14-clustering-canonical-m-step" class="legacy-anchor"></span><h3>20. EM Algorithm</h3>
+<h4>E-step</h4>
+<p>คำนวณ responsibilities จาก current parameters</p>
+<h4>M-step</h4>
+<p>update:</p>
+<pre><code class="language-text">N_k = Σ_i r_ik
+
+π_k = N_k/n
+μ_k = (1/N_k)Σ_i r_ik x_i
+Σ_k = weighted covariance
+</code></pre>
+<p>repeat จน log-likelihood improvement เล็ก</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>K-Means: initialize→distance→argmin→mean→repeat; DBSCAN: neighborhoods→core mask→core connectivity→border→noise; ห้ามใส่ centroid update ใน DBSCAN</p><p>ใช้ sklearn KMeans(init=centroids,n_init=1,algorithm='lloyd') เทียบ inertia และ matched centroids; DBSCAN เทียบ core mask/partition โดยยอม cluster ID permutation</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-20-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>K-Means: initialize→distance→argmin→mean→repeat; DBSCAN: neighborhoods→core mask→core connectivity→border→noise; ห้ามใส่ centroid update ใน DBSCAN</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-20-equation"><summary>สมการ</summary><p>K-Means: initialize→distance→argmin→mean→repeat; DBSCAN: neighborhoods→core mask→core connectivity→border→noise; ห้ามใส่ centroid update ใน DBSCAN</p></details><details id="help-topic-20-visual"><summary>ภาพและ shape</summary><p>K-Means: initialize→distance→argmin→mean→repeat; DBSCAN: neighborhoods→core mask→core connectivity→border→noise; ห้ามใส่ centroid update ใน DBSCAN</p></details><details id="help-topic-20-code"><summary>โค้ด</summary><p>K-Means: initialize→distance→argmin→mean→repeat; DBSCAN: neighborhoods→core mask→core connectivity→border→noise; ห้ามใส่ centroid update ใน DBSCAN</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-20-result"><summary>ผลการทดลอง</summary><p>K-Means: initialize→distance→argmin→mean→repeat; DBSCAN: neighborhoods→core mask→core connectivity→border→noise; ห้ามใส่ centroid update ใน DBSCAN</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-20"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-21" class="source-topic"><span id="source-14-clustering-canonical-21-k-means-vs-gmm" class="legacy-anchor"></span><h3>21. K-Means vs GMM</h3>
+<p>K-Means:
+- hard assignment
+- spherical-ish distance assumption
+- centroid only</p>
+<p>GMM:
+- soft assignment
+- covariance shape
+- probabilistic density</p>
+<p>K-Means สามารถมองเป็น limiting/simplified case ของ mixture geometryบางแบบ แต่ไม่ควรสรุปว่าทั้งสองเหมือนกัน</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>K-Means: initialize→distance→argmin→mean→repeat; DBSCAN: neighborhoods→core mask→core connectivity→border→noise; ห้ามใส่ centroid update ใน DBSCAN</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-21-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>K-Means: initialize→distance→argmin→mean→repeat; DBSCAN: neighborhoods→core mask→core connectivity→border→noise; ห้ามใส่ centroid update ใน DBSCAN</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-21-equation"><summary>สมการ</summary><p>K-Means: initialize→distance→argmin→mean→repeat; DBSCAN: neighborhoods→core mask→core connectivity→border→noise; ห้ามใส่ centroid update ใน DBSCAN</p></details><details id="help-topic-21-visual"><summary>ภาพและ shape</summary><p>K-Means: initialize→distance→argmin→mean→repeat; DBSCAN: neighborhoods→core mask→core connectivity→border→noise; ห้ามใส่ centroid update ใน DBSCAN</p></details><details id="help-topic-21-code"><summary>โค้ด</summary><p>K-Means: initialize→distance→argmin→mean→repeat; DBSCAN: neighborhoods→core mask→core connectivity→border→noise; ห้ามใส่ centroid update ใน DBSCAN</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-21-result"><summary>ผลการทดลอง</summary><p>K-Means: initialize→distance→argmin→mean→repeat; DBSCAN: neighborhoods→core mask→core connectivity→border→noise; ห้ามใส่ centroid update ใน DBSCAN</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-21"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-22" class="source-topic"><span id="source-14-clustering-canonical-22-number-of-gmm-components" class="legacy-anchor"></span><span id="source-14-clustering-canonical-aic" class="legacy-anchor"></span><span id="source-14-clustering-canonical-bic" class="legacy-anchor"></span><h3>22. Number of GMM Components</h3>
+<p>ใช้ validation likelihood / information criteria:</p>
+<h4>AIC</h4>
+<p>trade-off fit vs parameter count</p>
+<h4>BIC</h4>
+<p>penalty complexity แรงขึ้นตาม sample size</p>
+<p>ยังต้อง inspect domain validity</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-22-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>22. Number of GMM Components</h3>
+<p>ใช้ validation likelihood / information criteria:</p>
+<h4>AIC</h4>
+<p>trade-off fit vs parameter count</p>
+<h4>BIC</h4>
+<p>penalty complexity แรงขึ้นตาม sample size</p>
+<p>ยังต้อง inspect domain validity</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-22-equation"><summary>สมการ</summary><h3>22. Number of GMM Components</h3>
+<p>ใช้ validation likelihood / information criteria:</p>
+<h4>AIC</h4>
+<p>trade-off fit vs parameter count</p>
+<h4>BIC</h4>
+<p>penalty complexity แรงขึ้นตาม sample size</p>
+<p>ยังต้อง inspect domain validity</p></details><details id="help-topic-22-visual"><summary>ภาพและ shape</summary><h3>22. Number of GMM Components</h3>
+<p>ใช้ validation likelihood / information criteria:</p>
+<h4>AIC</h4>
+<p>trade-off fit vs parameter count</p>
+<h4>BIC</h4>
+<p>penalty complexity แรงขึ้นตาม sample size</p>
+<p>ยังต้อง inspect domain validity</p></details><details id="help-topic-22-code"><summary>โค้ด</summary><h3>22. Number of GMM Components</h3>
+<p>ใช้ validation likelihood / information criteria:</p>
+<h4>AIC</h4>
+<p>trade-off fit vs parameter count</p>
+<h4>BIC</h4>
+<p>penalty complexity แรงขึ้นตาม sample size</p>
+<p>ยังต้อง inspect domain validity</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-22-result"><summary>ผลการทดลอง</summary><h3>22. Number of GMM Components</h3>
+<p>ใช้ validation likelihood / information criteria:</p>
+<h4>AIC</h4>
+<p>trade-off fit vs parameter count</p>
+<h4>BIC</h4>
+<p>penalty complexity แรงขึ้นตาม sample size</p>
+<p>ยังต้อง inspect domain validity</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-22"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-23" class="source-topic"><span id="source-14-clustering-canonical-23-from-scratch" class="legacy-anchor"></span><h3>23. From Scratch</h3>
+<p><a href="../14-clustering/src/clustering.py">src/clustering.py</a></p>
+<p>มี:</p>
+<ul>
+<li>KMeansFromScratch</li>
+<li>k-means++ initialization</li>
+<li>inertia</li>
+<li>DBSCANFromScratch</li>
+</ul>
+<p>GMM EM จะทำเป็น guided extension เพื่อให้ผู้เรียน derive responsibility/covariance updates เองก่อนใช้ sklearn</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-23-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>23. From Scratch</h3>
+<p><a href="src/clustering.py">src/clustering.py</a></p>
+<p>มี:</p>
+<ul>
+<li>KMeansFromScratch</li>
+<li>k-means++ initialization</li>
+<li>inertia</li>
+<li>DBSCANFromScratch</li>
+</ul>
+<p>GMM EM จะทำเป็น guided extension เพื่อให้ผู้เรียน derive responsibility/covariance updates เองก่อนใช้ sklearn</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-23-equation"><summary>สมการ</summary><h3>23. From Scratch</h3>
+<p><a href="src/clustering.py">src/clustering.py</a></p>
+<p>มี:</p>
+<ul>
+<li>KMeansFromScratch</li>
+<li>k-means++ initialization</li>
+<li>inertia</li>
+<li>DBSCANFromScratch</li>
+</ul>
+<p>GMM EM จะทำเป็น guided extension เพื่อให้ผู้เรียน derive responsibility/covariance updates เองก่อนใช้ sklearn</p></details><details id="help-topic-23-visual"><summary>ภาพและ shape</summary><h3>23. From Scratch</h3>
+<p><a href="src/clustering.py">src/clustering.py</a></p>
+<p>มี:</p>
+<ul>
+<li>KMeansFromScratch</li>
+<li>k-means++ initialization</li>
+<li>inertia</li>
+<li>DBSCANFromScratch</li>
+</ul>
+<p>GMM EM จะทำเป็น guided extension เพื่อให้ผู้เรียน derive responsibility/covariance updates เองก่อนใช้ sklearn</p></details><details id="help-topic-23-code"><summary>โค้ด</summary><h3>23. From Scratch</h3>
+<p><a href="src/clustering.py">src/clustering.py</a></p>
+<p>มี:</p>
+<ul>
+<li>KMeansFromScratch</li>
+<li>k-means++ initialization</li>
+<li>inertia</li>
+<li>DBSCANFromScratch</li>
+</ul>
+<p>GMM EM จะทำเป็น guided extension เพื่อให้ผู้เรียน derive responsibility/covariance updates เองก่อนใช้ sklearn</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-23-result"><summary>ผลการทดลอง</summary><h3>23. From Scratch</h3>
+<p><a href="src/clustering.py">src/clustering.py</a></p>
+<p>มี:</p>
+<ul>
+<li>KMeansFromScratch</li>
+<li>k-means++ initialization</li>
+<li>inertia</li>
+<li>DBSCANFromScratch</li>
+</ul>
+<p>GMM EM จะทำเป็น guided extension เพื่อให้ผู้เรียน derive responsibility/covariance updates เองก่อนใช้ sklearn</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-23"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-24" class="source-topic"><span id="source-14-clustering-canonical-24-scikit-learn" class="legacy-anchor"></span><h3>24. scikit-learn</h3>
+<ul>
+<li><code>KMeans(init="k-means++", n_init="auto")</code></li>
+<li><code>DBSCAN</code></li>
+<li><code>AgglomerativeClustering</code></li>
+<li><code>GaussianMixture</code></li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-24-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>24. scikit-learn</h3>
+<ul>
+<li><code>KMeans(init="k-means++", n_init="auto")</code></li>
+<li><code>DBSCAN</code></li>
+<li><code>AgglomerativeClustering</code></li>
+<li><code>GaussianMixture</code></li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-24-equation"><summary>สมการ</summary><h3>24. scikit-learn</h3>
+<ul>
+<li><code>KMeans(init="k-means++", n_init="auto")</code></li>
+<li><code>DBSCAN</code></li>
+<li><code>AgglomerativeClustering</code></li>
+<li><code>GaussianMixture</code></li>
+</ul></details><details id="help-topic-24-visual"><summary>ภาพและ shape</summary><h3>24. scikit-learn</h3>
+<ul>
+<li><code>KMeans(init="k-means++", n_init="auto")</code></li>
+<li><code>DBSCAN</code></li>
+<li><code>AgglomerativeClustering</code></li>
+<li><code>GaussianMixture</code></li>
+</ul></details><details id="help-topic-24-code"><summary>โค้ด</summary><h3>24. scikit-learn</h3>
+<ul>
+<li><code>KMeans(init="k-means++", n_init="auto")</code></li>
+<li><code>DBSCAN</code></li>
+<li><code>AgglomerativeClustering</code></li>
+<li><code>GaussianMixture</code></li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-24-result"><summary>ผลการทดลอง</summary><h3>24. scikit-learn</h3>
+<ul>
+<li><code>KMeans(init="k-means++", n_init="auto")</code></li>
+<li><code>DBSCAN</code></li>
+<li><code>AgglomerativeClustering</code></li>
+<li><code>GaussianMixture</code></li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-24"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-25" class="source-topic"><span id="source-14-clustering-canonical-25-cluster-evaluation" class="legacy-anchor"></span><h3>25. Cluster Evaluation</h3>
+<p>ถ้ามี true labels ใช้ external metricsได้ แต่ clustering ไม่ควรแอบ tune เพื่อ match labels แล้วเรียก unsupervised evaluation</p>
+<p>internal metrics:
+- silhouette
+- Calinski-Harabasz
+- Davies-Bouldin</p>
+<p>แต่ทุก metricมี assumptions</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>silhouette s=(b−a)/max(a,b) วัด within-vs-nearest-other distance; ต้องมี 2≤k&lt;n และ distance เหมาะสม คะแนนสูงไม่รับประกันว่า noise/คลาสเชิงธุรกิจถูก</p><p>ใช้จุด DBSCAN ใน lab seed7; sweep ε=.25/.35/.6 และ min_samples3; บันทึก core/border/noise และ silhouette เฉพาะเมื่อ valid อย่าแทน noise เป็นอีกคลัสเตอร์โดยไม่อธิบาย</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-25-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>silhouette s=(b−a)/max(a,b) วัด within-vs-nearest-other distance; ต้องมี 2≤k&lt;n และ distance เหมาะสม คะแนนสูงไม่รับประกันว่า noise/คลาสเชิงธุรกิจถูก</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-25-equation"><summary>สมการ</summary><p>silhouette s=(b−a)/max(a,b) วัด within-vs-nearest-other distance; ต้องมี 2≤k&lt;n และ distance เหมาะสม คะแนนสูงไม่รับประกันว่า noise/คลาสเชิงธุรกิจถูก</p></details><details id="help-topic-25-visual"><summary>ภาพและ shape</summary><p>silhouette s=(b−a)/max(a,b) วัด within-vs-nearest-other distance; ต้องมี 2≤k&lt;n และ distance เหมาะสม คะแนนสูงไม่รับประกันว่า noise/คลาสเชิงธุรกิจถูก</p></details><details id="help-topic-25-code"><summary>โค้ด</summary><p>silhouette s=(b−a)/max(a,b) วัด within-vs-nearest-other distance; ต้องมี 2≤k&lt;n และ distance เหมาะสม คะแนนสูงไม่รับประกันว่า noise/คลาสเชิงธุรกิจถูก</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-25-result"><summary>ผลการทดลอง</summary><p>silhouette s=(b−a)/max(a,b) วัด within-vs-nearest-other distance; ต้องมี 2≤k&lt;n และ distance เหมาะสม คะแนนสูงไม่รับประกันว่า noise/คลาสเชิงธุรกิจถูก</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-25"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-26" class="source-topic"><span id="source-14-clustering-canonical-26-common-mistakes" class="legacy-anchor"></span><h3>26. Common Mistakes</h3>
+<ol>
+<li>clustering raw unscaled distance features</li>
+<li>K-Means กับ arbitrary-shaped clusters</li>
+<li>silhouette สูง = true semantic groups</li>
+<li>DBSCAN eps copy จาก tutorial</li>
+<li>tune clusteringบน test labels</li>
+<li>ignore noise label -1</li>
+<li>hierarchical linkage ไม่เข้าใจ</li>
+<li>GMM covariance singular</li>
+<li>assume component = real-world class</li>
+<li>cluster IDs 0/1/2 มี ordinal meaning</li>
+</ol><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-26-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>26. Common Mistakes</h3>
+<ol>
+<li>clustering raw unscaled distance features</li>
+<li>K-Means กับ arbitrary-shaped clusters</li>
+<li>silhouette สูง = true semantic groups</li>
+<li>DBSCAN eps copy จาก tutorial</li>
+<li>tune clusteringบน test labels</li>
+<li>ignore noise label -1</li>
+<li>hierarchical linkage ไม่เข้าใจ</li>
+<li>GMM covariance singular</li>
+<li>assume component = real-world class</li>
+<li>cluster IDs 0/1/2 มี ordinal meaning</li>
+</ol><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-26-equation"><summary>สมการ</summary><h3>26. Common Mistakes</h3>
+<ol>
+<li>clustering raw unscaled distance features</li>
+<li>K-Means กับ arbitrary-shaped clusters</li>
+<li>silhouette สูง = true semantic groups</li>
+<li>DBSCAN eps copy จาก tutorial</li>
+<li>tune clusteringบน test labels</li>
+<li>ignore noise label -1</li>
+<li>hierarchical linkage ไม่เข้าใจ</li>
+<li>GMM covariance singular</li>
+<li>assume component = real-world class</li>
+<li>cluster IDs 0/1/2 มี ordinal meaning</li>
+</ol></details><details id="help-topic-26-visual"><summary>ภาพและ shape</summary><h3>26. Common Mistakes</h3>
+<ol>
+<li>clustering raw unscaled distance features</li>
+<li>K-Means กับ arbitrary-shaped clusters</li>
+<li>silhouette สูง = true semantic groups</li>
+<li>DBSCAN eps copy จาก tutorial</li>
+<li>tune clusteringบน test labels</li>
+<li>ignore noise label -1</li>
+<li>hierarchical linkage ไม่เข้าใจ</li>
+<li>GMM covariance singular</li>
+<li>assume component = real-world class</li>
+<li>cluster IDs 0/1/2 มี ordinal meaning</li>
+</ol></details><details id="help-topic-26-code"><summary>โค้ด</summary><h3>26. Common Mistakes</h3>
+<ol>
+<li>clustering raw unscaled distance features</li>
+<li>K-Means กับ arbitrary-shaped clusters</li>
+<li>silhouette สูง = true semantic groups</li>
+<li>DBSCAN eps copy จาก tutorial</li>
+<li>tune clusteringบน test labels</li>
+<li>ignore noise label -1</li>
+<li>hierarchical linkage ไม่เข้าใจ</li>
+<li>GMM covariance singular</li>
+<li>assume component = real-world class</li>
+<li>cluster IDs 0/1/2 มี ordinal meaning</li>
+</ol><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-26-result"><summary>ผลการทดลอง</summary><h3>26. Common Mistakes</h3>
+<ol>
+<li>clustering raw unscaled distance features</li>
+<li>K-Means กับ arbitrary-shaped clusters</li>
+<li>silhouette สูง = true semantic groups</li>
+<li>DBSCAN eps copy จาก tutorial</li>
+<li>tune clusteringบน test labels</li>
+<li>ignore noise label -1</li>
+<li>hierarchical linkage ไม่เข้าใจ</li>
+<li>GMM covariance singular</li>
+<li>assume component = real-world class</li>
+<li>cluster IDs 0/1/2 มี ordinal meaning</li>
+</ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-26"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-27" class="source-topic"><span id="source-14-clustering-canonical-27-exercises-project" class="legacy-anchor"></span><h3>27. Exercises / Project</h3>
+<ul>
+<li><a href="../14-clustering/exercises/README.md">Exercises</a></li>
+<li><a href="../14-clustering/solutions/README.md">Solutions</a></li>
+<li><a href="../14-clustering/mini-project/README.md">Mini Project</a></li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-27-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>27. Exercises / Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-27-equation"><summary>สมการ</summary><h3>27. Exercises / Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-27-visual"><summary>ภาพและ shape</summary><h3>27. Exercises / Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-27-code"><summary>โค้ด</summary><h3>27. Exercises / Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-27-result"><summary>ผลการทดลอง</summary><h3>27. Exercises / Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-27"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-28" class="source-topic"><span id="source-14-clustering-canonical-28-checklist" class="legacy-anchor"></span><h3>28. Checklist</h3>
+<ul>
+<li>[ ] K-Means objective</li>
+<li>[ ] Lloyd steps</li>
+<li>[ ] K-Means++</li>
+<li>[ ] inertia</li>
+<li>[ ] silhouette</li>
+<li>[ ] DBSCAN core/border/noise</li>
+<li>[ ] eps/min_samples</li>
+<li>[ ] linkages</li>
+<li>[ ] dendrogram</li>
+<li>[ ] GMM/EM</li>
+<li>[ ] hard vs soft clustering</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-28-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>28. Checklist</h3>
+<ul>
+<li>[ ] K-Means objective</li>
+<li>[ ] Lloyd steps</li>
+<li>[ ] K-Means++</li>
+<li>[ ] inertia</li>
+<li>[ ] silhouette</li>
+<li>[ ] DBSCAN core/border/noise</li>
+<li>[ ] eps/min_samples</li>
+<li>[ ] linkages</li>
+<li>[ ] dendrogram</li>
+<li>[ ] GMM/EM</li>
+<li>[ ] hard vs soft clustering</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-28-equation"><summary>สมการ</summary><h3>28. Checklist</h3>
+<ul>
+<li>[ ] K-Means objective</li>
+<li>[ ] Lloyd steps</li>
+<li>[ ] K-Means++</li>
+<li>[ ] inertia</li>
+<li>[ ] silhouette</li>
+<li>[ ] DBSCAN core/border/noise</li>
+<li>[ ] eps/min_samples</li>
+<li>[ ] linkages</li>
+<li>[ ] dendrogram</li>
+<li>[ ] GMM/EM</li>
+<li>[ ] hard vs soft clustering</li>
+</ul></details><details id="help-topic-28-visual"><summary>ภาพและ shape</summary><h3>28. Checklist</h3>
+<ul>
+<li>[ ] K-Means objective</li>
+<li>[ ] Lloyd steps</li>
+<li>[ ] K-Means++</li>
+<li>[ ] inertia</li>
+<li>[ ] silhouette</li>
+<li>[ ] DBSCAN core/border/noise</li>
+<li>[ ] eps/min_samples</li>
+<li>[ ] linkages</li>
+<li>[ ] dendrogram</li>
+<li>[ ] GMM/EM</li>
+<li>[ ] hard vs soft clustering</li>
+</ul></details><details id="help-topic-28-code"><summary>โค้ด</summary><h3>28. Checklist</h3>
+<ul>
+<li>[ ] K-Means objective</li>
+<li>[ ] Lloyd steps</li>
+<li>[ ] K-Means++</li>
+<li>[ ] inertia</li>
+<li>[ ] silhouette</li>
+<li>[ ] DBSCAN core/border/noise</li>
+<li>[ ] eps/min_samples</li>
+<li>[ ] linkages</li>
+<li>[ ] dendrogram</li>
+<li>[ ] GMM/EM</li>
+<li>[ ] hard vs soft clustering</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-28-result"><summary>ผลการทดลอง</summary><h3>28. Checklist</h3>
+<ul>
+<li>[ ] K-Means objective</li>
+<li>[ ] Lloyd steps</li>
+<li>[ ] K-Means++</li>
+<li>[ ] inertia</li>
+<li>[ ] silhouette</li>
+<li>[ ] DBSCAN core/border/noise</li>
+<li>[ ] eps/min_samples</li>
+<li>[ ] linkages</li>
+<li>[ ] dendrogram</li>
+<li>[ ] GMM/EM</li>
+<li>[ ] hard vs soft clustering</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-28"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-29" class="source-topic"><span id="source-14-clustering-canonical-29-whats-next" class="legacy-anchor"></span><span id="source-14-clustering-canonical-14-clustering-clustering" class="legacy-anchor"></span><h3>29. What's Next</h3>
+<p>Chapter 15 จะลด dimension เพื่อ compression, visualization และ structure discovery: PCA, SVD, t-SNE, UMAP</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-29-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>29. What's Next</h3>
+<p>Chapter 15 จะลด dimension เพื่อ compression, visualization และ structure discovery: PCA, SVD, t-SNE, UMAP</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-29-equation"><summary>สมการ</summary><h3>29. What's Next</h3>
+<p>Chapter 15 จะลด dimension เพื่อ compression, visualization และ structure discovery: PCA, SVD, t-SNE, UMAP</p></details><details id="help-topic-29-visual"><summary>ภาพและ shape</summary><h3>29. What's Next</h3>
+<p>Chapter 15 จะลด dimension เพื่อ compression, visualization และ structure discovery: PCA, SVD, t-SNE, UMAP</p></details><details id="help-topic-29-code"><summary>โค้ด</summary><h3>29. What's Next</h3>
+<p>Chapter 15 จะลด dimension เพื่อ compression, visualization และ structure discovery: PCA, SVD, t-SNE, UMAP</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-29-result"><summary>ผลการทดลอง</summary><h3>29. What's Next</h3>
+<p>Chapter 15 จะลด dimension เพื่อ compression, visualization และ structure discovery: PCA, SVD, t-SNE, UMAP</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-29"> อ่านหัวข้อนี้แล้ว</label></section><details><summary>รายละเอียดเพิ่มเติมและข้อกำหนดของ local lab</summary><h3>14-clustering — Clustering</h3>
+<p><strong>Prerequisites:</strong> Complete 13-svm; be able to trace array/tensor shapes, separate train/validation/test data, and explain the core objective of the current chapter.</p>
+<p><strong>Mental model:</strong> Treat Clustering as a pipeline: input representation → central mechanism → objective/state update → observable output. At every boundary, state shape/state, allowed information flow, and the invariant that should remain true.</p>
+<p><strong>Code walkthrough:</strong> Read public API first, then input checks, state/shape transformations, numerical core, returned values and tests. Connect each important code block to the equation or algorithm in the chapter README.</p>
+<p><strong>Visualization / inspection:</strong> Use a tiny case. Inspect intermediate values, distributions, norms, scores, states or trajectories appropriate to Clustering; do not rely only on the final metric.</p>
+<p><strong>Experiment:</strong> Run a baseline, one controlled parameter change, one edge case and one repeated seeded comparison. Record seed, environment, data version, configuration and metric.</p>
+<p><strong>Limitations:</strong> List at least one assumption, one data-related limitation, one numerical/optimization limitation and one scaling limitation for Clustering.</p>
+<p><strong>Analysis workflow:</strong> Check inputs → preprocessing → shapes/state → finite numerical values → objective/update → evaluation protocol. The earliest unexpected state is more informative than a downstream metric.</p>
+<p><strong>Performance:</strong> Identify the dominant time and memory terms and measure them on the local learning run before attempting optimization.</p>
+<p><strong>Production perspective:</strong> Define input validation, artifact/configuration versioning, quality and resource measurements, staged release criteria and a way to return to the previous known-good artifact.</p>
+<p><strong>Research perspective:</strong> State a falsifiable hypothesis, baseline, one-factor change, metric, repeated-run plan when stochastic, and how negative results will be recorded.</p>
+<p><strong>Interview questions:</strong>
+1. Explain Clustering from first principles without naming a library API.
+2. Trace one input through the central mechanism and give the important intermediate shapes/state.
+3. Name the strongest assumption and a case where it fails.
+4. State the dominant compute/memory cost.
+5. Describe how you would validate a new implementation against a trusted baseline.</p>
+<p><strong>Summary / exit condition:</strong> You may move on when you can explain, derive or trace, implement, test, analyze, measure and evaluate Clustering, and when the chapter mini-project plus twenty total exercises are complete.</p></details></section><section id="objective-evidence" class="canonical-section"><h2>พิสูจน์ความสามารถทีละ objective</h2><p>ทำกรณีใหม่ก่อนเปิด reference แล้วบันทึกงานด้านล่าง ให้ผู้ตรวจใช้ rubric ตรวจคำอธิบาย ผลคำนวณ โค้ด และข้อจำกัด บันทึกเก็บในเบราว์เซอร์เครื่องนี้ กดส่งออกเพื่อสำรองหรือส่งให้ผู้ตรวจ เว็บไม่ได้รันโค้ดหรือตัดสินผลงานแทนผู้ตรวจ</p><button type="button" class="secondary-button" data-export-evidence>ส่งออกหลักฐานบทนี้เป็น JSON</button><p role="status" id="evidence-export-status"></p><details id="ch14-objective-01" class="objective-proof"><summary>derive K-Means objective</summary><p>derive K-Means objective: ใช้กรณีในหัวข้อ K-Means Objective เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch14-evidence-01"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch14-evidence-01-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch14-evidence-01-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch14-evidence-01-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch14-evidence-01-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch14-evidence-01-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch14-evidence-01-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch14-evidence-01-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch14-evidence-01-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>K-Means หา k centroid เพื่อลด Σᵢ‖xᵢ−μcᵢ‖²; input X(n,d), output labels(n,),centroids(k,d); label เป็นกลุ่ม ไม่ใช่คลาสที่รู้ล่วงหน้า</p><h3>5. K-Means Objective</h3>
+<p>มี K centroids:</p>
+<pre><code class="language-text">μ₁,...,μ_K
+</code></pre>
+<p>assignment:</p>
+<pre><code class="language-text">c_i ∈ {1,...,K}
+</code></pre>
+<p>objective:</p>
+<pre><code class="language-text">J = Σ_i ||x_i - μ_{c_i}||²
+</code></pre>
+<p>หรือ within-cluster sum of squares</p>
+<p>scikit-learn เรียก quantity นี้ว่า inertia</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch14-objective-02" class="objective-proof"><summary>implement Lloyd algorithm</summary><p>implement Lloyd algorithm: ใช้กรณีในหัวข้อ Lloyd Algorithm เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch14-evidence-02"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch14-evidence-02-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch14-evidence-02-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch14-evidence-02-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch14-evidence-02-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch14-evidence-02-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch14-evidence-02-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch14-evidence-02-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch14-evidence-02-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>centroid คือค่าเฉลี่ยเวกเตอร์; จุด (0,0),(2,0),(4,3) มี centroid (2,1) ไม่จำเป็นต้องตรงกับจุดใดในชุด</p><h3>6. Lloyd Algorithm</h3>
+<p>repeat:</p>
+<ol>
+<li>Assignment step</li>
+</ol>
+<pre><code class="language-text">c_i ← argmin_k ||x_i-μ_k||²
+</code></pre>
+<ol start="2">
+<li>Update step</li>
+</ol>
+<pre><code class="language-text">μ_k ← mean of points assigned to cluster k
+</code></pre>
+<p>จน labels/centroids stabilize หรือถึง max iterations</p>
+<p>แต่ละ iteration ไม่เพิ่ม objective แต่ final solutionอาจเป็น local optimum</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch14-objective-03" class="objective-proof"><summary>implement K-Means++ initialization</summary><p>implement K-Means++ initialization: ใช้กรณีในหัวข้อ K-Means++ เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch14-evidence-03"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch14-evidence-03-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch14-evidence-03-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch14-evidence-03-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch14-evidence-03-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch14-evidence-03-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch14-evidence-03-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch14-evidence-03-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch14-evidence-03-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>assert centroids [1,11], inertia4; permutation cluster IDs ต้องเทียบ partition ไม่เทียบเลข label; k&gt;n reject และจุดเหมือนกันไม่ควรสร้าง NaN</p><h3>8. K-Means++</h3>
+<p>แทนสุ่ม centroid uniform:</p>
+<ol>
+<li>เลือก center แรก</li>
+<li>คำนวณ squared distance ไป center ที่ใกล้ที่สุด</li>
+<li>sample center ใหม่โดย probability proportional ต่อ squared distance</li>
+<li>repeat</li>
+</ol>
+<p>ช่วยกระจาย initial centers และมัก convergence ดีขึ้น</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch14-objective-04" class="objective-proof"><summary>explain inertia</summary><p>explain inertia: ใช้กรณีในหัวข้อ K-Means Objective เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch14-evidence-04"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch14-evidence-04-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch14-evidence-04-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch14-evidence-04-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch14-evidence-04-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch14-evidence-04-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch14-evidence-04-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch14-evidence-04-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch14-evidence-04-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>K-Means หา k centroid เพื่อลด Σᵢ‖xᵢ−μcᵢ‖²; input X(n,d), output labels(n,),centroids(k,d); label เป็นกลุ่ม ไม่ใช่คลาสที่รู้ล่วงหน้า</p><h3>5. K-Means Objective</h3>
+<p>มี K centroids:</p>
+<pre><code class="language-text">μ₁,...,μ_K
+</code></pre>
+<p>assignment:</p>
+<pre><code class="language-text">c_i ∈ {1,...,K}
+</code></pre>
+<p>objective:</p>
+<pre><code class="language-text">J = Σ_i ||x_i - μ_{c_i}||²
+</code></pre>
+<p>หรือ within-cluster sum of squares</p>
+<p>scikit-learn เรียก quantity นี้ว่า inertia</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch14-objective-05" class="objective-proof"><summary>use silhouette score carefully</summary><p>use silhouette score carefully: ใช้กรณีในหัวข้อ Cluster Evaluation เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch14-evidence-05"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch14-evidence-05-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch14-evidence-05-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch14-evidence-05-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch14-evidence-05-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch14-evidence-05-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch14-evidence-05-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch14-evidence-05-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch14-evidence-05-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>silhouette s=(b−a)/max(a,b) วัด within-vs-nearest-other distance; ต้องมี 2≤k&lt;n และ distance เหมาะสม คะแนนสูงไม่รับประกันว่า noise/คลาสเชิงธุรกิจถูก</p><h3>25. Cluster Evaluation</h3>
+<p>ถ้ามี true labels ใช้ external metricsได้ แต่ clustering ไม่ควรแอบ tune เพื่อ match labels แล้วเรียก unsupervised evaluation</p>
+<p>internal metrics:
+- silhouette
+- Calinski-Harabasz
+- Davies-Bouldin</p>
+<p>แต่ทุก metricมี assumptions</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch14-objective-06" class="objective-proof"><summary>implement DBSCAN core/border/noise logic</summary><p>implement DBSCAN core/border/noise logic: ใช้กรณีในหัวข้อ DBSCAN, Core / Border / Noise เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch14-evidence-06"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch14-evidence-06-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch14-evidence-06-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch14-evidence-06-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch14-evidence-06-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch14-evidence-06-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch14-evidence-06-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch14-evidence-06-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch14-evidence-06-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>DBSCAN ใช้ ε-neighborhood และ min_samples รวมตัวเอง; core ขยาย connectivity, border เชื่อม core แต่ไม่ขยายต่อ, noise ไม่ถึง core ใด ไม่มีการโหวต label แบบ KNN</p><h3>11. DBSCAN</h3>
+<p>DBSCAN ใช้ density ไม่ต้องกำหนด K</p>
+<p>parameters:</p>
+<ul>
+<li><code>eps</code> — neighborhood radius</li>
+<li><code>min_samples</code> — minimum neighborhood mass/count สำหรับ core point</li>
+</ul>
+<h3>12. Core / Border / Noise</h3>
+<h4>Core point</h4>
+<p>มีอย่างน้อย min_samples points ภายใน eps-neighborhood โดยนับตัวมันเองตาม common implementation</p>
+<h4>Border point</h4>
+<p>ไม่เป็น core แต่ reachable จาก core cluster</p>
+<h4>Noise</h4>
+<p>ไม่ density-reachable จาก cluster</p>
+<p>scikit-learn ใช้ label:</p>
+<pre><code class="language-text">-1
+</code></pre>
+<p>สำหรับ noise</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch14-objective-07" class="objective-proof"><summary>explain eps / min_samples</summary><p>explain eps / min_samples: ใช้กรณีในหัวข้อ Core / Border / Noise, Density Reachability เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch14-evidence-07"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch14-evidence-07-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch14-evidence-07-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch14-evidence-07-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch14-evidence-07-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch14-evidence-07-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch14-evidence-07-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch14-evidence-07-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch14-evidence-07-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>DBSCAN ใช้ ε-neighborhood และ min_samples รวมตัวเอง; core ขยาย connectivity, border เชื่อม core แต่ไม่ขยายต่อ, noise ไม่ถึง core ใด ไม่มีการโหวต label แบบ KNN</p><h3>12. Core / Border / Noise</h3>
+<h4>Core point</h4>
+<p>มีอย่างน้อย min_samples points ภายใน eps-neighborhood โดยนับตัวมันเองตาม common implementation</p>
+<h4>Border point</h4>
+<p>ไม่เป็น core แต่ reachable จาก core cluster</p>
+<h4>Noise</h4>
+<p>ไม่ density-reachable จาก cluster</p>
+<p>scikit-learn ใช้ label:</p>
+<pre><code class="language-text">-1
+</code></pre>
+<p>สำหรับ noise</p>
+<h3>13. Density Reachability</h3>
+<p>DBSCAN สร้าง cluster ด้วยการ expand จาก core points ไปยัง neighbors และต่อไปยัง core neighbors</p>
+<p>ข้อดี:
+- cluster รูปร่าง arbitrary
+- detect noise</p>
+<p>ข้อเสีย:
+- eps เดียวลำบากเมื่อ densities ต่างมาก
+- scale/metric sensitive
+- high-dimensional distances มีปัญหา</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch14-objective-08" class="objective-proof"><summary>explain agglomerative linkage</summary><p>explain agglomerative linkage: ใช้กรณีในหัวข้อ Hierarchical Clustering, Linkage เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch14-evidence-08"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch14-evidence-08-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch14-evidence-08-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch14-evidence-08-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch14-evidence-08-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch14-evidence-08-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch14-evidence-08-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch14-evidence-08-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch14-evidence-08-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>hierarchical clustering แบบ agglomerative รวมแล้วแยกคืนระหว่าง fit ไม่ได้; single linkage เกิด chaining ได้ ให้ดู dendrogram และลอง complete linkage บน bridge points</p><h3>15. Hierarchical Clustering</h3>
+<p>Agglomerative:</p>
+<pre><code class="language-text">ทุก point เริ่มเป็น cluster
+↓
+merge closest pair
+↓
+repeat
+↓
+one hierarchy
+</code></pre>
+<p>จากนั้นตัด dendrogram ที่ระดับหนึ่งเพื่อได้จำนวน clusters</p>
+<h3>16. Linkage</h3>
+<p>ระยะระหว่าง clusters นิยามได้หลายแบบ</p>
+<h4>Single</h4>
+<p>minimum pairwise distance</p>
+<p>ข้อดี: detect elongated structure<br />
+ข้อเสีย: chaining</p>
+<h4>Complete</h4>
+<p>maximum pairwise distance</p>
+<p>compact clusters มากขึ้น</p>
+<h4>Average</h4>
+<p>average pairwise distance</p>
+<h4>Ward</h4>
+<p>merge ที่เพิ่ม within-cluster variance น้อยที่สุด</p>
+<p>มักใช้กับ Euclidean geometry</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch14-objective-09" class="objective-proof"><summary>understand dendrogram</summary><p>understand dendrogram: ใช้กรณีในหัวข้อ Dendrogram เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch14-evidence-09"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch14-evidence-09-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch14-evidence-09-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch14-evidence-09-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch14-evidence-09-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch14-evidence-09-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch14-evidence-09-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch14-evidence-09-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch14-evidence-09-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>คง X,scale,distance เปลี่ยน single→complete linkage; bridge points ควรทำให้โครงสร้าง dendrogram ต่าง ตรวจ cophenetic distances และ silhouette แทนสมมติว่าต้องดีขึ้น</p><h3>17. Dendrogram</h3>
+<p>tree ของการ merge:</p>
+<pre><code class="language-text">samples
+  /
+ cluster
+     /
+ bigger cluster
+    ...
+</code></pre>
+<p>ช่วย inspect multiscale structure</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch14-objective-10" class="objective-proof"><summary>derive Gaussian Mixture likelihood concept</summary><p>derive Gaussian Mixture likelihood concept: ใช้กรณีในหัวข้อ Gaussian Mixture Model, Responsibilities เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch14-evidence-10"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch14-evidence-10-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch14-evidence-10-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch14-evidence-10-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch14-evidence-10-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch14-evidence-10-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch14-evidence-10-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch14-evidence-10-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch14-evidence-10-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>K-Means: initialize→distance→argmin→mean→repeat; DBSCAN: neighborhoods→core mask→core connectivity→border→noise; ห้ามใส่ centroid update ใน DBSCAN</p><h3>18. Gaussian Mixture Model</h3>
+<p>assume data generated from mixture:</p>
+<pre><code class="language-text">p(x)=Σ_k π_k N(x|μ_k,Σ_k)
+</code></pre>
+<ul>
+<li><code>π_k</code> mixture weight</li>
+<li><code>μ_k</code> mean</li>
+<li><code>Σ_k</code> covariance</li>
+</ul>
+<p>ต่างจาก K-Means เพราะ assignment เป็น probability</p>
+<h3>19. Responsibilities</h3>
+<p>posterior membership:</p>
+<pre><code class="language-text">r_ik = P(z_i=k | x_i)
+</code></pre>
+<p>แต่ละ row:</p>
+<pre><code class="language-text">Σ_k r_ik = 1
+</code></pre></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch14-objective-11" class="objective-proof"><summary>understand EM: responsibility → parameter update</summary><p>understand EM: responsibility → parameter update: ใช้กรณีในหัวข้อ Responsibilities, EM Algorithm เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch14-evidence-11"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch14-evidence-11-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch14-evidence-11-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch14-evidence-11-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch14-evidence-11-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch14-evidence-11-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch14-evidence-11-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch14-evidence-11-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch14-evidence-11-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>K-Means: initialize→distance→argmin→mean→repeat; DBSCAN: neighborhoods→core mask→core connectivity→border→noise; ห้ามใส่ centroid update ใน DBSCAN</p><h3>19. Responsibilities</h3>
+<p>posterior membership:</p>
+<pre><code class="language-text">r_ik = P(z_i=k | x_i)
+</code></pre>
+<p>แต่ละ row:</p>
+<pre><code class="language-text">Σ_k r_ik = 1
+</code></pre>
+<h3>20. EM Algorithm</h3>
+<h4>E-step</h4>
+<p>คำนวณ responsibilities จาก current parameters</p>
+<h4>M-step</h4>
+<p>update:</p>
+<pre><code class="language-text">N_k = Σ_i r_ik
+
+π_k = N_k/n
+μ_k = (1/N_k)Σ_i r_ik x_i
+Σ_k = weighted covariance
+</code></pre>
+<p>repeat จน log-likelihood improvement เล็ก</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch14-objective-12" class="objective-proof"><summary>compare hard vs soft clustering</summary><p>compare hard vs soft clustering: ใช้กรณีในหัวข้อ K-Means vs GMM เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch14-evidence-12"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch14-evidence-12-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch14-evidence-12-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch14-evidence-12-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch14-evidence-12-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch14-evidence-12-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch14-evidence-12-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch14-evidence-12-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch14-evidence-12-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>K-Means: initialize→distance→argmin→mean→repeat; DBSCAN: neighborhoods→core mask→core connectivity→border→noise; ห้ามใส่ centroid update ใน DBSCAN</p><h3>21. K-Means vs GMM</h3>
+<p>K-Means:
+- hard assignment
+- spherical-ish distance assumption
+- centroid only</p>
+<p>GMM:
+- soft assignment
+- covariance shape
+- probabilistic density</p>
+<p>K-Means สามารถมองเป็น limiting/simplified case ของ mixture geometryบางแบบ แต่ไม่ควรสรุปว่าทั้งสองเหมือนกัน</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch14-objective-13" class="objective-proof"><summary>detect when clustering output is not meaningful</summary><p>detect when clustering output is not meaningful: ใช้กรณีในหัวข้อ Clustering Is Not Ground Truth, Cluster Evaluation เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch14-evidence-13"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch14-evidence-13-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch14-evidence-13-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch14-evidence-13-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch14-evidence-13-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch14-evidence-13-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch14-evidence-13-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch14-evidence-13-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch14-evidence-13-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>silhouette s=(b−a)/max(a,b) วัด within-vs-nearest-other distance; ต้องมี 2≤k&lt;n และ distance เหมาะสม คะแนนสูงไม่รับประกันว่า noise/คลาสเชิงธุรกิจถูก</p><h3>3. Clustering Is Not Ground Truth</h3>
+<p>ถ้า algorithm สร้าง 4 clusters ไม่ได้แปลว่าโลก “มี 4 กลุ่มจริง”</p>
+<p>ผลขึ้นกับ:</p>
+<ul>
+<li>representation</li>
+<li>scaling</li>
+<li>metric</li>
+<li>hyperparameters</li>
+<li>sampling</li>
+<li>algorithm assumptions</li>
+</ul>
+<h3>25. Cluster Evaluation</h3>
+<p>ถ้ามี true labels ใช้ external metricsได้ แต่ clustering ไม่ควรแอบ tune เพื่อ match labels แล้วเรียก unsupervised evaluation</p>
+<p>internal metrics:
+- silhouette
+- Calinski-Harabasz
+- Davies-Bouldin</p>
+<p>แต่ทุก metricมี assumptions</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details></section><section id="implementation" class="canonical-section"><h2>Implementation และ tests ที่รันบนเครื่องได้</h2><details><summary>14-clustering/src/clustering.py</summary><pre><code>&quot;&quot;&quot;Educational K-Means and DBSCAN implementations.&quot;&quot;&quot;
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+
+import numpy as np
+
+
+def _validate_X(X: np.ndarray) -&gt; np.ndarray:
+    array = np.asarray(X, dtype=float)
+    if array.ndim != 2 or array.shape[0] == 0 or array.shape[1] == 0:
+        raise ValueError(&quot;X must be a non-empty 2D array&quot;)
+    if not np.all(np.isfinite(array)):
+        raise ValueError(&quot;X must contain finite values&quot;)
+    return array
+
+
+@dataclass
+class KMeansFromScratch:
+    n_clusters: int = 8
+    max_iter: int = 300
+    tol: float = 1e-4
+    seed: int = 42
+    cluster_centers_: np.ndarray | None = None
+    labels_: np.ndarray | None = None
+    inertia_: float | None = None
+    inertia_history_: list[float] = field(default_factory=list)
+
+    def _init_kmeans_plus_plus(
+        self,
+        X: np.ndarray,
+        rng: np.random.Generator,
+    ) -&gt; np.ndarray:
+        n_samples = X.shape[0]
+        centers = [X[int(rng.integers(n_samples))].copy()]
+
+        while len(centers) &lt; self.n_clusters:
+            existing = np.vstack(centers)
+            squared = np.sum(
+                (X[:, None, :] - existing[None, :, :]) ** 2,
+                axis=2,
+            )
+            nearest_squared = np.min(squared, axis=1)
+            total = float(nearest_squared.sum())
+
+            if total == 0.0:
+                remaining = rng.integers(n_samples)
+                centers.append(X[int(remaining)].copy())
+                continue
+
+            probabilities = nearest_squared / total
+            index = int(rng.choice(n_samples, p=probabilities))
+            centers.append(X[index].copy())
+
+        return np.vstack(centers)
+
+    def fit(self, X: np.ndarray) -&gt; &quot;KMeansFromScratch&quot;:
+        X_array = _validate_X(X)
+        if not 1 &lt;= self.n_clusters &lt;= X_array.shape[0]:
+            raise ValueError(&quot;n_clusters must be in [1, n_samples]&quot;)
+        if self.max_iter &lt;= 0 or self.tol &lt; 0:
+            raise ValueError(&quot;invalid max_iter/tol&quot;)
+
+        rng = np.random.default_rng(self.seed)
+        centers = self._init_kmeans_plus_plus(X_array, rng)
+        self.inertia_history_ = []
+
+        for _ in range(self.max_iter):
+            squared = np.sum(
+                (X_array[:, None, :] - centers[None, :, :]) ** 2,
+                axis=2,
+            )
+            labels = np.argmin(squared, axis=1)
+            inertia = float(np.sum(squared[np.arange(len(X_array)), labels]))
+            self.inertia_history_.append(inertia)
+
+            new_centers = centers.copy()
+            for cluster in range(self.n_clusters):
+                members = X_array[labels == cluster]
+                if members.size:
+                    new_centers[cluster] = members.mean(axis=0)
+
+            shift = float(np.linalg.norm(new_centers - centers))
+            centers = new_centers
+            if shift &lt;= self.tol:
+                break
+
+        squared = np.sum(
+            (X_array[:, None, :] - centers[None, :, :]) ** 2,
+            axis=2,
+        )
+        labels = np.argmin(squared, axis=1)
+
+        self.cluster_centers_ = centers
+        self.labels_ = labels
+        self.inertia_ = float(
+            np.sum(squared[np.arange(len(X_array)), labels])
+        )
+        return self
+
+    def predict(self, X: np.ndarray) -&gt; np.ndarray:
+        if self.cluster_centers_ is None:
+            raise RuntimeError(&quot;model must be fit before predict&quot;)
+        X_array = _validate_X(X)
+        squared = np.sum(
+            (X_array[:, None, :] - self.cluster_centers_[None, :, :]) ** 2,
+            axis=2,
+        )
+        return np.argmin(squared, axis=1)
+
+
+@dataclass
+class DBSCANFromScratch:
+    eps: float = 0.5
+    min_samples: int = 5
+    labels_: np.ndarray | None = None
+    core_sample_indices_: np.ndarray | None = None
+
+    def fit(self, X: np.ndarray) -&gt; &quot;DBSCANFromScratch&quot;:
+        X_array = _validate_X(X)
+        if self.eps &lt;= 0:
+            raise ValueError(&quot;eps must be positive&quot;)
+        if self.min_samples &lt;= 0:
+            raise ValueError(&quot;min_samples must be positive&quot;)
+
+        n = X_array.shape[0]
+        distances = np.linalg.norm(
+            X_array[:, None, :] - X_array[None, :, :],
+            axis=2,
+        )
+        neighbors = [
+            np.flatnonzero(distances[i] &lt;= self.eps)
+            for i in range(n)
+        ]
+        core = np.array(
+            [len(indexes) &gt;= self.min_samples for indexes in neighbors]
+        )
+
+        labels = np.full(n, -1, dtype=int)
+        visited = np.zeros(n, dtype=bool)
+        cluster_id = 0
+
+        for point in range(n):
+            if visited[point]:
+                continue
+            visited[point] = True
+
+            if not core[point]:
+                continue
+
+            labels[point] = cluster_id
+            queue = list(neighbors[point])
+            queued = set(queue)
+
+            while queue:
+                current = queue.pop(0)
+
+                if not visited[current]:
+                    visited[current] = True
+                    if core[current]:
+                        for candidate in neighbors[current]:
+                            c = int(candidate)
+                            if c not in queued:
+                                queue.append(c)
+                                queued.add(c)
+
+                if labels[current] == -1:
+                    labels[current] = cluster_id
+
+            cluster_id += 1
+
+        self.labels_ = labels
+        self.core_sample_indices_ = np.flatnonzero(core)
+        return self
+
+    def fit_predict(self, X: np.ndarray) -&gt; np.ndarray:
+        return self.fit(X).labels_.copy()
+</code></pre></details><details><summary>14-clustering/tests/test_clustering.py</summary><pre><code>from pathlib import Path
+import importlib.util
+import sys
+
+import numpy as np
+from sklearn.cluster import DBSCAN, KMeans
+from sklearn.datasets import make_blobs
+from sklearn.metrics import adjusted_rand_score
+
+
+MODULE_PATH = Path(__file__).parents[1] / &quot;src&quot; / &quot;clustering.py&quot;
+SPEC = importlib.util.spec_from_file_location(&quot;clustering_course&quot;, MODULE_PATH)
+assert SPEC and SPEC.loader
+mod = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = mod
+SPEC.loader.exec_module(mod)
+
+
+def test_kmeans_finds_clear_blobs() -&gt; None:
+    X, y = make_blobs(
+        n_samples=240,
+        centers=[[-5, -5], [0, 5], [5, -4]],
+        cluster_std=0.45,
+        random_state=7,
+    )
+
+    model = mod.KMeansFromScratch(
+        n_clusters=3,
+        seed=7,
+    ).fit(X)
+
+    assert adjusted_rand_score(y, model.labels_) &gt; 0.98
+    assert model.inertia_ is not None
+
+
+def test_kmeans_reference_has_similar_inertia_scale() -&gt; None:
+    X, _ = make_blobs(
+        n_samples=180,
+        centers=3,
+        cluster_std=0.7,
+        random_state=11,
+    )
+
+    ours = mod.KMeansFromScratch(n_clusters=3, seed=11).fit(X)
+    ref = KMeans(
+        n_clusters=3,
+        init=&quot;k-means++&quot;,
+        n_init=10,
+        random_state=11,
+    ).fit(X)
+
+    assert ours.inertia_ &lt;= ref.inertia_ * 1.20
+
+
+def test_dbscan_matches_reference_structure_on_simple_data() -&gt; None:
+    X = np.array(
+        [
+            [0.0, 0.0],
+            [0.1, 0.0],
+            [0.0, 0.1],
+            [5.0, 5.0],
+            [5.1, 5.0],
+            [5.0, 5.1],
+            [20.0, 20.0],
+        ]
+    )
+
+    ours = mod.DBSCANFromScratch(eps=0.25, min_samples=2).fit_predict(X)
+    ref = DBSCAN(eps=0.25, min_samples=2).fit_predict(X)
+
+    assert adjusted_rand_score(ref, ours) == 1.0
+    assert ours[-1] == -1
+</code></pre></details></section><section id="glossary" class="canonical-section"><h2>อภิธานศัพท์ — คำไทย ความหมาย และข้อควรตรวจ</h2><dl><dt>tensor</dt><dd>เทนเซอร์: ชุดตัวเลขที่มีแกน เช่น scalar ไม่มีแกน, vector หนึ่งแกน, matrix สองแกน; shape บอกขนาดแต่ละแกน ไม่บอกความหมายของแกนจนกว่าจะระบุ</dd><dt>shape</dt><dd>รูปทรงข้อมูล: (B,T,d) หมายถึง batch × เวลา/ตำแหน่ง × features; ใช้ชื่อแกนกำกับเสมอ การ transpose เปลี่ยนแกนแต่ไม่ใช่แค่เปลี่ยนชื่อ</dd><dt>batch</dt><dd>กลุ่มตัวอย่างที่คำนวณร่วมกันหนึ่งครั้ง; B คือจำนวนตัวอย่าง ไม่ใช่จำนวน features หรือจำนวน optimizer updates</dd><dt>weight w / θ</dt><dd>น้ำหนักหรือพารามิเตอร์ที่โมเดลใช้คำนวณ; แก้ด้วยมือทำ forward ใหม่ ส่วน optimizer ต้องรับ gradient แล้วกด update จึงแก้ state</dd><dt>bias b</dt><dd>ค่าคงที่ที่บวกกับผลเชิงเส้น; regression scalar bias เพิ่ม Δ ทำให้ prediction ทุกจุดเพิ่ม Δ เท่ากัน</dd><dt>prediction ŷ</dt><dd>ค่าที่โมเดลทำนายจาก input และพารามิเตอร์ปัจจุบัน; เครื่องหมายหมวกแยกจาก target y ที่มาจากข้อมูล</dd><dt>residual e</dt><dd>ความคลาดเคลื่อน ในเว็บนี้นิยาม prediction − target; บางตำราใช้เครื่องหมายกลับกัน จึงต้องตรวจนิยามก่อนเทียบสูตร gradient</dd><dt>MSE</dt><dd>mean squared error = ผลรวม residual กำลังสองหารจำนวนรายการที่ระบุ; มีหน่วยเป็น target ยกกำลังสอง และการใช้ sum แทน mean เปลี่ยน scale gradient</dd><dt>loss L / objective J</dt><dd>จำนวนที่ optimizer ต้องการลด; objective อาจรวม data loss และ regularization จึงต้องดูองค์ประกอบและ reduction ให้ตรง implementation</dd><dt>gradient ∇ / ∂</dt><dd>เวกเตอร์ของ partial derivatives บอกอัตราเปลี่ยน loss ต่อพารามิเตอร์แต่ละตัว; ∂ ใช้เมื่อเปลี่ยนตัวหนึ่งโดยตรึงตัวอื่น</dd><dt>chain rule</dt><dd>กฎลูกโซ่: คูณอนุพันธ์ตามเส้นทาง และบวก contribution จากทุกเส้นทางที่มารวมกัน ใช้ย้อนจาก loss ถึง weights</dd><dt>learning rate η</dt><dd>ขนาดตัวคูณ gradient ใน update θnew=θ−ηg; η≥0, ศูนย์หมายถึงไม่มีการขยับพารามิเตอร์ ก้าวใหญ่เกินอาจ diverge</dd><dt>regularization λ</dt><dd>ตัวคูณค่าลงโทษ ต้อง λ≥0 ตามนิยามการลงโทษ; Ridge λΣw² เพิ่ม gradient 2λw โดยบท Regression นี้ไม่ลงโทษ bias</dd><dt>baseline</dt><dd>สถานะอ้างอิงที่ตรึงไว้สำหรับเทียบ; ต้องเก็บ snapshot ไม่อ้าง object ปัจจุบันที่แก้ตามไปด้วย</dd><dt>invariant</dt><dd>คุณสมบัติที่กลไกต้องรักษา เช่น probability รวม1, shape สอดคล้อง, queue ไม่เกิน capacity; ใช้ tests ตรวจได้มากกว่าดูภาพสวย</dd><dt>optimizer state</dt><dd>ความจำของอัลกอริทึม เช่น velocity, moments และ completed updates; คืนเฉพาะ weights ยังไม่เท่ากับเริ่มการฝึกใหม่ทั้งหมด</dd><dt>finite difference</dt><dd>ประมาณ derivative ด้วย [f(x+h)−f(x−h)]/(2h); h&gt;0, ใช้ smooth point และลองหลาย h เพื่อแยก truncation error จาก roundoff</dd><dt>softmax</dt><dd>แปลง logits เป็นความน่าจะเป็นตามแกนที่กำหนด; ลบ max ก่อน exp เพื่อความเสถียร และ fully masked row ต้องมีนโยบายชัดเจน</dd><dt>logit</dt><dd>คะแนนก่อน sigmoid/softmax ไม่ใช่ probability; อาจเป็นจำนวนจริงติดลบหรือเกิน1ได้ จึงห้ามส่งให้ loss ที่คาด probability โดยไม่แปลง</dd><dt>temperature τ / T</dt><dd>ตัวหาร logits ก่อน softmax; ต้องเป็นบวก ค่าเล็กทำ distribution แหลมขึ้น โดยไม่เท่ากับ retrain weights</dd><dt>mask</dt><dd>ตัวกำหนดตำแหน่งที่อ่านหรือคิด loss ได้; causal mask ปิดอนาคต, padding mask ปิดข้อมูลเติม, loss mask เลือก target แต่ละอย่างคนละหน้าที่</dd><dt>Q / K / V</dt><dd>query ใช้ค้นข้อมูล, key ใช้จับคู่ query, value เป็นข้อมูลที่ถูกถัวเฉลี่ย; เป็น learned projections ของ representation ไม่ใช่ป้ายความหมายตายตัว</dd><dt>head</dt><dd>ส่วนของ feature representation ที่ทำ attention แยกกัน แล้ว concat/project กลับ; ต้องตรวจ d_model หารจำนวน heads ลงตัว</dd><dt>ε-neighborhood</dt><dd>เพื่อนบ้านทั้งหมดที่มีระยะไม่เกิน ε รวมจุดตัวเองใน DBSCAN นี้; ε มีหน่วยเดียวกับพิกัด ไม่ใช่จำนวน k ที่ใช้โหวต</dd><dt>core / border / noise</dt><dd>DBSCAN core มีเพื่อนบ้านรวมตัวเองถึง min_samples; border อยู่ใกล้ core แต่เพื่อนบ้านไม่ถึง; noise ไม่ถูกเชื่อมกับ core cluster ใด</dd><dt>bootstrap</dt><dd>สุ่ม observations แบบ replacement ขนาดเท่าเดิมซ้ำหลายครั้งแล้วคำนวณ statistic ใหม่; seed ทำให้ตรวจซ้ำได้ แต่ไม่แก้สมมติฐาน IID ที่ผิด</dd><dt>confidence interval</dt><dd>ช่วงที่สร้างด้วย procedure ที่มี coverage ตามสมมติฐาน; ช่วงหนึ่งที่ได้แล้วไม่ใช่ posterior probability ของ parameter และ sample เล็กยังไม่แน่นอนมาก</dd><dt>validation / test</dt><dd>validation ใช้เลือกโมเดล/ค่าตั้ง ส่วน test ใช้ประเมินหลัง freeze การตัดสินใจ; fit preprocessing/tokenizer จาก test เป็น leakage</dd><dt>leakage</dt><dd>ข้อมูลที่ควรยังไม่รู้ไหลเข้า training/การเลือกโมเดล เช่น future feature หรือเอกสารซ้ำข้าม split ทำให้ metric ดูดีเกินการใช้งานจริง</dd><dt>queue / capacity</dt><dd>queue คือรายการรอ, capacity การให้บริการรวม = workers × service rate ตามแบบจำลอง; เพิ่ม timeout ไม่เพิ่มกำลังประมวลผล</dd><dt>state transition</dt><dd>การเปลี่ยนสถานะเมื่อเกิดเหตุการณ์ที่อนุญาต เช่น queued→active→done; ต้องระบุ guard, side effect และเหตุผลเมื่อ transition ถูกปฏิเสธ</dd><dt>latency / throughput</dt><dd>latency คือเวลาต่อคำขอ, throughput คือปริมาณงานต่อหน่วยเวลา; batching อาจเพิ่ม throughput แต่เพิ่มเวลารอ จึงต้องวัดทั้งคู่</dd><dt>idempotency</dt><dd>ทำคำขอ business operation เดิมซ้ำแล้ว side effect เกิดครั้งเดียวตาม key และ transaction protocol; ไม่ได้รับประกันจากการใช้ UUID ใหม่ทุก attempt</dd><dt>local lab</dt><dd>โปรแกรม Python และ tests ที่ผู้เรียนรันบนเครื่อง; เว็บเก็บเพียงคำยืนยันของผู้เรียน การผ่าน tests ของโค้ดต้นแบบไม่ใช่ผลตรวจโค้ดผู้เรียน</dd></dl></section></article>
+<section id="practice" class="practice-section"><span class="eyebrow">PRACTICE · DEBUG · BUILD</span><h2>พิสูจน์ด้วยการลงมือทำ</h2><div id="web-checks"></div><div class="retry-actions"><button class="secondary-button" id="retry-checks">เริ่มทำโจทย์ในเว็บใหม่</button><button class="text-button" id="undo-retry" hidden>คืนผลก่อนเริ่มใหม่</button></div><div id="exercise-content"><h2>แบบฝึก 20 ข้อ — เฉลยเฉพาะข้อ</h2><p>ทำคำตอบก่อนเปิด hints; โจทย์ปลายเปิดให้ใช้ตัวอย่างคำตอบและหลักฐานราย objective ตรวจงานจริง</p><section id="exercise-1" class="exercise-item"><h3>ข้อ 1</h3><p>Define K-Means.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ K-Means Objective: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): K-Means หา k centroid เพื่อลด Σᵢ‖xᵢ−μcᵢ‖²; input X(n…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: K-Means หา k centroid เพื่อลด Σᵢ‖xᵢ−μcᵢ‖²; input X(n,d), output labels(n,),centroids(k,d); lab…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>K-Means หา k centroid เพื่อลด Σᵢ‖xᵢ−μcᵢ‖²; input X(n,d), output labels(n,),centroids(k,d); label เป็นกลุ่ม ไม่ใช่คลาสที่รู้ล่วงหน้า</p><p>อ้างอิง: <a href="#chapter-14/section/topic-5">K-Means Objective</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch14-exercise-01"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-2" class="exercise-item"><h3>ข้อ 2</h3><p>Define centroid with a small example.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Lloyd Algorithm: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): centroid คือค่าเฉลี่ยเวกเตอร์; จุด (0,0)…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: centroid คือค่าเฉลี่ยเวกเตอร์; จุด (0,0),(2,0),(4,3) มี centroid (2,1) ไ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>centroid คือค่าเฉลี่ยเวกเตอร์; จุด (0,0),(2,0),(4,3) มี centroid (2,1) ไม่จำเป็นต้องตรงกับจุดใดในชุด</p><p>อ้างอิง: <a href="#chapter-14/section/topic-6">Lloyd Algorithm</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch14-exercise-02"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-3" class="exercise-item"><h3>ข้อ 3</h3><p>Explain inertia.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ K-Means Objective: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): inertia คือผลรวม squared distances ถึง c…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: inertia คือผลรวม squared distances ถึง centroid ที่ถูก assign; X=[0,2,10…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>inertia คือผลรวม squared distances ถึง centroid ที่ถูก assign; X=[0,2,10,12], μ=[1,11] ได้ 1+1+1+1=4</p><p>อ้างอิง: <a href="#chapter-14/section/topic-5">K-Means Objective</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch14-exercise-03"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-4" class="exercise-item"><h3>ข้อ 4</h3><p>Explain DBSCAN.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>แยกบทบาทความหนาแน่นออกจากระยะของ nearest neighbors การเป็น core ขึ้นกับจำนวนจุดในรัศมี</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>เขียน Nε(p)={q:distance(p,q)≤ε} รวม p เอง; core เมื่อจำนวนไม่น้อยกว่า min_samples</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>ใน lab เริ่ม ε=.35,min_samples=3: นับเพื่อนของ (0,0) ก่อน แล้วเทียบ (0.5,0) ซึ่งแตะ core แต่เพื่อนไม่พอขยายเอง</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>DBSCAN ใช้ ε-neighborhood และ min_samples รวมตัวเอง; core ขยาย connectivity, border เชื่อม core แต่ไม่ขยายต่อ, noise ไม่ถึง core ใด ไม่มีการโหวต label แบบ KNN</p><p>อ้างอิง: <a href="#chapter-14/section/topic-11">DBSCAN</a>, <a href="#chapter-14/section/topic-12">Core / Border / Noise</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch14-exercise-04"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-5" class="exercise-item"><h3>ข้อ 5</h3><p>Compare K-Means and centroid.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Lloyd Algorithm: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): K-Means คือกระบวนการ assign/update ส่วน centroid คือ p…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: K-Means คือกระบวนการ assign/update ส่วน centroid คือ parameter ของกลุ่ม; เปลี่ยนจุดหนึ่งมีผลต่อค่า…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>K-Means คือกระบวนการ assign/update ส่วน centroid คือ parameter ของกลุ่ม; เปลี่ยนจุดหนึ่งมีผลต่อค่าเฉลี่ยและอาจเปลี่ยน assignment รอบถัดไป</p><p>อ้างอิง: <a href="#chapter-14/section/topic-6">Lloyd Algorithm</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch14-exercise-05"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-6" class="exercise-item"><h3>ข้อ 6</h3><p>Explain how DBSCAN changes model behavior.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Core / Border / Noise, Density Reachability: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ε=.35,min_samples=3 กับจุดห้องทดลองให้ 2 กลุ่ม,6 core…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ε=.35,min_samples=3 กับจุดห้องทดลองให้ 2 กลุ่ม,6 core,1 border,1 noise; เพิ่ม ε อาจเชื่อมกลุ่มแล…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ε=.35,min_samples=3 กับจุดห้องทดลองให้ 2 กลุ่ม,6 core,1 border,1 noise; เพิ่ม ε อาจเชื่อมกลุ่มและลด noise แต่ไม่รับประกัน semantic ถูก</p><p>อ้างอิง: <a href="#chapter-14/section/topic-12">Core / Border / Noise</a>, <a href="#chapter-14/section/topic-13">Density Reachability</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch14-exercise-06"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-7" class="exercise-item"><h3>ข้อ 7</h3><p>Explain a common limitation involving hierarchical clustering.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Hierarchical Clustering, Linkage: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): hierarchical clustering แบบ agglomerative รวมแล้วแยกคืนระหว่าง fit…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: hierarchical clustering แบบ agglomerative รวมแล้วแยกคืนระหว่าง fit ไม่ได้; single linkage เกิด chaining ได้ ให้ดู dend…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>hierarchical clustering แบบ agglomerative รวมแล้วแยกคืนระหว่าง fit ไม่ได้; single linkage เกิด chaining ได้ ให้ดู dendrogram และลอง complete linkage บน bridge points</p><p>อ้างอิง: <a href="#chapter-14/section/topic-15">Hierarchical Clustering</a>, <a href="#chapter-14/section/topic-16">Linkage</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch14-exercise-07"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-8" class="exercise-item"><h3>ข้อ 8</h3><p>Explain the tradeoff introduced by silhouette score.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Cluster Evaluation: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): silhouette s=(b−a)/max(a,b) วัด within-vs-nearest-other di…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: silhouette s=(b−a)/max(a,b) วัด within-vs-nearest-other distance; ต้องมี 2≤k&lt;n และ distance เหมาะสม คะแนน…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>silhouette s=(b−a)/max(a,b) วัด within-vs-nearest-other distance; ต้องมี 2≤k&lt;n และ distance เหมาะสม คะแนนสูงไม่รับประกันว่า noise/คลาสเชิงธุรกิจถูก</p><p>อ้างอิง: <a href="#chapter-14/section/topic-25">Cluster Evaluation</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch14-exercise-08"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-9" class="exercise-item"><h3>ข้อ 9</h3><p>Implement a small from-scratch example of K-Means.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Lloyd Algorithm: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): X=[0,2,10,12], เริ่ม μ=[0,10]: assign=[0,0,1,1], …</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: X=[0,2,10,12], เริ่ม μ=[0,10]: assign=[0,0,1,1], update=[1,11], inertia=4; ทำซ้ำจน labels…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>X=[0,2,10,12], เริ่ม μ=[0,10]: assign=[0,0,1,1], update=[1,11], inertia=4; ทำซ้ำจน labels คงที่ และกำหนดนโยบาย empty cluster</p><p>อ้างอิง: <a href="#chapter-14/section/topic-6">Lloyd Algorithm</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch14-exercise-09"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-10" class="exercise-item"><h3>ข้อ 10</h3><p>Add deterministic tests for Exercise 9.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ K-Means++: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): assert centroids [1,11], inertia4; permutation cluster …</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: assert centroids [1,11], inertia4; permutation cluster IDs ต้องเทียบ partition ไม่เทียบเลข label; k&gt;…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>assert centroids [1,11], inertia4; permutation cluster IDs ต้องเทียบ partition ไม่เทียบเลข label; k&gt;n reject และจุดเหมือนกันไม่ควรสร้าง NaN</p><p>อ้างอิง: <a href="#chapter-14/section/topic-8">K-Means++</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch14-exercise-10"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-11" class="exercise-item"><h3>ข้อ 11</h3><p>Implement the main computation behind inertia.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ K-Means Objective: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): <code>np.square(X-centroids[labels]).sum()</code>; X(4,1),cent…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: <code>np.square(X-centroids[labels]).sum()</code>; X(4,1),centroids(2,1),labels[0,0,1,1] ได้4 ต้อง sum …</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p><code>np.square(X-centroids[labels]).sum()</code>; X(4,1),centroids(2,1),labels[0,0,1,1] ได้4 ต้อง sum ทุก feature และทุก sample ไม่ใช่ mean</p><p>อ้างอิง: <a href="#chapter-14/section/topic-5">K-Means Objective</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch14-exercise-11"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-12" class="exercise-item"><h3>ข้อ 12</h3><p>Run a small seeded experiment using centroid, DBSCAN, and silhouette score.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Lloyd Algorithm, DBSCAN, Core / Border / Noise, Cluster Evaluation: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ใช้จุด DBSCAN ใน lab seed7; sweep ε=.25/.35/.6 และ min_samples3; …</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ใช้จุด DBSCAN ใน lab seed7; sweep ε=.25/.35/.6 และ min_samples3; บันทึก core/border/noise และ silhouette เฉพาะเมื่อ va…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ใช้จุด DBSCAN ใน lab seed7; sweep ε=.25/.35/.6 และ min_samples3; บันทึก core/border/noise และ silhouette เฉพาะเมื่อ valid อย่าแทน noise เป็นอีกคลัสเตอร์โดยไม่อธิบาย</p><p>อ้างอิง: <a href="#chapter-14/section/topic-6">Lloyd Algorithm</a>, <a href="#chapter-14/section/topic-11">DBSCAN</a>, <a href="#chapter-14/section/topic-12">Core / Border / Noise</a>, <a href="#chapter-14/section/topic-25">Cluster Evaluation</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch14-exercise-12"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-13" class="exercise-item"><h3>ข้อ 13</h3><p>Explain a common shape or data mismatch for this topic.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Lloyd Algorithm: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ต้อง broadcast X[:,None,:]−centroids[None,:,:] เป็น…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ต้อง broadcast X[:,None,:]−centroids[None,:,:] เป็น (n,k,d) ก่อน sum(axis=2)→(n,k); sum axis…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ต้อง broadcast X[:,None,:]−centroids[None,:,:] เป็น (n,k,d) ก่อน sum(axis=2)→(n,k); sum axis ผิดทำให้ assign feature แทน cluster</p><p>อ้างอิง: <a href="#chapter-14/section/topic-6">Lloyd Algorithm</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch14-exercise-13"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-14" class="exercise-item"><h3>ข้อ 14</h3><p>Explain one numerical-stability concern.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Lloyd Algorithm: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): คำนวณระยะหลัง scale และใช้ float64 บน tiny oracle; emp…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: คำนวณระยะหลัง scale และใช้ float64 บน tiny oracle; empty cluster mean ให้ NaN ต้อง reinitialize ด…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>คำนวณระยะหลัง scale และใช้ float64 บน tiny oracle; empty cluster mean ให้ NaN ต้อง reinitialize ด้วยจุดไกลที่สุดหรือตรึงค่าเดิมตามนโยบาย</p><p>อ้างอิง: <a href="#chapter-14/section/topic-6">Lloyd Algorithm</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch14-exercise-14"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-15" class="exercise-item"><h3>ข้อ 15</h3><p>Explain the correct train, validation, and test workflow.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Clustering Is Not Ground Truth, Cluster Evaluation: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): fit scaler/centroid บน train แล้วประเมิน holdout distances; เลือ…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: fit scaler/centroid บน train แล้วประเมิน holdout distances; เลือก k/ε ด้วย validation+ความหมาย domain; DBSCAN ไม่มี…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>fit scaler/centroid บน train แล้วประเมิน holdout distances; เลือก k/ε ด้วย validation+ความหมาย domain; DBSCAN ไม่มี predict มาตรฐานจึงต้องระบุนโยบายสำหรับจุดใหม่</p><p>อ้างอิง: <a href="#chapter-14/section/topic-3">Clustering Is Not Ground Truth</a>, <a href="#chapter-14/section/topic-25">Cluster Evaluation</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch14-exercise-15"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-16" class="exercise-item"><h3>ข้อ 16</h3><p>Measure runtime and memory of the main computation.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Lloyd Algorithm, Core / Border / Noise: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): Lloyd หนึ่งรอบ O(nkd) เวลา, distance tensor O(nkd) หาก mater…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: Lloyd หนึ่งรอบ O(nkd) เวลา, distance tensor O(nkd) หาก materialize; chunk ลด memory; naive DBSCAN O(n²) ระยะ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>Lloyd หนึ่งรอบ O(nkd) เวลา, distance tensor O(nkd) หาก materialize; chunk ลด memory; naive DBSCAN O(n²) ระยะ/เวลาในกรณีเลวร้าย ต้องวัด index ที่ใช้จริง</p><p>อ้างอิง: <a href="#chapter-14/section/topic-6">Lloyd Algorithm</a>, <a href="#chapter-14/section/topic-12">Core / Border / Noise</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch14-exercise-16"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-17" class="exercise-item"><h3>ข้อ 17</h3><p>Derive the main input-to-output algorithm for Clustering.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Gaussian Mixture Model, Responsibilities, EM Algorithm, K-Means vs GMM: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): K-Means: initialize→distance→argmin→mean→repeat; DBSCAN: n…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: K-Means: initialize→distance→argmin→mean→repeat; DBSCAN: neighborhoods→core mask→core connectivity→border…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>K-Means: initialize→distance→argmin→mean→repeat; DBSCAN: neighborhoods→core mask→core connectivity→border→noise; ห้ามใส่ centroid update ใน DBSCAN</p><p>อ้างอิง: <a href="#chapter-14/section/topic-18">Gaussian Mixture Model</a>, <a href="#chapter-14/section/topic-19">Responsibilities</a>, <a href="#chapter-14/section/topic-20">EM Algorithm</a>, <a href="#chapter-14/section/topic-21">K-Means vs GMM</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch14-exercise-17"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-18" class="exercise-item"><h3>ข้อ 18</h3><p>Compare a scratch implementation with a trusted library on identical data.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Responsibilities, EM Algorithm: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ใช้ sklearn KMeans(init=centroids,n_init=1,algorithm='lloyd') เท…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ใช้ sklearn KMeans(init=centroids,n_init=1,algorithm='lloyd') เทียบ inertia และ matched centroids; DBSCAN เทียบ cor…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ใช้ sklearn KMeans(init=centroids,n_init=1,algorithm='lloyd') เทียบ inertia และ matched centroids; DBSCAN เทียบ core mask/partition โดยยอม cluster ID permutation</p><p>อ้างอิง: <a href="#chapter-14/section/topic-19">Responsibilities</a>, <a href="#chapter-14/section/topic-20">EM Algorithm</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch14-exercise-18"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-19" class="exercise-item"><h3>ข้อ 19</h3><p>Compare a baseline with a controlled change involving hierarchical clustering.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Dendrogram: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): คง X,scale,distance เปลี่ยน single→complete linkage; bridge point…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: คง X,scale,distance เปลี่ยน single→complete linkage; bridge points ควรทำให้โครงสร้าง dendrogram ต่าง ตรวจ cophenetic …</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>คง X,scale,distance เปลี่ยน single→complete linkage; bridge points ควรทำให้โครงสร้าง dendrogram ต่าง ตรวจ cophenetic distances และ silhouette แทนสมมติว่าต้องดีขึ้น</p><p>อ้างอิง: <a href="#chapter-14/section/topic-17">Dendrogram</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch14-exercise-19"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-20" class="exercise-item"><h3>ข้อ 20</h3><p>Summarize validation, reproducibility, monitoring, and one open research question.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Clustering Is Not Ground Truth, Cluster Evaluation: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ผ่านเมื่อบันทึก X/scale/metric/k/ε/min_samples/seed และตรวจความหมายกลุ่มกับ do…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ผ่านเมื่อบันทึก X/scale/metric/k/ε/min_samples/seed และตรวจความหมายกลุ่มกับ domain; ไม่ผ่านถ้าอ้าง cluster ID เป็น label จริง; ทดลอง “complet…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ผ่านเมื่อบันทึก X/scale/metric/k/ε/min_samples/seed และตรวจความหมายกลุ่มกับ domain; ไม่ผ่านถ้าอ้าง cluster ID เป็น label จริง; ทดลอง “complete linkage ลด chaining บน bridge data” เทียบ linkage เดิม</p><p>อ้างอิง: <a href="#chapter-14/section/topic-3">Clustering Is Not Ground Truth</a>, <a href="#chapter-14/section/topic-25">Cluster Evaluation</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch14-exercise-20"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section></div><div id="local-lab-content"><section id="local-lab"><h2>Local lab: Python 3.12 บน CPU</h2><p>รันจาก repository root; ใช้ Python 3.12 แยก environment สำหรับ framework ตาม requirements ของชุดบท</p><pre><code>python3.12 -m venv .venv-course
+source .venv-course/bin/activate
+python -m pip install -r requirements-batch05.txt pytest
+(cd 14-clustering &amp;&amp; python -m pytest tests -q -rs)</code></pre><p>ผลที่คาดหวัง: required tests ผ่านและไม่มี required test ถูก skip; GPU/integrations ที่ยังไม่รันต้องระบุแยก Python 3.15 ที่มากับเครื่องอาจใช้กับ framework wheels เหล่านี้ไม่ได้</p><h2>Mini Project — Cluster Assumption Lab</h2>
+<p>Generate datasets:
+- spherical blobs
+- anisotropic blobs
+- moons
+- unequal-density blobs
+- noise/outliers</p>
+<p>Compare:
+- KMeans
+- DBSCAN
+- AgglomerativeClustering
+- GaussianMixture</p>
+<p>For each:
+1. same standardized representation where appropriate
+2. plot clusters
+3. silhouette where meaningful
+4. noise count
+5. runtime
+6. repeat seeds for randomized models</p>
+<p>Write which algorithm assumption matches each geometry and where metrics mislead.</p><h2>Batch 05 Integration Project — Geometry &amp; Representation Lab</h2>
+<p>รวม Chapters 13–15:</p>
+<pre><code class="language-text">high-dimensional data
+      ↓
+StandardScaler
+      ├────────────→ SVM classification
+      │
+      └→ PCA
+          ├────────→ SVM classification
+          ├────────→ K-Means clustering
+          └────────→ DBSCAN clustering
+</code></pre>
+<h3>Goal</h3>
+<p>ตอบคำถาม 3 แบบโดยไม่สับสนกัน:</p>
+<ol>
+<li><strong>Supervised:</strong> margin classifier แยก labels ได้ดีแค่ไหน?</li>
+<li><strong>Unsupervised:</strong> geometry มี cluster structure แบบใด?</li>
+<li><strong>Representation:</strong> PCA ลด dimensions แล้วเก็บข้อมูลที่มีประโยชน์แค่ไหน?</li>
+</ol>
+<h3>Run</h3>
+<pre><code class="language-bash">source .venv/bin/activate
+python -m pip install -r requirements-batch05.txt
+
+python integration-project-batch05/src/geometry_lab.py \
+  --output-dir reports/batch05 \
+  --seed 42
+</code></pre>
+<h3>Outputs</h3>
+<p>JSON report:</p>
+<ul>
+<li>raw feature count</li>
+<li>PCA feature count</li>
+<li>PCA explained variance</li>
+<li>SVM validation/test metrics</li>
+<li>K-Means silhouette</li>
+<li>K-Means ARI diagnostic</li>
+<li>DBSCAN cluster/noise counts</li>
+</ul>
+<h3>Critical interpretation rule</h3>
+<p>ARI ใช้ true labels เป็น <strong>diagnostic หลัง clustering</strong> เท่านั้นใน synthetic lab นี้</p>
+<p>ห้ามใช้ labels เพื่อ tune clustering แล้วอ้างว่าเป็น unsupervised discovery</p>
+<h3>Required Extensions</h3>
+<ol>
+<li>RBF SVC</li>
+<li>PCA k sweep</li>
+<li>K-Means K sweep</li>
+<li>DBSCAN eps sweep</li>
+<li>t-SNE visualization</li>
+<li>optional UMAP visualization</li>
+<li>repeated seeds</li>
+<li>runtime comparison</li>
+<li>neighborhood preservation metric</li>
+<li>real-world dataset</li>
+</ol>
+<h3>Mastery Questions</h3>
+<ul>
+<li>PCA fit จาก train หรือ full data?</li>
+<li>ทำไม SVM ต้อง scale แต่ tree ไม่จำเป็นแบบเดียวกัน?</li>
+<li>silhouette สูงแปลว่ามี real-world classes จริงไหม?</li>
+<li>PCA 95% variance แปลว่าเก็บ 95% class informationไหม?</li>
+<li>t-SNE/UMAP islands พิสูจน์ cluster จริงหรือไม่?</li>
+</ul></section></div><label class="local-confirm"><input type="checkbox" id="local-lab-confirm"> ฉันรัน local lab และตรวจผลตาม rubric ด้วยตัวเองแล้ว</label><p class="local-note">สถานะนี้เป็นคำยืนยันของผู้เรียน เว็บไม่ได้รันหรือตรวจ Python บนเครื่องแทนคุณ</p></section>
+<section id="mastery-review" class="practice-section"><h2>หลักฐานตามเกณฑ์การเรียนรู้</h2><p>ทุก objective ต้องแสดงหลักฐานอธิบาย ทำนาย คำนวณ อ่าน shape/state debug และประยุกต์ พร้อมกรณีใหม่ ผลรัน source ผู้เรียนจริง และการประเมินซ้ำ เกณฑ์นี้ไม่รับประกันความเข้าใจทุกสถานการณ์ เปิด JavaScript เพื่อดูรายการที่ยังขาดและนำเข้ารายงานผู้ตรวจ</p></section><section class="coverage-section"><h2>แผนที่สิ่งที่เรียน → สิ่งที่ต้องแสดงให้ได้</h2><div id="coverage-table"></div></section><footer><span>ZERO TO ELITE AI ENGINEER · LEARNING STUDIO</span><span>อ่าน · derive · implement · debug · experiment · build</span></footer></div></main><noscript><style>.workbench,.sidebar,.reading-route,.lesson-toc,.mastery-status,#web-checks{display:none}main{margin-left:0}</style>อ่านเนื้อหา HTML ได้ตามปกติ เปิด JavaScript เพื่อใช้ห้องทดลองและตรวจคำตอบ</noscript></body></html>

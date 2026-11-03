@@ -1,0 +1,1432 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="บทเรียน AI Engineer ภาษาไทย พร้อมคณิตศาสตร์ทีละขั้นและห้องทดลองที่คำนวณจริง"><title>RLHF: optimize reward พร้อมคุม policy drift · AI Engineer Studio</title><link rel="stylesheet" href="../visual-lab/assets/styles.css"><link rel="stylesheet" href="../visual-lab/assets/course.css"><script defer src="../visual-lab/assets/lessons.js"></script><script defer src="../visual-lab/assets/chapter-meta.js"></script><script defer src="../visual-lab/assets/course-math.js"></script><script defer src="../visual-lab/assets/course-models.js"></script><script defer src="../visual-lab/assets/course-models-v3.js"></script><script defer src="../visual-lab/assets/course-assessment.js"></script><script defer src="../visual-lab/assets/course-mastery.js"></script><script defer src="../visual-lab/assets/course-catalog.js"></script><script defer src="../visual-lab/assets/book-content.js"></script><script defer src="../visual-lab/assets/course-render.js"></script><script defer src="../visual-lab/assets/course-mastery-panel.js"></script><script defer src="../visual-lab/assets/quality-report.js"></script><script defer src="../visual-lab/assets/course-app.js"></script></head>
+<body data-chapter="58" data-root="../"><a class="skip-link" href="#main">ข้ามไปบทเรียน</a>
+<aside class="sidebar" id="sidebar" aria-label="เลือกบทเรียน"><a class="brand" href="../visual-lab/index.html"><span class="brand-mark">ai</span><span>AI ENGINEER<small>LEARN · DERIVE · BUILD</small></span></a><div class="sidebar-intro">อ่านให้เข้าใจ · คำนวณให้เห็น · เขียนให้เป็น</div><label class="search-box"><input id="search" type="search" placeholder="ค้นหาบท / attention" aria-label="ค้นหาบทเรียน"></label><label class="filter-label" for="phase-filter">เส้นทางการเรียน <span id="nav-count"></span></label><select id="phase-filter"><option value="">ทุก Phase</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option></select><nav id="chapter-list" class="chapter-list" aria-label="รายชื่อบท"></nav><div class="course-progress"><div><span>ผ่านโจทย์ในเว็บ</span><strong id="progress-count">0 / 80</strong></div><progress id="course-progress" max="80" value="0" aria-label="บทที่ผ่านโจทย์"></progress><a id="resume-link" href="#chapter-1">อ่านต่อจากเดิม →</a></div></aside>
+<button class="nav-backdrop" id="nav-backdrop" aria-label="ปิดเมนู" hidden></button>
+<main id="main" tabindex="-1"><header class="topbar"><div><button id="nav-toggle" class="icon-button mobile-menu" aria-label="เปิดเมนูบทเรียน" aria-expanded="false" aria-controls="sidebar">☰</button><span id="breadcrumb"></span></div><span class="local-badge"><i></i> คำนวณในเครื่อง · ไม่มี API</span></header><div class="content">
+<div class="chapter-navigation"><label for="chapter-select" class="sr-only">เลือกบทเรียน</label><select id="chapter-select"></select><div class="chapter-arrows"><button id="prev-chapter" class="icon-button" aria-label="บทก่อนหน้า">←</button><button id="next-chapter" class="icon-button" aria-label="บทถัดไป">→</button></div></div>
+<section class="chapter-hero"><div><p id="chapter-kicker" class="eyebrow"></p><h1 id="chapter-title">RLHF: optimize reward พร้อมคุม policy drift</h1><p class="english-title" id="chapter-english"></p></div><span class="hero-symbol">f(x) ↗</span></section>
+<p id="quality-status" class="quality-status"></p><div id="mastery-status" class="mastery-status"></div><div class="reading-route"><a href="#chapter-58/section/overview">01 อ่านบทเรียน</a><a href="#workbench">02 ทดลองสมการ</a><a href="#practice">03 ฝึกและตรวจงาน</a><a href="#mastery-review">04 หลักฐานตามเกณฑ์</a></div>
+<nav id="lesson-toc" class="lesson-toc" aria-label="สารบัญบท"></nav>
+<section id="overview" class="course-overview"><span class="eyebrow">THE LEARNING CONTRACT</span><h2>เรียนบทนี้แล้วต้องทำอะไรได้</h2><p id="chapter-purpose"></p><div id="chapter-objectives"></div><div class="learning-hint">ทำนาย → เปลี่ยนทีละค่า → ตรวจตัวเลข → อธิบายเหตุผล → เขียนด้วย Python เอง</div></section>
+<section class="workbench lab-card" id="workbench" aria-label="ห้องทดลองคำนวณจริง"><div class="card-header"><div><span class="live-dot"></span><span class="eyebrow">COMPUTATION WORKBENCH</span></div><span class="simulation-label">ทุกภาพใช้ผลคำนวณชุดเดียวกัน</span></div><div class="lab-top"><label for="lab-select">เลือกกลไกที่ต้องการทดลอง</label><select id="lab-select"></select><p id="lab-question"></p></div><div class="workbench-grid"><div class="viz-column"><div class="compare-labels"><span>เส้นทึบ: ปัจจุบัน</span><span>เส้นประ: baseline ที่ตรึงไว้</span></div><div id="simulation" class="simulation"></div><div id="metrics" class="metrics"></div><div id="baseline-diff" class="baseline-diff"></div><div class="playback"><div class="playback-buttons"><button class="primary-button" id="update-once">อัปเดตหนึ่งก้าว</button><button class="secondary-button" id="train-many">▶ ฝึก 30 ก้าว</button><button class="icon-button" id="back-state" aria-label="ย้อนประวัติ">↶</button><button class="icon-button" id="forward-state" aria-label="ประวัติถัดไป">↷</button></div></div><div class="lab-secondary-actions"><button id="pin-baseline" class="text-button">ตรึง baseline ปัจจุบัน</button><button id="reset-lab" class="text-button">คืนค่าเริ่มต้น</button><button id="download-state" class="text-button">บันทึกผล JSON</button><span id="history-status"></span></div><p id="simulation-note" class="simulation-note"></p><p class="lab-error" id="lab-error" role="alert" hidden></p></div><div class="controls-column"><h3>เปลี่ยนทีละตัว แล้วสังเกตผล</h3><div id="lab-controls"></div><p class="control-note">แก้ weight ด้วยมือจะคำนวณ forward ใหม่; optimizer เปลี่ยน weights เมื่อกดอัปเดตเท่านั้น</p></div></div>
+<div class="trace-section"><div class="trace-toolbar"><h3>เดินสมการทีละ operation</h3><div><button id="trace-prev" class="icon-button" aria-label="operation ก่อนหน้า">←</button><button id="play-trace" class="secondary-button" aria-pressed="false">▶ เล่น flow</button><button id="trace-next" class="icon-button" aria-label="operation ถัดไป">→</button><span id="stage-counter"></span></div></div><label class="motion-control"><input id="reduce-motion" type="checkbox"> ลดภาพเคลื่อนไหว (หยุดการเล่นที่ค้างอยู่)</label><div id="operation-steps" class="operation-steps"></div><div id="flow-diagram" class="flow-diagram"></div><div id="active-operation" class="active-operation" aria-live="polite"></div><p class="control-note">ตัวเลขบนภาพปัดเศษเพื่อให้อ่านง่าย; บันทึก JSON เพื่อดูค่าที่ใช้คำนวณเต็ม precision</p><details open><summary>ตารางค่าระหว่างทาง — ตรวจด้วยมือได้</summary><div id="result-table"></div></details><div id="tensor-tables" class="tensor-tables"></div><details id="surface-details"><summary>ดู loss surface และเส้นทางของ w₁,b (ตรึง controls อื่น)</summary><div id="surface-chart"></div><p>surface คำนวณ objective ปัจจุบันโดยตรึง degree, penalty, ข้อมูล และ weights อื่น เส้นทางแสดงเฉพาะ snapshots ที่ค่าเหล่านี้ตรงกัน; นอกช่วง w=[−1,5], b=[−2,4] ให้ตรวจค่าจริงใน history</p></details><details><summary>ประวัติการเปลี่ยนค่า</summary><div id="history-table"></div></details></div></section>
+<article id="chapter-article" class="chapter-article"><section id="mechanism-1" class="teaching-section"><span class="section-kicker">CHAPTER 58 · ภาพ → สมการ → โค้ด</span><h2>1. reward model เรียน preference ไม่ใช่ truth ทั้งหมด</h2><h3>โจทย์และเหตุผล</h3><p>preferred/rejected pairs ใช้สร้างสัญญาณรางวัล แต่มี annotation noise และ distribution limits ต้องประเมิน reward generalization แยกจาก policy ที่ใช้มัน</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Compute Bradley-Terry preference probabilities by hand.</p><p>Bradley-TerryP(chosen)=σ(rc−rr); rc2,rr1ให้σ1=.731059; เพิ่มrewardconstantทั้งคู่probคงเดิม</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>p0: policy logit0,initial=1; p1: policy logit1,initial=0; reference: reference logit0,initial=0.5; beta: β,initial=0.5; reward0: reward answer0,initial=3; mode: objective,initial=rlhf; eta: learning rate,initial=0.1</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = [0.7310585786300049, 0.2689414213699951]; กำหนดความหมายและหน่วยของ input ก่อนทดลอง</li><li>J=E_p reward−β KL(p||reference) = 2.1800034429015716; DPO ใช้ chosen0/rejected1; RLHF toy optimize exact categorical objective ไม่ใช่ PPO implementation</li><li>normal / boundary / comparison = 2.1800034429015716; ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="preference-reward---β-kl-ของ-policy">เปิดการทดลองนี้</a><p class="failure-box">rewardmodeltrain/evalpairsซ้ำหรือใช้RMscoreเป็นqualityอย่างเดียวทำวงจรself-confirming; preferenceholdoutและindependenttaskjudgeแยก; 2-response categorical policy คำนวณ loss/gradient จริง; β ใน DPO และ KL penalty มีความหมายตาม objective ที่ระบุ</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Bradley-TerryP(chosen)=σ(rc−rr); rc2,rr1ให้σ1=.731059; เพิ่มrewardconstantทั้งคู่probคงเดิม</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-1-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = [0.7310585786300049, 0.2689414213699951]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>J=E_p reward−β KL(p||reference)</code> = 2.1800034429015716<p>DPO ใช้ chosen0/rejected1; RLHF toy optimize exact categorical objective ไม่ใช่ PPO implementation</p></li><li><code>normal / boundary / comparison</code> = 2.1800034429015716<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-1-visual"><summary>ภาพและ shape</summary><p>2-response categorical policy คำนวณ loss/gradient จริง; β ใน DPO และ KL penalty มีความหมายตาม objective ที่ระบุ</p><ol><li><code>shape / range</code> = [0.7310585786300049, 0.2689414213699951]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>J=E_p reward−β KL(p||reference)</code> = 2.1800034429015716<p>DPO ใช้ chosen0/rejected1; RLHF toy optimize exact categorical objective ไม่ใช่ PPO implementation</p></li><li><code>normal / boundary / comparison</code> = 2.1800034429015716<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-1-code"><summary>โค้ด</summary><p>Bradley-TerryP(chosen)=σ(rc−rr); rc2,rr1ให้σ1=.731059; เพิ่มrewardconstantทั้งคู่probคงเดิม</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-1-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = [0.7310585786300049, 0.2689414213699951]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>J=E_p reward−β KL(p||reference)</code> = 2.1800034429015716<p>DPO ใช้ chosen0/rejected1; RLHF toy optimize exact categorical objective ไม่ใช่ PPO implementation</p></li><li><code>normal / boundary / comparison</code> = 2.1800034429015716<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-1"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-2" class="teaching-section"><span class="section-kicker">CHAPTER 58 · ภาพ → สมการ → โค้ด</span><h2>2. reference เป็นจุดยึดไม่ให้ drift โดยไร้ต้นทุน</h2><h3>โจทย์และเหตุผล</h3><p>J=E reward-βKL ถ่วง task reward กับการต่างจาก reference ภาพคำนวณ exact KL ของสองคำตอบและ derivative จริง ส่วน PPO ratio/clipping/value model อยู่ใน local implementation</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Compute exact categorical KL between toy policies.</p><p>KL(P||Q)=ΣPlog(P/Q); P[.8,.2],Q[.5,.5]ได้≈.19274476; supportQ0แต่P&gt;0ให้infiniteต้องerror/explicitpolicy</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>p0: policy logit0,initial=1; p1: policy logit1,initial=0; reference: reference logit0,initial=0.5; beta: β,initial=1.5; reward0: reward answer0,initial=3; mode: objective,initial=rlhf; eta: learning rate,initial=0.1</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = [0.7310585786300049, 0.2689414213699951]; กำหนดความหมายและหน่วยของ input ก่อนทดลอง</li><li>J=E_p reward−β KL(p||reference) = 2.1536588569246855; DPO ใช้ chosen0/rejected1; RLHF toy optimize exact categorical objective ไม่ใช่ PPO implementation</li><li>normal / boundary / comparison = 2.1536588569246855; ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="preference-เพ--ม-kl-penalty-โดยคง-r">เปิดการทดลองนี้</a><p class="failure-box">rewardmodeltrain/evalpairsซ้ำหรือใช้RMscoreเป็นqualityอย่างเดียวทำวงจรself-confirming; preferenceholdoutและindependenttaskjudgeแยก; 2-response categorical policy คำนวณ loss/gradient จริง; β ใน DPO และ KL penalty มีความหมายตาม objective ที่ระบุ</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>KL(P||Q)=ΣPlog(P/Q); P[.8,.2],Q[.5,.5]ได้≈.19274476; supportQ0แต่P&gt;0ให้infiniteต้องerror/explicitpolicy</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-2-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = [0.7310585786300049, 0.2689414213699951]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>J=E_p reward−β KL(p||reference)</code> = 2.1536588569246855<p>DPO ใช้ chosen0/rejected1; RLHF toy optimize exact categorical objective ไม่ใช่ PPO implementation</p></li><li><code>normal / boundary / comparison</code> = 2.1536588569246855<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-2-visual"><summary>ภาพและ shape</summary><p>2-response categorical policy คำนวณ loss/gradient จริง; β ใน DPO และ KL penalty มีความหมายตาม objective ที่ระบุ</p><ol><li><code>shape / range</code> = [0.7310585786300049, 0.2689414213699951]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>J=E_p reward−β KL(p||reference)</code> = 2.1536588569246855<p>DPO ใช้ chosen0/rejected1; RLHF toy optimize exact categorical objective ไม่ใช่ PPO implementation</p></li><li><code>normal / boundary / comparison</code> = 2.1536588569246855<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-2-code"><summary>โค้ด</summary><p>KL(P||Q)=ΣPlog(P/Q); P[.8,.2],Q[.5,.5]ได้≈.19274476; supportQ0แต่P&gt;0ให้infiniteต้องerror/explicitpolicy</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-2-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = [0.7310585786300049, 0.2689414213699951]<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>J=E_p reward−β KL(p||reference)</code> = 2.1536588569246855<p>DPO ใช้ chosen0/rejected1; RLHF toy optimize exact categorical objective ไม่ใช่ PPO implementation</p></li><li><code>normal / boundary / comparison</code> = 2.1536588569246855<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-2"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-3" class="teaching-section"><span class="section-kicker">CHAPTER 58 · ภาพ → สมการ → โค้ด</span><h2>3. reward สูงขึ้นไม่ยืนยันว่าดีจริง</h2><h3>โจทย์และเหตุผล</h3><p>policy อาจ exploit reward model จึงต้องมี held-out human/task evaluation และตรวจ overoptimization ถ้า penalty สูงเกิน policy อาจไม่เรียน task ใหม่ ต้องดูทั้ง reward, KL และ quality</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Plot unclipped vs clipped PPO surrogate.</p><p>ε.2,A2,ratio1.3ให้surrogate2.4; A−2,ratio.7ให้−1.6; minimizeลบsurrogatemeanและclipratioไม่clipadvantage</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>q: Q(s,a),initial=0; reward: reward r,initial=1; nextQ: max Q(next,a),initial=2; gamma: discount γ,initial=0.9; alpha: step size α,initial=0.2; terminal: terminal (1 yes),initial=0</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = 0; ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</li><li>target=r+γ(1−terminal)max Q_next; Q′=Q+α(target−Q) = 0.5599999999999999; terminal state ไม่ bootstrap; Q-learning ใช้ greedy nextQ ต่างจาก SARSA ที่ใช้ action ที่ policy เลือกจริง</li><li>finite / normalized / bounded = 0.5599999999999999; เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="reinforcement-เช--อม-policy-optimizati">เปิดการทดลองนี้</a><p class="failure-box">rewardmodeltrain/evalpairsซ้ำหรือใช้RMscoreเป็นqualityอย่างเดียวทำวงจรself-confirming; preferenceholdoutและindependenttaskjudgeแยก; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>ε.2,A2,ratio1.3ให้surrogate2.4; A−2,ratio.7ให้−1.6; minimizeลบsurrogatemeanและclipratioไม่clipadvantage</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-3-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = 0<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>target=r+γ(1−terminal)max Q_next; Q′=Q+α(target−Q)</code> = 0.5599999999999999<p>terminal state ไม่ bootstrap; Q-learning ใช้ greedy nextQ ต่างจาก SARSA ที่ใช้ action ที่ policy เลือกจริง</p></li><li><code>finite / normalized / bounded</code> = 0.5599999999999999<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-3-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>shape / range</code> = 0<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>target=r+γ(1−terminal)max Q_next; Q′=Q+α(target−Q)</code> = 0.5599999999999999<p>terminal state ไม่ bootstrap; Q-learning ใช้ greedy nextQ ต่างจาก SARSA ที่ใช้ action ที่ policy เลือกจริง</p></li><li><code>finite / normalized / bounded</code> = 0.5599999999999999<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-3-code"><summary>โค้ด</summary><p>ε.2,A2,ratio1.3ให้surrogate2.4; A−2,ratio.7ให้−1.6; minimizeลบsurrogatemeanและclipratioไม่clipadvantage</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-3-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = 0<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>target=r+γ(1−terminal)max Q_next; Q′=Q+α(target−Q)</code> = 0.5599999999999999<p>terminal state ไม่ bootstrap; Q-learning ใช้ greedy nextQ ต่างจาก SARSA ที่ใช้ action ที่ policy เลือกจริง</p></li><li><code>finite / normalized / bounded</code> = 0.5599999999999999<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-3"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="reference" class="canonical-section"><h2>เนื้อหาครบทุกหัวข้อ พร้อมแผนที่ objective</h2><nav class="source-toc"><a href="#chapter-58/section/topic-1">1. What Is RLHF?</a> <a href="#chapter-58/section/topic-2">2. Learning Objectives</a> <a href="#chapter-58/section/topic-3">3. Preference Data</a> <a href="#chapter-58/section/topic-4">4. Reward Model</a> <a href="#chapter-58/section/topic-5">5. Bradley-Terry Model</a> <a href="#chapter-58/section/topic-6">6. Reward Margin</a> <a href="#chapter-58/section/topic-7">7. Preference Ties / Noise</a> <a href="#chapter-58/section/topic-8">8. Reward Model Generalization</a> <a href="#chapter-58/section/topic-9">9. Policy</a> <a href="#chapter-58/section/topic-10">10. Reference Policy</a> <a href="#chapter-58/section/topic-11">11. Exact Categorical KL</a> <a href="#chapter-58/section/topic-12">12. Sampled Log-Ratio</a> <a href="#chapter-58/section/topic-13">13. KL-Shaped Reward</a> <a href="#chapter-58/section/topic-14">14. PPO Ratio</a> <a href="#chapter-58/section/topic-15">15. Advantages</a> <a href="#chapter-58/section/topic-16">16. Advantage Normalization</a> <a href="#chapter-58/section/topic-17">17. PPO Clipping</a> <a href="#chapter-58/section/topic-18">18. Value Model</a> <a href="#chapter-58/section/topic-19">19. RLHF Optimization Loop</a> <a href="#chapter-58/section/topic-20">20. Reward Hacking</a> <a href="#chapter-58/section/topic-21">21. Overoptimization</a> <a href="#chapter-58/section/topic-22">22. KL Collapse / Excessive Drift</a> <a href="#chapter-58/section/topic-23">23. Reward Scaling</a> <a href="#chapter-58/section/topic-24">24. Current TRL Concepts</a> <a href="#chapter-58/section/topic-25">25. From Scratch</a> <a href="#chapter-58/section/topic-26">26. Common Mistakes</a> <a href="#chapter-58/section/topic-27">27. Exercises / Mini Project</a> <a href="#chapter-58/section/topic-28">28. Checklist</a> <a href="#chapter-58/section/topic-29">29. What&#x27;s Next</a> </nav><section id="topic-1" class="source-topic"><span id="source-58-rlhf-canonical-chapter-58-rlhf" class="legacy-anchor"></span><span id="source-58-rlhf-canonical-1-what-is-rlhf" class="legacy-anchor"></span><h3>1. What Is RLHF?</h3>
+<p>Reinforcement Learning from Human Feedback adapts a language model toward human preferences.</p>
+<p>A classical pipeline is:</p>
+<pre><code class="language-text">pretrained model
+↓
+supervised instruction tuning
+↓
+preference comparisons
+↓
+reward model
+↓
+policy optimization
+↓
+aligned policy
+</code></pre>
+<p>The difficult part is not merely "run PPO"; it is building a reliable preference signal and preventing the policy from exploiting it.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>1. What Is RLHF?</h3>
+<p>Reinforcement Learning from Human Feedback adapts a language model toward human preferences.</p>
+<p>A classical pipeline is:</p>
+<pre><code class="language-text">pretrained model
+↓
+supervised instruction tuning
+↓
+preference comparisons
+↓
+reward model
+↓
+policy optimization
+↓
+aligned policy
+</code></pre>
+<p>The difficult part is not merely "run PPO"; it is building a reliable preference signal and preventing the policy from exploiting it.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-1-equation"><summary>สมการ</summary><h3>1. What Is RLHF?</h3>
+<p>Reinforcement Learning from Human Feedback adapts a language model toward human preferences.</p>
+<p>A classical pipeline is:</p>
+<pre><code class="language-text">pretrained model
+↓
+supervised instruction tuning
+↓
+preference comparisons
+↓
+reward model
+↓
+policy optimization
+↓
+aligned policy
+</code></pre>
+<p>The difficult part is not merely "run PPO"; it is building a reliable preference signal and preventing the policy from exploiting it.</p></details><details id="help-topic-1-visual"><summary>ภาพและ shape</summary><h3>1. What Is RLHF?</h3>
+<p>Reinforcement Learning from Human Feedback adapts a language model toward human preferences.</p>
+<p>A classical pipeline is:</p>
+<pre><code class="language-text">pretrained model
+↓
+supervised instruction tuning
+↓
+preference comparisons
+↓
+reward model
+↓
+policy optimization
+↓
+aligned policy
+</code></pre>
+<p>The difficult part is not merely "run PPO"; it is building a reliable preference signal and preventing the policy from exploiting it.</p></details><details id="help-topic-1-code"><summary>โค้ด</summary><h3>1. What Is RLHF?</h3>
+<p>Reinforcement Learning from Human Feedback adapts a language model toward human preferences.</p>
+<p>A classical pipeline is:</p>
+<pre><code class="language-text">pretrained model
+↓
+supervised instruction tuning
+↓
+preference comparisons
+↓
+reward model
+↓
+policy optimization
+↓
+aligned policy
+</code></pre>
+<p>The difficult part is not merely "run PPO"; it is building a reliable preference signal and preventing the policy from exploiting it.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-1-result"><summary>ผลการทดลอง</summary><h3>1. What Is RLHF?</h3>
+<p>Reinforcement Learning from Human Feedback adapts a language model toward human preferences.</p>
+<p>A classical pipeline is:</p>
+<pre><code class="language-text">pretrained model
+↓
+supervised instruction tuning
+↓
+preference comparisons
+↓
+reward model
+↓
+policy optimization
+↓
+aligned policy
+</code></pre>
+<p>The difficult part is not merely "run PPO"; it is building a reliable preference signal and preventing the policy from exploiting it.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-1"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-2" class="source-topic"><span id="source-58-rlhf-canonical-2-learning-objectives" class="legacy-anchor"></span><h3>2. Learning Objectives</h3>
+<p>You should be able to:</p>
+<ul>
+<li>represent preference-pair datasets</li>
+<li>derive the Bradley-Terry reward-model objective</li>
+<li>train/evaluate pairwise reward models</li>
+<li>distinguish reward accuracy from reward calibration</li>
+<li>explain policy/reference models</li>
+<li>compute exact categorical KL</li>
+<li>understand sampled log-ratio KL estimators</li>
+<li>derive PPO probability ratios</li>
+<li>explain clipped PPO objectives</li>
+<li>normalize advantages</li>
+<li>understand value models / advantages</li>
+<li>explain KL penalties</li>
+<li>identify reward hacking</li>
+<li>reason about overoptimization</li>
+<li>design offline evaluation before online optimization</li>
+<li>understand modern TRL reward/PPO tooling conceptually</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>2. Learning Objectives</h3>
+<p>You should be able to:</p>
+<ul>
+<li>represent preference-pair datasets</li>
+<li>derive the Bradley-Terry reward-model objective</li>
+<li>train/evaluate pairwise reward models</li>
+<li>distinguish reward accuracy from reward calibration</li>
+<li>explain policy/reference models</li>
+<li>compute exact categorical KL</li>
+<li>understand sampled log-ratio KL estimators</li>
+<li>derive PPO probability ratios</li>
+<li>explain clipped PPO objectives</li>
+<li>normalize advantages</li>
+<li>understand value models / advantages</li>
+<li>explain KL penalties</li>
+<li>identify reward hacking</li>
+<li>reason about overoptimization</li>
+<li>design offline evaluation before online optimization</li>
+<li>understand modern TRL reward/PPO tooling conceptually</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-2-equation"><summary>สมการ</summary><h3>2. Learning Objectives</h3>
+<p>You should be able to:</p>
+<ul>
+<li>represent preference-pair datasets</li>
+<li>derive the Bradley-Terry reward-model objective</li>
+<li>train/evaluate pairwise reward models</li>
+<li>distinguish reward accuracy from reward calibration</li>
+<li>explain policy/reference models</li>
+<li>compute exact categorical KL</li>
+<li>understand sampled log-ratio KL estimators</li>
+<li>derive PPO probability ratios</li>
+<li>explain clipped PPO objectives</li>
+<li>normalize advantages</li>
+<li>understand value models / advantages</li>
+<li>explain KL penalties</li>
+<li>identify reward hacking</li>
+<li>reason about overoptimization</li>
+<li>design offline evaluation before online optimization</li>
+<li>understand modern TRL reward/PPO tooling conceptually</li>
+</ul></details><details id="help-topic-2-visual"><summary>ภาพและ shape</summary><h3>2. Learning Objectives</h3>
+<p>You should be able to:</p>
+<ul>
+<li>represent preference-pair datasets</li>
+<li>derive the Bradley-Terry reward-model objective</li>
+<li>train/evaluate pairwise reward models</li>
+<li>distinguish reward accuracy from reward calibration</li>
+<li>explain policy/reference models</li>
+<li>compute exact categorical KL</li>
+<li>understand sampled log-ratio KL estimators</li>
+<li>derive PPO probability ratios</li>
+<li>explain clipped PPO objectives</li>
+<li>normalize advantages</li>
+<li>understand value models / advantages</li>
+<li>explain KL penalties</li>
+<li>identify reward hacking</li>
+<li>reason about overoptimization</li>
+<li>design offline evaluation before online optimization</li>
+<li>understand modern TRL reward/PPO tooling conceptually</li>
+</ul></details><details id="help-topic-2-code"><summary>โค้ด</summary><h3>2. Learning Objectives</h3>
+<p>You should be able to:</p>
+<ul>
+<li>represent preference-pair datasets</li>
+<li>derive the Bradley-Terry reward-model objective</li>
+<li>train/evaluate pairwise reward models</li>
+<li>distinguish reward accuracy from reward calibration</li>
+<li>explain policy/reference models</li>
+<li>compute exact categorical KL</li>
+<li>understand sampled log-ratio KL estimators</li>
+<li>derive PPO probability ratios</li>
+<li>explain clipped PPO objectives</li>
+<li>normalize advantages</li>
+<li>understand value models / advantages</li>
+<li>explain KL penalties</li>
+<li>identify reward hacking</li>
+<li>reason about overoptimization</li>
+<li>design offline evaluation before online optimization</li>
+<li>understand modern TRL reward/PPO tooling conceptually</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-2-result"><summary>ผลการทดลอง</summary><h3>2. Learning Objectives</h3>
+<p>You should be able to:</p>
+<ul>
+<li>represent preference-pair datasets</li>
+<li>derive the Bradley-Terry reward-model objective</li>
+<li>train/evaluate pairwise reward models</li>
+<li>distinguish reward accuracy from reward calibration</li>
+<li>explain policy/reference models</li>
+<li>compute exact categorical KL</li>
+<li>understand sampled log-ratio KL estimators</li>
+<li>derive PPO probability ratios</li>
+<li>explain clipped PPO objectives</li>
+<li>normalize advantages</li>
+<li>understand value models / advantages</li>
+<li>explain KL penalties</li>
+<li>identify reward hacking</li>
+<li>reason about overoptimization</li>
+<li>design offline evaluation before online optimization</li>
+<li>understand modern TRL reward/PPO tooling conceptually</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-2"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-3" class="source-topic"><span id="source-58-rlhf-canonical-3-preference-data" class="legacy-anchor"></span><h3>3. Preference Data</h3>
+<p>A pair contains:</p>
+<pre><code class="language-text">prompt x
+chosen response y_w
+rejected response y_l
+</code></pre>
+<p>Humans/annotators indicate:</p>
+<pre><code class="language-text">y_w ≻ y_l
+</code></pre>
+<p>Preference data can come from:
+- human ranking
+- pairwise annotation
+- carefully controlled synthetic preference labels</p>
+<p>Label quality matters more than raw pair count.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>3. Preference Data</h3>
+<p>A pair contains:</p>
+<pre><code class="language-text">prompt x
+chosen response y_w
+rejected response y_l
+</code></pre>
+<p>Humans/annotators indicate:</p>
+<pre><code class="language-text">y_w ≻ y_l
+</code></pre>
+<p>Preference data can come from:
+- human ranking
+- pairwise annotation
+- carefully controlled synthetic preference labels</p>
+<p>Label quality matters more than raw pair count.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-3-equation"><summary>สมการ</summary><h3>3. Preference Data</h3>
+<p>A pair contains:</p>
+<pre><code class="language-text">prompt x
+chosen response y_w
+rejected response y_l
+</code></pre>
+<p>Humans/annotators indicate:</p>
+<pre><code class="language-text">y_w ≻ y_l
+</code></pre>
+<p>Preference data can come from:
+- human ranking
+- pairwise annotation
+- carefully controlled synthetic preference labels</p>
+<p>Label quality matters more than raw pair count.</p></details><details id="help-topic-3-visual"><summary>ภาพและ shape</summary><h3>3. Preference Data</h3>
+<p>A pair contains:</p>
+<pre><code class="language-text">prompt x
+chosen response y_w
+rejected response y_l
+</code></pre>
+<p>Humans/annotators indicate:</p>
+<pre><code class="language-text">y_w ≻ y_l
+</code></pre>
+<p>Preference data can come from:
+- human ranking
+- pairwise annotation
+- carefully controlled synthetic preference labels</p>
+<p>Label quality matters more than raw pair count.</p></details><details id="help-topic-3-code"><summary>โค้ด</summary><h3>3. Preference Data</h3>
+<p>A pair contains:</p>
+<pre><code class="language-text">prompt x
+chosen response y_w
+rejected response y_l
+</code></pre>
+<p>Humans/annotators indicate:</p>
+<pre><code class="language-text">y_w ≻ y_l
+</code></pre>
+<p>Preference data can come from:
+- human ranking
+- pairwise annotation
+- carefully controlled synthetic preference labels</p>
+<p>Label quality matters more than raw pair count.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-3-result"><summary>ผลการทดลอง</summary><h3>3. Preference Data</h3>
+<p>A pair contains:</p>
+<pre><code class="language-text">prompt x
+chosen response y_w
+rejected response y_l
+</code></pre>
+<p>Humans/annotators indicate:</p>
+<pre><code class="language-text">y_w ≻ y_l
+</code></pre>
+<p>Preference data can come from:
+- human ranking
+- pairwise annotation
+- carefully controlled synthetic preference labels</p>
+<p>Label quality matters more than raw pair count.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-3"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-4" class="source-topic"><span id="source-58-rlhf-canonical-4-reward-model" class="legacy-anchor"></span><h3>4. Reward Model</h3>
+<p>The reward model maps prompt+response to a scalar:</p>
+<pre><code class="language-text">r_phi(x,y) ∈ R
+</code></pre>
+<p>Higher score should correspond to more preferred responses.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-4-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>4. Reward Model</h3>
+<p>The reward model maps prompt+response to a scalar:</p>
+<pre><code class="language-text">r_phi(x,y) ∈ R
+</code></pre>
+<p>Higher score should correspond to more preferred responses.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-4-equation"><summary>สมการ</summary><h3>4. Reward Model</h3>
+<p>The reward model maps prompt+response to a scalar:</p>
+<pre><code class="language-text">r_phi(x,y) ∈ R
+</code></pre>
+<p>Higher score should correspond to more preferred responses.</p></details><details id="help-topic-4-visual"><summary>ภาพและ shape</summary><h3>4. Reward Model</h3>
+<p>The reward model maps prompt+response to a scalar:</p>
+<pre><code class="language-text">r_phi(x,y) ∈ R
+</code></pre>
+<p>Higher score should correspond to more preferred responses.</p></details><details id="help-topic-4-code"><summary>โค้ด</summary><h3>4. Reward Model</h3>
+<p>The reward model maps prompt+response to a scalar:</p>
+<pre><code class="language-text">r_phi(x,y) ∈ R
+</code></pre>
+<p>Higher score should correspond to more preferred responses.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-4-result"><summary>ผลการทดลอง</summary><h3>4. Reward Model</h3>
+<p>The reward model maps prompt+response to a scalar:</p>
+<pre><code class="language-text">r_phi(x,y) ∈ R
+</code></pre>
+<p>Higher score should correspond to more preferred responses.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-4"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-5" class="source-topic"><span id="source-58-rlhf-canonical-5-bradley-terry-model" class="legacy-anchor"></span><h3>5. Bradley-Terry Model</h3>
+<p>For chosen/rejected rewards:</p>
+<pre><code class="language-text">P(y_w ≻ y_l)
+=
+sigmoid(
+r_w - r_l
+)
+</code></pre>
+<p>The pairwise negative log-likelihood is:</p>
+<pre><code class="language-text">L_RM
+=
+-log sigmoid(r_w - r_l)
+</code></pre>
+<p>Equivalent stable implementation:</p>
+<pre><code class="language-text">softplus(-(r_w-r_l))
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>Bradley-TerryP(chosen)=σ(rc−rr); rc2,rr1ให้σ1=.731059; เพิ่มrewardconstantทั้งคู่probคงเดิม</p><p>pairwiseloss=softplus(−(rc−rr)); margin1ได้.313262,margin−1ได้1.313262; ใช้stablelogaddexpไม่logsigmoidตรงๆ</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-5-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Bradley-TerryP(chosen)=σ(rc−rr); rc2,rr1ให้σ1=.731059; เพิ่มrewardconstantทั้งคู่probคงเดิม</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-5-equation"><summary>สมการ</summary><p>Bradley-TerryP(chosen)=σ(rc−rr); rc2,rr1ให้σ1=.731059; เพิ่มrewardconstantทั้งคู่probคงเดิม</p></details><details id="help-topic-5-visual"><summary>ภาพและ shape</summary><p>Bradley-TerryP(chosen)=σ(rc−rr); rc2,rr1ให้σ1=.731059; เพิ่มrewardconstantทั้งคู่probคงเดิม</p></details><details id="help-topic-5-code"><summary>โค้ด</summary><p>Bradley-TerryP(chosen)=σ(rc−rr); rc2,rr1ให้σ1=.731059; เพิ่มrewardconstantทั้งคู่probคงเดิม</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-5-result"><summary>ผลการทดลอง</summary><p>Bradley-TerryP(chosen)=σ(rc−rr); rc2,rr1ให้σ1=.731059; เพิ่มrewardconstantทั้งคู่probคงเดิม</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-5"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-6" class="source-topic"><span id="source-58-rlhf-canonical-6-reward-margin" class="legacy-anchor"></span><h3>6. Reward Margin</h3>
+<pre><code class="language-text">margin =
+r_chosen - r_rejected
+</code></pre>
+<p>Positive margin means the reward model ranks the pair correctly.</p>
+<p>Pairwise accuracy:</p>
+<pre><code class="language-text">mean(margin &gt; 0)
+</code></pre>
+<p>Accuracy alone does not measure reward calibration or scale.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>Bradley-TerryP(chosen)=σ(rc−rr); rc2,rr1ให้σ1=.731059; เพิ่มrewardconstantทั้งคู่probคงเดิม</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-6-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>Bradley-TerryP(chosen)=σ(rc−rr); rc2,rr1ให้σ1=.731059; เพิ่มrewardconstantทั้งคู่probคงเดิม</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-6-equation"><summary>สมการ</summary><p>Bradley-TerryP(chosen)=σ(rc−rr); rc2,rr1ให้σ1=.731059; เพิ่มrewardconstantทั้งคู่probคงเดิม</p></details><details id="help-topic-6-visual"><summary>ภาพและ shape</summary><p>Bradley-TerryP(chosen)=σ(rc−rr); rc2,rr1ให้σ1=.731059; เพิ่มrewardconstantทั้งคู่probคงเดิม</p></details><details id="help-topic-6-code"><summary>โค้ด</summary><p>Bradley-TerryP(chosen)=σ(rc−rr); rc2,rr1ให้σ1=.731059; เพิ่มrewardconstantทั้งคู่probคงเดิม</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-6-result"><summary>ผลการทดลอง</summary><p>Bradley-TerryP(chosen)=σ(rc−rr); rc2,rr1ให้σ1=.731059; เพิ่มrewardconstantทั้งคู่probคงเดิม</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-6"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-7" class="source-topic"><span id="source-58-rlhf-canonical-7-preference-ties-noise" class="legacy-anchor"></span><h3>7. Preference Ties / Noise</h3>
+<p>Human preferences can be:
+- ambiguous
+- inconsistent
+- annotator-dependent</p>
+<p>Possible practices:
+- allow ties/uncertainty
+- majority vote
+- adjudication
+- annotator-quality analysis</p>
+<p>Do not pretend pair labels are perfect ground truth.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-7-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>7. Preference Ties / Noise</h3>
+<p>Human preferences can be:
+- ambiguous
+- inconsistent
+- annotator-dependent</p>
+<p>Possible practices:
+- allow ties/uncertainty
+- majority vote
+- adjudication
+- annotator-quality analysis</p>
+<p>Do not pretend pair labels are perfect ground truth.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-7-equation"><summary>สมการ</summary><h3>7. Preference Ties / Noise</h3>
+<p>Human preferences can be:
+- ambiguous
+- inconsistent
+- annotator-dependent</p>
+<p>Possible practices:
+- allow ties/uncertainty
+- majority vote
+- adjudication
+- annotator-quality analysis</p>
+<p>Do not pretend pair labels are perfect ground truth.</p></details><details id="help-topic-7-visual"><summary>ภาพและ shape</summary><h3>7. Preference Ties / Noise</h3>
+<p>Human preferences can be:
+- ambiguous
+- inconsistent
+- annotator-dependent</p>
+<p>Possible practices:
+- allow ties/uncertainty
+- majority vote
+- adjudication
+- annotator-quality analysis</p>
+<p>Do not pretend pair labels are perfect ground truth.</p></details><details id="help-topic-7-code"><summary>โค้ด</summary><h3>7. Preference Ties / Noise</h3>
+<p>Human preferences can be:
+- ambiguous
+- inconsistent
+- annotator-dependent</p>
+<p>Possible practices:
+- allow ties/uncertainty
+- majority vote
+- adjudication
+- annotator-quality analysis</p>
+<p>Do not pretend pair labels are perfect ground truth.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-7-result"><summary>ผลการทดลอง</summary><h3>7. Preference Ties / Noise</h3>
+<p>Human preferences can be:
+- ambiguous
+- inconsistent
+- annotator-dependent</p>
+<p>Possible practices:
+- allow ties/uncertainty
+- majority vote
+- adjudication
+- annotator-quality analysis</p>
+<p>Do not pretend pair labels are perfect ground truth.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-7"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-8" class="source-topic"><span id="source-58-rlhf-canonical-8-reward-model-generalization" class="legacy-anchor"></span><h3>8. Reward Model Generalization</h3>
+<p>A reward model can overfit training comparison styles.</p>
+<p>Hold out:
+- prompt families
+- domains
+- lengths
+- adversarial examples</p>
+<p>Evaluate OOD preference accuracy when deployment prompts differ.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>accuracy=mean(rc&gt;rr)ตามtiepolicy; margins[1,−.2,0]ให้1/3ถ้าtieไม่ผ่าน; reporttiesแยกไม่สลับlabelเพื่อเพิ่มคะแนน</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-8-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>accuracy=mean(rc&gt;rr)ตามtiepolicy; margins[1,−.2,0]ให้1/3ถ้าtieไม่ผ่าน; reporttiesแยกไม่สลับlabelเพื่อเพิ่มคะแนน</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-8-equation"><summary>สมการ</summary><p>accuracy=mean(rc&gt;rr)ตามtiepolicy; margins[1,−.2,0]ให้1/3ถ้าtieไม่ผ่าน; reporttiesแยกไม่สลับlabelเพื่อเพิ่มคะแนน</p></details><details id="help-topic-8-visual"><summary>ภาพและ shape</summary><p>accuracy=mean(rc&gt;rr)ตามtiepolicy; margins[1,−.2,0]ให้1/3ถ้าtieไม่ผ่าน; reporttiesแยกไม่สลับlabelเพื่อเพิ่มคะแนน</p></details><details id="help-topic-8-code"><summary>โค้ด</summary><p>accuracy=mean(rc&gt;rr)ตามtiepolicy; margins[1,−.2,0]ให้1/3ถ้าtieไม่ผ่าน; reporttiesแยกไม่สลับlabelเพื่อเพิ่มคะแนน</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-8-result"><summary>ผลการทดลอง</summary><p>accuracy=mean(rc&gt;rr)ตามtiepolicy; margins[1,−.2,0]ให้1/3ถ้าtieไม่ผ่าน; reporttiesแยกไม่สลับlabelเพื่อเพิ่มคะแนน</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-8"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-9" class="source-topic"><span id="source-58-rlhf-canonical-9-policy" class="legacy-anchor"></span><h3>9. Policy</h3>
+<p>The policy is the language model being optimized:</p>
+<pre><code class="language-text">pi_theta(y|x)
+</code></pre>
+<p>It generates candidate responses.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-9-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>9. Policy</h3>
+<p>The policy is the language model being optimized:</p>
+<pre><code class="language-text">pi_theta(y|x)
+</code></pre>
+<p>It generates candidate responses.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-9-equation"><summary>สมการ</summary><h3>9. Policy</h3>
+<p>The policy is the language model being optimized:</p>
+<pre><code class="language-text">pi_theta(y|x)
+</code></pre>
+<p>It generates candidate responses.</p></details><details id="help-topic-9-visual"><summary>ภาพและ shape</summary><h3>9. Policy</h3>
+<p>The policy is the language model being optimized:</p>
+<pre><code class="language-text">pi_theta(y|x)
+</code></pre>
+<p>It generates candidate responses.</p></details><details id="help-topic-9-code"><summary>โค้ด</summary><h3>9. Policy</h3>
+<p>The policy is the language model being optimized:</p>
+<pre><code class="language-text">pi_theta(y|x)
+</code></pre>
+<p>It generates candidate responses.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-9-result"><summary>ผลการทดลอง</summary><h3>9. Policy</h3>
+<p>The policy is the language model being optimized:</p>
+<pre><code class="language-text">pi_theta(y|x)
+</code></pre>
+<p>It generates candidate responses.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-9"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-10" class="source-topic"><span id="source-58-rlhf-canonical-10-reference-policy" class="legacy-anchor"></span><h3>10. Reference Policy</h3>
+<p>A frozen reference policy:</p>
+<pre><code class="language-text">pi_ref
+</code></pre>
+<p>anchors optimization near a known baseline.</p>
+<p>Without regularization, policy optimization may move aggressively toward reward-model quirks.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-10-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>10. Reference Policy</h3>
+<p>A frozen reference policy:</p>
+<pre><code class="language-text">pi_ref
+</code></pre>
+<p>anchors optimization near a known baseline.</p>
+<p>Without regularization, policy optimization may move aggressively toward reward-model quirks.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-10-equation"><summary>สมการ</summary><h3>10. Reference Policy</h3>
+<p>A frozen reference policy:</p>
+<pre><code class="language-text">pi_ref
+</code></pre>
+<p>anchors optimization near a known baseline.</p>
+<p>Without regularization, policy optimization may move aggressively toward reward-model quirks.</p></details><details id="help-topic-10-visual"><summary>ภาพและ shape</summary><h3>10. Reference Policy</h3>
+<p>A frozen reference policy:</p>
+<pre><code class="language-text">pi_ref
+</code></pre>
+<p>anchors optimization near a known baseline.</p>
+<p>Without regularization, policy optimization may move aggressively toward reward-model quirks.</p></details><details id="help-topic-10-code"><summary>โค้ด</summary><h3>10. Reference Policy</h3>
+<p>A frozen reference policy:</p>
+<pre><code class="language-text">pi_ref
+</code></pre>
+<p>anchors optimization near a known baseline.</p>
+<p>Without regularization, policy optimization may move aggressively toward reward-model quirks.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-10-result"><summary>ผลการทดลอง</summary><h3>10. Reference Policy</h3>
+<p>A frozen reference policy:</p>
+<pre><code class="language-text">pi_ref
+</code></pre>
+<p>anchors optimization near a known baseline.</p>
+<p>Without regularization, policy optimization may move aggressively toward reward-model quirks.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-10"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-11" class="source-topic"><span id="source-58-rlhf-canonical-11-exact-categorical-kl" class="legacy-anchor"></span><h3>11. Exact Categorical KL</h3>
+<p>For distributions p and q over the same support:</p>
+<pre><code class="language-text">KL(p || q)
+=
+Σ_i p_i log(p_i/q_i)
+</code></pre>
+<p>It is always non-negative.</p>
+<p>For full language-model sequences this exact quantity can be expensive.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>KL(P||Q)=ΣPlog(P/Q); P[.8,.2],Q[.5,.5]ได้≈.19274476; supportQ0แต่P&gt;0ให้infiniteต้องerror/explicitpolicy</p><p>rmchosen2,rejected1loss.313262; policyKL.192745ไม่เท่ากับsampledlogratioทุกsample; ตัวอย่างนี้จับการรายงานKLผิดนิยาม</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-11-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>KL(P||Q)=ΣPlog(P/Q); P[.8,.2],Q[.5,.5]ได้≈.19274476; supportQ0แต่P&gt;0ให้infiniteต้องerror/explicitpolicy</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-11-equation"><summary>สมการ</summary><p>KL(P||Q)=ΣPlog(P/Q); P[.8,.2],Q[.5,.5]ได้≈.19274476; supportQ0แต่P&gt;0ให้infiniteต้องerror/explicitpolicy</p></details><details id="help-topic-11-visual"><summary>ภาพและ shape</summary><p>KL(P||Q)=ΣPlog(P/Q); P[.8,.2],Q[.5,.5]ได้≈.19274476; supportQ0แต่P&gt;0ให้infiniteต้องerror/explicitpolicy</p></details><details id="help-topic-11-code"><summary>โค้ด</summary><p>KL(P||Q)=ΣPlog(P/Q); P[.8,.2],Q[.5,.5]ได้≈.19274476; supportQ0แต่P&gt;0ให้infiniteต้องerror/explicitpolicy</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-11-result"><summary>ผลการทดลอง</summary><p>KL(P||Q)=ΣPlog(P/Q); P[.8,.2],Q[.5,.5]ได้≈.19274476; supportQ0แต่P&gt;0ให้infiniteต้องerror/explicitpolicy</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-11"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-12" class="source-topic"><span id="source-58-rlhf-canonical-12-sampled-log-ratio" class="legacy-anchor"></span><h3>12. Sampled Log-Ratio</h3>
+<p>For a sampled token/action a:</p>
+<pre><code class="language-text">log pi_theta(a)
+-
+log pi_ref(a)
+</code></pre>
+<p>This quantity is often used in policy-training estimators/penalties.</p>
+<p>Important:
+- a single sampled log-ratio can be negative
+- it is not itself the exact full-distribution KL</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>sampledaction1เมื่อP.2,Q.5ให้log(.2/.5)=−.916291 แม้exactKL.192745≥0; singlelogratioไม่ใช่exactKL</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-12-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>sampledaction1เมื่อP.2,Q.5ให้log(.2/.5)=−.916291 แม้exactKL.192745≥0; singlelogratioไม่ใช่exactKL</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-12-equation"><summary>สมการ</summary><p>sampledaction1เมื่อP.2,Q.5ให้log(.2/.5)=−.916291 แม้exactKL.192745≥0; singlelogratioไม่ใช่exactKL</p></details><details id="help-topic-12-visual"><summary>ภาพและ shape</summary><p>sampledaction1เมื่อP.2,Q.5ให้log(.2/.5)=−.916291 แม้exactKL.192745≥0; singlelogratioไม่ใช่exactKL</p></details><details id="help-topic-12-code"><summary>โค้ด</summary><p>sampledaction1เมื่อP.2,Q.5ให้log(.2/.5)=−.916291 แม้exactKL.192745≥0; singlelogratioไม่ใช่exactKL</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-12-result"><summary>ผลการทดลอง</summary><p>sampledaction1เมื่อP.2,Q.5ให้log(.2/.5)=−.916291 แม้exactKL.192745≥0; singlelogratioไม่ใช่exactKL</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-12"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-13" class="source-topic"><span id="source-58-rlhf-canonical-13-kl-shaped-reward" class="legacy-anchor"></span><h3>13. KL-Shaped Reward</h3>
+<p>A common conceptual form:</p>
+<pre><code class="language-text">reward_shaped
+=
+reward_model_score
+-
+beta * sampled_log_ratio
+</code></pre>
+<p>Beta controls regularization strength.</p>
+<p>Large beta:
+- stays closer to reference</p>
+<p>Small beta:
+- permits more movement</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>shapedreward=rm_score−β(logπ−logπref); score1,β.1,logratio.5ได้.95; sampledpenaltyอาจติดลบต้องแยกexpectedKL</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-13-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>shapedreward=rm_score−β(logπ−logπref); score1,β.1,logratio.5ได้.95; sampledpenaltyอาจติดลบต้องแยกexpectedKL</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-13-equation"><summary>สมการ</summary><p>shapedreward=rm_score−β(logπ−logπref); score1,β.1,logratio.5ได้.95; sampledpenaltyอาจติดลบต้องแยกexpectedKL</p></details><details id="help-topic-13-visual"><summary>ภาพและ shape</summary><p>shapedreward=rm_score−β(logπ−logπref); score1,β.1,logratio.5ได้.95; sampledpenaltyอาจติดลบต้องแยกexpectedKL</p></details><details id="help-topic-13-code"><summary>โค้ด</summary><p>shapedreward=rm_score−β(logπ−logπref); score1,β.1,logratio.5ได้.95; sampledpenaltyอาจติดลบต้องแยกexpectedKL</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-13-result"><summary>ผลการทดลอง</summary><p>shapedreward=rm_score−β(logπ−logπref); score1,β.1,logratio.5ได้.95; sampledpenaltyอาจติดลบต้องแยกexpectedKL</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-13"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-14" class="source-topic"><span id="source-58-rlhf-canonical-14-ppo-ratio" class="legacy-anchor"></span><h3>14. PPO Ratio</h3>
+<p>Given old policy and new policy:</p>
+<pre><code class="language-text">ratio_t
+=
+exp(
+log pi_new(a_t)
+-
+log pi_old(a_t)
+)
+</code></pre>
+<p>Ratio &gt; 1 means the new policy increased probability of that sampled action.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>ratio=exp(logπnew−logπold); oldprob.2,new.3ให้1.5; PPOoldpolicyไม่ใช่referencemodelที่ใช้KLregularization</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-14-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>ratio=exp(logπnew−logπold); oldprob.2,new.3ให้1.5; PPOoldpolicyไม่ใช่referencemodelที่ใช้KLregularization</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-14-equation"><summary>สมการ</summary><p>ratio=exp(logπnew−logπold); oldprob.2,new.3ให้1.5; PPOoldpolicyไม่ใช่referencemodelที่ใช้KLregularization</p></details><details id="help-topic-14-visual"><summary>ภาพและ shape</summary><p>ratio=exp(logπnew−logπold); oldprob.2,new.3ให้1.5; PPOoldpolicyไม่ใช่referencemodelที่ใช้KLregularization</p></details><details id="help-topic-14-code"><summary>โค้ด</summary><p>ratio=exp(logπnew−logπold); oldprob.2,new.3ให้1.5; PPOoldpolicyไม่ใช่referencemodelที่ใช้KLregularization</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-14-result"><summary>ผลการทดลอง</summary><p>ratio=exp(logπnew−logπold); oldprob.2,new.3ให้1.5; PPOoldpolicyไม่ใช่referencemodelที่ใช้KLregularization</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-14"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-15" class="source-topic"><span id="source-58-rlhf-canonical-15-advantages" class="legacy-anchor"></span><h3>15. Advantages</h3>
+<p>Advantage estimates whether an action performed better than the value baseline.</p>
+<pre><code class="language-text">A_t ≈ return_t - V(s_t)
+</code></pre>
+<p>Modern PPO pipelines may use generalized advantage estimation, value models and whitening/normalization.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-15-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>15. Advantages</h3>
+<p>Advantage estimates whether an action performed better than the value baseline.</p>
+<pre><code class="language-text">A_t ≈ return_t - V(s_t)
+</code></pre>
+<p>Modern PPO pipelines may use generalized advantage estimation, value models and whitening/normalization.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-15-equation"><summary>สมการ</summary><h3>15. Advantages</h3>
+<p>Advantage estimates whether an action performed better than the value baseline.</p>
+<pre><code class="language-text">A_t ≈ return_t - V(s_t)
+</code></pre>
+<p>Modern PPO pipelines may use generalized advantage estimation, value models and whitening/normalization.</p></details><details id="help-topic-15-visual"><summary>ภาพและ shape</summary><h3>15. Advantages</h3>
+<p>Advantage estimates whether an action performed better than the value baseline.</p>
+<pre><code class="language-text">A_t ≈ return_t - V(s_t)
+</code></pre>
+<p>Modern PPO pipelines may use generalized advantage estimation, value models and whitening/normalization.</p></details><details id="help-topic-15-code"><summary>โค้ด</summary><h3>15. Advantages</h3>
+<p>Advantage estimates whether an action performed better than the value baseline.</p>
+<pre><code class="language-text">A_t ≈ return_t - V(s_t)
+</code></pre>
+<p>Modern PPO pipelines may use generalized advantage estimation, value models and whitening/normalization.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-15-result"><summary>ผลการทดลอง</summary><h3>15. Advantages</h3>
+<p>Advantage estimates whether an action performed better than the value baseline.</p>
+<pre><code class="language-text">A_t ≈ return_t - V(s_t)
+</code></pre>
+<p>Modern PPO pipelines may use generalized advantage estimation, value models and whitening/normalization.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-15"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-16" class="source-topic"><span id="source-58-rlhf-canonical-16-advantage-normalization" class="legacy-anchor"></span><h3>16. Advantage Normalization</h3>
+<p>Simple normalization:</p>
+<pre><code class="language-text">A_hat =
+(A - mean(A))
+/
+(std(A) + epsilon)
+</code></pre>
+<p>This changes optimization scale, not preference labels.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>advantages[1,3]mean2,popstd1→[−1,1]; std0ใช้epsilonหรือreturnzeroโดยประกาศและไม่normalizeacrossunrelatedpadding</p><p>advantage-normalizationon/offคงrollouts/seed/LR; reportgradnorm/clipfraction/taskqualityและไม่เปลี่ยนrewardscaleพร้อมกัน</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-16-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>advantages[1,3]mean2,popstd1→[−1,1]; std0ใช้epsilonหรือreturnzeroโดยประกาศและไม่normalizeacrossunrelatedpadding</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-16-equation"><summary>สมการ</summary><p>advantages[1,3]mean2,popstd1→[−1,1]; std0ใช้epsilonหรือreturnzeroโดยประกาศและไม่normalizeacrossunrelatedpadding</p></details><details id="help-topic-16-visual"><summary>ภาพและ shape</summary><p>advantages[1,3]mean2,popstd1→[−1,1]; std0ใช้epsilonหรือreturnzeroโดยประกาศและไม่normalizeacrossunrelatedpadding</p></details><details id="help-topic-16-code"><summary>โค้ด</summary><p>advantages[1,3]mean2,popstd1→[−1,1]; std0ใช้epsilonหรือreturnzeroโดยประกาศและไม่normalizeacrossunrelatedpadding</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-16-result"><summary>ผลการทดลอง</summary><p>advantages[1,3]mean2,popstd1→[−1,1]; std0ใช้epsilonหรือreturnzeroโดยประกาศและไม่normalizeacrossunrelatedpadding</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-16"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-17" class="source-topic"><span id="source-58-rlhf-canonical-17-ppo-clipping" class="legacy-anchor"></span><h3>17. PPO Clipping</h3>
+<p>Clipped surrogate:</p>
+<pre><code class="language-text">min(
+ratio * A,
+clip(ratio, 1-eps, 1+eps) * A
+)
+</code></pre>
+<p>Policy optimization maximizes this surrogate.</p>
+<p>Clipping limits overly large probability-ratio updates.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>ε.2,A2,ratio1.3ให้surrogate2.4; A−2,ratio.7ให้−1.6; minimizeลบsurrogatemeanและclipratioไม่clipadvantage</p><p>rewardshiftinvariance,exactKL≥−tolerance,KL(P||P)=0,clipfixturetwo-signsถูกและreference/oldpolicyfrozen</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-17-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>ε.2,A2,ratio1.3ให้surrogate2.4; A−2,ratio.7ให้−1.6; minimizeลบsurrogatemeanและclipratioไม่clipadvantage</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-17-equation"><summary>สมการ</summary><p>ε.2,A2,ratio1.3ให้surrogate2.4; A−2,ratio.7ให้−1.6; minimizeลบsurrogatemeanและclipratioไม่clipadvantage</p></details><details id="help-topic-17-visual"><summary>ภาพและ shape</summary><p>ε.2,A2,ratio1.3ให้surrogate2.4; A−2,ratio.7ให้−1.6; minimizeลบsurrogatemeanและclipratioไม่clipadvantage</p></details><details id="help-topic-17-code"><summary>โค้ด</summary><p>ε.2,A2,ratio1.3ให้surrogate2.4; A−2,ratio.7ให้−1.6; minimizeลบsurrogatemeanและclipratioไม่clipadvantage</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-17-result"><summary>ผลการทดลอง</summary><p>ε.2,A2,ratio1.3ให้surrogate2.4; A−2,ratio.7ให้−1.6; minimizeลบsurrogatemeanและclipratioไม่clipadvantage</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-17"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-18" class="source-topic"><span id="source-58-rlhf-canonical-18-value-model" class="legacy-anchor"></span><h3>18. Value Model</h3>
+<p>A value model estimates expected future reward.</p>
+<p>In language-model PPO it helps estimate advantages.</p>
+<p>Poor value estimates can increase policy-gradient variance.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-18-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>18. Value Model</h3>
+<p>A value model estimates expected future reward.</p>
+<p>In language-model PPO it helps estimate advantages.</p>
+<p>Poor value estimates can increase policy-gradient variance.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-18-equation"><summary>สมการ</summary><h3>18. Value Model</h3>
+<p>A value model estimates expected future reward.</p>
+<p>In language-model PPO it helps estimate advantages.</p>
+<p>Poor value estimates can increase policy-gradient variance.</p></details><details id="help-topic-18-visual"><summary>ภาพและ shape</summary><h3>18. Value Model</h3>
+<p>A value model estimates expected future reward.</p>
+<p>In language-model PPO it helps estimate advantages.</p>
+<p>Poor value estimates can increase policy-gradient variance.</p></details><details id="help-topic-18-code"><summary>โค้ด</summary><h3>18. Value Model</h3>
+<p>A value model estimates expected future reward.</p>
+<p>In language-model PPO it helps estimate advantages.</p>
+<p>Poor value estimates can increase policy-gradient variance.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-18-result"><summary>ผลการทดลอง</summary><h3>18. Value Model</h3>
+<p>A value model estimates expected future reward.</p>
+<p>In language-model PPO it helps estimate advantages.</p>
+<p>Poor value estimates can increase policy-gradient variance.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-18"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-19" class="source-topic"><span id="source-58-rlhf-canonical-19-rlhf-optimization-loop" class="legacy-anchor"></span><h3>19. RLHF Optimization Loop</h3>
+<pre><code class="language-text">prompts
+↓
+policy generates responses
+↓
+reward model scores responses
+↓
+reference log probabilities
+↓
+advantages / returns
+↓
+PPO update
+↓
+repeat
+</code></pre>
+<p>This is online relative to policy generations.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>recordcompletionmask/tokenlogprobs/rewardscalar/advantages/ratio/clipfraction/exacttoyKLและindependentaccuracy</p><p>policy+reference+reward+valueforwardเพิ่มcompute/memory; PPOrolloutstorageO(BT)ต่อtokenstatsนอกเหนือmodelstates ต้องวัดทุกmodel</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-19-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>recordcompletionmask/tokenlogprobs/rewardscalar/advantages/ratio/clipfraction/exacttoyKLและindependentaccuracy</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-19-equation"><summary>สมการ</summary><p>recordcompletionmask/tokenlogprobs/rewardscalar/advantages/ratio/clipfraction/exacttoyKLและindependentaccuracy</p></details><details id="help-topic-19-visual"><summary>ภาพและ shape</summary><p>recordcompletionmask/tokenlogprobs/rewardscalar/advantages/ratio/clipfraction/exacttoyKLและindependentaccuracy</p></details><details id="help-topic-19-code"><summary>โค้ด</summary><p>recordcompletionmask/tokenlogprobs/rewardscalar/advantages/ratio/clipfraction/exacttoyKLและindependentaccuracy</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-19-result"><summary>ผลการทดลอง</summary><p>recordcompletionmask/tokenlogprobs/rewardscalar/advantages/ratio/clipfraction/exacttoyKLและindependentaccuracy</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-19"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-20" class="source-topic"><span id="source-58-rlhf-canonical-20-reward-hacking" class="legacy-anchor"></span><h3>20. Reward Hacking</h3>
+<p>The policy optimizes the learned reward, not human intent directly.</p>
+<p>It can discover:
+- stylistic shortcuts
+- excessive verbosity
+- repeated phrases
+- hidden reward-model biases</p>
+<p>High reward-model score does not guarantee true quality.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>independentcasesมีrewardproxyสูงแต่wronganswer/verbosity/spuriousformat; blindhumanrubricประเมินtaskcorrectnessไม่ใช้rewardmodelตัวเดิมเป็นsolejudge</p><p>ทดลอง“KLpenaltyลดindependentfailureแม้RMscoreอาจลด”; β0baseline→.1,fixedrolloutbudgetและblindtaskscore/lengthslices</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-20-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>independentcasesมีrewardproxyสูงแต่wronganswer/verbosity/spuriousformat; blindhumanrubricประเมินtaskcorrectnessไม่ใช้rewardmodelตัวเดิมเป็นsolejudge</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-20-equation"><summary>สมการ</summary><p>independentcasesมีrewardproxyสูงแต่wronganswer/verbosity/spuriousformat; blindhumanrubricประเมินtaskcorrectnessไม่ใช้rewardmodelตัวเดิมเป็นsolejudge</p></details><details id="help-topic-20-visual"><summary>ภาพและ shape</summary><p>independentcasesมีrewardproxyสูงแต่wronganswer/verbosity/spuriousformat; blindhumanrubricประเมินtaskcorrectnessไม่ใช้rewardmodelตัวเดิมเป็นsolejudge</p></details><details id="help-topic-20-code"><summary>โค้ด</summary><p>independentcasesมีrewardproxyสูงแต่wronganswer/verbosity/spuriousformat; blindhumanrubricประเมินtaskcorrectnessไม่ใช้rewardmodelตัวเดิมเป็นsolejudge</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-20-result"><summary>ผลการทดลอง</summary><p>independentcasesมีrewardproxyสูงแต่wronganswer/verbosity/spuriousformat; blindhumanrubricประเมินtaskcorrectnessไม่ใช้rewardmodelตัวเดิมเป็นsolejudge</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-20"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-21" class="source-topic"><span id="source-58-rlhf-canonical-21-overoptimization" class="legacy-anchor"></span><h3>21. Overoptimization</h3>
+<p>As policy optimization continues:
+- proxy reward may keep rising
+- true human preference can flatten or fall</p>
+<p>Therefore monitor independent evaluation, not reward alone.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>rewardmodeltrain/evalpairsซ้ำหรือใช้RMscoreเป็นqualityอย่างเดียวทำวงจรself-confirming; preferenceholdoutและindependenttaskjudgeแยก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-21-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>rewardmodeltrain/evalpairsซ้ำหรือใช้RMscoreเป็นqualityอย่างเดียวทำวงจรself-confirming; preferenceholdoutและindependenttaskjudgeแยก</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-21-equation"><summary>สมการ</summary><p>rewardmodeltrain/evalpairsซ้ำหรือใช้RMscoreเป็นqualityอย่างเดียวทำวงจรself-confirming; preferenceholdoutและindependenttaskjudgeแยก</p></details><details id="help-topic-21-visual"><summary>ภาพและ shape</summary><p>rewardmodeltrain/evalpairsซ้ำหรือใช้RMscoreเป็นqualityอย่างเดียวทำวงจรself-confirming; preferenceholdoutและindependenttaskjudgeแยก</p></details><details id="help-topic-21-code"><summary>โค้ด</summary><p>rewardmodeltrain/evalpairsซ้ำหรือใช้RMscoreเป็นqualityอย่างเดียวทำวงจรself-confirming; preferenceholdoutและindependenttaskjudgeแยก</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-21-result"><summary>ผลการทดลอง</summary><p>rewardmodeltrain/evalpairsซ้ำหรือใช้RMscoreเป็นqualityอย่างเดียวทำวงจรself-confirming; preferenceholdoutและindependenttaskjudgeแยก</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-21"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-22" class="source-topic"><span id="source-58-rlhf-canonical-22-kl-collapse-excessive-drift" class="legacy-anchor"></span><h3>22. KL Collapse / Excessive Drift</h3>
+<p>If policy drifts too far:
+- language quality can degrade
+- reward exploitation can increase
+- retained capabilities can fall</p>
+<p>Track:
+- approximate KL
+- response entropy
+- task metrics
+- independent preference win rate</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>β.01/.1คงpolicy/reference/prompts/rewardmodel/budget; reporttaskmetric/reward/trueKLแยกและหลายseedเพื่อตรวจrewardhacking</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-22-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>β.01/.1คงpolicy/reference/prompts/rewardmodel/budget; reporttaskmetric/reward/trueKLแยกและหลายseedเพื่อตรวจrewardhacking</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-22-equation"><summary>สมการ</summary><p>β.01/.1คงpolicy/reference/prompts/rewardmodel/budget; reporttaskmetric/reward/trueKLแยกและหลายseedเพื่อตรวจrewardhacking</p></details><details id="help-topic-22-visual"><summary>ภาพและ shape</summary><p>β.01/.1คงpolicy/reference/prompts/rewardmodel/budget; reporttaskmetric/reward/trueKLแยกและหลายseedเพื่อตรวจrewardhacking</p></details><details id="help-topic-22-code"><summary>โค้ด</summary><p>β.01/.1คงpolicy/reference/prompts/rewardmodel/budget; reporttaskmetric/reward/trueKLแยกและหลายseedเพื่อตรวจrewardhacking</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-22-result"><summary>ผลการทดลอง</summary><p>β.01/.1คงpolicy/reference/prompts/rewardmodel/budget; reporttaskmetric/reward/trueKLแยกและหลายseedเพื่อตรวจrewardhacking</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-22"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-23" class="source-topic"><span id="source-58-rlhf-canonical-23-reward-scaling" class="legacy-anchor"></span><h3>23. Reward Scaling</h3>
+<p>Reward magnitude affects optimization.</p>
+<p>Possible operations:
+- centering
+- normalization
+- clipping</p>
+<p>Do not change reward scale without understanding its effect on PPO/value learning.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-23-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>23. Reward Scaling</h3>
+<p>Reward magnitude affects optimization.</p>
+<p>Possible operations:
+- centering
+- normalization
+- clipping</p>
+<p>Do not change reward scale without understanding its effect on PPO/value learning.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-23-equation"><summary>สมการ</summary><h3>23. Reward Scaling</h3>
+<p>Reward magnitude affects optimization.</p>
+<p>Possible operations:
+- centering
+- normalization
+- clipping</p>
+<p>Do not change reward scale without understanding its effect on PPO/value learning.</p></details><details id="help-topic-23-visual"><summary>ภาพและ shape</summary><h3>23. Reward Scaling</h3>
+<p>Reward magnitude affects optimization.</p>
+<p>Possible operations:
+- centering
+- normalization
+- clipping</p>
+<p>Do not change reward scale without understanding its effect on PPO/value learning.</p></details><details id="help-topic-23-code"><summary>โค้ด</summary><h3>23. Reward Scaling</h3>
+<p>Reward magnitude affects optimization.</p>
+<p>Possible operations:
+- centering
+- normalization
+- clipping</p>
+<p>Do not change reward scale without understanding its effect on PPO/value learning.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-23-result"><summary>ผลการทดลอง</summary><h3>23. Reward Scaling</h3>
+<p>Reward magnitude affects optimization.</p>
+<p>Possible operations:
+- centering
+- normalization
+- clipping</p>
+<p>Do not change reward scale without understanding its effect on PPO/value learning.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-23"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-24" class="source-topic"><span id="source-58-rlhf-canonical-24-current-trl-concepts" class="legacy-anchor"></span><h3>24. Current TRL Concepts</h3>
+<p>Current Hugging Face TRL includes:
+- RewardTrainer for reward models
+- DPOTrainer and other offline preference methods
+- PPO functionality under its experimental PPO API</p>
+<p>Modern post-training ecosystems increasingly use offline preference optimization where suitable because it is simpler than a full online PPO stack.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>manifest มีpolicy/reference/old-policy/RM/valueversions/prompthash/preferencehash/β/PPOclip/rolloutseed/rewardnormalization/evalrubric</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-24-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>manifest มีpolicy/reference/old-policy/RM/valueversions/prompthash/preferencehash/β/PPOclip/rolloutseed/rewardnormalization/evalrubric</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-24-equation"><summary>สมการ</summary><p>manifest มีpolicy/reference/old-policy/RM/valueversions/prompthash/preferencehash/β/PPOclip/rolloutseed/rewardnormalization/evalrubric</p></details><details id="help-topic-24-visual"><summary>ภาพและ shape</summary><p>manifest มีpolicy/reference/old-policy/RM/valueversions/prompthash/preferencehash/β/PPOclip/rolloutseed/rewardnormalization/evalrubric</p></details><details id="help-topic-24-code"><summary>โค้ด</summary><p>manifest มีpolicy/reference/old-policy/RM/valueversions/prompthash/preferencehash/β/PPOclip/rolloutseed/rewardnormalization/evalrubric</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-24-result"><summary>ผลการทดลอง</summary><p>manifest มีpolicy/reference/old-policy/RM/valueversions/prompthash/preferencehash/β/PPOclip/rolloutseed/rewardnormalization/evalrubric</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-24"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-25" class="source-topic"><span id="source-58-rlhf-canonical-25-from-scratch" class="legacy-anchor"></span><h3>25. From Scratch</h3>
+<p>src/rlhf_numpy.py implements:</p>
+<ul>
+<li>sigmoid_stable</li>
+<li>bradley_terry_probability</li>
+<li>reward_model_loss</li>
+<li>pairwise_accuracy</li>
+<li>categorical_kl</li>
+<li>sampled_log_ratio</li>
+<li>kl_shaped_reward</li>
+<li>normalize_advantages</li>
+<li>ppo_ratio</li>
+<li>ppo_clipped_policy_loss</li>
+</ul><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>stablepairlossNumPyเทียบtorchsoftplusและKLกับtorch.distributions.kl_divergenceCategorical; orientationP||Qต้องตรง</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-25-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>stablepairlossNumPyเทียบtorchsoftplusและKLกับtorch.distributions.kl_divergenceCategorical; orientationP||Qต้องตรง</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-25-equation"><summary>สมการ</summary><p>stablepairlossNumPyเทียบtorchsoftplusและKLกับtorch.distributions.kl_divergenceCategorical; orientationP||Qต้องตรง</p></details><details id="help-topic-25-visual"><summary>ภาพและ shape</summary><p>stablepairlossNumPyเทียบtorchsoftplusและKLกับtorch.distributions.kl_divergenceCategorical; orientationP||Qต้องตรง</p></details><details id="help-topic-25-code"><summary>โค้ด</summary><p>stablepairlossNumPyเทียบtorchsoftplusและKLกับtorch.distributions.kl_divergenceCategorical; orientationP||Qต้องตรง</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-25-result"><summary>ผลการทดลอง</summary><p>stablepairlossNumPyเทียบtorchsoftplusและKLกับtorch.distributions.kl_divergenceCategorical; orientationP||Qต้องตรง</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-25"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-26" class="source-topic"><span id="source-58-rlhf-canonical-26-common-mistakes" class="legacy-anchor"></span><h3>26. Common Mistakes</h3>
+<ol>
+<li>reward-model training pairs leak into evaluation</li>
+<li>reward score treated as ground-truth human utility</li>
+<li>pairwise accuracy confused with calibration</li>
+<li>sampled log-ratio called exact KL</li>
+<li>PPO old/new policy probabilities mixed up</li>
+<li>wrong sign on advantage objective</li>
+<li>policy updated without a reference/KL monitor</li>
+<li>reward-model exploitation ignored</li>
+<li>only proxy reward reported</li>
+<li>online RL started before offline pipeline is validated</li>
+</ol><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-26-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>26. Common Mistakes</h3>
+<ol>
+<li>reward-model training pairs leak into evaluation</li>
+<li>reward score treated as ground-truth human utility</li>
+<li>pairwise accuracy confused with calibration</li>
+<li>sampled log-ratio called exact KL</li>
+<li>PPO old/new policy probabilities mixed up</li>
+<li>wrong sign on advantage objective</li>
+<li>policy updated without a reference/KL monitor</li>
+<li>reward-model exploitation ignored</li>
+<li>only proxy reward reported</li>
+<li>online RL started before offline pipeline is validated</li>
+</ol><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-26-equation"><summary>สมการ</summary><h3>26. Common Mistakes</h3>
+<ol>
+<li>reward-model training pairs leak into evaluation</li>
+<li>reward score treated as ground-truth human utility</li>
+<li>pairwise accuracy confused with calibration</li>
+<li>sampled log-ratio called exact KL</li>
+<li>PPO old/new policy probabilities mixed up</li>
+<li>wrong sign on advantage objective</li>
+<li>policy updated without a reference/KL monitor</li>
+<li>reward-model exploitation ignored</li>
+<li>only proxy reward reported</li>
+<li>online RL started before offline pipeline is validated</li>
+</ol></details><details id="help-topic-26-visual"><summary>ภาพและ shape</summary><h3>26. Common Mistakes</h3>
+<ol>
+<li>reward-model training pairs leak into evaluation</li>
+<li>reward score treated as ground-truth human utility</li>
+<li>pairwise accuracy confused with calibration</li>
+<li>sampled log-ratio called exact KL</li>
+<li>PPO old/new policy probabilities mixed up</li>
+<li>wrong sign on advantage objective</li>
+<li>policy updated without a reference/KL monitor</li>
+<li>reward-model exploitation ignored</li>
+<li>only proxy reward reported</li>
+<li>online RL started before offline pipeline is validated</li>
+</ol></details><details id="help-topic-26-code"><summary>โค้ด</summary><h3>26. Common Mistakes</h3>
+<ol>
+<li>reward-model training pairs leak into evaluation</li>
+<li>reward score treated as ground-truth human utility</li>
+<li>pairwise accuracy confused with calibration</li>
+<li>sampled log-ratio called exact KL</li>
+<li>PPO old/new policy probabilities mixed up</li>
+<li>wrong sign on advantage objective</li>
+<li>policy updated without a reference/KL monitor</li>
+<li>reward-model exploitation ignored</li>
+<li>only proxy reward reported</li>
+<li>online RL started before offline pipeline is validated</li>
+</ol><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-26-result"><summary>ผลการทดลอง</summary><h3>26. Common Mistakes</h3>
+<ol>
+<li>reward-model training pairs leak into evaluation</li>
+<li>reward score treated as ground-truth human utility</li>
+<li>pairwise accuracy confused with calibration</li>
+<li>sampled log-ratio called exact KL</li>
+<li>PPO old/new policy probabilities mixed up</li>
+<li>wrong sign on advantage objective</li>
+<li>policy updated without a reference/KL monitor</li>
+<li>reward-model exploitation ignored</li>
+<li>only proxy reward reported</li>
+<li>online RL started before offline pipeline is validated</li>
+</ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-26"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-27" class="source-topic"><span id="source-58-rlhf-canonical-27-exercises-mini-project" class="legacy-anchor"></span><h3>27. Exercises / Mini Project</h3>
+<ul>
+<li><a href="../58-rlhf/exercises/README.md">Exercises</a></li>
+<li><a href="../58-rlhf/solutions/README.md">Solutions</a></li>
+<li><a href="../58-rlhf/mini-project/README.md">Mini Project</a></li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-27-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>27. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-27-equation"><summary>สมการ</summary><h3>27. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-27-visual"><summary>ภาพและ shape</summary><h3>27. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-27-code"><summary>โค้ด</summary><h3>27. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-27-result"><summary>ผลการทดลอง</summary><h3>27. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-27"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-28" class="source-topic"><span id="source-58-rlhf-canonical-28-checklist" class="legacy-anchor"></span><h3>28. Checklist</h3>
+<ul>
+<li>[ ] preference pairs</li>
+<li>[ ] Bradley-Terry</li>
+<li>[ ] reward model</li>
+<li>[ ] reference policy</li>
+<li>[ ] exact KL</li>
+<li>[ ] sampled log-ratio</li>
+<li>[ ] PPO ratio</li>
+<li>[ ] advantages</li>
+<li>[ ] clipping</li>
+<li>[ ] value model</li>
+<li>[ ] reward hacking</li>
+<li>[ ] independent evaluation</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-28-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>28. Checklist</h3>
+<ul>
+<li>[ ] preference pairs</li>
+<li>[ ] Bradley-Terry</li>
+<li>[ ] reward model</li>
+<li>[ ] reference policy</li>
+<li>[ ] exact KL</li>
+<li>[ ] sampled log-ratio</li>
+<li>[ ] PPO ratio</li>
+<li>[ ] advantages</li>
+<li>[ ] clipping</li>
+<li>[ ] value model</li>
+<li>[ ] reward hacking</li>
+<li>[ ] independent evaluation</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-28-equation"><summary>สมการ</summary><h3>28. Checklist</h3>
+<ul>
+<li>[ ] preference pairs</li>
+<li>[ ] Bradley-Terry</li>
+<li>[ ] reward model</li>
+<li>[ ] reference policy</li>
+<li>[ ] exact KL</li>
+<li>[ ] sampled log-ratio</li>
+<li>[ ] PPO ratio</li>
+<li>[ ] advantages</li>
+<li>[ ] clipping</li>
+<li>[ ] value model</li>
+<li>[ ] reward hacking</li>
+<li>[ ] independent evaluation</li>
+</ul></details><details id="help-topic-28-visual"><summary>ภาพและ shape</summary><h3>28. Checklist</h3>
+<ul>
+<li>[ ] preference pairs</li>
+<li>[ ] Bradley-Terry</li>
+<li>[ ] reward model</li>
+<li>[ ] reference policy</li>
+<li>[ ] exact KL</li>
+<li>[ ] sampled log-ratio</li>
+<li>[ ] PPO ratio</li>
+<li>[ ] advantages</li>
+<li>[ ] clipping</li>
+<li>[ ] value model</li>
+<li>[ ] reward hacking</li>
+<li>[ ] independent evaluation</li>
+</ul></details><details id="help-topic-28-code"><summary>โค้ด</summary><h3>28. Checklist</h3>
+<ul>
+<li>[ ] preference pairs</li>
+<li>[ ] Bradley-Terry</li>
+<li>[ ] reward model</li>
+<li>[ ] reference policy</li>
+<li>[ ] exact KL</li>
+<li>[ ] sampled log-ratio</li>
+<li>[ ] PPO ratio</li>
+<li>[ ] advantages</li>
+<li>[ ] clipping</li>
+<li>[ ] value model</li>
+<li>[ ] reward hacking</li>
+<li>[ ] independent evaluation</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-28-result"><summary>ผลการทดลอง</summary><h3>28. Checklist</h3>
+<ul>
+<li>[ ] preference pairs</li>
+<li>[ ] Bradley-Terry</li>
+<li>[ ] reward model</li>
+<li>[ ] reference policy</li>
+<li>[ ] exact KL</li>
+<li>[ ] sampled log-ratio</li>
+<li>[ ] PPO ratio</li>
+<li>[ ] advantages</li>
+<li>[ ] clipping</li>
+<li>[ ] value model</li>
+<li>[ ] reward hacking</li>
+<li>[ ] independent evaluation</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-28"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-29" class="source-topic"><span id="source-58-rlhf-canonical-29-whats-next" class="legacy-anchor"></span><span id="source-58-rlhf-canonical-58-rlhf-rlhf" class="legacy-anchor"></span><h3>29. What's Next</h3>
+<p>Chapter 59 derives Direct Preference Optimization, which learns directly from chosen/rejected pairs without running a separate online PPO loop.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-29-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>29. What's Next</h3>
+<p>Chapter 59 derives Direct Preference Optimization, which learns directly from chosen/rejected pairs without running a separate online PPO loop.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-29-equation"><summary>สมการ</summary><h3>29. What's Next</h3>
+<p>Chapter 59 derives Direct Preference Optimization, which learns directly from chosen/rejected pairs without running a separate online PPO loop.</p></details><details id="help-topic-29-visual"><summary>ภาพและ shape</summary><h3>29. What's Next</h3>
+<p>Chapter 59 derives Direct Preference Optimization, which learns directly from chosen/rejected pairs without running a separate online PPO loop.</p></details><details id="help-topic-29-code"><summary>โค้ด</summary><h3>29. What's Next</h3>
+<p>Chapter 59 derives Direct Preference Optimization, which learns directly from chosen/rejected pairs without running a separate online PPO loop.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-29-result"><summary>ผลการทดลอง</summary><h3>29. What's Next</h3>
+<p>Chapter 59 derives Direct Preference Optimization, which learns directly from chosen/rejected pairs without running a separate online PPO loop.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-29"> อ่านหัวข้อนี้แล้ว</label></section><details><summary>รายละเอียดเพิ่มเติมและข้อกำหนดของ local lab</summary><h3>58-rlhf — RLHF</h3>
+<p><strong>Prerequisites:</strong> Complete 57-instruction-tuning; be able to trace array/tensor shapes, separate train/validation/test data, and explain the core objective of the current chapter.</p>
+<p><strong>Mental model:</strong> Treat RLHF as a pipeline: input representation → central mechanism → objective/state update → observable output. At every boundary, state shape/state, allowed information flow, and the invariant that should remain true.</p>
+<p><strong>Code walkthrough:</strong> Read public API first, then input checks, state/shape transformations, numerical core, returned values and tests. Connect each important code block to the equation or algorithm in the chapter README.</p>
+<p><strong>Visualization / inspection:</strong> Use a tiny case. Inspect intermediate values, distributions, norms, scores, states or trajectories appropriate to RLHF; do not rely only on the final metric.</p>
+<p><strong>Experiment:</strong> Run a baseline, one controlled parameter change, one edge case and one repeated seeded comparison. Record seed, environment, data version, configuration and metric.</p>
+<p><strong>Limitations:</strong> List at least one assumption, one data-related limitation, one numerical/optimization limitation and one scaling limitation for RLHF.</p>
+<p><strong>Analysis workflow:</strong> Check inputs → preprocessing → shapes/state → finite numerical values → objective/update → evaluation protocol. The earliest unexpected state is more informative than a downstream metric.</p>
+<p><strong>Performance:</strong> Identify the dominant time and memory terms and measure them on the local learning run before attempting optimization.</p>
+<p><strong>Production perspective:</strong> Define input validation, artifact/configuration versioning, quality and resource measurements, staged release criteria and a way to return to the previous known-good artifact.</p>
+<p><strong>Research perspective:</strong> State a falsifiable hypothesis, baseline, one-factor change, metric, repeated-run plan when stochastic, and how negative results will be recorded.</p>
+<p><strong>Interview questions:</strong>
+1. Explain RLHF from first principles without naming a library API.
+2. Trace one input through the central mechanism and give the important intermediate shapes/state.
+3. Name the strongest assumption and a case where it fails.
+4. State the dominant compute/memory cost.
+5. Describe how you would validate a new implementation against a trusted baseline.</p>
+<p><strong>Summary / exit condition:</strong> You may move on when you can explain, derive or trace, implement, test, analyze, measure and evaluate RLHF, and when the chapter mini-project plus twenty total exercises are complete.</p></details></section><section id="objective-evidence" class="canonical-section"><h2>พิสูจน์ความสามารถทีละ objective</h2><p>ทำกรณีใหม่ก่อนเปิด reference แล้วบันทึกงานด้านล่าง ให้ผู้ตรวจใช้ rubric ตรวจคำอธิบาย ผลคำนวณ โค้ด และข้อจำกัด บันทึกเก็บในเบราว์เซอร์เครื่องนี้ กดส่งออกเพื่อสำรองหรือส่งให้ผู้ตรวจ เว็บไม่ได้รันโค้ดหรือตัดสินผลงานแทนผู้ตรวจ</p><button type="button" class="secondary-button" data-export-evidence>ส่งออกหลักฐานบทนี้เป็น JSON</button><p role="status" id="evidence-export-status"></p><details id="ch58-objective-01" class="objective-proof"><summary>represent preference-pair datasets</summary><p>represent preference-pair datasets: ใช้กรณีในหัวข้อ Preference Data เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch58-evidence-01"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch58-evidence-01-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch58-evidence-01-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch58-evidence-01-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch58-evidence-01-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch58-evidence-01-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch58-evidence-01-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch58-evidence-01-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch58-evidence-01-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>3. Preference Data</h3>
+<p>A pair contains:</p>
+<pre><code class="language-text">prompt x
+chosen response y_w
+rejected response y_l
+</code></pre>
+<p>Humans/annotators indicate:</p>
+<pre><code class="language-text">y_w ≻ y_l
+</code></pre>
+<p>Preference data can come from:
+- human ranking
+- pairwise annotation
+- carefully controlled synthetic preference labels</p>
+<p>Label quality matters more than raw pair count.</p><h3>3. Preference Data</h3>
+<p>A pair contains:</p>
+<pre><code class="language-text">prompt x
+chosen response y_w
+rejected response y_l
+</code></pre>
+<p>Humans/annotators indicate:</p>
+<pre><code class="language-text">y_w ≻ y_l
+</code></pre>
+<p>Preference data can come from:
+- human ranking
+- pairwise annotation
+- carefully controlled synthetic preference labels</p>
+<p>Label quality matters more than raw pair count.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch58-objective-02" class="objective-proof"><summary>derive the Bradley-Terry reward-model objective</summary><p>derive the Bradley-Terry reward-model objective: ใช้กรณีในหัวข้อ Reward Model, Bradley-Terry Model, Reward Margin เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch58-evidence-02"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch58-evidence-02-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch58-evidence-02-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch58-evidence-02-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch58-evidence-02-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch58-evidence-02-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch58-evidence-02-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch58-evidence-02-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch58-evidence-02-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>Bradley-TerryP(chosen)=σ(rc−rr); rc2,rr1ให้σ1=.731059; เพิ่มrewardconstantทั้งคู่probคงเดิม</p><h3>4. Reward Model</h3>
+<p>The reward model maps prompt+response to a scalar:</p>
+<pre><code class="language-text">r_phi(x,y) ∈ R
+</code></pre>
+<p>Higher score should correspond to more preferred responses.</p>
+<h3>5. Bradley-Terry Model</h3>
+<p>For chosen/rejected rewards:</p>
+<pre><code class="language-text">P(y_w ≻ y_l)
+=
+sigmoid(
+r_w - r_l
+)
+</code></pre>
+<p>The pairwise negative log-likelihood is:</p>
+<pre><code class="language-text">L_RM
+=
+-log sigmoid(r_w - r_l)
+</code></pre>
+<p>Equivalent stable implementation:</p>
+<pre><code class="language-text">softplus(-(r_w-r_l))
+</code></pre>
+<h3>6. Reward Margin</h3>
+<pre><code class="language-text">margin =
+r_chosen - r_rejected
+</code></pre>
+<p>Positive margin means the reward model ranks the pair correctly.</p>
+<p>Pairwise accuracy:</p>
+<pre><code class="language-text">mean(margin &gt; 0)
+</code></pre>
+<p>Accuracy alone does not measure reward calibration or scale.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch58-objective-03" class="objective-proof"><summary>train/evaluate pairwise reward models</summary><p>train/evaluate pairwise reward models: ใช้กรณีในหัวข้อ Preference Ties / Noise, Reward Model Generalization เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch58-evidence-03"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch58-evidence-03-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch58-evidence-03-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch58-evidence-03-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch58-evidence-03-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch58-evidence-03-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch58-evidence-03-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch58-evidence-03-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch58-evidence-03-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>accuracy=mean(rc&gt;rr)ตามtiepolicy; margins[1,−.2,0]ให้1/3ถ้าtieไม่ผ่าน; reporttiesแยกไม่สลับlabelเพื่อเพิ่มคะแนน</p><h3>7. Preference Ties / Noise</h3>
+<p>Human preferences can be:
+- ambiguous
+- inconsistent
+- annotator-dependent</p>
+<p>Possible practices:
+- allow ties/uncertainty
+- majority vote
+- adjudication
+- annotator-quality analysis</p>
+<p>Do not pretend pair labels are perfect ground truth.</p>
+<h3>8. Reward Model Generalization</h3>
+<p>A reward model can overfit training comparison styles.</p>
+<p>Hold out:
+- prompt families
+- domains
+- lengths
+- adversarial examples</p>
+<p>Evaluate OOD preference accuracy when deployment prompts differ.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch58-objective-04" class="objective-proof"><summary>distinguish reward accuracy from reward calibration</summary><p>distinguish reward accuracy from reward calibration: ใช้กรณีในหัวข้อ Reward Model Generalization เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch58-evidence-04"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch58-evidence-04-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch58-evidence-04-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch58-evidence-04-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch58-evidence-04-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch58-evidence-04-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch58-evidence-04-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch58-evidence-04-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch58-evidence-04-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>accuracy=mean(rc&gt;rr)ตามtiepolicy; margins[1,−.2,0]ให้1/3ถ้าtieไม่ผ่าน; reporttiesแยกไม่สลับlabelเพื่อเพิ่มคะแนน</p><h3>8. Reward Model Generalization</h3>
+<p>A reward model can overfit training comparison styles.</p>
+<p>Hold out:
+- prompt families
+- domains
+- lengths
+- adversarial examples</p>
+<p>Evaluate OOD preference accuracy when deployment prompts differ.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch58-objective-05" class="objective-proof"><summary>explain policy/reference models</summary><p>explain policy/reference models: ใช้กรณีในหัวข้อ Policy, Reference Policy เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch58-evidence-05"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch58-evidence-05-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch58-evidence-05-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch58-evidence-05-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch58-evidence-05-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch58-evidence-05-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch58-evidence-05-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch58-evidence-05-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch58-evidence-05-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>9. Policy</h3>
+<p>The policy is the language model being optimized:</p>
+<pre><code class="language-text">pi_theta(y|x)
+</code></pre>
+<p>It generates candidate responses.</p>
+<h3>10. Reference Policy</h3>
+<p>A frozen reference policy:</p>
+<pre><code class="language-text">pi_ref
+</code></pre>
+<p>anchors optimization near a known baseline.</p>
+<p>Without regularization, policy optimization may move aggressively toward reward-model quirks.</p><h3>9. Policy</h3>
+<p>The policy is the language model being optimized:</p>
+<pre><code class="language-text">pi_theta(y|x)
+</code></pre>
+<p>It generates candidate responses.</p>
+<h3>10. Reference Policy</h3>
+<p>A frozen reference policy:</p>
+<pre><code class="language-text">pi_ref
+</code></pre>
+<p>anchors optimization near a known baseline.</p>
+<p>Without regularization, policy optimization may move aggressively toward reward-model quirks.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch58-objective-06" class="objective-proof"><summary>compute exact categorical KL</summary><p>compute exact categorical KL: ใช้กรณีในหัวข้อ Exact Categorical KL เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch58-evidence-06"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch58-evidence-06-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch58-evidence-06-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch58-evidence-06-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch58-evidence-06-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch58-evidence-06-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch58-evidence-06-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch58-evidence-06-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch58-evidence-06-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>KL(P||Q)=ΣPlog(P/Q); P[.8,.2],Q[.5,.5]ได้≈.19274476; supportQ0แต่P&gt;0ให้infiniteต้องerror/explicitpolicy</p><h3>11. Exact Categorical KL</h3>
+<p>For distributions p and q over the same support:</p>
+<pre><code class="language-text">KL(p || q)
+=
+Σ_i p_i log(p_i/q_i)
+</code></pre>
+<p>It is always non-negative.</p>
+<p>For full language-model sequences this exact quantity can be expensive.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch58-objective-07" class="objective-proof"><summary>understand sampled log-ratio KL estimators</summary><p>understand sampled log-ratio KL estimators: ใช้กรณีในหัวข้อ Sampled Log-Ratio เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch58-evidence-07"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch58-evidence-07-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch58-evidence-07-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch58-evidence-07-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch58-evidence-07-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch58-evidence-07-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch58-evidence-07-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch58-evidence-07-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch58-evidence-07-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>sampledaction1เมื่อP.2,Q.5ให้log(.2/.5)=−.916291 แม้exactKL.192745≥0; singlelogratioไม่ใช่exactKL</p><h3>12. Sampled Log-Ratio</h3>
+<p>For a sampled token/action a:</p>
+<pre><code class="language-text">log pi_theta(a)
+-
+log pi_ref(a)
+</code></pre>
+<p>This quantity is often used in policy-training estimators/penalties.</p>
+<p>Important:
+- a single sampled log-ratio can be negative
+- it is not itself the exact full-distribution KL</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch58-objective-08" class="objective-proof"><summary>derive PPO probability ratios</summary><p>derive PPO probability ratios: ใช้กรณีในหัวข้อ PPO Ratio เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch58-evidence-08"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch58-evidence-08-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch58-evidence-08-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch58-evidence-08-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch58-evidence-08-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch58-evidence-08-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch58-evidence-08-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch58-evidence-08-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch58-evidence-08-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>ratio=exp(logπnew−logπold); oldprob.2,new.3ให้1.5; PPOoldpolicyไม่ใช่referencemodelที่ใช้KLregularization</p><h3>14. PPO Ratio</h3>
+<p>Given old policy and new policy:</p>
+<pre><code class="language-text">ratio_t
+=
+exp(
+log pi_new(a_t)
+-
+log pi_old(a_t)
+)
+</code></pre>
+<p>Ratio &gt; 1 means the new policy increased probability of that sampled action.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch58-objective-09" class="objective-proof"><summary>explain clipped PPO objectives</summary><p>explain clipped PPO objectives: ใช้กรณีในหัวข้อ PPO Clipping เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch58-evidence-09"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch58-evidence-09-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch58-evidence-09-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch58-evidence-09-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch58-evidence-09-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch58-evidence-09-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch58-evidence-09-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch58-evidence-09-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch58-evidence-09-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>ε.2,A2,ratio1.3ให้surrogate2.4; A−2,ratio.7ให้−1.6; minimizeลบsurrogatemeanและclipratioไม่clipadvantage</p><h3>17. PPO Clipping</h3>
+<p>Clipped surrogate:</p>
+<pre><code class="language-text">min(
+ratio * A,
+clip(ratio, 1-eps, 1+eps) * A
+)
+</code></pre>
+<p>Policy optimization maximizes this surrogate.</p>
+<p>Clipping limits overly large probability-ratio updates.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch58-objective-10" class="objective-proof"><summary>normalize advantages</summary><p>normalize advantages: ใช้กรณีในหัวข้อ Advantages, Advantage Normalization เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch58-evidence-10"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch58-evidence-10-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch58-evidence-10-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch58-evidence-10-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch58-evidence-10-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch58-evidence-10-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch58-evidence-10-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch58-evidence-10-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch58-evidence-10-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>advantages[1,3]mean2,popstd1→[−1,1]; std0ใช้epsilonหรือreturnzeroโดยประกาศและไม่normalizeacrossunrelatedpadding</p><h3>15. Advantages</h3>
+<p>Advantage estimates whether an action performed better than the value baseline.</p>
+<pre><code class="language-text">A_t ≈ return_t - V(s_t)
+</code></pre>
+<p>Modern PPO pipelines may use generalized advantage estimation, value models and whitening/normalization.</p>
+<h3>16. Advantage Normalization</h3>
+<p>Simple normalization:</p>
+<pre><code class="language-text">A_hat =
+(A - mean(A))
+/
+(std(A) + epsilon)
+</code></pre>
+<p>This changes optimization scale, not preference labels.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch58-objective-11" class="objective-proof"><summary>understand value models / advantages</summary><p>understand value models / advantages: ใช้กรณีในหัวข้อ Value Model เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch58-evidence-11"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch58-evidence-11-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch58-evidence-11-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch58-evidence-11-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch58-evidence-11-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch58-evidence-11-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch58-evidence-11-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch58-evidence-11-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch58-evidence-11-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>18. Value Model</h3>
+<p>A value model estimates expected future reward.</p>
+<p>In language-model PPO it helps estimate advantages.</p>
+<p>Poor value estimates can increase policy-gradient variance.</p><h3>18. Value Model</h3>
+<p>A value model estimates expected future reward.</p>
+<p>In language-model PPO it helps estimate advantages.</p>
+<p>Poor value estimates can increase policy-gradient variance.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch58-objective-12" class="objective-proof"><summary>explain KL penalties</summary><p>explain KL penalties: ใช้กรณีในหัวข้อ KL-Shaped Reward, KL Collapse / Excessive Drift เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch58-evidence-12"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch58-evidence-12-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch58-evidence-12-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch58-evidence-12-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch58-evidence-12-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch58-evidence-12-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch58-evidence-12-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch58-evidence-12-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch58-evidence-12-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>shapedreward=rm_score−β(logπ−logπref); score1,β.1,logratio.5ได้.95; sampledpenaltyอาจติดลบต้องแยกexpectedKL</p><h3>13. KL-Shaped Reward</h3>
+<p>A common conceptual form:</p>
+<pre><code class="language-text">reward_shaped
+=
+reward_model_score
+-
+beta * sampled_log_ratio
+</code></pre>
+<p>Beta controls regularization strength.</p>
+<p>Large beta:
+- stays closer to reference</p>
+<p>Small beta:
+- permits more movement</p>
+<h3>22. KL Collapse / Excessive Drift</h3>
+<p>If policy drifts too far:
+- language quality can degrade
+- reward exploitation can increase
+- retained capabilities can fall</p>
+<p>Track:
+- approximate KL
+- response entropy
+- task metrics
+- independent preference win rate</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch58-objective-13" class="objective-proof"><summary>identify reward hacking</summary><p>identify reward hacking: ใช้กรณีในหัวข้อ Reward Hacking เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch58-evidence-13"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch58-evidence-13-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch58-evidence-13-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch58-evidence-13-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch58-evidence-13-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch58-evidence-13-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch58-evidence-13-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch58-evidence-13-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch58-evidence-13-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>independentcasesมีrewardproxyสูงแต่wronganswer/verbosity/spuriousformat; blindhumanrubricประเมินtaskcorrectnessไม่ใช้rewardmodelตัวเดิมเป็นsolejudge</p><h3>20. Reward Hacking</h3>
+<p>The policy optimizes the learned reward, not human intent directly.</p>
+<p>It can discover:
+- stylistic shortcuts
+- excessive verbosity
+- repeated phrases
+- hidden reward-model biases</p>
+<p>High reward-model score does not guarantee true quality.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch58-objective-14" class="objective-proof"><summary>reason about overoptimization</summary><p>reason about overoptimization: ใช้กรณีในหัวข้อ Overoptimization, Reward Scaling เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch58-evidence-14"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch58-evidence-14-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch58-evidence-14-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch58-evidence-14-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch58-evidence-14-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch58-evidence-14-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch58-evidence-14-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch58-evidence-14-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch58-evidence-14-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>rewardmodeltrain/evalpairsซ้ำหรือใช้RMscoreเป็นqualityอย่างเดียวทำวงจรself-confirming; preferenceholdoutและindependenttaskjudgeแยก</p><h3>21. Overoptimization</h3>
+<p>As policy optimization continues:
+- proxy reward may keep rising
+- true human preference can flatten or fall</p>
+<p>Therefore monitor independent evaluation, not reward alone.</p>
+<h3>23. Reward Scaling</h3>
+<p>Reward magnitude affects optimization.</p>
+<p>Possible operations:
+- centering
+- normalization
+- clipping</p>
+<p>Do not change reward scale without understanding its effect on PPO/value learning.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch58-objective-15" class="objective-proof"><summary>design offline evaluation before online optimization</summary><p>design offline evaluation before online optimization: ใช้กรณีในหัวข้อ RLHF Optimization Loop, From Scratch เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch58-evidence-15"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch58-evidence-15-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch58-evidence-15-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch58-evidence-15-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch58-evidence-15-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch58-evidence-15-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch58-evidence-15-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch58-evidence-15-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch58-evidence-15-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>recordcompletionmask/tokenlogprobs/rewardscalar/advantages/ratio/clipfraction/exacttoyKLและindependentaccuracy</p><h3>19. RLHF Optimization Loop</h3>
+<pre><code class="language-text">prompts
+↓
+policy generates responses
+↓
+reward model scores responses
+↓
+reference log probabilities
+↓
+advantages / returns
+↓
+PPO update
+↓
+repeat
+</code></pre>
+<p>This is online relative to policy generations.</p>
+<h3>25. From Scratch</h3>
+<p>src/rlhf_numpy.py implements:</p>
+<ul>
+<li>sigmoid_stable</li>
+<li>bradley_terry_probability</li>
+<li>reward_model_loss</li>
+<li>pairwise_accuracy</li>
+<li>categorical_kl</li>
+<li>sampled_log_ratio</li>
+<li>kl_shaped_reward</li>
+<li>normalize_advantages</li>
+<li>ppo_ratio</li>
+<li>ppo_clipped_policy_loss</li>
+</ul></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch58-objective-16" class="objective-proof"><summary>understand modern TRL reward/PPO tooling conceptually</summary><p>understand modern TRL reward/PPO tooling conceptually: ใช้กรณีในหัวข้อ Current TRL Concepts เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch58-evidence-16"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch58-evidence-16-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch58-evidence-16-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch58-evidence-16-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch58-evidence-16-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch58-evidence-16-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch58-evidence-16-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch58-evidence-16-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch58-evidence-16-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>manifest มีpolicy/reference/old-policy/RM/valueversions/prompthash/preferencehash/β/PPOclip/rolloutseed/rewardnormalization/evalrubric</p><h3>24. Current TRL Concepts</h3>
+<p>Current Hugging Face TRL includes:
+- RewardTrainer for reward models
+- DPOTrainer and other offline preference methods
+- PPO functionality under its experimental PPO API</p>
+<p>Modern post-training ecosystems increasingly use offline preference optimization where suitable because it is simpler than a full online PPO stack.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details></section><section id="implementation" class="canonical-section"><h2>Implementation และ tests ที่รันบนเครื่องได้</h2><details><summary>58-rlhf/src/rlhf_numpy.py</summary><pre><code>&quot;&quot;&quot;Numerically stable educational RLHF/reward/PPO utilities.&quot;&quot;&quot;
+
+from __future__ import annotations
+
+import numpy as np
+
+
+def sigmoid_stable(x: np.ndarray | float) -&gt; np.ndarray:
+    values = np.asarray(x, dtype=float)
+    output = np.empty_like(values)
+
+    positive = values &gt;= 0
+    output[positive] = 1.0 / (1.0 + np.exp(-values[positive]))
+
+    negative_values = values[~positive]
+    exponential = np.exp(negative_values)
+    output[~positive] = exponential / (1.0 + exponential)
+    return output
+
+
+def bradley_terry_probability(
+    chosen_rewards: np.ndarray,
+    rejected_rewards: np.ndarray,
+) -&gt; np.ndarray:
+    chosen = np.asarray(chosen_rewards, dtype=float)
+    rejected = np.asarray(rejected_rewards, dtype=float)
+
+    if chosen.shape != rejected.shape:
+        raise ValueError(&quot;reward shapes must match&quot;)
+
+    return sigmoid_stable(chosen - rejected)
+
+
+def reward_model_loss(
+    chosen_rewards: np.ndarray,
+    rejected_rewards: np.ndarray,
+) -&gt; float:
+    chosen = np.asarray(chosen_rewards, dtype=float)
+    rejected = np.asarray(rejected_rewards, dtype=float)
+
+    if chosen.shape != rejected.shape:
+        raise ValueError(&quot;reward shapes must match&quot;)
+    if chosen.size == 0:
+        raise ValueError(&quot;rewards must be non-empty&quot;)
+
+    margin = chosen - rejected
+    return float(np.mean(np.logaddexp(0.0, -margin)))
+
+
+def pairwise_accuracy(
+    chosen_rewards: np.ndarray,
+    rejected_rewards: np.ndarray,
+) -&gt; float:
+    chosen = np.asarray(chosen_rewards, dtype=float)
+    rejected = np.asarray(rejected_rewards, dtype=float)
+
+    if chosen.shape != rejected.shape or chosen.size == 0:
+        raise ValueError(&quot;matching non-empty rewards required&quot;)
+
+    return float(np.mean(chosen &gt; rejected))
+
+
+def _log_softmax(logits: np.ndarray) -&gt; np.ndarray:
+    values = np.asarray(logits, dtype=float)
+    maximum = np.max(values, axis=-1, keepdims=True)
+    shifted = values - maximum
+    return shifted - np.log(
+        np.sum(np.exp(shifted), axis=-1, keepdims=True)
+    )
+
+
+def categorical_kl(
+    policy_logits: np.ndarray,
+    reference_logits: np.ndarray,
+) -&gt; np.ndarray:
+    policy = np.asarray(policy_logits, dtype=float)
+    reference = np.asarray(reference_logits, dtype=float)
+
+    if policy.shape != reference.shape:
+        raise ValueError(&quot;logit shapes must match&quot;)
+    if policy.ndim &lt; 1:
+        raise ValueError(&quot;logits need a class dimension&quot;)
+
+    log_p = _log_softmax(policy)
+    log_q = _log_softmax(reference)
+    p = np.exp(log_p)
+
+    return np.sum(p * (log_p - log_q), axis=-1)
+
+
+def sampled_log_ratio(
+    policy_log_probs: np.ndarray,
+    reference_log_probs: np.ndarray,
+) -&gt; np.ndarray:
+    policy = np.asarray(policy_log_probs, dtype=float)
+    reference = np.asarray(reference_log_probs, dtype=float)
+
+    if policy.shape != reference.shape:
+        raise ValueError(&quot;log-probability shapes must match&quot;)
+
+    return policy - reference
+
+
+def kl_shaped_reward(
+    external_reward: np.ndarray,
+    policy_log_probs: np.ndarray,
+    reference_log_probs: np.ndarray,
+    *,
+    beta: float,
+) -&gt; np.ndarray:
+    if beta &lt; 0:
+        raise ValueError(&quot;beta must be non-negative&quot;)
+
+    reward = np.asarray(external_reward, dtype=float)
+    ratio = sampled_log_ratio(
+        policy_log_probs,
+        reference_log_probs,
+    )
+
+    if reward.shape != ratio.shape:
+        raise ValueError(&quot;reward/log-probability shapes must match&quot;)
+
+    return reward - beta * ratio
+
+
+def normalize_advantages(
+    advantages: np.ndarray,
+    *,
+    eps: float = 1e-8,
+) -&gt; np.ndarray:
+    values = np.asarray(advantages, dtype=float)
+
+    if values.size == 0:
+        raise ValueError(&quot;advantages must be non-empty&quot;)
+    if eps &lt;= 0:
+        raise ValueError(&quot;eps must be positive&quot;)
+
+    std = np.std(values)
+    return (values - np.mean(values)) / max(std, eps)
+
+
+def ppo_ratio(
+    new_log_probs: np.ndarray,
+    old_log_probs: np.ndarray,
+) -&gt; np.ndarray:
+    new = np.asarray(new_log_probs, dtype=float)
+    old = np.asarray(old_log_probs, dtype=float)
+
+    if new.shape != old.shape:
+        raise ValueError(&quot;log-probability shapes must match&quot;)
+
+    return np.exp(new - old)
+
+
+def ppo_clipped_policy_loss(
+    new_log_probs: np.ndarray,
+    old_log_probs: np.ndarray,
+    advantages: np.ndarray,
+    *,
+    clip_range: float = 0.2,
+) -&gt; float:
+    if not 0.0 &lt; clip_range &lt; 1.0:
+        raise ValueError(&quot;clip_range must lie in (0,1)&quot;)
+
+    ratio = ppo_ratio(new_log_probs, old_log_probs)
+    advantage = np.asarray(advantages, dtype=float)
+
+    if ratio.shape != advantage.shape or ratio.size == 0:
+        raise ValueError(&quot;matching non-empty arrays required&quot;)
+
+    clipped_ratio = np.clip(
+        ratio,
+        1.0 - clip_range,
+        1.0 + clip_range,
+    )
+
+    surrogate = np.minimum(
+        ratio * advantage,
+        clipped_ratio * advantage,
+    )
+
+    return float(-np.mean(surrogate))
+</code></pre></details><details><summary>58-rlhf/tests/test_rlhf_numpy.py</summary><pre><code>from pathlib import Path
+import importlib.util
+
+import numpy as np
+
+
+MODULE_PATH = Path(__file__).parents[1] / &quot;src&quot; / &quot;rlhf_numpy.py&quot;
+SPEC = importlib.util.spec_from_file_location(&quot;rlhf_numpy_course&quot;, MODULE_PATH)
+assert SPEC and SPEC.loader
+mod = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(mod)
+
+
+def test_bradley_terry_prefers_larger_reward() -&gt; None:
+    probability = mod.bradley_terry_probability(
+        np.array([3.0]),
+        np.array([1.0]),
+    )
+    assert probability[0] &gt; 0.5
+
+
+def test_reward_loss_decreases_with_better_margin() -&gt; None:
+    bad = mod.reward_model_loss(
+        np.array([0.0]),
+        np.array([1.0]),
+    )
+    good = mod.reward_model_loss(
+        np.array([3.0]),
+        np.array([1.0]),
+    )
+    assert good &lt; bad
+
+
+def test_categorical_kl_is_nonnegative() -&gt; None:
+    kl = mod.categorical_kl(
+        np.array([[2.0, 0.0, -1.0]]),
+        np.array([[1.0, 1.0, 0.0]]),
+    )
+    assert kl.shape == (1,)
+    assert kl[0] &gt;= -1e-12
+
+
+def test_sampled_log_ratio_can_be_negative() -&gt; None:
+    value = mod.sampled_log_ratio(
+        np.array([-2.0]),
+        np.array([-1.0]),
+    )
+    assert value[0] &lt; 0
+
+
+def test_advantages_are_normalized() -&gt; None:
+    values = mod.normalize_advantages(
+        np.array([1.0, 2.0, 3.0])
+    )
+    np.testing.assert_allclose(np.mean(values), 0.0, atol=1e-12)
+    np.testing.assert_allclose(np.std(values), 1.0, atol=1e-12)
+
+
+def test_ppo_clipping_limits_positive_advantage_gain() -&gt; None:
+    old = np.log(np.array([0.5]))
+    new = np.log(np.array([0.9]))
+    advantage = np.array([1.0])
+
+    loss = mod.ppo_clipped_policy_loss(
+        new,
+        old,
+        advantage,
+        clip_range=0.2,
+    )
+
+    np.testing.assert_allclose(loss, -1.2)
+</code></pre></details></section><section id="glossary" class="canonical-section"><h2>อภิธานศัพท์ — คำไทย ความหมาย และข้อควรตรวจ</h2><dl><dt>tensor</dt><dd>เทนเซอร์: ชุดตัวเลขที่มีแกน เช่น scalar ไม่มีแกน, vector หนึ่งแกน, matrix สองแกน; shape บอกขนาดแต่ละแกน ไม่บอกความหมายของแกนจนกว่าจะระบุ</dd><dt>shape</dt><dd>รูปทรงข้อมูล: (B,T,d) หมายถึง batch × เวลา/ตำแหน่ง × features; ใช้ชื่อแกนกำกับเสมอ การ transpose เปลี่ยนแกนแต่ไม่ใช่แค่เปลี่ยนชื่อ</dd><dt>batch</dt><dd>กลุ่มตัวอย่างที่คำนวณร่วมกันหนึ่งครั้ง; B คือจำนวนตัวอย่าง ไม่ใช่จำนวน features หรือจำนวน optimizer updates</dd><dt>weight w / θ</dt><dd>น้ำหนักหรือพารามิเตอร์ที่โมเดลใช้คำนวณ; แก้ด้วยมือทำ forward ใหม่ ส่วน optimizer ต้องรับ gradient แล้วกด update จึงแก้ state</dd><dt>bias b</dt><dd>ค่าคงที่ที่บวกกับผลเชิงเส้น; regression scalar bias เพิ่ม Δ ทำให้ prediction ทุกจุดเพิ่ม Δ เท่ากัน</dd><dt>prediction ŷ</dt><dd>ค่าที่โมเดลทำนายจาก input และพารามิเตอร์ปัจจุบัน; เครื่องหมายหมวกแยกจาก target y ที่มาจากข้อมูล</dd><dt>residual e</dt><dd>ความคลาดเคลื่อน ในเว็บนี้นิยาม prediction − target; บางตำราใช้เครื่องหมายกลับกัน จึงต้องตรวจนิยามก่อนเทียบสูตร gradient</dd><dt>MSE</dt><dd>mean squared error = ผลรวม residual กำลังสองหารจำนวนรายการที่ระบุ; มีหน่วยเป็น target ยกกำลังสอง และการใช้ sum แทน mean เปลี่ยน scale gradient</dd><dt>loss L / objective J</dt><dd>จำนวนที่ optimizer ต้องการลด; objective อาจรวม data loss และ regularization จึงต้องดูองค์ประกอบและ reduction ให้ตรง implementation</dd><dt>gradient ∇ / ∂</dt><dd>เวกเตอร์ของ partial derivatives บอกอัตราเปลี่ยน loss ต่อพารามิเตอร์แต่ละตัว; ∂ ใช้เมื่อเปลี่ยนตัวหนึ่งโดยตรึงตัวอื่น</dd><dt>chain rule</dt><dd>กฎลูกโซ่: คูณอนุพันธ์ตามเส้นทาง และบวก contribution จากทุกเส้นทางที่มารวมกัน ใช้ย้อนจาก loss ถึง weights</dd><dt>learning rate η</dt><dd>ขนาดตัวคูณ gradient ใน update θnew=θ−ηg; η≥0, ศูนย์หมายถึงไม่มีการขยับพารามิเตอร์ ก้าวใหญ่เกินอาจ diverge</dd><dt>regularization λ</dt><dd>ตัวคูณค่าลงโทษ ต้อง λ≥0 ตามนิยามการลงโทษ; Ridge λΣw² เพิ่ม gradient 2λw โดยบท Regression นี้ไม่ลงโทษ bias</dd><dt>baseline</dt><dd>สถานะอ้างอิงที่ตรึงไว้สำหรับเทียบ; ต้องเก็บ snapshot ไม่อ้าง object ปัจจุบันที่แก้ตามไปด้วย</dd><dt>invariant</dt><dd>คุณสมบัติที่กลไกต้องรักษา เช่น probability รวม1, shape สอดคล้อง, queue ไม่เกิน capacity; ใช้ tests ตรวจได้มากกว่าดูภาพสวย</dd><dt>optimizer state</dt><dd>ความจำของอัลกอริทึม เช่น velocity, moments และ completed updates; คืนเฉพาะ weights ยังไม่เท่ากับเริ่มการฝึกใหม่ทั้งหมด</dd><dt>finite difference</dt><dd>ประมาณ derivative ด้วย [f(x+h)−f(x−h)]/(2h); h&gt;0, ใช้ smooth point และลองหลาย h เพื่อแยก truncation error จาก roundoff</dd><dt>softmax</dt><dd>แปลง logits เป็นความน่าจะเป็นตามแกนที่กำหนด; ลบ max ก่อน exp เพื่อความเสถียร และ fully masked row ต้องมีนโยบายชัดเจน</dd><dt>logit</dt><dd>คะแนนก่อน sigmoid/softmax ไม่ใช่ probability; อาจเป็นจำนวนจริงติดลบหรือเกิน1ได้ จึงห้ามส่งให้ loss ที่คาด probability โดยไม่แปลง</dd><dt>temperature τ / T</dt><dd>ตัวหาร logits ก่อน softmax; ต้องเป็นบวก ค่าเล็กทำ distribution แหลมขึ้น โดยไม่เท่ากับ retrain weights</dd><dt>mask</dt><dd>ตัวกำหนดตำแหน่งที่อ่านหรือคิด loss ได้; causal mask ปิดอนาคต, padding mask ปิดข้อมูลเติม, loss mask เลือก target แต่ละอย่างคนละหน้าที่</dd><dt>Q / K / V</dt><dd>query ใช้ค้นข้อมูล, key ใช้จับคู่ query, value เป็นข้อมูลที่ถูกถัวเฉลี่ย; เป็น learned projections ของ representation ไม่ใช่ป้ายความหมายตายตัว</dd><dt>head</dt><dd>ส่วนของ feature representation ที่ทำ attention แยกกัน แล้ว concat/project กลับ; ต้องตรวจ d_model หารจำนวน heads ลงตัว</dd><dt>ε-neighborhood</dt><dd>เพื่อนบ้านทั้งหมดที่มีระยะไม่เกิน ε รวมจุดตัวเองใน DBSCAN นี้; ε มีหน่วยเดียวกับพิกัด ไม่ใช่จำนวน k ที่ใช้โหวต</dd><dt>core / border / noise</dt><dd>DBSCAN core มีเพื่อนบ้านรวมตัวเองถึง min_samples; border อยู่ใกล้ core แต่เพื่อนบ้านไม่ถึง; noise ไม่ถูกเชื่อมกับ core cluster ใด</dd><dt>bootstrap</dt><dd>สุ่ม observations แบบ replacement ขนาดเท่าเดิมซ้ำหลายครั้งแล้วคำนวณ statistic ใหม่; seed ทำให้ตรวจซ้ำได้ แต่ไม่แก้สมมติฐาน IID ที่ผิด</dd><dt>confidence interval</dt><dd>ช่วงที่สร้างด้วย procedure ที่มี coverage ตามสมมติฐาน; ช่วงหนึ่งที่ได้แล้วไม่ใช่ posterior probability ของ parameter และ sample เล็กยังไม่แน่นอนมาก</dd><dt>validation / test</dt><dd>validation ใช้เลือกโมเดล/ค่าตั้ง ส่วน test ใช้ประเมินหลัง freeze การตัดสินใจ; fit preprocessing/tokenizer จาก test เป็น leakage</dd><dt>leakage</dt><dd>ข้อมูลที่ควรยังไม่รู้ไหลเข้า training/การเลือกโมเดล เช่น future feature หรือเอกสารซ้ำข้าม split ทำให้ metric ดูดีเกินการใช้งานจริง</dd><dt>queue / capacity</dt><dd>queue คือรายการรอ, capacity การให้บริการรวม = workers × service rate ตามแบบจำลอง; เพิ่ม timeout ไม่เพิ่มกำลังประมวลผล</dd><dt>state transition</dt><dd>การเปลี่ยนสถานะเมื่อเกิดเหตุการณ์ที่อนุญาต เช่น queued→active→done; ต้องระบุ guard, side effect และเหตุผลเมื่อ transition ถูกปฏิเสธ</dd><dt>latency / throughput</dt><dd>latency คือเวลาต่อคำขอ, throughput คือปริมาณงานต่อหน่วยเวลา; batching อาจเพิ่ม throughput แต่เพิ่มเวลารอ จึงต้องวัดทั้งคู่</dd><dt>idempotency</dt><dd>ทำคำขอ business operation เดิมซ้ำแล้ว side effect เกิดครั้งเดียวตาม key และ transaction protocol; ไม่ได้รับประกันจากการใช้ UUID ใหม่ทุก attempt</dd><dt>local lab</dt><dd>โปรแกรม Python และ tests ที่ผู้เรียนรันบนเครื่อง; เว็บเก็บเพียงคำยืนยันของผู้เรียน การผ่าน tests ของโค้ดต้นแบบไม่ใช่ผลตรวจโค้ดผู้เรียน</dd></dl></section></article>
+<section id="practice" class="practice-section"><span class="eyebrow">PRACTICE · DEBUG · BUILD</span><h2>พิสูจน์ด้วยการลงมือทำ</h2><div id="web-checks"></div><div class="retry-actions"><button class="secondary-button" id="retry-checks">เริ่มทำโจทย์ในเว็บใหม่</button><button class="text-button" id="undo-retry" hidden>คืนผลก่อนเริ่มใหม่</button></div><div id="exercise-content"><h2>แบบฝึก 20 ข้อ — เฉลยเฉพาะข้อ</h2><p>ทำคำตอบก่อนเปิด hints; โจทย์ปลายเปิดให้ใช้ตัวอย่างคำตอบและหลักฐานราย objective ตรวจงานจริง</p><section id="exercise-1" class="exercise-item"><h3>ข้อ 1</h3><p>Compute Bradley-Terry preference probabilities by hand.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Bradley-Terry Model, Reward Margin: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): Bradley-TerryP(chosen)=σ(rc−rr); rc2…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: Bradley-TerryP(chosen)=σ(rc−rr); rc2,rr1ให้σ1=.731059; เพิ่มrewar…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>Bradley-TerryP(chosen)=σ(rc−rr); rc2,rr1ให้σ1=.731059; เพิ่มrewardconstantทั้งคู่probคงเดิม</p><p>อ้างอิง: <a href="#chapter-58/section/topic-5">Bradley-Terry Model</a>, <a href="#chapter-58/section/topic-6">Reward Margin</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch58-exercise-01"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-2" class="exercise-item"><h3>ข้อ 2</h3><p>Implement stable reward-model pairwise loss.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Bradley-Terry Model: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): pairwiseloss=softplus(−(rc−rr)); margin1ได…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: pairwiseloss=softplus(−(rc−rr)); margin1ได้.313262,margin−1ได้1.313262; ใช้st…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>pairwiseloss=softplus(−(rc−rr)); margin1ได้.313262,margin−1ได้1.313262; ใช้stablelogaddexpไม่logsigmoidตรงๆ</p><p>อ้างอิง: <a href="#chapter-58/section/topic-5">Bradley-Terry Model</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch58-exercise-02"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-3" class="exercise-item"><h3>ข้อ 3</h3><p>Measure reward-model pairwise accuracy.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Reward Model Generalization: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): accuracy=mean(rc&gt;rr)ตามtiepolicy; margins[1,…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: accuracy=mean(rc&gt;rr)ตามtiepolicy; margins[1,−.2,0]ให้1/3ถ้าtieไม่ผ่าน; reportti…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>accuracy=mean(rc&gt;rr)ตามtiepolicy; margins[1,−.2,0]ให้1/3ถ้าtieไม่ผ่าน; reporttiesแยกไม่สลับlabelเพื่อเพิ่มคะแนน</p><p>อ้างอิง: <a href="#chapter-58/section/topic-8">Reward Model Generalization</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch58-exercise-03"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-4" class="exercise-item"><h3>ข้อ 4</h3><p>Compute exact categorical KL between toy policies.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Exact Categorical KL: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): KL(P||Q)=ΣPlog(P/Q); P[.8,.2],Q[.5,.5]ได้…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: KL(P||Q)=ΣPlog(P/Q); P[.8,.2],Q[.5,.5]ได้≈.19274476; supportQ0แต่P&gt;0ให้inf…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>KL(P||Q)=ΣPlog(P/Q); P[.8,.2],Q[.5,.5]ได้≈.19274476; supportQ0แต่P&gt;0ให้infiniteต้องerror/explicitpolicy</p><p>อ้างอิง: <a href="#chapter-58/section/topic-11">Exact Categorical KL</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch58-exercise-04"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-5" class="exercise-item"><h3>ข้อ 5</h3><p>Show a sampled log-ratio can be negative while exact KL is non-negative.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Sampled Log-Ratio: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): sampledaction1เมื่อP.2,Q.5ให้log(.2/.5…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: sampledaction1เมื่อP.2,Q.5ให้log(.2/.5)=−.916291 แม้exactKL.192745≥0;…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>sampledaction1เมื่อP.2,Q.5ให้log(.2/.5)=−.916291 แม้exactKL.192745≥0; singlelogratioไม่ใช่exactKL</p><p>อ้างอิง: <a href="#chapter-58/section/topic-12">Sampled Log-Ratio</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch58-exercise-05"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-6" class="exercise-item"><h3>ข้อ 6</h3><p>Implement advantage normalization.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Advantage Normalization: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): advantages[1,3]mean2,popstd1→[−1,1]; std0ใช้…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: advantages[1,3]mean2,popstd1→[−1,1]; std0ใช้epsilonหรือreturnzeroโดยประกาศและไม…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>advantages[1,3]mean2,popstd1→[−1,1]; std0ใช้epsilonหรือreturnzeroโดยประกาศและไม่normalizeacrossunrelatedpadding</p><p>อ้างอิง: <a href="#chapter-58/section/topic-16">Advantage Normalization</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch58-exercise-06"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-7" class="exercise-item"><h3>ข้อ 7</h3><p>Derive the PPO probability ratio.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ PPO Ratio: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ratio=exp(logπnew−logπold); oldprob.2,new.…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ratio=exp(logπnew−logπold); oldprob.2,new.3ให้1.5; PPOoldpolicyไม่ใช่refere…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ratio=exp(logπnew−logπold); oldprob.2,new.3ให้1.5; PPOoldpolicyไม่ใช่referencemodelที่ใช้KLregularization</p><p>อ้างอิง: <a href="#chapter-58/section/topic-14">PPO Ratio</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch58-exercise-07"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-8" class="exercise-item"><h3>ข้อ 8</h3><p>Plot unclipped vs clipped PPO surrogate.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ PPO Clipping: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ε.2,A2,ratio1.3ให้surrogate2.4; A−2,ratio…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ε.2,A2,ratio1.3ให้surrogate2.4; A−2,ratio.7ให้−1.6; minimizeลบsurrogatemea…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ε.2,A2,ratio1.3ให้surrogate2.4; A−2,ratio.7ให้−1.6; minimizeลบsurrogatemeanและclipratioไม่clipadvantage</p><p>อ้างอิง: <a href="#chapter-58/section/topic-17">PPO Clipping</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch58-exercise-08"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-9" class="exercise-item"><h3>ข้อ 9</h3><p>Build KL-shaped reward from reward score + policy/reference log-probs.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ KL-Shaped Reward: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): shapedreward=rm_score−β(logπ−logπref); sco…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: shapedreward=rm_score−β(logπ−logπref); score1,β.1,logratio.5ได้.95; sampledpe…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>shapedreward=rm_score−β(logπ−logπref); score1,β.1,logratio.5ได้.95; sampledpenaltyอาจติดลบต้องแยกexpectedKL</p><p>อ้างอิง: <a href="#chapter-58/section/topic-13">KL-Shaped Reward</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch58-exercise-09"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-10" class="exercise-item"><h3>ข้อ 10</h3><p>Design an independent reward-hacking evaluation set.</p>
+<p>Challenge:
+- train a tiny reward model on synthetic pairwise preferences
+- implement a tiny bandit PPO update with a frozen reference distribution</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Reward Hacking: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): independentcasesมีrewardproxyสูงแต่wronganswer/verbosity/sp…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: independentcasesมีrewardproxyสูงแต่wronganswer/verbosity/spuriousformat; blindhumanrubricประเมินtaskcorrec…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>independentcasesมีrewardproxyสูงแต่wronganswer/verbosity/spuriousformat; blindhumanrubricประเมินtaskcorrectnessไม่ใช้rewardmodelตัวเดิมเป็นsolejudge</p><p>อ้างอิง: <a href="#chapter-58/section/topic-20">Reward Hacking</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch58-exercise-10"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-11" class="exercise-item"><h3>ข้อ 11</h3><p>Reproduce one central calculation from RLHF using a tiny hand-checkable input.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Exact Categorical KL: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): rmchosen2,rejected1loss.313262; policyKL.19274…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: rmchosen2,rejected1loss.313262; policyKL.192745ไม่เท่ากับsampledlogratioทุกsample; …</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>rmchosen2,rejected1loss.313262; policyKL.192745ไม่เท่ากับsampledlogratioทุกsample; ตัวอย่างนี้จับการรายงานKLผิดนิยาม</p><p>อ้างอิง: <a href="#chapter-58/section/topic-11">Exact Categorical KL</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch58-exercise-11"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-12" class="exercise-item"><h3>ข้อ 12</h3><p>Write a deterministic test that verifies the most important invariant in RLHF.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ PPO Clipping: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): rewardshiftinvariance,exactKL≥−tolerance,…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: rewardshiftinvariance,exactKL≥−tolerance,KL(P||P)=0,clipfixturetwo-signsถู…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>rewardshiftinvariance,exactKL≥−tolerance,KL(P||P)=0,clipfixturetwo-signsถูกและreference/oldpolicyfrozen</p><p>อ้างอิง: <a href="#chapter-58/section/topic-17">PPO Clipping</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch58-exercise-12"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-13" class="exercise-item"><h3>ข้อ 13</h3><p>Compare two meaningful configurations while keeping data and seed fixed.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ KL Collapse / Excessive Drift: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): β.01/.1คงpolicy/reference/prompts/rewardmodel/bu…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: β.01/.1คงpolicy/reference/prompts/rewardmodel/budget; reporttaskmetric/reward/trueKLแย…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>β.01/.1คงpolicy/reference/prompts/rewardmodel/budget; reporttaskmetric/reward/trueKLแยกและหลายseedเพื่อตรวจrewardhacking</p><p>อ้างอิง: <a href="#chapter-58/section/topic-22">KL Collapse / Excessive Drift</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch58-exercise-13"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-14" class="exercise-item"><h3>ข้อ 14</h3><p>Record intermediate shapes, ranges, and one quality metric for a tiny end-to-end run.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ RLHF Optimization Loop: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): recordcompletionmask/tokenlogprobs/rewardsca…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: recordcompletionmask/tokenlogprobs/rewardscalar/advantages/ratio/clipfraction/e…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>recordcompletionmask/tokenlogprobs/rewardscalar/advantages/ratio/clipfraction/exacttoyKLและindependentaccuracy</p><p>อ้างอิง: <a href="#chapter-58/section/topic-19">RLHF Optimization Loop</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch58-exercise-14"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-15" class="exercise-item"><h3>ข้อ 15</h3><p>Explain one evaluation mistake that could make a RLHF result look better than it really is.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Overoptimization: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): rewardmodeltrain/evalpairsซ้ำหรือใช้RMscoreเป็นquali…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: rewardmodeltrain/evalpairsซ้ำหรือใช้RMscoreเป็นqualityอย่างเดียวทำวงจรself-confirming; prefer…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>rewardmodeltrain/evalpairsซ้ำหรือใช้RMscoreเป็นqualityอย่างเดียวทำวงจรself-confirming; preferenceholdoutและindependenttaskjudgeแยก</p><p>อ้างอิง: <a href="#chapter-58/section/topic-21">Overoptimization</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch58-exercise-15"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-16" class="exercise-item"><h3>ข้อ 16</h3><p>State the dominant time and memory complexity for the main operation in RLHF.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ RLHF Optimization Loop: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): policy+reference+reward+valueforwardเพิ่มcompute/m…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: policy+reference+reward+valueforwardเพิ่มcompute/memory; PPOrolloutstorageO(BT)ต่อtokenstat…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>policy+reference+reward+valueforwardเพิ่มcompute/memory; PPOrolloutstorageO(BT)ต่อtokenstatsนอกเหนือmodelstates ต้องวัดทุกmodel</p><p>อ้างอิง: <a href="#chapter-58/section/topic-19">RLHF Optimization Loop</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch58-exercise-16"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-17" class="exercise-item"><h3>ข้อ 17</h3><p>Compare a from-scratch result with a trusted implementation using identical inputs and settings.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ From Scratch: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): stablepairlossNumPyเทียบtorchsoftplusและKLกับ…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: stablepairlossNumPyเทียบtorchsoftplusและKLกับtorch.distributions.kl_divergenceCat…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>stablepairlossNumPyเทียบtorchsoftplusและKLกับtorch.distributions.kl_divergenceCategorical; orientationP||Qต้องตรง</p><p>อ้างอิง: <a href="#chapter-58/section/topic-25">From Scratch</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch58-exercise-17"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-18" class="exercise-item"><h3>ข้อ 18</h3><p>Run a one-factor ablation and report the measured change over repeated runs when randomness matters.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Advantage Normalization: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): advantage-normalizationon/offคงrollouts/seed/LR;…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: advantage-normalizationon/offคงrollouts/seed/LR; reportgradnorm/clipfraction/taskquali…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>advantage-normalizationon/offคงrollouts/seed/LR; reportgradnorm/clipfraction/taskqualityและไม่เปลี่ยนrewardscaleพร้อมกัน</p><p>อ้างอิง: <a href="#chapter-58/section/topic-16">Advantage Normalization</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch58-exercise-18"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-19" class="exercise-item"><h3>ข้อ 19</h3><p>Design a small reproducibility record containing seed, code version, data version, configuration, and metric.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Current TRL Concepts: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): manifest มีpolicy/reference/old-policy/RM/valueversio…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: manifest มีpolicy/reference/old-policy/RM/valueversions/prompthash/preferencehash/β/PPOclip/roll…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>manifest มีpolicy/reference/old-policy/RM/valueversions/prompthash/preferencehash/β/PPOclip/rolloutseed/rewardnormalization/evalrubric</p><p>อ้างอิง: <a href="#chapter-58/section/topic-24">Current TRL Concepts</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch58-exercise-19"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-20" class="exercise-item"><h3>ข้อ 20</h3><p>Propose one falsifiable research question for RLHF and specify the baseline, changed factor, and acceptance metric.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Reward Hacking: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ทดลอง“KLpenaltyลดindependentfailureแม้RMscoreอ…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ทดลอง“KLpenaltyลดindependentfailureแม้RMscoreอาจลด”; β0baseline→.1,fixedrolloutbud…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ทดลอง“KLpenaltyลดindependentfailureแม้RMscoreอาจลด”; β0baseline→.1,fixedrolloutbudgetและblindtaskscore/lengthslices</p><p>อ้างอิง: <a href="#chapter-58/section/topic-20">Reward Hacking</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch58-exercise-20"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section></div><div id="local-lab-content"><section id="local-lab"><h2>Local lab: Python 3.12 บน CPU</h2><p>รันจาก repository root; ใช้ Python 3.12 แยก environment สำหรับ framework ตาม requirements ของชุดบท</p><pre><code>python3.12 -m venv .venv-course
+source .venv-course/bin/activate
+python -m pip install -r requirements-batch20.txt pytest
+(cd 58-rlhf &amp;&amp; python -m pytest tests -q -rs)</code></pre><p>ผลที่คาดหวัง: required tests ผ่านและไม่มี required test ถูก skip; GPU/integrations ที่ยังไม่รันต้องระบุแยก Python 3.15 ที่มากับเครื่องอาจใช้กับ framework wheels เหล่านี้ไม่ได้</p><h2>Mini Project — Tiny RLHF Bandit</h2>
+<p>Build a small contextual bandit with several candidate responses per prompt.</p>
+<ol>
+<li>create hidden ground-truth utilities</li>
+<li>generate noisy preference pairs</li>
+<li>train a Bradley-Terry reward model</li>
+<li>freeze a reference policy</li>
+<li>optimize a policy with PPO-style clipping + KL shaping</li>
+<li>compare proxy reward against hidden true utility</li>
+<li>deliberately create a reward-model blind spot and observe reward hacking</li>
+</ol>
+<p>Report both reward-model score and true held-out utility.</p><h2>Batch 20 Integration Project — Preference Alignment &amp; Evaluation Lab</h2>
+<p>Batch 20 connects reward modeling, DPO and rigorous evaluation.</p>
+<h3>Part A — Reward Model</h3>
+<p>Synthetic prompts have several candidate responses with hidden utilities.</p>
+<pre><code class="language-text">response features
+↓
+hidden utility
+↓
+chosen / rejected pairs
+↓
+linear reward model
+↓
+Bradley-Terry loss
+</code></pre>
+<p>Track:
+- first/final pairwise loss
+- pairwise accuracy
+- parameter count</p>
+<h3>Part B — DPO</h3>
+<p>A categorical policy starts equal to a frozen uniform reference.</p>
+<pre><code class="language-text">chosen/rejected pairs
++
+reference log probabilities
+↓
+DPO objective
+↓
+policy logits
+</code></pre>
+<p>Track:
+- first/final DPO loss
+- chosen-vs-rejected accuracy
+- hidden true-best-response accuracy</p>
+<p>This separates training preference accuracy from an independent hidden utility target.</p>
+<h3>Part C — Evaluation</h3>
+<p>The evaluation mode demonstrates:</p>
+<pre><code class="language-text">baseline per-sample scores
+aligned per-sample scores
+↓
+paired bootstrap difference
+
+baseline scores
+↓
+bootstrap confidence interval
+
+training/eval texts
+↓
+normalized-hash contamination audit
+</code></pre>
+<p>A reproducibility manifest records seed and bootstrap configuration.</p>
+<h3>Run</h3>
+<pre><code class="language-bash">python integration-project-batch20/src/rlhf_dpo_eval_lab.py --mode reward --steps 40
+
+python integration-project-batch20/src/rlhf_dpo_eval_lab.py \
+  --mode dpo \
+  --steps 60 \
+  --beta 0.5
+
+python integration-project-batch20/src/rlhf_dpo_eval_lab.py --mode evaluate
+</code></pre>
+<h3>Optional TRL Lab</h3>
+<pre><code class="language-bash">python -m pip install -r requirements-batch20-trl.txt
+</code></pre>
+<p>Then reproduce:
+- reward modeling with RewardTrainer
+- DPO with DPOTrainer / DPOConfig</p>
+<p>Record the installed TRL version and configuration because post-training APIs evolve quickly.</p>
+<h3>Required Extensions</h3>
+<ol>
+<li>noisy/tied human preferences</li>
+<li>reward-model held-out prompt split</li>
+<li>reward calibration</li>
+<li>reward-hacking synthetic failure case</li>
+<li>PPO bandit update</li>
+<li>DPO completion masks</li>
+<li>reference log-probability cache</li>
+<li>length-bias audit</li>
+<li>per-sample JSONL output</li>
+<li>evaluation slices and judge-order randomization</li>
+</ol></section></div><label class="local-confirm"><input type="checkbox" id="local-lab-confirm"> ฉันรัน local lab และตรวจผลตาม rubric ด้วยตัวเองแล้ว</label><p class="local-note">สถานะนี้เป็นคำยืนยันของผู้เรียน เว็บไม่ได้รันหรือตรวจ Python บนเครื่องแทนคุณ</p></section>
+<section id="mastery-review" class="practice-section"><h2>หลักฐานตามเกณฑ์การเรียนรู้</h2><p>ทุก objective ต้องแสดงหลักฐานอธิบาย ทำนาย คำนวณ อ่าน shape/state debug และประยุกต์ พร้อมกรณีใหม่ ผลรัน source ผู้เรียนจริง และการประเมินซ้ำ เกณฑ์นี้ไม่รับประกันความเข้าใจทุกสถานการณ์ เปิด JavaScript เพื่อดูรายการที่ยังขาดและนำเข้ารายงานผู้ตรวจ</p></section><section class="coverage-section"><h2>แผนที่สิ่งที่เรียน → สิ่งที่ต้องแสดงให้ได้</h2><div id="coverage-table"></div></section><footer><span>ZERO TO ELITE AI ENGINEER · LEARNING STUDIO</span><span>อ่าน · derive · implement · debug · experiment · build</span></footer></div></main><noscript><style>.workbench,.sidebar,.reading-route,.lesson-toc,.mastery-status,#web-checks{display:none}main{margin-left:0}</style>อ่านเนื้อหา HTML ได้ตามปกติ เปิด JavaScript เพื่อใช้ห้องทดลองและตรวจคำตอบ</noscript></body></html>

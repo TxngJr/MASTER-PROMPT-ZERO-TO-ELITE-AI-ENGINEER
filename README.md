@@ -4,6 +4,20 @@
 
 > เป้าหมายของ repository นี้ไม่ใช่การจำ API แต่คือ เข้าใจ → derive → implement → debug → experiment → build
 
+## Interactive Visual Lab — 80 บท
+
+[เปิด AI Visual Lab](visual-lab/index.html) เพื่อเรียนผ่าน HTML, CSS และ JavaScript: บทเรียนพร้อมสมการทีละขั้น, 249 ชุดทดลองที่คำนวณจริง, baseline/history, แบบฝึกหลัก 1,600 ข้อพร้อมเฉลยเฉพาะข้อ และคำถาม 6 ประเภทต่อบท พร้อม local lab และ integration project ทุกบทมี `animation.html` ในโฟลเดอร์ของตัวเอง
+
+v3 เพิ่ม explicit objective/evidence IDs, offline help และ progress migration ที่ไม่ใช้คะแนนเก่าเป็นการผ่านคำถามใหม่ ดู [ผลตรวจแยกด้านและข้อจำกัด](visual-lab/VALIDATION.md) — ผล tests ของต้นแบบไม่ใช่ผลตรวจทักษะของผู้เรียน
+
+HTML และ assets อยู่ในเครื่อง ไม่ใช้ paid API; วิธีเปิดที่ทดสอบผ่าน browser คือรันจาก root ของ repository:
+
+```bash
+python3 -m http.server 8765 --bind 127.0.0.1
+```
+
+แล้วเปิด [http://127.0.0.1:8765/visual-lab/index.html](http://127.0.0.1:8765/visual-lab/index.html) ดูวิธีใช้และขอบเขตภาพจำลองใน [คู่มือ Visual Lab](visual-lab/README.md)
+
 ## Target machine
 
 หลักสูตรออกแบบให้ทำ Local Lab ได้บน laptop ระดับ:

@@ -1,0 +1,1631 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="บทเรียน AI Engineer ภาษาไทย พร้อมคณิตศาสตร์ทีละขั้นและห้องทดลองที่คำนวณจริง"><title>Activations &amp; Losses: เลือกคู่ที่ให้ gradient ถูก · AI Engineer Studio</title><link rel="stylesheet" href="../visual-lab/assets/styles.css"><link rel="stylesheet" href="../visual-lab/assets/course.css"><script defer src="../visual-lab/assets/lessons.js"></script><script defer src="../visual-lab/assets/chapter-meta.js"></script><script defer src="../visual-lab/assets/course-math.js"></script><script defer src="../visual-lab/assets/course-models.js"></script><script defer src="../visual-lab/assets/course-models-v3.js"></script><script defer src="../visual-lab/assets/course-assessment.js"></script><script defer src="../visual-lab/assets/course-mastery.js"></script><script defer src="../visual-lab/assets/course-catalog.js"></script><script defer src="../visual-lab/assets/book-content.js"></script><script defer src="../visual-lab/assets/course-render.js"></script><script defer src="../visual-lab/assets/course-mastery-panel.js"></script><script defer src="../visual-lab/assets/quality-report.js"></script><script defer src="../visual-lab/assets/course-app.js"></script></head>
+<body data-chapter="21" data-root="../"><a class="skip-link" href="#main">ข้ามไปบทเรียน</a>
+<aside class="sidebar" id="sidebar" aria-label="เลือกบทเรียน"><a class="brand" href="../visual-lab/index.html"><span class="brand-mark">ai</span><span>AI ENGINEER<small>LEARN · DERIVE · BUILD</small></span></a><div class="sidebar-intro">อ่านให้เข้าใจ · คำนวณให้เห็น · เขียนให้เป็น</div><label class="search-box"><input id="search" type="search" placeholder="ค้นหาบท / attention" aria-label="ค้นหาบทเรียน"></label><label class="filter-label" for="phase-filter">เส้นทางการเรียน <span id="nav-count"></span></label><select id="phase-filter"><option value="">ทุก Phase</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option></select><nav id="chapter-list" class="chapter-list" aria-label="รายชื่อบท"></nav><div class="course-progress"><div><span>ผ่านโจทย์ในเว็บ</span><strong id="progress-count">0 / 80</strong></div><progress id="course-progress" max="80" value="0" aria-label="บทที่ผ่านโจทย์"></progress><a id="resume-link" href="#chapter-1">อ่านต่อจากเดิม →</a></div></aside>
+<button class="nav-backdrop" id="nav-backdrop" aria-label="ปิดเมนู" hidden></button>
+<main id="main" tabindex="-1"><header class="topbar"><div><button id="nav-toggle" class="icon-button mobile-menu" aria-label="เปิดเมนูบทเรียน" aria-expanded="false" aria-controls="sidebar">☰</button><span id="breadcrumb"></span></div><span class="local-badge"><i></i> คำนวณในเครื่อง · ไม่มี API</span></header><div class="content">
+<div class="chapter-navigation"><label for="chapter-select" class="sr-only">เลือกบทเรียน</label><select id="chapter-select"></select><div class="chapter-arrows"><button id="prev-chapter" class="icon-button" aria-label="บทก่อนหน้า">←</button><button id="next-chapter" class="icon-button" aria-label="บทถัดไป">→</button></div></div>
+<section class="chapter-hero"><div><p id="chapter-kicker" class="eyebrow"></p><h1 id="chapter-title">Activations &amp; Losses: เลือกคู่ที่ให้ gradient ถูก</h1><p class="english-title" id="chapter-english"></p></div><span class="hero-symbol">f(x) ↗</span></section>
+<p id="quality-status" class="quality-status"></p><div id="mastery-status" class="mastery-status"></div><div class="reading-route"><a href="#chapter-21/section/overview">01 อ่านบทเรียน</a><a href="#workbench">02 ทดลองสมการ</a><a href="#practice">03 ฝึกและตรวจงาน</a><a href="#mastery-review">04 หลักฐานตามเกณฑ์</a></div>
+<nav id="lesson-toc" class="lesson-toc" aria-label="สารบัญบท"></nav>
+<section id="overview" class="course-overview"><span class="eyebrow">THE LEARNING CONTRACT</span><h2>เรียนบทนี้แล้วต้องทำอะไรได้</h2><p id="chapter-purpose"></p><div id="chapter-objectives"></div><div class="learning-hint">ทำนาย → เปลี่ยนทีละค่า → ตรวจตัวเลข → อธิบายเหตุผล → เขียนด้วย Python เอง</div></section>
+<section class="workbench lab-card" id="workbench" aria-label="ห้องทดลองคำนวณจริง"><div class="card-header"><div><span class="live-dot"></span><span class="eyebrow">COMPUTATION WORKBENCH</span></div><span class="simulation-label">ทุกภาพใช้ผลคำนวณชุดเดียวกัน</span></div><div class="lab-top"><label for="lab-select">เลือกกลไกที่ต้องการทดลอง</label><select id="lab-select"></select><p id="lab-question"></p></div><div class="workbench-grid"><div class="viz-column"><div class="compare-labels"><span>เส้นทึบ: ปัจจุบัน</span><span>เส้นประ: baseline ที่ตรึงไว้</span></div><div id="simulation" class="simulation"></div><div id="metrics" class="metrics"></div><div id="baseline-diff" class="baseline-diff"></div><div class="playback"><div class="playback-buttons"><button class="primary-button" id="update-once">อัปเดตหนึ่งก้าว</button><button class="secondary-button" id="train-many">▶ ฝึก 30 ก้าว</button><button class="icon-button" id="back-state" aria-label="ย้อนประวัติ">↶</button><button class="icon-button" id="forward-state" aria-label="ประวัติถัดไป">↷</button></div></div><div class="lab-secondary-actions"><button id="pin-baseline" class="text-button">ตรึง baseline ปัจจุบัน</button><button id="reset-lab" class="text-button">คืนค่าเริ่มต้น</button><button id="download-state" class="text-button">บันทึกผล JSON</button><span id="history-status"></span></div><p id="simulation-note" class="simulation-note"></p><p class="lab-error" id="lab-error" role="alert" hidden></p></div><div class="controls-column"><h3>เปลี่ยนทีละตัว แล้วสังเกตผล</h3><div id="lab-controls"></div><p class="control-note">แก้ weight ด้วยมือจะคำนวณ forward ใหม่; optimizer เปลี่ยน weights เมื่อกดอัปเดตเท่านั้น</p></div></div>
+<div class="trace-section"><div class="trace-toolbar"><h3>เดินสมการทีละ operation</h3><div><button id="trace-prev" class="icon-button" aria-label="operation ก่อนหน้า">←</button><button id="play-trace" class="secondary-button" aria-pressed="false">▶ เล่น flow</button><button id="trace-next" class="icon-button" aria-label="operation ถัดไป">→</button><span id="stage-counter"></span></div></div><label class="motion-control"><input id="reduce-motion" type="checkbox"> ลดภาพเคลื่อนไหว (หยุดการเล่นที่ค้างอยู่)</label><div id="operation-steps" class="operation-steps"></div><div id="flow-diagram" class="flow-diagram"></div><div id="active-operation" class="active-operation" aria-live="polite"></div><p class="control-note">ตัวเลขบนภาพปัดเศษเพื่อให้อ่านง่าย; บันทึก JSON เพื่อดูค่าที่ใช้คำนวณเต็ม precision</p><details open><summary>ตารางค่าระหว่างทาง — ตรวจด้วยมือได้</summary><div id="result-table"></div></details><div id="tensor-tables" class="tensor-tables"></div><details id="surface-details"><summary>ดู loss surface และเส้นทางของ w₁,b (ตรึง controls อื่น)</summary><div id="surface-chart"></div><p>surface คำนวณ objective ปัจจุบันโดยตรึง degree, penalty, ข้อมูล และ weights อื่น เส้นทางแสดงเฉพาะ snapshots ที่ค่าเหล่านี้ตรงกัน; นอกช่วง w=[−1,5], b=[−2,4] ให้ตรวจค่าจริงใน history</p></details><details><summary>ประวัติการเปลี่ยนค่า</summary><div id="history-table"></div></details></div></section>
+<article id="chapter-article" class="chapter-article"><section id="mechanism-1" class="teaching-section"><span class="section-kicker">CHAPTER 21 · ภาพ → สมการ → โค้ด</span><h2>1. activation ใน hidden layer กับ output transformation ทำคนละหน้าที่</h2><h3>โจทย์และเหตุผล</h3><p>hidden activation เพิ่ม nonlinear geometry ส่วน sigmoid/softmax ปลายทางช่วยตีความ probability ต้องเลือก loss ที่เข้าคู่ เช่น binary BCE กับ logits หรือ multiclass CE กับ class IDs</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Explain softmax.</p><p>softmaxzᵢ=exp(zᵢ−maxz)/Σexp(zⱼ−maxz); logits[0,log3]ให้prob[.25,.75]และรวม1ตามclassaxis</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>w: weight w,initial=1; b: bias b,initial=0; eta: learning rate,initial=0.1; threshold: decision threshold,initial=0.5; target: selected label (last row),initial=1</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>z=wx+b = [-2, -1, 0, 1, 2]; score ยังไม่ใช่ probability</li><li>p=1/(1+exp(−z)) = [0.11920292202211755, 0.2689414213699951, 0.5, 0.7310585786300049, 0.8807970779778823]; เปลี่ยน score เป็นค่าในช่วง 0–1</li><li>max(z,0)−yz+log1p(exp(−abs(z))) = 0.3147053155364672; คำนวณจาก logits เพื่อไม่ต้อง log(0)</li><li>g_w=mean((p−y)x), g_b=mean(p−y) = [-0.20293890616569216, 0.09999999999999998]; threshold ไม่มีใน loss จึงไม่เปลี่ยน gradient</li><li>p ≥ threshold = [2, 1, 0, 2]; เปลี่ยน threshold เปลี่ยน confusion matrix โดยไม่ retrain</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="logistic-bce-from-logits--probabi">เปิดการทดลองนี้</a><p class="failure-box">logsumexp=maxz+logΣexp(z−maxz); CE=logsumexp−zy; logits[1000,1001]ไม่ควรNaN; log(softmax)ตรงๆอาจlog0; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>softmaxzᵢ=exp(zᵢ−maxz)/Σexp(zⱼ−maxz); logits[0,log3]ให้prob[.25,.75]และรวม1ตามclassaxis</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-1-equation"><summary>สมการ</summary><ol><li><code>z=wx+b</code> = [-2, -1, 0, 1, 2]<p>score ยังไม่ใช่ probability</p></li><li><code>p=1/(1+exp(−z))</code> = [0.11920292202211755, 0.2689414213699951, 0.5, 0.7310585786300049, 0.8807970779778823]<p>เปลี่ยน score เป็นค่าในช่วง 0–1</p></li><li><code>max(z,0)−yz+log1p(exp(−abs(z)))</code> = 0.3147053155364672<p>คำนวณจาก logits เพื่อไม่ต้อง log(0)</p></li><li><code>g_w=mean((p−y)x), g_b=mean(p−y)</code> = [-0.20293890616569216, 0.09999999999999998]<p>threshold ไม่มีใน loss จึงไม่เปลี่ยน gradient</p></li><li><code>p ≥ threshold</code> = [2, 1, 0, 2]<p>เปลี่ยน threshold เปลี่ยน confusion matrix โดยไม่ retrain</p></li></ol></details><details id="help-mechanism-1-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>z=wx+b</code> = [-2, -1, 0, 1, 2]<p>score ยังไม่ใช่ probability</p></li><li><code>p=1/(1+exp(−z))</code> = [0.11920292202211755, 0.2689414213699951, 0.5, 0.7310585786300049, 0.8807970779778823]<p>เปลี่ยน score เป็นค่าในช่วง 0–1</p></li><li><code>max(z,0)−yz+log1p(exp(−abs(z)))</code> = 0.3147053155364672<p>คำนวณจาก logits เพื่อไม่ต้อง log(0)</p></li><li><code>g_w=mean((p−y)x), g_b=mean(p−y)</code> = [-0.20293890616569216, 0.09999999999999998]<p>threshold ไม่มีใน loss จึงไม่เปลี่ยน gradient</p></li><li><code>p ≥ threshold</code> = [2, 1, 0, 2]<p>เปลี่ยน threshold เปลี่ยน confusion matrix โดยไม่ retrain</p></li></ol></details><details id="help-mechanism-1-code"><summary>โค้ด</summary><p>softmaxzᵢ=exp(zᵢ−maxz)/Σexp(zⱼ−maxz); logits[0,log3]ให้prob[.25,.75]และรวม1ตามclassaxis</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-1-result"><summary>ผลการทดลอง</summary><ol><li><code>z=wx+b</code> = [-2, -1, 0, 1, 2]<p>score ยังไม่ใช่ probability</p></li><li><code>p=1/(1+exp(−z))</code> = [0.11920292202211755, 0.2689414213699951, 0.5, 0.7310585786300049, 0.8807970779778823]<p>เปลี่ยน score เป็นค่าในช่วง 0–1</p></li><li><code>max(z,0)−yz+log1p(exp(−abs(z)))</code> = 0.3147053155364672<p>คำนวณจาก logits เพื่อไม่ต้อง log(0)</p></li><li><code>g_w=mean((p−y)x), g_b=mean(p−y)</code> = [-0.20293890616569216, 0.09999999999999998]<p>threshold ไม่มีใน loss จึงไม่เปลี่ยน gradient</p></li><li><code>p ≥ threshold</code> = [2, 1, 0, 2]<p>เปลี่ยน threshold เปลี่ยน confusion matrix โดยไม่ retrain</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-1"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-2" class="teaching-section"><span class="section-kicker">CHAPTER 21 · ภาพ → สมการ → โค้ด</span><h2>2. saturation และ zero gradient มองจากตัวเลขได้</h2><h3>โจทย์และเหตุผล</h3><p>sigmoid ใกล้ 0/1 มี local derivative เล็ก แต่เมื่อต่อกับ BCE derivative ต่อ logit ลดรูปเป็น p-y ReLU ปิดด้านลบเป็นศูนย์ จึงต้องแยก local derivative กับ gradient ทั้งเส้นทาง</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Explain a common limitation involving cross-entropy.</p><p>cross-entropyคาดlogits(C)กับtargetclassint0..C−1 หรือdistributionตามAPI; softmaxก่อนCrossEntropyLossซ้ำทำgradientผิดนิยาม</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>x: input x,initial=2; w: weight w,initial=0.8; b: bias b,initial=0.5; v: output weight v,initial=1.5; target: target y,initial=3; eta: learning rate,initial=0.05; activation: activation,initial=relu</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>z=wx+b = 2.1; รับ scalar input; batch จริงเป็น matrix multiplication</li><li>relu = 2.1; local derivative กำหนดการไหลของ gradient</li><li>ŷ=vh = 3.1500000000000004; output weight ผสม hidden activation</li><li>L=(ŷ−target)² = 0.022500000000000107; ใช้ squared loss แบบหนึ่งตัวอย่าง ไม่มี mean factor เพิ่ม</li><li>dL/dw=2e · v · activation′(z) · x = [0.3000000000000007, 1.5, 1, 2, 0.9000000000000021]; คูณ derivatives ตามเส้นทาง; เมื่อ node ถูกใช้หลายทางต้องบวก contributions</li><li>w←w−ηg_w; b←b−ηg_b; v←v−ηg_v = [0.7549999999999999, 0.4774999999999999, 1.4685]; เปลี่ยน parameters พร้อมกันโดยใช้ gradients จาก forward เดียวกัน</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="neuron-relu-tanh-sigmoid-และ-lo">เปิดการทดลองนี้</a><p class="failure-box">logsumexp=maxz+logΣexp(z−maxz); CE=logsumexp−zy; logits[1000,1001]ไม่ควรNaN; log(softmax)ตรงๆอาจlog0; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>cross-entropyคาดlogits(C)กับtargetclassint0..C−1 หรือdistributionตามAPI; softmaxก่อนCrossEntropyLossซ้ำทำgradientผิดนิยาม</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-2-equation"><summary>สมการ</summary><ol><li><code>z=wx+b</code> = 2.1<p>รับ scalar input; batch จริงเป็น matrix multiplication</p></li><li><code>relu</code> = 2.1<p>local derivative กำหนดการไหลของ gradient</p></li><li><code>ŷ=vh</code> = 3.1500000000000004<p>output weight ผสม hidden activation</p></li><li><code>L=(ŷ−target)²</code> = 0.022500000000000107<p>ใช้ squared loss แบบหนึ่งตัวอย่าง ไม่มี mean factor เพิ่ม</p></li><li><code>dL/dw=2e · v · activation′(z) · x</code> = [0.3000000000000007, 1.5, 1, 2, 0.9000000000000021]<p>คูณ derivatives ตามเส้นทาง; เมื่อ node ถูกใช้หลายทางต้องบวก contributions</p></li><li><code>w←w−ηg_w; b←b−ηg_b; v←v−ηg_v</code> = [0.7549999999999999, 0.4774999999999999, 1.4685]<p>เปลี่ยน parameters พร้อมกันโดยใช้ gradients จาก forward เดียวกัน</p></li></ol></details><details id="help-mechanism-2-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>z=wx+b</code> = 2.1<p>รับ scalar input; batch จริงเป็น matrix multiplication</p></li><li><code>relu</code> = 2.1<p>local derivative กำหนดการไหลของ gradient</p></li><li><code>ŷ=vh</code> = 3.1500000000000004<p>output weight ผสม hidden activation</p></li><li><code>L=(ŷ−target)²</code> = 0.022500000000000107<p>ใช้ squared loss แบบหนึ่งตัวอย่าง ไม่มี mean factor เพิ่ม</p></li><li><code>dL/dw=2e · v · activation′(z) · x</code> = [0.3000000000000007, 1.5, 1, 2, 0.9000000000000021]<p>คูณ derivatives ตามเส้นทาง; เมื่อ node ถูกใช้หลายทางต้องบวก contributions</p></li><li><code>w←w−ηg_w; b←b−ηg_b; v←v−ηg_v</code> = [0.7549999999999999, 0.4774999999999999, 1.4685]<p>เปลี่ยน parameters พร้อมกันโดยใช้ gradients จาก forward เดียวกัน</p></li></ol></details><details id="help-mechanism-2-code"><summary>โค้ด</summary><p>cross-entropyคาดlogits(C)กับtargetclassint0..C−1 หรือdistributionตามAPI; softmaxก่อนCrossEntropyLossซ้ำทำgradientผิดนิยาม</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-2-result"><summary>ผลการทดลอง</summary><ol><li><code>z=wx+b</code> = 2.1<p>รับ scalar input; batch จริงเป็น matrix multiplication</p></li><li><code>relu</code> = 2.1<p>local derivative กำหนดการไหลของ gradient</p></li><li><code>ŷ=vh</code> = 3.1500000000000004<p>output weight ผสม hidden activation</p></li><li><code>L=(ŷ−target)²</code> = 0.022500000000000107<p>ใช้ squared loss แบบหนึ่งตัวอย่าง ไม่มี mean factor เพิ่ม</p></li><li><code>dL/dw=2e · v · activation′(z) · x</code> = [0.3000000000000007, 1.5, 1, 2, 0.9000000000000021]<p>คูณ derivatives ตามเส้นทาง; เมื่อ node ถูกใช้หลายทางต้องบวก contributions</p></li><li><code>w←w−ηg_w; b←b−ηg_b; v←v−ηg_v</code> = [0.7549999999999999, 0.4774999999999999, 1.4685]<p>เปลี่ยน parameters พร้อมกันโดยใช้ gradients จาก forward เดียวกัน</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-2"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-3" class="teaching-section"><span class="section-kicker">CHAPTER 21 · ภาพ → สมการ → โค้ด</span><h2>3. stable formulations สำคัญกับค่า extreme</h2><h3>โจทย์และเหตุผล</h3><p>ลบ max ก่อน softmax และใช้ log-sum-exp/BCEWithLogits แทน log(sigmoid) ตรง ๆ local lab เปรียบเทียบ MSE/MAE/Huber และ contrastive losses ตาม objective ไม่ใช่เลือกจากชื่อยอดนิยม</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Explain one numerical-stability concern.</p><p>logsumexp=maxz+logΣexp(z−maxz); CE=logsumexp−zy; logits[1000,1001]ไม่ควรNaN; log(softmax)ตรงๆอาจlog0</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>corpus: corpus over a,b,c,initial=abacaba; eta: learning rate,initial=0.2; temperature: sampling temperature,initial=1; query: query token ID (a=0,b=1,c=2),initial=0; ignorePrefix: ignore first target positions,initial=0; l0: logit W[0,0],initial=0; l1: logit W[0,1],initial=0; l2: logit W[0,2],initial=0; l3: logit W[1,0],initial=0; l4: logit W[1,1],initial=0; l5: logit W[1,2],initial=0; l6: logit W[2,0],initial=0; l7: logit W[2,1],initial=0; l8: logit W[2,2],initial=0</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>inputs=tokens[:-1], targets=tokens[1:] = [0, 1, 0, 2, 0, 1, 0]; causal bigram model ใช้ current token ทำนาย next token</li><li>logits=W[current token] = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]; weights เริ่มจาก 0 จึง probability=1/3; ไม่มี pretrained weights</li><li>valid=t &gt;= ignorePrefix = 6; ignore label ไม่ได้ลบ input; ใช้สอน assistant-only loss</li><li>L=−mean log p(target) = 1.0986122886681098; normalize เฉพาะ valid targets</li><li>∂L/∂W[x,j] += (p_j−1[j=target])/N_valid = [[0.16666666666666666, -0.1666666666666667, -1.850371707708594e-17], [-0.22222222222222224, 0.1111111111111111, 0.1111111111111111], [-0.11111111111111112, 0.05555555555555555, 0.05555555555555555]]; accumulate เมื่อ context token เดียวถูกใช้หลายครั้ง</li><li>softmax(W[query]/temperature) = [0.3333333333333333, 0.3333333333333333, 0.3333333333333333]; temperature ใช้เฉพาะ distribution ตอน inference ไม่แก้ training CE</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="language-multiclass-cross-entropy">เปิดการทดลองนี้</a><p class="failure-box">logsumexp=maxz+logΣexp(z−maxz); CE=logsumexp−zy; logits[1000,1001]ไม่ควรNaN; log(softmax)ตรงๆอาจlog0; tiny trainable bigram LM ใน browser ไม่ใช่ Transformer; full decoder-only implementation และ training loop อยู่ในบทเต็ม/local lab</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>logsumexp=maxz+logΣexp(z−maxz); CE=logsumexp−zy; logits[1000,1001]ไม่ควรNaN; log(softmax)ตรงๆอาจlog0</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-3-equation"><summary>สมการ</summary><ol><li><code>inputs=tokens[:-1], targets=tokens[1:]</code> = [0, 1, 0, 2, 0, 1, 0]<p>causal bigram model ใช้ current token ทำนาย next token</p></li><li><code>logits=W[current token]</code> = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]<p>weights เริ่มจาก 0 จึง probability=1/3; ไม่มี pretrained weights</p></li><li><code>valid=t &gt;= ignorePrefix</code> = 6<p>ignore label ไม่ได้ลบ input; ใช้สอน assistant-only loss</p></li><li><code>L=−mean log p(target)</code> = 1.0986122886681098<p>normalize เฉพาะ valid targets</p></li><li><code>∂L/∂W[x,j] += (p_j−1[j=target])/N_valid</code> = [[0.16666666666666666, -0.1666666666666667, -1.850371707708594e-17], [-0.22222222222222224, 0.1111111111111111, 0.1111111111111111], [-0.11111111111111112, 0.05555555555555555, 0.05555555555555555]]<p>accumulate เมื่อ context token เดียวถูกใช้หลายครั้ง</p></li><li><code>softmax(W[query]/temperature)</code> = [0.3333333333333333, 0.3333333333333333, 0.3333333333333333]<p>temperature ใช้เฉพาะ distribution ตอน inference ไม่แก้ training CE</p></li></ol></details><details id="help-mechanism-3-visual"><summary>ภาพและ shape</summary><p>tiny trainable bigram LM ใน browser ไม่ใช่ Transformer; full decoder-only implementation และ training loop อยู่ในบทเต็ม/local lab</p><ol><li><code>inputs=tokens[:-1], targets=tokens[1:]</code> = [0, 1, 0, 2, 0, 1, 0]<p>causal bigram model ใช้ current token ทำนาย next token</p></li><li><code>logits=W[current token]</code> = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]<p>weights เริ่มจาก 0 จึง probability=1/3; ไม่มี pretrained weights</p></li><li><code>valid=t &gt;= ignorePrefix</code> = 6<p>ignore label ไม่ได้ลบ input; ใช้สอน assistant-only loss</p></li><li><code>L=−mean log p(target)</code> = 1.0986122886681098<p>normalize เฉพาะ valid targets</p></li><li><code>∂L/∂W[x,j] += (p_j−1[j=target])/N_valid</code> = [[0.16666666666666666, -0.1666666666666667, -1.850371707708594e-17], [-0.22222222222222224, 0.1111111111111111, 0.1111111111111111], [-0.11111111111111112, 0.05555555555555555, 0.05555555555555555]]<p>accumulate เมื่อ context token เดียวถูกใช้หลายครั้ง</p></li><li><code>softmax(W[query]/temperature)</code> = [0.3333333333333333, 0.3333333333333333, 0.3333333333333333]<p>temperature ใช้เฉพาะ distribution ตอน inference ไม่แก้ training CE</p></li></ol></details><details id="help-mechanism-3-code"><summary>โค้ด</summary><p>logsumexp=maxz+logΣexp(z−maxz); CE=logsumexp−zy; logits[1000,1001]ไม่ควรNaN; log(softmax)ตรงๆอาจlog0</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-3-result"><summary>ผลการทดลอง</summary><ol><li><code>inputs=tokens[:-1], targets=tokens[1:]</code> = [0, 1, 0, 2, 0, 1, 0]<p>causal bigram model ใช้ current token ทำนาย next token</p></li><li><code>logits=W[current token]</code> = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]<p>weights เริ่มจาก 0 จึง probability=1/3; ไม่มี pretrained weights</p></li><li><code>valid=t &gt;= ignorePrefix</code> = 6<p>ignore label ไม่ได้ลบ input; ใช้สอน assistant-only loss</p></li><li><code>L=−mean log p(target)</code> = 1.0986122886681098<p>normalize เฉพาะ valid targets</p></li><li><code>∂L/∂W[x,j] += (p_j−1[j=target])/N_valid</code> = [[0.16666666666666666, -0.1666666666666667, -1.850371707708594e-17], [-0.22222222222222224, 0.1111111111111111, 0.1111111111111111], [-0.11111111111111112, 0.05555555555555555, 0.05555555555555555]]<p>accumulate เมื่อ context token เดียวถูกใช้หลายครั้ง</p></li><li><code>softmax(W[query]/temperature)</code> = [0.3333333333333333, 0.3333333333333333, 0.3333333333333333]<p>temperature ใช้เฉพาะ distribution ตอน inference ไม่แก้ training CE</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-3"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="reference" class="canonical-section"><h2>เนื้อหาครบทุกหัวข้อ พร้อมแผนที่ objective</h2><nav class="source-toc"><a href="#chapter-21/section/topic-1">1. Why This Chapter Matters</a> <a href="#chapter-21/section/topic-2">2. Hidden Activations vs Output Functions</a> <a href="#chapter-21/section/topic-3">3. ReLU</a> <a href="#chapter-21/section/topic-4">4. Leaky ReLU</a> <a href="#chapter-21/section/topic-5">5. ELU</a> <a href="#chapter-21/section/topic-6">6. GELU</a> <a href="#chapter-21/section/topic-7">7. SiLU / Swish</a> <a href="#chapter-21/section/topic-8">8. Sigmoid</a> <a href="#chapter-21/section/topic-9">9. Tanh</a> <a href="#chapter-21/section/topic-10">10. Softmax</a> <a href="#chapter-21/section/topic-11">11. Logits</a> <a href="#chapter-21/section/topic-12">12. Regression Losses</a> <a href="#chapter-21/section/topic-13">13. Binary Cross Entropy</a> <a href="#chapter-21/section/topic-14">14. BCE With Logits</a> <a href="#chapter-21/section/topic-15">15. Multiclass Cross Entropy</a> <a href="#chapter-21/section/topic-16">16. Label Smoothing</a> <a href="#chapter-21/section/topic-17">17. Class Weighting</a> <a href="#chapter-21/section/topic-18">18. Focal Loss Preview</a> <a href="#chapter-21/section/topic-19">19. Numerical Stability Rules</a> <a href="#chapter-21/section/topic-20">20. Activation Gradient Flow</a> <a href="#chapter-21/section/topic-21">21. Loss/Task Pairing</a> <a href="#chapter-21/section/topic-22">22. From Scratch</a> <a href="#chapter-21/section/topic-23">23. Gradient Checking</a> <a href="#chapter-21/section/topic-24">24. Common Mistakes</a> <a href="#chapter-21/section/topic-25">25. Exercises</a> <a href="#chapter-21/section/topic-26">26. Mini Project</a> <a href="#chapter-21/section/topic-27">27. Exit Checklist</a> <a href="#chapter-21/section/topic-28">28. Next</a> </nav><section id="topic-1" class="source-topic"><span id="source-21-activations-losses-canonical-chapter-21-activations-loss-functions" class="legacy-anchor"></span><span id="source-21-activations-losses-canonical-1-why-this-chapter-matters" class="legacy-anchor"></span><h3>1. Why This Chapter Matters</h3>
+<p>Activation และ loss ไม่ใช่แค่สูตรปลายทาง</p>
+<p>มันกำหนด:
+- geometry ของ model
+- gradient flow
+- numerical stability
+- output interpretation
+- optimization difficulty</p>
+<p>เลือกผิดคู่:
+- training ไม่ดี
+- gradients vanish/explode
+- probabilitiesผิด
+- loss NaN</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>1. Why This Chapter Matters</h3>
+<p>Activation และ loss ไม่ใช่แค่สูตรปลายทาง</p>
+<p>มันกำหนด:
+- geometry ของ model
+- gradient flow
+- numerical stability
+- output interpretation
+- optimization difficulty</p>
+<p>เลือกผิดคู่:
+- training ไม่ดี
+- gradients vanish/explode
+- probabilitiesผิด
+- loss NaN</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-1-equation"><summary>สมการ</summary><h3>1. Why This Chapter Matters</h3>
+<p>Activation และ loss ไม่ใช่แค่สูตรปลายทาง</p>
+<p>มันกำหนด:
+- geometry ของ model
+- gradient flow
+- numerical stability
+- output interpretation
+- optimization difficulty</p>
+<p>เลือกผิดคู่:
+- training ไม่ดี
+- gradients vanish/explode
+- probabilitiesผิด
+- loss NaN</p></details><details id="help-topic-1-visual"><summary>ภาพและ shape</summary><h3>1. Why This Chapter Matters</h3>
+<p>Activation และ loss ไม่ใช่แค่สูตรปลายทาง</p>
+<p>มันกำหนด:
+- geometry ของ model
+- gradient flow
+- numerical stability
+- output interpretation
+- optimization difficulty</p>
+<p>เลือกผิดคู่:
+- training ไม่ดี
+- gradients vanish/explode
+- probabilitiesผิด
+- loss NaN</p></details><details id="help-topic-1-code"><summary>โค้ด</summary><h3>1. Why This Chapter Matters</h3>
+<p>Activation และ loss ไม่ใช่แค่สูตรปลายทาง</p>
+<p>มันกำหนด:
+- geometry ของ model
+- gradient flow
+- numerical stability
+- output interpretation
+- optimization difficulty</p>
+<p>เลือกผิดคู่:
+- training ไม่ดี
+- gradients vanish/explode
+- probabilitiesผิด
+- loss NaN</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-1-result"><summary>ผลการทดลอง</summary><h3>1. Why This Chapter Matters</h3>
+<p>Activation และ loss ไม่ใช่แค่สูตรปลายทาง</p>
+<p>มันกำหนด:
+- geometry ของ model
+- gradient flow
+- numerical stability
+- output interpretation
+- optimization difficulty</p>
+<p>เลือกผิดคู่:
+- training ไม่ดี
+- gradients vanish/explode
+- probabilitiesผิด
+- loss NaN</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-1"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-2" class="source-topic"><span id="source-21-activations-losses-canonical-2-hidden-activations-vs-output-functions" class="legacy-anchor"></span><h3>2. Hidden Activations vs Output Functions</h3>
+<p>Hidden activation:
+- ReLU
+- LeakyReLU
+- ELU
+- GELU
+- SiLU/Swish
+- Tanh</p>
+<p>Output depends on task:</p>
+<p>binary classification:</p>
+<pre><code class="language-text">one logit
+→ sigmoid conceptually
+→ BCE-with-logits loss
+</code></pre>
+<p>multiclass:</p>
+<pre><code class="language-text">K logits
+→ softmax conceptually
+→ cross-entropy-from-logits
+</code></pre>
+<p>regression:</p>
+<pre><code class="language-text">often linear output
+</code></pre><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>2. Hidden Activations vs Output Functions</h3>
+<p>Hidden activation:
+- ReLU
+- LeakyReLU
+- ELU
+- GELU
+- SiLU/Swish
+- Tanh</p>
+<p>Output depends on task:</p>
+<p>binary classification:</p>
+<pre><code class="language-text">one logit
+→ sigmoid conceptually
+→ BCE-with-logits loss
+</code></pre>
+<p>multiclass:</p>
+<pre><code class="language-text">K logits
+→ softmax conceptually
+→ cross-entropy-from-logits
+</code></pre>
+<p>regression:</p>
+<pre><code class="language-text">often linear output
+</code></pre><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-2-equation"><summary>สมการ</summary><h3>2. Hidden Activations vs Output Functions</h3>
+<p>Hidden activation:
+- ReLU
+- LeakyReLU
+- ELU
+- GELU
+- SiLU/Swish
+- Tanh</p>
+<p>Output depends on task:</p>
+<p>binary classification:</p>
+<pre><code class="language-text">one logit
+→ sigmoid conceptually
+→ BCE-with-logits loss
+</code></pre>
+<p>multiclass:</p>
+<pre><code class="language-text">K logits
+→ softmax conceptually
+→ cross-entropy-from-logits
+</code></pre>
+<p>regression:</p>
+<pre><code class="language-text">often linear output
+</code></pre></details><details id="help-topic-2-visual"><summary>ภาพและ shape</summary><h3>2. Hidden Activations vs Output Functions</h3>
+<p>Hidden activation:
+- ReLU
+- LeakyReLU
+- ELU
+- GELU
+- SiLU/Swish
+- Tanh</p>
+<p>Output depends on task:</p>
+<p>binary classification:</p>
+<pre><code class="language-text">one logit
+→ sigmoid conceptually
+→ BCE-with-logits loss
+</code></pre>
+<p>multiclass:</p>
+<pre><code class="language-text">K logits
+→ softmax conceptually
+→ cross-entropy-from-logits
+</code></pre>
+<p>regression:</p>
+<pre><code class="language-text">often linear output
+</code></pre></details><details id="help-topic-2-code"><summary>โค้ด</summary><h3>2. Hidden Activations vs Output Functions</h3>
+<p>Hidden activation:
+- ReLU
+- LeakyReLU
+- ELU
+- GELU
+- SiLU/Swish
+- Tanh</p>
+<p>Output depends on task:</p>
+<p>binary classification:</p>
+<pre><code class="language-text">one logit
+→ sigmoid conceptually
+→ BCE-with-logits loss
+</code></pre>
+<p>multiclass:</p>
+<pre><code class="language-text">K logits
+→ softmax conceptually
+→ cross-entropy-from-logits
+</code></pre>
+<p>regression:</p>
+<pre><code class="language-text">often linear output
+</code></pre><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-2-result"><summary>ผลการทดลอง</summary><h3>2. Hidden Activations vs Output Functions</h3>
+<p>Hidden activation:
+- ReLU
+- LeakyReLU
+- ELU
+- GELU
+- SiLU/Swish
+- Tanh</p>
+<p>Output depends on task:</p>
+<p>binary classification:</p>
+<pre><code class="language-text">one logit
+→ sigmoid conceptually
+→ BCE-with-logits loss
+</code></pre>
+<p>multiclass:</p>
+<pre><code class="language-text">K logits
+→ softmax conceptually
+→ cross-entropy-from-logits
+</code></pre>
+<p>regression:</p>
+<pre><code class="language-text">often linear output
+</code></pre><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-2"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-3" class="source-topic"><span id="source-21-activations-losses-canonical-3-relu" class="legacy-anchor"></span><h3>3. ReLU</h3>
+<pre><code class="language-text">ReLU(x)=max(0,x)
+</code></pre>
+<p>derivative:</p>
+<pre><code class="language-text">1 if x&gt;0
+0 if x&lt;0
+</code></pre>
+<p>ข้อดี:
+- cheap
+- good gradient on positive side</p>
+<p>ปัญหา:
+- dead ReLU
+- zero negative gradient</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>ReLU(z)=max(0,z),derivative1เมื่อz&gt;0,0เมื่อz&lt;0; z0ไม่differentiableต้องประกาศsubgradientที่ใช้เช่น0</p><p>ReLUnegativeเป็น0ส่วนGELUnegativeอาจไม่ศูนย์; GELUแพงกว่าแต่ไม่รับประกันaccuracyดีกว่า ต้องคุมarchitecture/init/data</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>ReLU(z)=max(0,z),derivative1เมื่อz&gt;0,0เมื่อz&lt;0; z0ไม่differentiableต้องประกาศsubgradientที่ใช้เช่น0</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-3-equation"><summary>สมการ</summary><p>ReLU(z)=max(0,z),derivative1เมื่อz&gt;0,0เมื่อz&lt;0; z0ไม่differentiableต้องประกาศsubgradientที่ใช้เช่น0</p></details><details id="help-topic-3-visual"><summary>ภาพและ shape</summary><p>ReLU(z)=max(0,z),derivative1เมื่อz&gt;0,0เมื่อz&lt;0; z0ไม่differentiableต้องประกาศsubgradientที่ใช้เช่น0</p></details><details id="help-topic-3-code"><summary>โค้ด</summary><p>ReLU(z)=max(0,z),derivative1เมื่อz&gt;0,0เมื่อz&lt;0; z0ไม่differentiableต้องประกาศsubgradientที่ใช้เช่น0</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-3-result"><summary>ผลการทดลอง</summary><p>ReLU(z)=max(0,z),derivative1เมื่อz&gt;0,0เมื่อz&lt;0; z0ไม่differentiableต้องประกาศsubgradientที่ใช้เช่น0</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-3"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-4" class="source-topic"><span id="source-21-activations-losses-canonical-4-leaky-relu" class="legacy-anchor"></span><h3>4. Leaky ReLU</h3>
+<pre><code class="language-text">f(x)=x       if x&gt;=0
+f(x)=αx      if x&lt;0
+</code></pre>
+<p>negative side ยังมี gradient เล็ก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-4-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>4. Leaky ReLU</h3>
+<pre><code class="language-text">f(x)=x       if x&gt;=0
+f(x)=αx      if x&lt;0
+</code></pre>
+<p>negative side ยังมี gradient เล็ก</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-4-equation"><summary>สมการ</summary><h3>4. Leaky ReLU</h3>
+<pre><code class="language-text">f(x)=x       if x&gt;=0
+f(x)=αx      if x&lt;0
+</code></pre>
+<p>negative side ยังมี gradient เล็ก</p></details><details id="help-topic-4-visual"><summary>ภาพและ shape</summary><h3>4. Leaky ReLU</h3>
+<pre><code class="language-text">f(x)=x       if x&gt;=0
+f(x)=αx      if x&lt;0
+</code></pre>
+<p>negative side ยังมี gradient เล็ก</p></details><details id="help-topic-4-code"><summary>โค้ด</summary><h3>4. Leaky ReLU</h3>
+<pre><code class="language-text">f(x)=x       if x&gt;=0
+f(x)=αx      if x&lt;0
+</code></pre>
+<p>negative side ยังมี gradient เล็ก</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-4-result"><summary>ผลการทดลอง</summary><h3>4. Leaky ReLU</h3>
+<pre><code class="language-text">f(x)=x       if x&gt;=0
+f(x)=αx      if x&lt;0
+</code></pre>
+<p>negative side ยังมี gradient เล็ก</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-4"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-5" class="source-topic"><span id="source-21-activations-losses-canonical-5-elu" class="legacy-anchor"></span><h3>5. ELU</h3>
+<pre><code class="language-text">x                  if x&gt;0
+α(exp(x)-1)        otherwise
+</code></pre>
+<p>smooth-ish negative saturation แต่ต้องใช้ exp</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-5-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>5. ELU</h3>
+<pre><code class="language-text">x                  if x&gt;0
+α(exp(x)-1)        otherwise
+</code></pre>
+<p>smooth-ish negative saturation แต่ต้องใช้ exp</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-5-equation"><summary>สมการ</summary><h3>5. ELU</h3>
+<pre><code class="language-text">x                  if x&gt;0
+α(exp(x)-1)        otherwise
+</code></pre>
+<p>smooth-ish negative saturation แต่ต้องใช้ exp</p></details><details id="help-topic-5-visual"><summary>ภาพและ shape</summary><h3>5. ELU</h3>
+<pre><code class="language-text">x                  if x&gt;0
+α(exp(x)-1)        otherwise
+</code></pre>
+<p>smooth-ish negative saturation แต่ต้องใช้ exp</p></details><details id="help-topic-5-code"><summary>โค้ด</summary><h3>5. ELU</h3>
+<pre><code class="language-text">x                  if x&gt;0
+α(exp(x)-1)        otherwise
+</code></pre>
+<p>smooth-ish negative saturation แต่ต้องใช้ exp</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-5-result"><summary>ผลการทดลอง</summary><h3>5. ELU</h3>
+<pre><code class="language-text">x                  if x&gt;0
+α(exp(x)-1)        otherwise
+</code></pre>
+<p>smooth-ish negative saturation แต่ต้องใช้ exp</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-5"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-6" class="source-topic"><span id="source-21-activations-losses-canonical-6-gelu" class="legacy-anchor"></span><h3>6. GELU</h3>
+<p>concept:</p>
+<pre><code class="language-text">GELU(x)=x Φ(x)
+</code></pre>
+<p>deep transformersนิยมใช้ GELU variants</p>
+<p>implementation มักใช้ exact/approximate forms</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>GELU(z)=zΦ(z); z1ได้≈.8413447,z−1≈−.1586553 เป็นsmoothgatingไม่ใช่ตัดnegativeทั้งหมด</p><p>ReLUnegativeเป็น0ส่วนGELUnegativeอาจไม่ศูนย์; GELUแพงกว่าแต่ไม่รับประกันaccuracyดีกว่า ต้องคุมarchitecture/init/data</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-6-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>GELU(z)=zΦ(z); z1ได้≈.8413447,z−1≈−.1586553 เป็นsmoothgatingไม่ใช่ตัดnegativeทั้งหมด</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-6-equation"><summary>สมการ</summary><p>GELU(z)=zΦ(z); z1ได้≈.8413447,z−1≈−.1586553 เป็นsmoothgatingไม่ใช่ตัดnegativeทั้งหมด</p></details><details id="help-topic-6-visual"><summary>ภาพและ shape</summary><p>GELU(z)=zΦ(z); z1ได้≈.8413447,z−1≈−.1586553 เป็นsmoothgatingไม่ใช่ตัดnegativeทั้งหมด</p></details><details id="help-topic-6-code"><summary>โค้ด</summary><p>GELU(z)=zΦ(z); z1ได้≈.8413447,z−1≈−.1586553 เป็นsmoothgatingไม่ใช่ตัดnegativeทั้งหมด</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-6-result"><summary>ผลการทดลอง</summary><p>GELU(z)=zΦ(z); z1ได้≈.8413447,z−1≈−.1586553 เป็นsmoothgatingไม่ใช่ตัดnegativeทั้งหมด</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-6"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-7" class="source-topic"><span id="source-21-activations-losses-canonical-7-silu-swish" class="legacy-anchor"></span><h3>7. SiLU / Swish</h3>
+<pre><code class="language-text">SiLU(x)=x sigmoid(x)
+</code></pre>
+<p>smooth non-monotonic behaviorบางช่วง</p>
+<p>ใช้มากใน modern deep networks</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>SiLU(z)=zσ(z); derivativeσ(z)+zσ(z)(1−σ(z)); z0 output0 derivative.5 จึงไม่เหมือนReLUที่0</p><p><code>s=stable_sigmoid(z); out=z*s; grad=s+z*s*(1-s)</code>; z0ได้out0,grad.5; z1out≈.731059</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-7-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>SiLU(z)=zσ(z); derivativeσ(z)+zσ(z)(1−σ(z)); z0 output0 derivative.5 จึงไม่เหมือนReLUที่0</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-7-equation"><summary>สมการ</summary><p>SiLU(z)=zσ(z); derivativeσ(z)+zσ(z)(1−σ(z)); z0 output0 derivative.5 จึงไม่เหมือนReLUที่0</p></details><details id="help-topic-7-visual"><summary>ภาพและ shape</summary><p>SiLU(z)=zσ(z); derivativeσ(z)+zσ(z)(1−σ(z)); z0 output0 derivative.5 จึงไม่เหมือนReLUที่0</p></details><details id="help-topic-7-code"><summary>โค้ด</summary><p>SiLU(z)=zσ(z); derivativeσ(z)+zσ(z)(1−σ(z)); z0 output0 derivative.5 จึงไม่เหมือนReLUที่0</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-7-result"><summary>ผลการทดลอง</summary><p>SiLU(z)=zσ(z); derivativeσ(z)+zσ(z)(1−σ(z)); z0 output0 derivative.5 จึงไม่เหมือนReLUที่0</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-7"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-8" class="source-topic"><span id="source-21-activations-losses-canonical-8-sigmoid" class="legacy-anchor"></span><h3>8. Sigmoid</h3>
+<pre><code class="language-text">σ(x)=1/(1+e^-x)
+</code></pre>
+<p>เหมาะ output binary probability parameterization</p>
+<p>hidden sigmoid มี saturation:
+- very positive → gradient ~0
+- very negative → gradient ~0</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-8-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>8. Sigmoid</h3>
+<pre><code class="language-text">σ(x)=1/(1+e^-x)
+</code></pre>
+<p>เหมาะ output binary probability parameterization</p>
+<p>hidden sigmoid มี saturation:
+- very positive → gradient ~0
+- very negative → gradient ~0</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-8-equation"><summary>สมการ</summary><h3>8. Sigmoid</h3>
+<pre><code class="language-text">σ(x)=1/(1+e^-x)
+</code></pre>
+<p>เหมาะ output binary probability parameterization</p>
+<p>hidden sigmoid มี saturation:
+- very positive → gradient ~0
+- very negative → gradient ~0</p></details><details id="help-topic-8-visual"><summary>ภาพและ shape</summary><h3>8. Sigmoid</h3>
+<pre><code class="language-text">σ(x)=1/(1+e^-x)
+</code></pre>
+<p>เหมาะ output binary probability parameterization</p>
+<p>hidden sigmoid มี saturation:
+- very positive → gradient ~0
+- very negative → gradient ~0</p></details><details id="help-topic-8-code"><summary>โค้ด</summary><h3>8. Sigmoid</h3>
+<pre><code class="language-text">σ(x)=1/(1+e^-x)
+</code></pre>
+<p>เหมาะ output binary probability parameterization</p>
+<p>hidden sigmoid มี saturation:
+- very positive → gradient ~0
+- very negative → gradient ~0</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-8-result"><summary>ผลการทดลอง</summary><h3>8. Sigmoid</h3>
+<pre><code class="language-text">σ(x)=1/(1+e^-x)
+</code></pre>
+<p>เหมาะ output binary probability parameterization</p>
+<p>hidden sigmoid มี saturation:
+- very positive → gradient ~0
+- very negative → gradient ~0</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-8"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-9" class="source-topic"><span id="source-21-activations-losses-canonical-9-tanh" class="legacy-anchor"></span><h3>9. Tanh</h3>
+<pre><code class="language-text">tanh(x)
+</code></pre>
+<p>range (-1,1), zero-centered แต่ยัง saturate</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-9-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>9. Tanh</h3>
+<pre><code class="language-text">tanh(x)
+</code></pre>
+<p>range (-1,1), zero-centered แต่ยัง saturate</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-9-equation"><summary>สมการ</summary><h3>9. Tanh</h3>
+<pre><code class="language-text">tanh(x)
+</code></pre>
+<p>range (-1,1), zero-centered แต่ยัง saturate</p></details><details id="help-topic-9-visual"><summary>ภาพและ shape</summary><h3>9. Tanh</h3>
+<pre><code class="language-text">tanh(x)
+</code></pre>
+<p>range (-1,1), zero-centered แต่ยัง saturate</p></details><details id="help-topic-9-code"><summary>โค้ด</summary><h3>9. Tanh</h3>
+<pre><code class="language-text">tanh(x)
+</code></pre>
+<p>range (-1,1), zero-centered แต่ยัง saturate</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-9-result"><summary>ผลการทดลอง</summary><h3>9. Tanh</h3>
+<pre><code class="language-text">tanh(x)
+</code></pre>
+<p>range (-1,1), zero-centered แต่ยัง saturate</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-9"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-10" class="source-topic"><span id="source-21-activations-losses-canonical-10-softmax" class="legacy-anchor"></span><h3>10. Softmax</h3>
+<pre><code class="language-text">p_k=exp(z_k)/Σ exp(z_j)
+</code></pre>
+<p>ต้อง subtract max:</p>
+<pre><code class="language-text">z_shift = z-max(z)
+</code></pre>
+<p>เพื่อลด overflow</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>softmaxzᵢ=exp(zᵢ−maxz)/Σexp(zⱼ−maxz); logits[0,log3]ให้prob[.25,.75]และรวม1ตามclassaxis</p><p>softmaxเพิ่มlogitหนึ่งทำprobอื่นลดเพราะdenominatorร่วมกัน; บวกconstantทุกlogitprobคงเดิม ไม่ใช่independentsigmoid</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-10-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>softmaxzᵢ=exp(zᵢ−maxz)/Σexp(zⱼ−maxz); logits[0,log3]ให้prob[.25,.75]และรวม1ตามclassaxis</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-10-equation"><summary>สมการ</summary><p>softmaxzᵢ=exp(zᵢ−maxz)/Σexp(zⱼ−maxz); logits[0,log3]ให้prob[.25,.75]และรวม1ตามclassaxis</p></details><details id="help-topic-10-visual"><summary>ภาพและ shape</summary><p>softmaxzᵢ=exp(zᵢ−maxz)/Σexp(zⱼ−maxz); logits[0,log3]ให้prob[.25,.75]และรวม1ตามclassaxis</p></details><details id="help-topic-10-code"><summary>โค้ด</summary><p>softmaxzᵢ=exp(zᵢ−maxz)/Σexp(zⱼ−maxz); logits[0,log3]ให้prob[.25,.75]และรวม1ตามclassaxis</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-10-result"><summary>ผลการทดลอง</summary><p>softmaxzᵢ=exp(zᵢ−maxz)/Σexp(zⱼ−maxz); logits[0,log3]ให้prob[.25,.75]และรวม1ตามclassaxis</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-10"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-11" class="source-topic"><span id="source-21-activations-losses-canonical-11-logits" class="legacy-anchor"></span><h3>11. Logits</h3>
+<p>logit = raw model score ก่อน probability transform</p>
+<p>สำคัญมาก:</p>
+<pre><code class="language-text">model output logits
+loss consumes logits directly
+</code></pre>
+<p>อย่า sigmoid/softmax ก่อน loss ถ้า API เป็น logits-aware</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>logits(B,C),labels(B,)long; softmaxaxis−1 ไม่ใช่batchaxis0; probabilityแต่ละsampleรวม1 และpaddingtokensต้องignoreในloss</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-11-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>logits(B,C),labels(B,)long; softmaxaxis−1 ไม่ใช่batchaxis0; probabilityแต่ละsampleรวม1 และpaddingtokensต้องignoreในloss</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-11-equation"><summary>สมการ</summary><p>logits(B,C),labels(B,)long; softmaxaxis−1 ไม่ใช่batchaxis0; probabilityแต่ละsampleรวม1 และpaddingtokensต้องignoreในloss</p></details><details id="help-topic-11-visual"><summary>ภาพและ shape</summary><p>logits(B,C),labels(B,)long; softmaxaxis−1 ไม่ใช่batchaxis0; probabilityแต่ละsampleรวม1 และpaddingtokensต้องignoreในloss</p></details><details id="help-topic-11-code"><summary>โค้ด</summary><p>logits(B,C),labels(B,)long; softmaxaxis−1 ไม่ใช่batchaxis0; probabilityแต่ละsampleรวม1 และpaddingtokensต้องignoreในloss</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-11-result"><summary>ผลการทดลอง</summary><p>logits(B,C),labels(B,)long; softmaxaxis−1 ไม่ใช่batchaxis0; probabilityแต่ละsampleรวม1 และpaddingtokensต้องignoreในloss</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-11"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-12" class="source-topic"><span id="source-21-activations-losses-canonical-12-regression-losses" class="legacy-anchor"></span><span id="source-21-activations-losses-canonical-mse" class="legacy-anchor"></span><span id="source-21-activations-losses-canonical-mae" class="legacy-anchor"></span><span id="source-21-activations-losses-canonical-huber" class="legacy-anchor"></span><h3>12. Regression Losses</h3>
+<h4>MSE</h4>
+<pre><code class="language-text">mean((prediction-target)^2)
+</code></pre>
+<p>large errors ถูก penalize quadratic</p>
+<h4>MAE</h4>
+<pre><code class="language-text">mean(|prediction-target|)
+</code></pre>
+<p>robust กว่า MSE ต่อ extreme residuals แต่ derivativeไม่ smooth ที่ 0</p>
+<h4>Huber</h4>
+<p>quadratic near zero, linear for large errors</p>
+<p>combine smooth optimization + robustness</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-12-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>12. Regression Losses</h3>
+<h4>MSE</h4>
+<pre><code class="language-text">mean((prediction-target)^2)
+</code></pre>
+<p>large errors ถูก penalize quadratic</p>
+<h4>MAE</h4>
+<pre><code class="language-text">mean(|prediction-target|)
+</code></pre>
+<p>robust กว่า MSE ต่อ extreme residuals แต่ derivativeไม่ smooth ที่ 0</p>
+<h4>Huber</h4>
+<p>quadratic near zero, linear for large errors</p>
+<p>combine smooth optimization + robustness</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-12-equation"><summary>สมการ</summary><h3>12. Regression Losses</h3>
+<h4>MSE</h4>
+<pre><code class="language-text">mean((prediction-target)^2)
+</code></pre>
+<p>large errors ถูก penalize quadratic</p>
+<h4>MAE</h4>
+<pre><code class="language-text">mean(|prediction-target|)
+</code></pre>
+<p>robust กว่า MSE ต่อ extreme residuals แต่ derivativeไม่ smooth ที่ 0</p>
+<h4>Huber</h4>
+<p>quadratic near zero, linear for large errors</p>
+<p>combine smooth optimization + robustness</p></details><details id="help-topic-12-visual"><summary>ภาพและ shape</summary><h3>12. Regression Losses</h3>
+<h4>MSE</h4>
+<pre><code class="language-text">mean((prediction-target)^2)
+</code></pre>
+<p>large errors ถูก penalize quadratic</p>
+<h4>MAE</h4>
+<pre><code class="language-text">mean(|prediction-target|)
+</code></pre>
+<p>robust กว่า MSE ต่อ extreme residuals แต่ derivativeไม่ smooth ที่ 0</p>
+<h4>Huber</h4>
+<p>quadratic near zero, linear for large errors</p>
+<p>combine smooth optimization + robustness</p></details><details id="help-topic-12-code"><summary>โค้ด</summary><h3>12. Regression Losses</h3>
+<h4>MSE</h4>
+<pre><code class="language-text">mean((prediction-target)^2)
+</code></pre>
+<p>large errors ถูก penalize quadratic</p>
+<h4>MAE</h4>
+<pre><code class="language-text">mean(|prediction-target|)
+</code></pre>
+<p>robust กว่า MSE ต่อ extreme residuals แต่ derivativeไม่ smooth ที่ 0</p>
+<h4>Huber</h4>
+<p>quadratic near zero, linear for large errors</p>
+<p>combine smooth optimization + robustness</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-12-result"><summary>ผลการทดลอง</summary><h3>12. Regression Losses</h3>
+<h4>MSE</h4>
+<pre><code class="language-text">mean((prediction-target)^2)
+</code></pre>
+<p>large errors ถูก penalize quadratic</p>
+<h4>MAE</h4>
+<pre><code class="language-text">mean(|prediction-target|)
+</code></pre>
+<p>robust กว่า MSE ต่อ extreme residuals แต่ derivativeไม่ smooth ที่ 0</p>
+<h4>Huber</h4>
+<p>quadratic near zero, linear for large errors</p>
+<p>combine smooth optimization + robustness</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-12"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-13" class="source-topic"><span id="source-21-activations-losses-canonical-13-binary-cross-entropy" class="legacy-anchor"></span><h3>13. Binary Cross Entropy</h3>
+<p>probability-space formula:</p>
+<pre><code class="language-text">-[y log p + (1-y)log(1-p)]
+</code></pre>
+<p>แต่ถ้า p กลายเป็น 0 หรือ 1 exact:
+- log(0)
+- inf / NaN</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-13-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>13. Binary Cross Entropy</h3>
+<p>probability-space formula:</p>
+<pre><code class="language-text">-[y log p + (1-y)log(1-p)]
+</code></pre>
+<p>แต่ถ้า p กลายเป็น 0 หรือ 1 exact:
+- log(0)
+- inf / NaN</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-13-equation"><summary>สมการ</summary><h3>13. Binary Cross Entropy</h3>
+<p>probability-space formula:</p>
+<pre><code class="language-text">-[y log p + (1-y)log(1-p)]
+</code></pre>
+<p>แต่ถ้า p กลายเป็น 0 หรือ 1 exact:
+- log(0)
+- inf / NaN</p></details><details id="help-topic-13-visual"><summary>ภาพและ shape</summary><h3>13. Binary Cross Entropy</h3>
+<p>probability-space formula:</p>
+<pre><code class="language-text">-[y log p + (1-y)log(1-p)]
+</code></pre>
+<p>แต่ถ้า p กลายเป็น 0 หรือ 1 exact:
+- log(0)
+- inf / NaN</p></details><details id="help-topic-13-code"><summary>โค้ด</summary><h3>13. Binary Cross Entropy</h3>
+<p>probability-space formula:</p>
+<pre><code class="language-text">-[y log p + (1-y)log(1-p)]
+</code></pre>
+<p>แต่ถ้า p กลายเป็น 0 หรือ 1 exact:
+- log(0)
+- inf / NaN</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-13-result"><summary>ผลการทดลอง</summary><h3>13. Binary Cross Entropy</h3>
+<p>probability-space formula:</p>
+<pre><code class="language-text">-[y log p + (1-y)log(1-p)]
+</code></pre>
+<p>แต่ถ้า p กลายเป็น 0 หรือ 1 exact:
+- log(0)
+- inf / NaN</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-13"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-14" class="source-topic"><span id="source-21-activations-losses-canonical-14-bce-with-logits" class="legacy-anchor"></span><h3>14. BCE With Logits</h3>
+<p>stable formula ต่อ logit x:</p>
+<pre><code class="language-text">max(x,0)
+-
+x*y
++
+log(1+exp(-|x|))
+</code></pre>
+<p>gradient:</p>
+<pre><code class="language-text">sigmoid(x)-y
+</code></pre>
+<p>หลัง mean reduction หารด้วย N</p>
+<p>PyTorch current BCEWithLogitsLoss ก็รวม sigmoid และ BCE ใน operation เดียวเพื่อใช้ log-sum-exp-style numerical stability</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-14-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>14. BCE With Logits</h3>
+<p>stable formula ต่อ logit x:</p>
+<pre><code class="language-text">max(x,0)
+-
+x*y
++
+log(1+exp(-|x|))
+</code></pre>
+<p>gradient:</p>
+<pre><code class="language-text">sigmoid(x)-y
+</code></pre>
+<p>หลัง mean reduction หารด้วย N</p>
+<p>PyTorch current BCEWithLogitsLoss ก็รวม sigmoid และ BCE ใน operation เดียวเพื่อใช้ log-sum-exp-style numerical stability</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-14-equation"><summary>สมการ</summary><h3>14. BCE With Logits</h3>
+<p>stable formula ต่อ logit x:</p>
+<pre><code class="language-text">max(x,0)
+-
+x*y
++
+log(1+exp(-|x|))
+</code></pre>
+<p>gradient:</p>
+<pre><code class="language-text">sigmoid(x)-y
+</code></pre>
+<p>หลัง mean reduction หารด้วย N</p>
+<p>PyTorch current BCEWithLogitsLoss ก็รวม sigmoid และ BCE ใน operation เดียวเพื่อใช้ log-sum-exp-style numerical stability</p></details><details id="help-topic-14-visual"><summary>ภาพและ shape</summary><h3>14. BCE With Logits</h3>
+<p>stable formula ต่อ logit x:</p>
+<pre><code class="language-text">max(x,0)
+-
+x*y
++
+log(1+exp(-|x|))
+</code></pre>
+<p>gradient:</p>
+<pre><code class="language-text">sigmoid(x)-y
+</code></pre>
+<p>หลัง mean reduction หารด้วย N</p>
+<p>PyTorch current BCEWithLogitsLoss ก็รวม sigmoid และ BCE ใน operation เดียวเพื่อใช้ log-sum-exp-style numerical stability</p></details><details id="help-topic-14-code"><summary>โค้ด</summary><h3>14. BCE With Logits</h3>
+<p>stable formula ต่อ logit x:</p>
+<pre><code class="language-text">max(x,0)
+-
+x*y
++
+log(1+exp(-|x|))
+</code></pre>
+<p>gradient:</p>
+<pre><code class="language-text">sigmoid(x)-y
+</code></pre>
+<p>หลัง mean reduction หารด้วย N</p>
+<p>PyTorch current BCEWithLogitsLoss ก็รวม sigmoid และ BCE ใน operation เดียวเพื่อใช้ log-sum-exp-style numerical stability</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-14-result"><summary>ผลการทดลอง</summary><h3>14. BCE With Logits</h3>
+<p>stable formula ต่อ logit x:</p>
+<pre><code class="language-text">max(x,0)
+-
+x*y
++
+log(1+exp(-|x|))
+</code></pre>
+<p>gradient:</p>
+<pre><code class="language-text">sigmoid(x)-y
+</code></pre>
+<p>หลัง mean reduction หารด้วย N</p>
+<p>PyTorch current BCEWithLogitsLoss ก็รวม sigmoid และ BCE ใน operation เดียวเพื่อใช้ log-sum-exp-style numerical stability</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-14"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-15" class="source-topic"><span id="source-21-activations-losses-canonical-15-multiclass-cross-entropy" class="legacy-anchor"></span><h3>15. Multiclass Cross Entropy</h3>
+<p>logits z shape:</p>
+<pre><code class="language-text">(N,C)
+</code></pre>
+<p>log-sum-exp:</p>
+<pre><code class="language-text">LSE(z)
+=
+m + log Σ exp(z-m)
+
+m=max(z)
+</code></pre>
+<p>per-sample loss:</p>
+<pre><code class="language-text">-log softmax(z)[target]
+</code></pre>
+<p>gradient:</p>
+<pre><code class="language-text">softmax(z)-one_hot(target)
+</code></pre>
+<p>แล้วหาร batch sizeถ้า mean reduction</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>cross-entropyคาดlogits(C)กับtargetclassint0..C−1 หรือdistributionตามAPI; softmaxก่อนCrossEntropyLossซ้ำทำgradientผิดนิยาม</p><p>logits(B,C),labels(B,)long; softmaxaxis−1 ไม่ใช่batchaxis0; probabilityแต่ละsampleรวม1 และpaddingtokensต้องignoreในloss</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-15-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>cross-entropyคาดlogits(C)กับtargetclassint0..C−1 หรือdistributionตามAPI; softmaxก่อนCrossEntropyLossซ้ำทำgradientผิดนิยาม</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-15-equation"><summary>สมการ</summary><p>cross-entropyคาดlogits(C)กับtargetclassint0..C−1 หรือdistributionตามAPI; softmaxก่อนCrossEntropyLossซ้ำทำgradientผิดนิยาม</p></details><details id="help-topic-15-visual"><summary>ภาพและ shape</summary><p>cross-entropyคาดlogits(C)กับtargetclassint0..C−1 หรือdistributionตามAPI; softmaxก่อนCrossEntropyLossซ้ำทำgradientผิดนิยาม</p></details><details id="help-topic-15-code"><summary>โค้ด</summary><p>cross-entropyคาดlogits(C)กับtargetclassint0..C−1 หรือdistributionตามAPI; softmaxก่อนCrossEntropyLossซ้ำทำgradientผิดนิยาม</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-15-result"><summary>ผลการทดลอง</summary><p>cross-entropyคาดlogits(C)กับtargetclassint0..C−1 หรือdistributionตามAPI; softmaxก่อนCrossEntropyLossซ้ำทำgradientผิดนิยาม</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-15"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-16" class="source-topic"><span id="source-21-activations-losses-canonical-16-label-smoothing" class="legacy-anchor"></span><h3>16. Label Smoothing</h3>
+<p>แทน one-hot target:</p>
+<pre><code class="language-text">true class = 1
+others = 0
+</code></pre>
+<p>ใช้:</p>
+<pre><code class="language-text">target_distribution
+=
+(1-epsilon)*one_hot
++
+epsilon/C
+</code></pre>
+<p>ช่วยลด overconfidence บาง setting</p>
+<p>แต่:
+- ไม่ใช่ calibration guarantee
+- epsilon ต้อง validate
+- task บางอย่างไม่เหมาะ</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-16-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>16. Label Smoothing</h3>
+<p>แทน one-hot target:</p>
+<pre><code class="language-text">true class = 1
+others = 0
+</code></pre>
+<p>ใช้:</p>
+<pre><code class="language-text">target_distribution
+=
+(1-epsilon)*one_hot
++
+epsilon/C
+</code></pre>
+<p>ช่วยลด overconfidence บาง setting</p>
+<p>แต่:
+- ไม่ใช่ calibration guarantee
+- epsilon ต้อง validate
+- task บางอย่างไม่เหมาะ</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-16-equation"><summary>สมการ</summary><h3>16. Label Smoothing</h3>
+<p>แทน one-hot target:</p>
+<pre><code class="language-text">true class = 1
+others = 0
+</code></pre>
+<p>ใช้:</p>
+<pre><code class="language-text">target_distribution
+=
+(1-epsilon)*one_hot
++
+epsilon/C
+</code></pre>
+<p>ช่วยลด overconfidence บาง setting</p>
+<p>แต่:
+- ไม่ใช่ calibration guarantee
+- epsilon ต้อง validate
+- task บางอย่างไม่เหมาะ</p></details><details id="help-topic-16-visual"><summary>ภาพและ shape</summary><h3>16. Label Smoothing</h3>
+<p>แทน one-hot target:</p>
+<pre><code class="language-text">true class = 1
+others = 0
+</code></pre>
+<p>ใช้:</p>
+<pre><code class="language-text">target_distribution
+=
+(1-epsilon)*one_hot
++
+epsilon/C
+</code></pre>
+<p>ช่วยลด overconfidence บาง setting</p>
+<p>แต่:
+- ไม่ใช่ calibration guarantee
+- epsilon ต้อง validate
+- task บางอย่างไม่เหมาะ</p></details><details id="help-topic-16-code"><summary>โค้ด</summary><h3>16. Label Smoothing</h3>
+<p>แทน one-hot target:</p>
+<pre><code class="language-text">true class = 1
+others = 0
+</code></pre>
+<p>ใช้:</p>
+<pre><code class="language-text">target_distribution
+=
+(1-epsilon)*one_hot
++
+epsilon/C
+</code></pre>
+<p>ช่วยลด overconfidence บาง setting</p>
+<p>แต่:
+- ไม่ใช่ calibration guarantee
+- epsilon ต้อง validate
+- task บางอย่างไม่เหมาะ</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-16-result"><summary>ผลการทดลอง</summary><h3>16. Label Smoothing</h3>
+<p>แทน one-hot target:</p>
+<pre><code class="language-text">true class = 1
+others = 0
+</code></pre>
+<p>ใช้:</p>
+<pre><code class="language-text">target_distribution
+=
+(1-epsilon)*one_hot
++
+epsilon/C
+</code></pre>
+<p>ช่วยลด overconfidence บาง setting</p>
+<p>แต่:
+- ไม่ใช่ calibration guarantee
+- epsilon ต้อง validate
+- task บางอย่างไม่เหมาะ</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-16"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-17" class="source-topic"><span id="source-21-activations-losses-canonical-17-class-weighting" class="legacy-anchor"></span><h3>17. Class Weighting</h3>
+<p>imbalanced classification อาจ weight classes</p>
+<p>แต่:
+- changes training objective
+- probability calibration อาจเปลี่ยน
+- threshold ยังต้อง validate</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-17-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>17. Class Weighting</h3>
+<p>imbalanced classification อาจ weight classes</p>
+<p>แต่:
+- changes training objective
+- probability calibration อาจเปลี่ยน
+- threshold ยังต้อง validate</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-17-equation"><summary>สมการ</summary><h3>17. Class Weighting</h3>
+<p>imbalanced classification อาจ weight classes</p>
+<p>แต่:
+- changes training objective
+- probability calibration อาจเปลี่ยน
+- threshold ยังต้อง validate</p></details><details id="help-topic-17-visual"><summary>ภาพและ shape</summary><h3>17. Class Weighting</h3>
+<p>imbalanced classification อาจ weight classes</p>
+<p>แต่:
+- changes training objective
+- probability calibration อาจเปลี่ยน
+- threshold ยังต้อง validate</p></details><details id="help-topic-17-code"><summary>โค้ด</summary><h3>17. Class Weighting</h3>
+<p>imbalanced classification อาจ weight classes</p>
+<p>แต่:
+- changes training objective
+- probability calibration อาจเปลี่ยน
+- threshold ยังต้อง validate</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-17-result"><summary>ผลการทดลอง</summary><h3>17. Class Weighting</h3>
+<p>imbalanced classification อาจ weight classes</p>
+<p>แต่:
+- changes training objective
+- probability calibration อาจเปลี่ยน
+- threshold ยังต้อง validate</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-17"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-18" class="source-topic"><span id="source-21-activations-losses-canonical-18-focal-loss-preview" class="legacy-anchor"></span><h3>18. Focal Loss Preview</h3>
+<p>ลด weight ของ easy examples เพื่อ focus hard examples</p>
+<p>ใช้ใน dense detection/imbalanceบางแบบ</p>
+<p>แต่ไม่ควรใช้แทนการเข้าใจ sampling/threshold/metric</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>contrastivelossต้องกำหนดpositive/negativeและtemperature; false negativesผลักข้อความความหมายเดียวออกจากกัน batchใหญ่เพิ่มnegativesและmemory</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-18-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>contrastivelossต้องกำหนดpositive/negativeและtemperature; false negativesผลักข้อความความหมายเดียวออกจากกัน batchใหญ่เพิ่มnegativesและmemory</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-18-equation"><summary>สมการ</summary><p>contrastivelossต้องกำหนดpositive/negativeและtemperature; false negativesผลักข้อความความหมายเดียวออกจากกัน batchใหญ่เพิ่มnegativesและmemory</p></details><details id="help-topic-18-visual"><summary>ภาพและ shape</summary><p>contrastivelossต้องกำหนดpositive/negativeและtemperature; false negativesผลักข้อความความหมายเดียวออกจากกัน batchใหญ่เพิ่มnegativesและmemory</p></details><details id="help-topic-18-code"><summary>โค้ด</summary><p>contrastivelossต้องกำหนดpositive/negativeและtemperature; false negativesผลักข้อความความหมายเดียวออกจากกัน batchใหญ่เพิ่มnegativesและmemory</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-18-result"><summary>ผลการทดลอง</summary><p>contrastivelossต้องกำหนดpositive/negativeและtemperature; false negativesผลักข้อความความหมายเดียวออกจากกัน batchใหญ่เพิ่มnegativesและmemory</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-18"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-19" class="source-topic"><span id="source-21-activations-losses-canonical-19-numerical-stability-rules" class="legacy-anchor"></span><h3>19. Numerical Stability Rules</h3>
+<ol>
+<li>subtract max before softmax</li>
+<li>prefer log-sum-exp</li>
+<li>prefer logits-aware BCE/CE</li>
+<li>avoid log(sigmoid(x)) naive สำหรับ extreme logits</li>
+<li>inspect finite loss/gradients</li>
+<li>use dtype appropriate to scale</li>
+</ol><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>logsumexp=maxz+logΣexp(z−maxz); CE=logsumexp−zy; logits[1000,1001]ไม่ควรNaN; log(softmax)ตรงๆอาจlog0</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-19-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>logsumexp=maxz+logΣexp(z−maxz); CE=logsumexp−zy; logits[1000,1001]ไม่ควรNaN; log(softmax)ตรงๆอาจlog0</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-19-equation"><summary>สมการ</summary><p>logsumexp=maxz+logΣexp(z−maxz); CE=logsumexp−zy; logits[1000,1001]ไม่ควรNaN; log(softmax)ตรงๆอาจlog0</p></details><details id="help-topic-19-visual"><summary>ภาพและ shape</summary><p>logsumexp=maxz+logΣexp(z−maxz); CE=logsumexp−zy; logits[1000,1001]ไม่ควรNaN; log(softmax)ตรงๆอาจlog0</p></details><details id="help-topic-19-code"><summary>โค้ด</summary><p>logsumexp=maxz+logΣexp(z−maxz); CE=logsumexp−zy; logits[1000,1001]ไม่ควรNaN; log(softmax)ตรงๆอาจlog0</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-19-result"><summary>ผลการทดลอง</summary><p>logsumexp=maxz+logΣexp(z−maxz); CE=logsumexp−zy; logits[1000,1001]ไม่ควรNaN; log(softmax)ตรงๆอาจlog0</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-19"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-20" class="source-topic"><span id="source-21-activations-losses-canonical-20-activation-gradient-flow" class="legacy-anchor"></span><h3>20. Activation Gradient Flow</h3>
+<p>Sigmoid/Tanh:
+- saturating regions</p>
+<p>ReLU:
+- positive gradients survive
+- negative gradient zero</p>
+<p>GELU/SiLU:
+- smooth gates</p>
+<p>activation choice interacts with:
+- initialization
+- normalization
+- architecture
+- optimizer</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-20-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>20. Activation Gradient Flow</h3>
+<p>Sigmoid/Tanh:
+- saturating regions</p>
+<p>ReLU:
+- positive gradients survive
+- negative gradient zero</p>
+<p>GELU/SiLU:
+- smooth gates</p>
+<p>activation choice interacts with:
+- initialization
+- normalization
+- architecture
+- optimizer</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-20-equation"><summary>สมการ</summary><h3>20. Activation Gradient Flow</h3>
+<p>Sigmoid/Tanh:
+- saturating regions</p>
+<p>ReLU:
+- positive gradients survive
+- negative gradient zero</p>
+<p>GELU/SiLU:
+- smooth gates</p>
+<p>activation choice interacts with:
+- initialization
+- normalization
+- architecture
+- optimizer</p></details><details id="help-topic-20-visual"><summary>ภาพและ shape</summary><h3>20. Activation Gradient Flow</h3>
+<p>Sigmoid/Tanh:
+- saturating regions</p>
+<p>ReLU:
+- positive gradients survive
+- negative gradient zero</p>
+<p>GELU/SiLU:
+- smooth gates</p>
+<p>activation choice interacts with:
+- initialization
+- normalization
+- architecture
+- optimizer</p></details><details id="help-topic-20-code"><summary>โค้ด</summary><h3>20. Activation Gradient Flow</h3>
+<p>Sigmoid/Tanh:
+- saturating regions</p>
+<p>ReLU:
+- positive gradients survive
+- negative gradient zero</p>
+<p>GELU/SiLU:
+- smooth gates</p>
+<p>activation choice interacts with:
+- initialization
+- normalization
+- architecture
+- optimizer</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-20-result"><summary>ผลการทดลอง</summary><h3>20. Activation Gradient Flow</h3>
+<p>Sigmoid/Tanh:
+- saturating regions</p>
+<p>ReLU:
+- positive gradients survive
+- negative gradient zero</p>
+<p>GELU/SiLU:
+- smooth gates</p>
+<p>activation choice interacts with:
+- initialization
+- normalization
+- architecture
+- optimizer</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-20"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-21" class="source-topic"><span id="source-21-activations-losses-canonical-21-losstask-pairing" class="legacy-anchor"></span><h3>21. Loss/Task Pairing</h3>
+<p>binary single-label:
+- one logit + BCEWithLogits</p>
+<p>multiclass single-label:
+- C logits + CrossEntropy</p>
+<p>multi-label:
+- C independent logits + BCEWithLogits</p>
+<p>regression:
+- linear output + MSE/MAE/Huber depending error model</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>seed7XORเปรียบGELU/ReLUคงweights/batches/lr; softmaxCEกับcontrastiveเป็นคนละtaskต้องกำหนดlabels/pairsก่อน อย่าลากlossเปรียบscaleตรงๆ</p><p>tuneactivation/temperatureบนvalidation; classweightsคำนวณtrainเท่านั้น; testใช้calibrationที่freezeแล้วไม่เลือกthresholdหลังเห็นtest</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-21-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>seed7XORเปรียบGELU/ReLUคงweights/batches/lr; softmaxCEกับcontrastiveเป็นคนละtaskต้องกำหนดlabels/pairsก่อน อย่าลากlossเปรียบscaleตรงๆ</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-21-equation"><summary>สมการ</summary><p>seed7XORเปรียบGELU/ReLUคงweights/batches/lr; softmaxCEกับcontrastiveเป็นคนละtaskต้องกำหนดlabels/pairsก่อน อย่าลากlossเปรียบscaleตรงๆ</p></details><details id="help-topic-21-visual"><summary>ภาพและ shape</summary><p>seed7XORเปรียบGELU/ReLUคงweights/batches/lr; softmaxCEกับcontrastiveเป็นคนละtaskต้องกำหนดlabels/pairsก่อน อย่าลากlossเปรียบscaleตรงๆ</p></details><details id="help-topic-21-code"><summary>โค้ด</summary><p>seed7XORเปรียบGELU/ReLUคงweights/batches/lr; softmaxCEกับcontrastiveเป็นคนละtaskต้องกำหนดlabels/pairsก่อน อย่าลากlossเปรียบscaleตรงๆ</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-21-result"><summary>ผลการทดลอง</summary><p>seed7XORเปรียบGELU/ReLUคงweights/batches/lr; softmaxCEกับcontrastiveเป็นคนละtaskต้องกำหนดlabels/pairsก่อน อย่าลากlossเปรียบscaleตรงๆ</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-21"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-22" class="source-topic"><span id="source-21-activations-losses-canonical-22-from-scratch" class="legacy-anchor"></span><h3>22. From Scratch</h3>
+<p>src/activations_losses.py มี:
+- stable sigmoid
+- ReLU / LeakyReLU / ELU
+- GELU approximation
+- SiLU
+- stable softmax
+- MSE + gradient
+- MAE + subgradient convention
+- Huber + gradient
+- BCE-with-logits + gradient
+- multiclass cross-entropy + gradient
+- label smoothing</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p><code>np.maximum(np.array([-2.,0.,3.]),0)</code> ได้[0,0,3]; backwardใช้maskz&gt;0กับupstreamgradientไม่overwritegradientจากbranchอื่น</p><p>logits→validmask→stable logsumexp→selectedclasslogit→lossmeanvalidtokens→gradient(p−onehot)/N; อย่าmeanรวมpadding</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-22-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p><code>np.maximum(np.array([-2.,0.,3.]),0)</code> ได้[0,0,3]; backwardใช้maskz&gt;0กับupstreamgradientไม่overwritegradientจากbranchอื่น</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-22-equation"><summary>สมการ</summary><p><code>np.maximum(np.array([-2.,0.,3.]),0)</code> ได้[0,0,3]; backwardใช้maskz&gt;0กับupstreamgradientไม่overwritegradientจากbranchอื่น</p></details><details id="help-topic-22-visual"><summary>ภาพและ shape</summary><p><code>np.maximum(np.array([-2.,0.,3.]),0)</code> ได้[0,0,3]; backwardใช้maskz&gt;0กับupstreamgradientไม่overwritegradientจากbranchอื่น</p></details><details id="help-topic-22-code"><summary>โค้ด</summary><p><code>np.maximum(np.array([-2.,0.,3.]),0)</code> ได้[0,0,3]; backwardใช้maskz&gt;0กับupstreamgradientไม่overwritegradientจากbranchอื่น</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-22-result"><summary>ผลการทดลอง</summary><p><code>np.maximum(np.array([-2.,0.,3.]),0)</code> ได้[0,0,3]; backwardใช้maskz&gt;0กับupstreamgradientไม่overwritegradientจากbranchอื่น</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-22"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-23" class="source-topic"><span id="source-21-activations-losses-canonical-23-gradient-checking" class="legacy-anchor"></span><h3>23. Gradient Checking</h3>
+<p>loss gradient functionsต้อง compare finite differences</p>
+<p>โดยเฉพาะ:
+- BCE extreme logits
+- CE logits
+- Huber transition</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>assertoutputs[0,0,3],grads[0,0,1]ตามsubgradient0; inputemptyรักษาshapeและNaNต้องแจ้ง; finite differenceห่างจาก0เท่านั้น</p><p>torch.nn.functional.cross_entropyเทียบNumPylogsumexpด้วยfloat64; GELUexactเทียบapproximate='none'ไม่ใช้tanhapproxโดยไม่บอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-23-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>assertoutputs[0,0,3],grads[0,0,1]ตามsubgradient0; inputemptyรักษาshapeและNaNต้องแจ้ง; finite differenceห่างจาก0เท่านั้น</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-23-equation"><summary>สมการ</summary><p>assertoutputs[0,0,3],grads[0,0,1]ตามsubgradient0; inputemptyรักษาshapeและNaNต้องแจ้ง; finite differenceห่างจาก0เท่านั้น</p></details><details id="help-topic-23-visual"><summary>ภาพและ shape</summary><p>assertoutputs[0,0,3],grads[0,0,1]ตามsubgradient0; inputemptyรักษาshapeและNaNต้องแจ้ง; finite differenceห่างจาก0เท่านั้น</p></details><details id="help-topic-23-code"><summary>โค้ด</summary><p>assertoutputs[0,0,3],grads[0,0,1]ตามsubgradient0; inputemptyรักษาshapeและNaNต้องแจ้ง; finite differenceห่างจาก0เท่านั้น</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-23-result"><summary>ผลการทดลอง</summary><p>assertoutputs[0,0,3],grads[0,0,1]ตามsubgradient0; inputemptyรักษาshapeและNaNต้องแจ้ง; finite differenceห่างจาก0เท่านั้น</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-23"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-24" class="source-topic"><span id="source-21-activations-losses-canonical-24-common-mistakes" class="legacy-anchor"></span><h3>24. Common Mistakes</h3>
+<ol>
+<li>sigmoid before BCEWithLogits</li>
+<li>softmax before CrossEntropy</li>
+<li>unstable exp on huge logits</li>
+<li>log(0)</li>
+<li>wrong target shape</li>
+<li>binary vs multiclass confusion</li>
+<li>MAE derivative at zero assumption unstated</li>
+<li>label smoothing twice</li>
+<li>class weights without metric review</li>
+<li>activation chosen from trend rather than architecture/task</li>
+</ol><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-24-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>24. Common Mistakes</h3>
+<ol>
+<li>sigmoid before BCEWithLogits</li>
+<li>softmax before CrossEntropy</li>
+<li>unstable exp on huge logits</li>
+<li>log(0)</li>
+<li>wrong target shape</li>
+<li>binary vs multiclass confusion</li>
+<li>MAE derivative at zero assumption unstated</li>
+<li>label smoothing twice</li>
+<li>class weights without metric review</li>
+<li>activation chosen from trend rather than architecture/task</li>
+</ol><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-24-equation"><summary>สมการ</summary><h3>24. Common Mistakes</h3>
+<ol>
+<li>sigmoid before BCEWithLogits</li>
+<li>softmax before CrossEntropy</li>
+<li>unstable exp on huge logits</li>
+<li>log(0)</li>
+<li>wrong target shape</li>
+<li>binary vs multiclass confusion</li>
+<li>MAE derivative at zero assumption unstated</li>
+<li>label smoothing twice</li>
+<li>class weights without metric review</li>
+<li>activation chosen from trend rather than architecture/task</li>
+</ol></details><details id="help-topic-24-visual"><summary>ภาพและ shape</summary><h3>24. Common Mistakes</h3>
+<ol>
+<li>sigmoid before BCEWithLogits</li>
+<li>softmax before CrossEntropy</li>
+<li>unstable exp on huge logits</li>
+<li>log(0)</li>
+<li>wrong target shape</li>
+<li>binary vs multiclass confusion</li>
+<li>MAE derivative at zero assumption unstated</li>
+<li>label smoothing twice</li>
+<li>class weights without metric review</li>
+<li>activation chosen from trend rather than architecture/task</li>
+</ol></details><details id="help-topic-24-code"><summary>โค้ด</summary><h3>24. Common Mistakes</h3>
+<ol>
+<li>sigmoid before BCEWithLogits</li>
+<li>softmax before CrossEntropy</li>
+<li>unstable exp on huge logits</li>
+<li>log(0)</li>
+<li>wrong target shape</li>
+<li>binary vs multiclass confusion</li>
+<li>MAE derivative at zero assumption unstated</li>
+<li>label smoothing twice</li>
+<li>class weights without metric review</li>
+<li>activation chosen from trend rather than architecture/task</li>
+</ol><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-24-result"><summary>ผลการทดลอง</summary><h3>24. Common Mistakes</h3>
+<ol>
+<li>sigmoid before BCEWithLogits</li>
+<li>softmax before CrossEntropy</li>
+<li>unstable exp on huge logits</li>
+<li>log(0)</li>
+<li>wrong target shape</li>
+<li>binary vs multiclass confusion</li>
+<li>MAE derivative at zero assumption unstated</li>
+<li>label smoothing twice</li>
+<li>class weights without metric review</li>
+<li>activation chosen from trend rather than architecture/task</li>
+</ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-24"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-25" class="source-topic"><span id="source-21-activations-losses-canonical-25-exercises" class="legacy-anchor"></span><h3>25. Exercises</h3>
+<ul>
+<li>derive sigmoid derivative</li>
+<li>derive softmax Jacobian</li>
+<li>derive CE gradient</li>
+<li>implement logsumexp</li>
+<li>compare BCE probability vs logits stability</li>
+<li>compare MSE/MAE/Huber influence on outlier</li>
+<li>plot ReLU/GELU/SiLU derivatives</li>
+<li>test label smoothing</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-25-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>25. Exercises</h3>
+<ul>
+<li>derive sigmoid derivative</li>
+<li>derive softmax Jacobian</li>
+<li>derive CE gradient</li>
+<li>implement logsumexp</li>
+<li>compare BCE probability vs logits stability</li>
+<li>compare MSE/MAE/Huber influence on outlier</li>
+<li>plot ReLU/GELU/SiLU derivatives</li>
+<li>test label smoothing</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-25-equation"><summary>สมการ</summary><h3>25. Exercises</h3>
+<ul>
+<li>derive sigmoid derivative</li>
+<li>derive softmax Jacobian</li>
+<li>derive CE gradient</li>
+<li>implement logsumexp</li>
+<li>compare BCE probability vs logits stability</li>
+<li>compare MSE/MAE/Huber influence on outlier</li>
+<li>plot ReLU/GELU/SiLU derivatives</li>
+<li>test label smoothing</li>
+</ul></details><details id="help-topic-25-visual"><summary>ภาพและ shape</summary><h3>25. Exercises</h3>
+<ul>
+<li>derive sigmoid derivative</li>
+<li>derive softmax Jacobian</li>
+<li>derive CE gradient</li>
+<li>implement logsumexp</li>
+<li>compare BCE probability vs logits stability</li>
+<li>compare MSE/MAE/Huber influence on outlier</li>
+<li>plot ReLU/GELU/SiLU derivatives</li>
+<li>test label smoothing</li>
+</ul></details><details id="help-topic-25-code"><summary>โค้ด</summary><h3>25. Exercises</h3>
+<ul>
+<li>derive sigmoid derivative</li>
+<li>derive softmax Jacobian</li>
+<li>derive CE gradient</li>
+<li>implement logsumexp</li>
+<li>compare BCE probability vs logits stability</li>
+<li>compare MSE/MAE/Huber influence on outlier</li>
+<li>plot ReLU/GELU/SiLU derivatives</li>
+<li>test label smoothing</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-25-result"><summary>ผลการทดลอง</summary><h3>25. Exercises</h3>
+<ul>
+<li>derive sigmoid derivative</li>
+<li>derive softmax Jacobian</li>
+<li>derive CE gradient</li>
+<li>implement logsumexp</li>
+<li>compare BCE probability vs logits stability</li>
+<li>compare MSE/MAE/Huber influence on outlier</li>
+<li>plot ReLU/GELU/SiLU derivatives</li>
+<li>test label smoothing</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-25"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-26" class="source-topic"><span id="source-21-activations-losses-canonical-26-mini-project" class="legacy-anchor"></span><h3>26. Mini Project</h3>
+<p><a href="../21-activations-losses/mini-project/README.md">Loss Stability Lab</a></p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>บันทึกactivationapprox/lossaxis/mask/reduction/temperature; monitorentropy/deadunits; ทดลองSiLUเพิ่มconvergenceในMLPเล็กภายใต้updatesเท่ากันพร้อม3seeds</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-26-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>บันทึกactivationapprox/lossaxis/mask/reduction/temperature; monitorentropy/deadunits; ทดลองSiLUเพิ่มconvergenceในMLPเล็กภายใต้updatesเท่ากันพร้อม3seeds</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-26-equation"><summary>สมการ</summary><p>บันทึกactivationapprox/lossaxis/mask/reduction/temperature; monitorentropy/deadunits; ทดลองSiLUเพิ่มconvergenceในMLPเล็กภายใต้updatesเท่ากันพร้อม3seeds</p></details><details id="help-topic-26-visual"><summary>ภาพและ shape</summary><p>บันทึกactivationapprox/lossaxis/mask/reduction/temperature; monitorentropy/deadunits; ทดลองSiLUเพิ่มconvergenceในMLPเล็กภายใต้updatesเท่ากันพร้อม3seeds</p></details><details id="help-topic-26-code"><summary>โค้ด</summary><p>บันทึกactivationapprox/lossaxis/mask/reduction/temperature; monitorentropy/deadunits; ทดลองSiLUเพิ่มconvergenceในMLPเล็กภายใต้updatesเท่ากันพร้อม3seeds</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-26-result"><summary>ผลการทดลอง</summary><p>บันทึกactivationapprox/lossaxis/mask/reduction/temperature; monitorentropy/deadunits; ทดลองSiLUเพิ่มconvergenceในMLPเล็กภายใต้updatesเท่ากันพร้อม3seeds</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-26"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-27" class="source-topic"><span id="source-21-activations-losses-canonical-27-exit-checklist" class="legacy-anchor"></span><h3>27. Exit Checklist</h3>
+<ul>
+<li>[ ] logits</li>
+<li>[ ] stable sigmoid</li>
+<li>[ ] stable softmax</li>
+<li>[ ] ReLU family</li>
+<li>[ ] GELU</li>
+<li>[ ] SiLU</li>
+<li>[ ] MSE/MAE/Huber</li>
+<li>[ ] BCE-with-logits</li>
+<li>[ ] multiclass CE</li>
+<li>[ ] label smoothing</li>
+<li>[ ] task/loss pairing</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-27-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>27. Exit Checklist</h3>
+<ul>
+<li>[ ] logits</li>
+<li>[ ] stable sigmoid</li>
+<li>[ ] stable softmax</li>
+<li>[ ] ReLU family</li>
+<li>[ ] GELU</li>
+<li>[ ] SiLU</li>
+<li>[ ] MSE/MAE/Huber</li>
+<li>[ ] BCE-with-logits</li>
+<li>[ ] multiclass CE</li>
+<li>[ ] label smoothing</li>
+<li>[ ] task/loss pairing</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-27-equation"><summary>สมการ</summary><h3>27. Exit Checklist</h3>
+<ul>
+<li>[ ] logits</li>
+<li>[ ] stable sigmoid</li>
+<li>[ ] stable softmax</li>
+<li>[ ] ReLU family</li>
+<li>[ ] GELU</li>
+<li>[ ] SiLU</li>
+<li>[ ] MSE/MAE/Huber</li>
+<li>[ ] BCE-with-logits</li>
+<li>[ ] multiclass CE</li>
+<li>[ ] label smoothing</li>
+<li>[ ] task/loss pairing</li>
+</ul></details><details id="help-topic-27-visual"><summary>ภาพและ shape</summary><h3>27. Exit Checklist</h3>
+<ul>
+<li>[ ] logits</li>
+<li>[ ] stable sigmoid</li>
+<li>[ ] stable softmax</li>
+<li>[ ] ReLU family</li>
+<li>[ ] GELU</li>
+<li>[ ] SiLU</li>
+<li>[ ] MSE/MAE/Huber</li>
+<li>[ ] BCE-with-logits</li>
+<li>[ ] multiclass CE</li>
+<li>[ ] label smoothing</li>
+<li>[ ] task/loss pairing</li>
+</ul></details><details id="help-topic-27-code"><summary>โค้ด</summary><h3>27. Exit Checklist</h3>
+<ul>
+<li>[ ] logits</li>
+<li>[ ] stable sigmoid</li>
+<li>[ ] stable softmax</li>
+<li>[ ] ReLU family</li>
+<li>[ ] GELU</li>
+<li>[ ] SiLU</li>
+<li>[ ] MSE/MAE/Huber</li>
+<li>[ ] BCE-with-logits</li>
+<li>[ ] multiclass CE</li>
+<li>[ ] label smoothing</li>
+<li>[ ] task/loss pairing</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-27-result"><summary>ผลการทดลอง</summary><h3>27. Exit Checklist</h3>
+<ul>
+<li>[ ] logits</li>
+<li>[ ] stable sigmoid</li>
+<li>[ ] stable softmax</li>
+<li>[ ] ReLU family</li>
+<li>[ ] GELU</li>
+<li>[ ] SiLU</li>
+<li>[ ] MSE/MAE/Huber</li>
+<li>[ ] BCE-with-logits</li>
+<li>[ ] multiclass CE</li>
+<li>[ ] label smoothing</li>
+<li>[ ] task/loss pairing</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-27"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-28" class="source-topic"><span id="source-21-activations-losses-canonical-28-next" class="legacy-anchor"></span><span id="source-21-activations-losses-canonical-21-activations-losses-activations-and-losses" class="legacy-anchor"></span><h3>28. Next</h3>
+<p>หลัง Chapter 21 เราจะรวม Tensor + optimizer + stable loss เป็น tiny trainable MLP ก่อนเข้าสู่ Chapter 22 PyTorch</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-28-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>28. Next</h3>
+<p>หลัง Chapter 21 เราจะรวม Tensor + optimizer + stable loss เป็น tiny trainable MLP ก่อนเข้าสู่ Chapter 22 PyTorch</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-28-equation"><summary>สมการ</summary><h3>28. Next</h3>
+<p>หลัง Chapter 21 เราจะรวม Tensor + optimizer + stable loss เป็น tiny trainable MLP ก่อนเข้าสู่ Chapter 22 PyTorch</p></details><details id="help-topic-28-visual"><summary>ภาพและ shape</summary><h3>28. Next</h3>
+<p>หลัง Chapter 21 เราจะรวม Tensor + optimizer + stable loss เป็น tiny trainable MLP ก่อนเข้าสู่ Chapter 22 PyTorch</p></details><details id="help-topic-28-code"><summary>โค้ด</summary><h3>28. Next</h3>
+<p>หลัง Chapter 21 เราจะรวม Tensor + optimizer + stable loss เป็น tiny trainable MLP ก่อนเข้าสู่ Chapter 22 PyTorch</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-28-result"><summary>ผลการทดลอง</summary><h3>28. Next</h3>
+<p>หลัง Chapter 21 เราจะรวม Tensor + optimizer + stable loss เป็น tiny trainable MLP ก่อนเข้าสู่ Chapter 22 PyTorch</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-28"> อ่านหัวข้อนี้แล้ว</label></section><details><summary>รายละเอียดเพิ่มเติมและข้อกำหนดของ local lab</summary><h3>21-activations-losses — Activations and Losses</h3>
+<p><strong>Prerequisites:</strong> Complete 20-optimizers; be able to trace array/tensor shapes, separate train/validation/test data, and explain the core objective of the current chapter.</p>
+<p><strong>Mental model:</strong> Treat Activations and Losses as a pipeline: input representation → central mechanism → objective/state update → observable output. At every boundary, state shape/state, allowed information flow, and the invariant that should remain true.</p>
+<p><strong>Code walkthrough:</strong> Read public API first, then input checks, state/shape transformations, numerical core, returned values and tests. Connect each important code block to the equation or algorithm in the chapter README.</p>
+<p><strong>Visualization / inspection:</strong> Use a tiny case. Inspect intermediate values, distributions, norms, scores, states or trajectories appropriate to Activations and Losses; do not rely only on the final metric.</p>
+<p><strong>Experiment:</strong> Run a baseline, one controlled parameter change, one edge case and one repeated seeded comparison. Record seed, environment, data version, configuration and metric.</p>
+<p><strong>Limitations:</strong> List at least one assumption, one data-related limitation, one numerical/optimization limitation and one scaling limitation for Activations and Losses.</p>
+<p><strong>Analysis workflow:</strong> Check inputs → preprocessing → shapes/state → finite numerical values → objective/update → evaluation protocol. The earliest unexpected state is more informative than a downstream metric.</p>
+<p><strong>Performance:</strong> Identify the dominant time and memory terms and measure them on the local learning run before attempting optimization.</p>
+<p><strong>Production perspective:</strong> Define input validation, artifact/configuration versioning, quality and resource measurements, staged release criteria and a way to return to the previous known-good artifact.</p>
+<p><strong>Research perspective:</strong> State a falsifiable hypothesis, baseline, one-factor change, metric, repeated-run plan when stochastic, and how negative results will be recorded.</p>
+<p><strong>Interview questions:</strong>
+1. Explain Activations and Losses from first principles without naming a library API.
+2. Trace one input through the central mechanism and give the important intermediate shapes/state.
+3. Name the strongest assumption and a case where it fails.
+4. State the dominant compute/memory cost.
+5. Describe how you would validate a new implementation against a trusted baseline.</p>
+<p><strong>Summary / exit condition:</strong> You may move on when you can explain, derive or trace, implement, test, analyze, measure and evaluate Activations and Losses, and when the chapter mini-project plus twenty total exercises are complete.</p></details></section><section id="objective-evidence" class="canonical-section"><h2>พิสูจน์ความสามารถทีละ objective</h2><p>ทำกรณีใหม่ก่อนเปิด reference แล้วบันทึกงานด้านล่าง ให้ผู้ตรวจใช้ rubric ตรวจคำอธิบาย ผลคำนวณ โค้ด และข้อจำกัด บันทึกเก็บในเบราว์เซอร์เครื่องนี้ กดส่งออกเพื่อสำรองหรือส่งให้ผู้ตรวจ เว็บไม่ได้รันโค้ดหรือตัดสินผลงานแทนผู้ตรวจ</p><button type="button" class="secondary-button" data-export-evidence>ส่งออกหลักฐานบทนี้เป็น JSON</button><p role="status" id="evidence-export-status"></p><details id="ch21-objective-01" class="objective-proof"><summary>Hidden Activations vs Output Functions / ReLU / Leaky ReLU / ELU</summary><p>Hidden Activations vs Output Functions / ReLU / Leaky ReLU / ELU: ใช้กรณีในหัวข้อ Hidden Activations vs Output Functions, ReLU, Leaky ReLU, ELU เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch21-evidence-01"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch21-evidence-01-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch21-evidence-01-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch21-evidence-01-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch21-evidence-01-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch21-evidence-01-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch21-evidence-01-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch21-evidence-01-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch21-evidence-01-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>ReLU(z)=max(0,z),derivative1เมื่อz&gt;0,0เมื่อz&lt;0; z0ไม่differentiableต้องประกาศsubgradientที่ใช้เช่น0</p><h3>2. Hidden Activations vs Output Functions</h3>
+<p>Hidden activation:
+- ReLU
+- LeakyReLU
+- ELU
+- GELU
+- SiLU/Swish
+- Tanh</p>
+<p>Output depends on task:</p>
+<p>binary classification:</p>
+<pre><code class="language-text">one logit
+→ sigmoid conceptually
+→ BCE-with-logits loss
+</code></pre>
+<p>multiclass:</p>
+<pre><code class="language-text">K logits
+→ softmax conceptually
+→ cross-entropy-from-logits
+</code></pre>
+<p>regression:</p>
+<pre><code class="language-text">often linear output
+</code></pre>
+<h3>3. ReLU</h3>
+<pre><code class="language-text">ReLU(x)=max(0,x)
+</code></pre>
+<p>derivative:</p>
+<pre><code class="language-text">1 if x&gt;0
+0 if x&lt;0
+</code></pre>
+<p>ข้อดี:
+- cheap
+- good gradient on positive side</p>
+<p>ปัญหา:
+- dead ReLU
+- zero negative gradient</p>
+<h3>4. Leaky ReLU</h3>
+<pre><code class="language-text">f(x)=x       if x&gt;=0
+f(x)=αx      if x&lt;0
+</code></pre>
+<p>negative side ยังมี gradient เล็ก</p>
+<h3>5. ELU</h3>
+<pre><code class="language-text">x                  if x&gt;0
+α(exp(x)-1)        otherwise
+</code></pre>
+<p>smooth-ish negative saturation แต่ต้องใช้ exp</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch21-objective-02" class="objective-proof"><summary>GELU</summary><p>GELU: ใช้กรณีในหัวข้อ GELU เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch21-evidence-02"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch21-evidence-02-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch21-evidence-02-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch21-evidence-02-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch21-evidence-02-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch21-evidence-02-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch21-evidence-02-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch21-evidence-02-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch21-evidence-02-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>GELU(z)=zΦ(z); z1ได้≈.8413447,z−1≈−.1586553 เป็นsmoothgatingไม่ใช่ตัดnegativeทั้งหมด</p><h3>6. GELU</h3>
+<p>concept:</p>
+<pre><code class="language-text">GELU(x)=x Φ(x)
+</code></pre>
+<p>deep transformersนิยมใช้ GELU variants</p>
+<p>implementation มักใช้ exact/approximate forms</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch21-objective-03" class="objective-proof"><summary>SiLU / Swish</summary><p>SiLU / Swish: ใช้กรณีในหัวข้อ SiLU / Swish เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch21-evidence-03"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch21-evidence-03-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch21-evidence-03-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch21-evidence-03-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch21-evidence-03-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch21-evidence-03-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch21-evidence-03-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch21-evidence-03-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch21-evidence-03-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>SiLU(z)=zσ(z); derivativeσ(z)+zσ(z)(1−σ(z)); z0 output0 derivative.5 จึงไม่เหมือนReLUที่0</p><h3>7. SiLU / Swish</h3>
+<pre><code class="language-text">SiLU(x)=x sigmoid(x)
+</code></pre>
+<p>smooth non-monotonic behaviorบางช่วง</p>
+<p>ใช้มากใน modern deep networks</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch21-objective-04" class="objective-proof"><summary>Sigmoid / Tanh</summary><p>Sigmoid / Tanh: ใช้กรณีในหัวข้อ Sigmoid, Tanh เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch21-evidence-04"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch21-evidence-04-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch21-evidence-04-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch21-evidence-04-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch21-evidence-04-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch21-evidence-04-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch21-evidence-04-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch21-evidence-04-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch21-evidence-04-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>8. Sigmoid</h3>
+<pre><code class="language-text">σ(x)=1/(1+e^-x)
+</code></pre>
+<p>เหมาะ output binary probability parameterization</p>
+<p>hidden sigmoid มี saturation:
+- very positive → gradient ~0
+- very negative → gradient ~0</p>
+<h3>9. Tanh</h3>
+<pre><code class="language-text">tanh(x)
+</code></pre>
+<p>range (-1,1), zero-centered แต่ยัง saturate</p><h3>8. Sigmoid</h3>
+<pre><code class="language-text">σ(x)=1/(1+e^-x)
+</code></pre>
+<p>เหมาะ output binary probability parameterization</p>
+<p>hidden sigmoid มี saturation:
+- very positive → gradient ~0
+- very negative → gradient ~0</p>
+<h3>9. Tanh</h3>
+<pre><code class="language-text">tanh(x)
+</code></pre>
+<p>range (-1,1), zero-centered แต่ยัง saturate</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch21-objective-05" class="objective-proof"><summary>Softmax / Logits</summary><p>Softmax / Logits: ใช้กรณีในหัวข้อ Softmax, Logits เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch21-evidence-05"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch21-evidence-05-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch21-evidence-05-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch21-evidence-05-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch21-evidence-05-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch21-evidence-05-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch21-evidence-05-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch21-evidence-05-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch21-evidence-05-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>softmaxzᵢ=exp(zᵢ−maxz)/Σexp(zⱼ−maxz); logits[0,log3]ให้prob[.25,.75]และรวม1ตามclassaxis</p><h3>10. Softmax</h3>
+<pre><code class="language-text">p_k=exp(z_k)/Σ exp(z_j)
+</code></pre>
+<p>ต้อง subtract max:</p>
+<pre><code class="language-text">z_shift = z-max(z)
+</code></pre>
+<p>เพื่อลด overflow</p>
+<h3>11. Logits</h3>
+<p>logit = raw model score ก่อน probability transform</p>
+<p>สำคัญมาก:</p>
+<pre><code class="language-text">model output logits
+loss consumes logits directly
+</code></pre>
+<p>อย่า sigmoid/softmax ก่อน loss ถ้า API เป็น logits-aware</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch21-objective-06" class="objective-proof"><summary>Regression Losses</summary><p>Regression Losses: ใช้กรณีในหัวข้อ Regression Losses เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch21-evidence-06"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch21-evidence-06-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch21-evidence-06-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch21-evidence-06-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch21-evidence-06-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch21-evidence-06-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch21-evidence-06-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch21-evidence-06-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch21-evidence-06-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>12. Regression Losses</h3>
+<h4>MSE</h4>
+<pre><code class="language-text">mean((prediction-target)^2)
+</code></pre>
+<p>large errors ถูก penalize quadratic</p>
+<h4>MAE</h4>
+<pre><code class="language-text">mean(|prediction-target|)
+</code></pre>
+<p>robust กว่า MSE ต่อ extreme residuals แต่ derivativeไม่ smooth ที่ 0</p>
+<h4>Huber</h4>
+<p>quadratic near zero, linear for large errors</p>
+<p>combine smooth optimization + robustness</p><h3>12. Regression Losses</h3>
+<h4>MSE</h4>
+<pre><code class="language-text">mean((prediction-target)^2)
+</code></pre>
+<p>large errors ถูก penalize quadratic</p>
+<h4>MAE</h4>
+<pre><code class="language-text">mean(|prediction-target|)
+</code></pre>
+<p>robust กว่า MSE ต่อ extreme residuals แต่ derivativeไม่ smooth ที่ 0</p>
+<h4>Huber</h4>
+<p>quadratic near zero, linear for large errors</p>
+<p>combine smooth optimization + robustness</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch21-objective-07" class="objective-proof"><summary>Binary Cross Entropy / BCE With Logits</summary><p>Binary Cross Entropy / BCE With Logits: ใช้กรณีในหัวข้อ Binary Cross Entropy, BCE With Logits เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch21-evidence-07"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch21-evidence-07-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch21-evidence-07-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch21-evidence-07-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch21-evidence-07-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch21-evidence-07-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch21-evidence-07-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch21-evidence-07-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch21-evidence-07-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>13. Binary Cross Entropy</h3>
+<p>probability-space formula:</p>
+<pre><code class="language-text">-[y log p + (1-y)log(1-p)]
+</code></pre>
+<p>แต่ถ้า p กลายเป็น 0 หรือ 1 exact:
+- log(0)
+- inf / NaN</p>
+<h3>14. BCE With Logits</h3>
+<p>stable formula ต่อ logit x:</p>
+<pre><code class="language-text">max(x,0)
+-
+x*y
++
+log(1+exp(-|x|))
+</code></pre>
+<p>gradient:</p>
+<pre><code class="language-text">sigmoid(x)-y
+</code></pre>
+<p>หลัง mean reduction หารด้วย N</p>
+<p>PyTorch current BCEWithLogitsLoss ก็รวม sigmoid และ BCE ใน operation เดียวเพื่อใช้ log-sum-exp-style numerical stability</p><h3>13. Binary Cross Entropy</h3>
+<p>probability-space formula:</p>
+<pre><code class="language-text">-[y log p + (1-y)log(1-p)]
+</code></pre>
+<p>แต่ถ้า p กลายเป็น 0 หรือ 1 exact:
+- log(0)
+- inf / NaN</p>
+<h3>14. BCE With Logits</h3>
+<p>stable formula ต่อ logit x:</p>
+<pre><code class="language-text">max(x,0)
+-
+x*y
++
+log(1+exp(-|x|))
+</code></pre>
+<p>gradient:</p>
+<pre><code class="language-text">sigmoid(x)-y
+</code></pre>
+<p>หลัง mean reduction หารด้วย N</p>
+<p>PyTorch current BCEWithLogitsLoss ก็รวม sigmoid และ BCE ใน operation เดียวเพื่อใช้ log-sum-exp-style numerical stability</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch21-objective-08" class="objective-proof"><summary>Multiclass Cross Entropy / Label Smoothing / Class Weighting / Focal Loss Preview</summary><p>Multiclass Cross Entropy / Label Smoothing / Class Weighting / Focal Loss Preview: ใช้กรณีในหัวข้อ Multiclass Cross Entropy, Label Smoothing, Class Weighting, Focal Loss Preview เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch21-evidence-08"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch21-evidence-08-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch21-evidence-08-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch21-evidence-08-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch21-evidence-08-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch21-evidence-08-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch21-evidence-08-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch21-evidence-08-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch21-evidence-08-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>cross-entropyคาดlogits(C)กับtargetclassint0..C−1 หรือdistributionตามAPI; softmaxก่อนCrossEntropyLossซ้ำทำgradientผิดนิยาม</p><h3>15. Multiclass Cross Entropy</h3>
+<p>logits z shape:</p>
+<pre><code class="language-text">(N,C)
+</code></pre>
+<p>log-sum-exp:</p>
+<pre><code class="language-text">LSE(z)
+=
+m + log Σ exp(z-m)
+
+m=max(z)
+</code></pre>
+<p>per-sample loss:</p>
+<pre><code class="language-text">-log softmax(z)[target]
+</code></pre>
+<p>gradient:</p>
+<pre><code class="language-text">softmax(z)-one_hot(target)
+</code></pre>
+<p>แล้วหาร batch sizeถ้า mean reduction</p>
+<h3>16. Label Smoothing</h3>
+<p>แทน one-hot target:</p>
+<pre><code class="language-text">true class = 1
+others = 0
+</code></pre>
+<p>ใช้:</p>
+<pre><code class="language-text">target_distribution
+=
+(1-epsilon)*one_hot
++
+epsilon/C
+</code></pre>
+<p>ช่วยลด overconfidence บาง setting</p>
+<p>แต่:
+- ไม่ใช่ calibration guarantee
+- epsilon ต้อง validate
+- task บางอย่างไม่เหมาะ</p>
+<h3>17. Class Weighting</h3>
+<p>imbalanced classification อาจ weight classes</p>
+<p>แต่:
+- changes training objective
+- probability calibration อาจเปลี่ยน
+- threshold ยังต้อง validate</p>
+<h3>18. Focal Loss Preview</h3>
+<p>ลด weight ของ easy examples เพื่อ focus hard examples</p>
+<p>ใช้ใน dense detection/imbalanceบางแบบ</p>
+<p>แต่ไม่ควรใช้แทนการเข้าใจ sampling/threshold/metric</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch21-objective-09" class="objective-proof"><summary>Numerical Stability Rules</summary><p>Numerical Stability Rules: ใช้กรณีในหัวข้อ Numerical Stability Rules เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch21-evidence-09"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch21-evidence-09-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch21-evidence-09-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch21-evidence-09-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch21-evidence-09-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch21-evidence-09-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch21-evidence-09-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch21-evidence-09-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch21-evidence-09-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>logsumexp=maxz+logΣexp(z−maxz); CE=logsumexp−zy; logits[1000,1001]ไม่ควรNaN; log(softmax)ตรงๆอาจlog0</p><h3>19. Numerical Stability Rules</h3>
+<ol>
+<li>subtract max before softmax</li>
+<li>prefer log-sum-exp</li>
+<li>prefer logits-aware BCE/CE</li>
+<li>avoid log(sigmoid(x)) naive สำหรับ extreme logits</li>
+<li>inspect finite loss/gradients</li>
+<li>use dtype appropriate to scale</li>
+</ol></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch21-objective-10" class="objective-proof"><summary>Activation Gradient Flow</summary><p>Activation Gradient Flow: ใช้กรณีในหัวข้อ Activation Gradient Flow เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch21-evidence-10"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch21-evidence-10-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch21-evidence-10-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch21-evidence-10-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch21-evidence-10-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch21-evidence-10-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch21-evidence-10-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch21-evidence-10-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch21-evidence-10-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>20. Activation Gradient Flow</h3>
+<p>Sigmoid/Tanh:
+- saturating regions</p>
+<p>ReLU:
+- positive gradients survive
+- negative gradient zero</p>
+<p>GELU/SiLU:
+- smooth gates</p>
+<p>activation choice interacts with:
+- initialization
+- normalization
+- architecture
+- optimizer</p><h3>20. Activation Gradient Flow</h3>
+<p>Sigmoid/Tanh:
+- saturating regions</p>
+<p>ReLU:
+- positive gradients survive
+- negative gradient zero</p>
+<p>GELU/SiLU:
+- smooth gates</p>
+<p>activation choice interacts with:
+- initialization
+- normalization
+- architecture
+- optimizer</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch21-objective-11" class="objective-proof"><summary>Loss/Task Pairing / From Scratch / Gradient Checking</summary><p>Loss/Task Pairing / From Scratch / Gradient Checking: ใช้กรณีในหัวข้อ Loss/Task Pairing, From Scratch, Gradient Checking เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch21-evidence-11"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch21-evidence-11-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch21-evidence-11-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch21-evidence-11-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch21-evidence-11-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch21-evidence-11-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch21-evidence-11-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch21-evidence-11-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch21-evidence-11-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p><code>np.maximum(np.array([-2.,0.,3.]),0)</code> ได้[0,0,3]; backwardใช้maskz&gt;0กับupstreamgradientไม่overwritegradientจากbranchอื่น</p><h3>21. Loss/Task Pairing</h3>
+<p>binary single-label:
+- one logit + BCEWithLogits</p>
+<p>multiclass single-label:
+- C logits + CrossEntropy</p>
+<p>multi-label:
+- C independent logits + BCEWithLogits</p>
+<p>regression:
+- linear output + MSE/MAE/Huber depending error model</p>
+<h3>22. From Scratch</h3>
+<p>src/activations_losses.py มี:
+- stable sigmoid
+- ReLU / LeakyReLU / ELU
+- GELU approximation
+- SiLU
+- stable softmax
+- MSE + gradient
+- MAE + subgradient convention
+- Huber + gradient
+- BCE-with-logits + gradient
+- multiclass cross-entropy + gradient
+- label smoothing</p>
+<h3>23. Gradient Checking</h3>
+<p>loss gradient functionsต้อง compare finite differences</p>
+<p>โดยเฉพาะ:
+- BCE extreme logits
+- CE logits
+- Huber transition</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch21-objective-12" class="objective-proof"><summary>Mini Project</summary><p>Mini Project: ใช้กรณีในหัวข้อ Mini Project เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch21-evidence-12"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch21-evidence-12-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch21-evidence-12-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch21-evidence-12-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch21-evidence-12-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch21-evidence-12-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch21-evidence-12-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch21-evidence-12-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch21-evidence-12-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>บันทึกactivationapprox/lossaxis/mask/reduction/temperature; monitorentropy/deadunits; ทดลองSiLUเพิ่มconvergenceในMLPเล็กภายใต้updatesเท่ากันพร้อม3seeds</p><h3>26. Mini Project</h3>
+<p><a href="mini-project/README.md">Loss Stability Lab</a></p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details></section><section id="implementation" class="canonical-section"><h2>Implementation และ tests ที่รันบนเครื่องได้</h2><details><summary>21-activations-losses/src/activations_losses.py</summary><pre><code>&quot;&quot;&quot;Stable activation and loss functions with analytic gradients.&quot;&quot;&quot;
+
+from __future__ import annotations
+
+import numpy as np
+
+
+def stable_sigmoid(x: np.ndarray) -&gt; np.ndarray:
+    values = np.asarray(x, dtype=float)
+    out = np.empty_like(values)
+    positive = values &gt;= 0
+    out[positive] = 1.0 / (1.0 + np.exp(-values[positive]))
+    exp_values = np.exp(values[~positive])
+    out[~positive] = exp_values / (1.0 + exp_values)
+    return out
+
+
+def relu(x: np.ndarray) -&gt; np.ndarray:
+    return np.maximum(np.asarray(x, dtype=float), 0.0)
+
+
+def leaky_relu(x: np.ndarray, alpha: float = 0.01) -&gt; np.ndarray:
+    values = np.asarray(x, dtype=float)
+    return np.where(values &gt;= 0.0, values, alpha * values)
+
+
+def elu(x: np.ndarray, alpha: float = 1.0) -&gt; np.ndarray:
+    values = np.asarray(x, dtype=float)
+    return np.where(values &gt; 0.0, values, alpha * np.expm1(values))
+
+
+def gelu_tanh(x: np.ndarray) -&gt; np.ndarray:
+    values = np.asarray(x, dtype=float)
+    coefficient = np.sqrt(2.0 / np.pi)
+    return 0.5 * values * (
+        1.0
+        + np.tanh(
+            coefficient * (values + 0.044715 * values**3)
+        )
+    )
+
+
+def silu(x: np.ndarray) -&gt; np.ndarray:
+    values = np.asarray(x, dtype=float)
+    return values * stable_sigmoid(values)
+
+
+def softmax(x: np.ndarray, axis: int = -1) -&gt; np.ndarray:
+    values = np.asarray(x, dtype=float)
+    shifted = values - np.max(values, axis=axis, keepdims=True)
+    exp_values = np.exp(shifted)
+    return exp_values / np.sum(exp_values, axis=axis, keepdims=True)
+
+
+def mse_loss_and_grad(
+    prediction: np.ndarray,
+    target: np.ndarray,
+) -&gt; tuple[float, np.ndarray]:
+    p = np.asarray(prediction, dtype=float)
+    y = np.asarray(target, dtype=float)
+    if p.shape != y.shape or p.size == 0:
+        raise ValueError(&quot;prediction and target must have equal non-empty shape&quot;)
+    residual = p - y
+    return float(np.mean(residual**2)), 2.0 * residual / residual.size
+
+
+def mae_loss_and_grad(
+    prediction: np.ndarray,
+    target: np.ndarray,
+) -&gt; tuple[float, np.ndarray]:
+    p = np.asarray(prediction, dtype=float)
+    y = np.asarray(target, dtype=float)
+    if p.shape != y.shape or p.size == 0:
+        raise ValueError(&quot;prediction and target must have equal non-empty shape&quot;)
+    residual = p - y
+    # Convention: subgradient at zero is 0.
+    return float(np.mean(np.abs(residual))), np.sign(residual) / residual.size
+
+
+def huber_loss_and_grad(
+    prediction: np.ndarray,
+    target: np.ndarray,
+    *,
+    delta: float = 1.0,
+) -&gt; tuple[float, np.ndarray]:
+    if delta &lt;= 0:
+        raise ValueError(&quot;delta must be positive&quot;)
+
+    p = np.asarray(prediction, dtype=float)
+    y = np.asarray(target, dtype=float)
+    if p.shape != y.shape or p.size == 0:
+        raise ValueError(&quot;prediction and target must have equal non-empty shape&quot;)
+
+    residual = p - y
+    absolute = np.abs(residual)
+    quadratic = absolute &lt;= delta
+
+    element_loss = np.where(
+        quadratic,
+        0.5 * residual**2,
+        delta * (absolute - 0.5 * delta),
+    )
+    element_grad = np.where(
+        quadratic,
+        residual,
+        delta * np.sign(residual),
+    )
+
+    return float(np.mean(element_loss)), element_grad / residual.size
+
+
+def bce_with_logits_loss_and_grad(
+    logits: np.ndarray,
+    target: np.ndarray,
+) -&gt; tuple[float, np.ndarray]:
+    x = np.asarray(logits, dtype=float)
+    y = np.asarray(target, dtype=float)
+
+    if x.shape != y.shape or x.size == 0:
+        raise ValueError(&quot;logits and target must have equal non-empty shape&quot;)
+    if not np.all(np.isin(y, [0.0, 1.0])):
+        raise ValueError(&quot;binary targets must be 0/1&quot;)
+
+    element_loss = (
+        np.maximum(x, 0.0)
+        - x * y
+        + np.log1p(np.exp(-np.abs(x)))
+    )
+    gradient = (stable_sigmoid(x) - y) / x.size
+
+    return float(np.mean(element_loss)), gradient
+
+
+def cross_entropy_with_logits_loss_and_grad(
+    logits: np.ndarray,
+    target: np.ndarray,
+    *,
+    label_smoothing: float = 0.0,
+) -&gt; tuple[float, np.ndarray]:
+    z = np.asarray(logits, dtype=float)
+    labels = np.asarray(target, dtype=int).reshape(-1)
+
+    if z.ndim != 2 or z.shape[0] == 0 or z.shape[1] &lt; 2:
+        raise ValueError(&quot;logits must have shape (N,C) with C&gt;=2&quot;)
+    if labels.shape[0] != z.shape[0]:
+        raise ValueError(&quot;target length must match batch&quot;)
+    if np.any(labels &lt; 0) or np.any(labels &gt;= z.shape[1]):
+        raise ValueError(&quot;target class index out of range&quot;)
+    if not 0.0 &lt;= label_smoothing &lt; 1.0:
+        raise ValueError(&quot;label_smoothing must be in [0,1)&quot;)
+
+    shifted = z - np.max(z, axis=1, keepdims=True)
+    logsumexp = np.log(np.sum(np.exp(shifted), axis=1, keepdims=True))
+    log_prob = shifted - logsumexp
+    probabilities = np.exp(log_prob)
+
+    n_samples, n_classes = z.shape
+    target_distribution = np.full(
+        (n_samples, n_classes),
+        label_smoothing / n_classes,
+        dtype=float,
+    )
+    target_distribution[np.arange(n_samples), labels] += 1.0 - label_smoothing
+
+    loss = -np.sum(target_distribution * log_prob) / n_samples
+    gradient = (probabilities - target_distribution) / n_samples
+
+    return float(loss), gradient
+</code></pre></details><details><summary>21-activations-losses/tests/test_activations_losses.py</summary><pre><code>from pathlib import Path
+import importlib.util
+
+import numpy as np
+
+
+MODULE_PATH = Path(__file__).parents[1] / &quot;src&quot; / &quot;activations_losses.py&quot;
+SPEC = importlib.util.spec_from_file_location(&quot;activations_losses_course&quot;, MODULE_PATH)
+assert SPEC and SPEC.loader
+m = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(m)
+
+
+def finite_difference(fn, value, eps=1e-6):
+    value = np.asarray(value, dtype=float)
+    grad = np.zeros_like(value)
+
+    for index in np.ndindex(value.shape):
+        plus = value.copy()
+        minus = value.copy()
+        plus[index] += eps
+        minus[index] -= eps
+        grad[index] = (fn(plus) - fn(minus)) / (2.0 * eps)
+
+    return grad
+
+
+def test_sigmoid_and_softmax_stable_on_extreme_values() -&gt; None:
+    sigmoid = m.stable_sigmoid(np.array([-1000.0, 0.0, 1000.0]))
+    assert np.all(np.isfinite(sigmoid))
+    assert sigmoid[0] &lt; 1e-10
+    assert sigmoid[2] &gt; 1.0 - 1e-10
+
+    probabilities = m.softmax(
+        np.array([[10000.0, 10001.0, 10002.0]]),
+        axis=1,
+    )
+    assert np.all(np.isfinite(probabilities))
+    np.testing.assert_allclose(probabilities.sum(axis=1), 1.0)
+
+
+def test_bce_with_logits_extreme_values_finite() -&gt; None:
+    logits = np.array([-1000.0, 1000.0])
+    target = np.array([0.0, 1.0])
+
+    loss, gradient = m.bce_with_logits_loss_and_grad(logits, target)
+
+    assert np.isfinite(loss)
+    assert np.all(np.isfinite(gradient))
+    assert loss &lt; 1e-10
+
+
+def test_bce_gradient_matches_finite_difference() -&gt; None:
+    logits = np.array([-1.2, 0.3, 2.0])
+    target = np.array([0.0, 1.0, 1.0])
+
+    _, gradient = m.bce_with_logits_loss_and_grad(logits, target)
+    numeric = finite_difference(
+        lambda x: m.bce_with_logits_loss_and_grad(x, target)[0],
+        logits,
+    )
+
+    np.testing.assert_allclose(gradient, numeric, rtol=1e-6, atol=1e-7)
+
+
+def test_cross_entropy_gradient_matches_finite_difference() -&gt; None:
+    logits = np.array(
+        [[1.2, -0.3, 0.8], [-0.5, 1.5, 0.1]],
+        dtype=float,
+    )
+    target = np.array([2, 1])
+
+    _, gradient = m.cross_entropy_with_logits_loss_and_grad(
+        logits,
+        target,
+        label_smoothing=0.1,
+    )
+    numeric = finite_difference(
+        lambda z: m.cross_entropy_with_logits_loss_and_grad(
+            z,
+            target,
+            label_smoothing=0.1,
+        )[0],
+        logits,
+    )
+
+    np.testing.assert_allclose(gradient, numeric, rtol=1e-6, atol=1e-7)
+
+
+def test_huber_is_less_quadratic_for_large_error() -&gt; None:
+    prediction = np.array([10.0])
+    target = np.array([0.0])
+
+    mse, _ = m.mse_loss_and_grad(prediction, target)
+    huber, grad = m.huber_loss_and_grad(prediction, target, delta=1.0)
+
+    assert huber &lt; mse
+    assert abs(grad[0]) == 1.0
+</code></pre></details></section><section id="glossary" class="canonical-section"><h2>อภิธานศัพท์ — คำไทย ความหมาย และข้อควรตรวจ</h2><dl><dt>tensor</dt><dd>เทนเซอร์: ชุดตัวเลขที่มีแกน เช่น scalar ไม่มีแกน, vector หนึ่งแกน, matrix สองแกน; shape บอกขนาดแต่ละแกน ไม่บอกความหมายของแกนจนกว่าจะระบุ</dd><dt>shape</dt><dd>รูปทรงข้อมูล: (B,T,d) หมายถึง batch × เวลา/ตำแหน่ง × features; ใช้ชื่อแกนกำกับเสมอ การ transpose เปลี่ยนแกนแต่ไม่ใช่แค่เปลี่ยนชื่อ</dd><dt>batch</dt><dd>กลุ่มตัวอย่างที่คำนวณร่วมกันหนึ่งครั้ง; B คือจำนวนตัวอย่าง ไม่ใช่จำนวน features หรือจำนวน optimizer updates</dd><dt>weight w / θ</dt><dd>น้ำหนักหรือพารามิเตอร์ที่โมเดลใช้คำนวณ; แก้ด้วยมือทำ forward ใหม่ ส่วน optimizer ต้องรับ gradient แล้วกด update จึงแก้ state</dd><dt>bias b</dt><dd>ค่าคงที่ที่บวกกับผลเชิงเส้น; regression scalar bias เพิ่ม Δ ทำให้ prediction ทุกจุดเพิ่ม Δ เท่ากัน</dd><dt>prediction ŷ</dt><dd>ค่าที่โมเดลทำนายจาก input และพารามิเตอร์ปัจจุบัน; เครื่องหมายหมวกแยกจาก target y ที่มาจากข้อมูล</dd><dt>residual e</dt><dd>ความคลาดเคลื่อน ในเว็บนี้นิยาม prediction − target; บางตำราใช้เครื่องหมายกลับกัน จึงต้องตรวจนิยามก่อนเทียบสูตร gradient</dd><dt>MSE</dt><dd>mean squared error = ผลรวม residual กำลังสองหารจำนวนรายการที่ระบุ; มีหน่วยเป็น target ยกกำลังสอง และการใช้ sum แทน mean เปลี่ยน scale gradient</dd><dt>loss L / objective J</dt><dd>จำนวนที่ optimizer ต้องการลด; objective อาจรวม data loss และ regularization จึงต้องดูองค์ประกอบและ reduction ให้ตรง implementation</dd><dt>gradient ∇ / ∂</dt><dd>เวกเตอร์ของ partial derivatives บอกอัตราเปลี่ยน loss ต่อพารามิเตอร์แต่ละตัว; ∂ ใช้เมื่อเปลี่ยนตัวหนึ่งโดยตรึงตัวอื่น</dd><dt>chain rule</dt><dd>กฎลูกโซ่: คูณอนุพันธ์ตามเส้นทาง และบวก contribution จากทุกเส้นทางที่มารวมกัน ใช้ย้อนจาก loss ถึง weights</dd><dt>learning rate η</dt><dd>ขนาดตัวคูณ gradient ใน update θnew=θ−ηg; η≥0, ศูนย์หมายถึงไม่มีการขยับพารามิเตอร์ ก้าวใหญ่เกินอาจ diverge</dd><dt>regularization λ</dt><dd>ตัวคูณค่าลงโทษ ต้อง λ≥0 ตามนิยามการลงโทษ; Ridge λΣw² เพิ่ม gradient 2λw โดยบท Regression นี้ไม่ลงโทษ bias</dd><dt>baseline</dt><dd>สถานะอ้างอิงที่ตรึงไว้สำหรับเทียบ; ต้องเก็บ snapshot ไม่อ้าง object ปัจจุบันที่แก้ตามไปด้วย</dd><dt>invariant</dt><dd>คุณสมบัติที่กลไกต้องรักษา เช่น probability รวม1, shape สอดคล้อง, queue ไม่เกิน capacity; ใช้ tests ตรวจได้มากกว่าดูภาพสวย</dd><dt>optimizer state</dt><dd>ความจำของอัลกอริทึม เช่น velocity, moments และ completed updates; คืนเฉพาะ weights ยังไม่เท่ากับเริ่มการฝึกใหม่ทั้งหมด</dd><dt>finite difference</dt><dd>ประมาณ derivative ด้วย [f(x+h)−f(x−h)]/(2h); h&gt;0, ใช้ smooth point และลองหลาย h เพื่อแยก truncation error จาก roundoff</dd><dt>softmax</dt><dd>แปลง logits เป็นความน่าจะเป็นตามแกนที่กำหนด; ลบ max ก่อน exp เพื่อความเสถียร และ fully masked row ต้องมีนโยบายชัดเจน</dd><dt>logit</dt><dd>คะแนนก่อน sigmoid/softmax ไม่ใช่ probability; อาจเป็นจำนวนจริงติดลบหรือเกิน1ได้ จึงห้ามส่งให้ loss ที่คาด probability โดยไม่แปลง</dd><dt>temperature τ / T</dt><dd>ตัวหาร logits ก่อน softmax; ต้องเป็นบวก ค่าเล็กทำ distribution แหลมขึ้น โดยไม่เท่ากับ retrain weights</dd><dt>mask</dt><dd>ตัวกำหนดตำแหน่งที่อ่านหรือคิด loss ได้; causal mask ปิดอนาคต, padding mask ปิดข้อมูลเติม, loss mask เลือก target แต่ละอย่างคนละหน้าที่</dd><dt>Q / K / V</dt><dd>query ใช้ค้นข้อมูล, key ใช้จับคู่ query, value เป็นข้อมูลที่ถูกถัวเฉลี่ย; เป็น learned projections ของ representation ไม่ใช่ป้ายความหมายตายตัว</dd><dt>head</dt><dd>ส่วนของ feature representation ที่ทำ attention แยกกัน แล้ว concat/project กลับ; ต้องตรวจ d_model หารจำนวน heads ลงตัว</dd><dt>ε-neighborhood</dt><dd>เพื่อนบ้านทั้งหมดที่มีระยะไม่เกิน ε รวมจุดตัวเองใน DBSCAN นี้; ε มีหน่วยเดียวกับพิกัด ไม่ใช่จำนวน k ที่ใช้โหวต</dd><dt>core / border / noise</dt><dd>DBSCAN core มีเพื่อนบ้านรวมตัวเองถึง min_samples; border อยู่ใกล้ core แต่เพื่อนบ้านไม่ถึง; noise ไม่ถูกเชื่อมกับ core cluster ใด</dd><dt>bootstrap</dt><dd>สุ่ม observations แบบ replacement ขนาดเท่าเดิมซ้ำหลายครั้งแล้วคำนวณ statistic ใหม่; seed ทำให้ตรวจซ้ำได้ แต่ไม่แก้สมมติฐาน IID ที่ผิด</dd><dt>confidence interval</dt><dd>ช่วงที่สร้างด้วย procedure ที่มี coverage ตามสมมติฐาน; ช่วงหนึ่งที่ได้แล้วไม่ใช่ posterior probability ของ parameter และ sample เล็กยังไม่แน่นอนมาก</dd><dt>validation / test</dt><dd>validation ใช้เลือกโมเดล/ค่าตั้ง ส่วน test ใช้ประเมินหลัง freeze การตัดสินใจ; fit preprocessing/tokenizer จาก test เป็น leakage</dd><dt>leakage</dt><dd>ข้อมูลที่ควรยังไม่รู้ไหลเข้า training/การเลือกโมเดล เช่น future feature หรือเอกสารซ้ำข้าม split ทำให้ metric ดูดีเกินการใช้งานจริง</dd><dt>queue / capacity</dt><dd>queue คือรายการรอ, capacity การให้บริการรวม = workers × service rate ตามแบบจำลอง; เพิ่ม timeout ไม่เพิ่มกำลังประมวลผล</dd><dt>state transition</dt><dd>การเปลี่ยนสถานะเมื่อเกิดเหตุการณ์ที่อนุญาต เช่น queued→active→done; ต้องระบุ guard, side effect และเหตุผลเมื่อ transition ถูกปฏิเสธ</dd><dt>latency / throughput</dt><dd>latency คือเวลาต่อคำขอ, throughput คือปริมาณงานต่อหน่วยเวลา; batching อาจเพิ่ม throughput แต่เพิ่มเวลารอ จึงต้องวัดทั้งคู่</dd><dt>idempotency</dt><dd>ทำคำขอ business operation เดิมซ้ำแล้ว side effect เกิดครั้งเดียวตาม key และ transaction protocol; ไม่ได้รับประกันจากการใช้ UUID ใหม่ทุก attempt</dd><dt>local lab</dt><dd>โปรแกรม Python และ tests ที่ผู้เรียนรันบนเครื่อง; เว็บเก็บเพียงคำยืนยันของผู้เรียน การผ่าน tests ของโค้ดต้นแบบไม่ใช่ผลตรวจโค้ดผู้เรียน</dd></dl></section></article>
+<section id="practice" class="practice-section"><span class="eyebrow">PRACTICE · DEBUG · BUILD</span><h2>พิสูจน์ด้วยการลงมือทำ</h2><div id="web-checks"></div><div class="retry-actions"><button class="secondary-button" id="retry-checks">เริ่มทำโจทย์ในเว็บใหม่</button><button class="text-button" id="undo-retry" hidden>คืนผลก่อนเริ่มใหม่</button></div><div id="exercise-content"><h2>แบบฝึก 20 ข้อ — เฉลยเฉพาะข้อ</h2><p>ทำคำตอบก่อนเปิด hints; โจทย์ปลายเปิดให้ใช้ตัวอย่างคำตอบและหลักฐานราย objective ตรวจงานจริง</p><section id="exercise-1" class="exercise-item"><h3>ข้อ 1</h3><p>Define ReLU.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ ReLU: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ReLU(z)=max(0,z),derivative1เมื่อz&gt;0,0เ…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ReLU(z)=max(0,z),derivative1เมื่อz&gt;0,0เมื่อz&lt;0; z0ไม่differentiableต้อง…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ReLU(z)=max(0,z),derivative1เมื่อz&gt;0,0เมื่อz&lt;0; z0ไม่differentiableต้องประกาศsubgradientที่ใช้เช่น0</p><p>อ้างอิง: <a href="#chapter-21/section/topic-3">ReLU</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch21-exercise-01"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-2" class="exercise-item"><h3>ข้อ 2</h3><p>Define GELU with a small example.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ GELU: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): GELU(z)=zΦ(z); z1ได้≈.8413447,z−1…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: GELU(z)=zΦ(z); z1ได้≈.8413447,z−1≈−.1586553 เป็นsmoothgating…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>GELU(z)=zΦ(z); z1ได้≈.8413447,z−1≈−.1586553 เป็นsmoothgatingไม่ใช่ตัดnegativeทั้งหมด</p><p>อ้างอิง: <a href="#chapter-21/section/topic-6">GELU</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch21-exercise-02"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-3" class="exercise-item"><h3>ข้อ 3</h3><p>Explain SiLU.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ SiLU / Swish: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): SiLU(z)=zσ(z); derivativeσ(z)+zσ(z)…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: SiLU(z)=zσ(z); derivativeσ(z)+zσ(z)(1−σ(z)); z0 output0 derivati…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>SiLU(z)=zσ(z); derivativeσ(z)+zσ(z)(1−σ(z)); z0 output0 derivative.5 จึงไม่เหมือนReLUที่0</p><p>อ้างอิง: <a href="#chapter-21/section/topic-7">SiLU / Swish</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch21-exercise-03"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-4" class="exercise-item"><h3>ข้อ 4</h3><p>Explain softmax.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Softmax: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): softmaxzᵢ=exp(zᵢ−maxz)/Σexp(zⱼ−max…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: softmaxzᵢ=exp(zᵢ−maxz)/Σexp(zⱼ−maxz); logits[0,log3]ให้prob[.2…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>softmaxzᵢ=exp(zᵢ−maxz)/Σexp(zⱼ−maxz); logits[0,log3]ให้prob[.25,.75]และรวม1ตามclassaxis</p><p>อ้างอิง: <a href="#chapter-21/section/topic-10">Softmax</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch21-exercise-04"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-5" class="exercise-item"><h3>ข้อ 5</h3><p>Compare ReLU and GELU.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ ReLU, GELU: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ReLUnegativeเป็น0ส่วนGELUnegativeอาจไม่ศูนย์; …</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ReLUnegativeเป็น0ส่วนGELUnegativeอาจไม่ศูนย์; GELUแพงกว่าแต่ไม่รับประกันaccuracyดีก…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ReLUnegativeเป็น0ส่วนGELUnegativeอาจไม่ศูนย์; GELUแพงกว่าแต่ไม่รับประกันaccuracyดีกว่า ต้องคุมarchitecture/init/data</p><p>อ้างอิง: <a href="#chapter-21/section/topic-3">ReLU</a>, <a href="#chapter-21/section/topic-6">GELU</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch21-exercise-05"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-6" class="exercise-item"><h3>ข้อ 6</h3><p>Explain how softmax changes model behavior.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Softmax: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): softmaxเพิ่มlogitหนึ่งทำprobอื่นลดเพราะdenomi…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: softmaxเพิ่มlogitหนึ่งทำprobอื่นลดเพราะdenominatorร่วมกัน; บวกconstantทุกlogitpro…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>softmaxเพิ่มlogitหนึ่งทำprobอื่นลดเพราะdenominatorร่วมกัน; บวกconstantทุกlogitprobคงเดิม ไม่ใช่independentsigmoid</p><p>อ้างอิง: <a href="#chapter-21/section/topic-10">Softmax</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch21-exercise-06"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-7" class="exercise-item"><h3>ข้อ 7</h3><p>Explain a common limitation involving cross-entropy.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Multiclass Cross Entropy: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): cross-entropyคาดlogits(C)กับtargetclassint0..C−1…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: cross-entropyคาดlogits(C)กับtargetclassint0..C−1 หรือdistributionตามAPI; softmaxก่อนCro…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>cross-entropyคาดlogits(C)กับtargetclassint0..C−1 หรือdistributionตามAPI; softmaxก่อนCrossEntropyLossซ้ำทำgradientผิดนิยาม</p><p>อ้างอิง: <a href="#chapter-21/section/topic-15">Multiclass Cross Entropy</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch21-exercise-07"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-8" class="exercise-item"><h3>ข้อ 8</h3><p>Explain the tradeoff introduced by contrastive loss.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Focal Loss Preview: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): contrastivelossต้องกำหนดpositive/negativeและtemperature…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: contrastivelossต้องกำหนดpositive/negativeและtemperature; false negativesผลักข้อความความหมายเดียวออก…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>contrastivelossต้องกำหนดpositive/negativeและtemperature; false negativesผลักข้อความความหมายเดียวออกจากกัน batchใหญ่เพิ่มnegativesและmemory</p><p>อ้างอิง: <a href="#chapter-21/section/topic-18">Focal Loss Preview</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch21-exercise-08"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-9" class="exercise-item"><h3>ข้อ 9</h3><p>Implement a small from-scratch example of ReLU.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ From Scratch: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): <code>np.maximum(np.array([-2.,0.,3.]),0)</code> ได้[0,0,3]…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: <code>np.maximum(np.array([-2.,0.,3.]),0)</code> ได้[0,0,3]; backwardใช้maskz&gt;0กับupstreamgradien…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p><code>np.maximum(np.array([-2.,0.,3.]),0)</code> ได้[0,0,3]; backwardใช้maskz&gt;0กับupstreamgradientไม่overwritegradientจากbranchอื่น</p><p>อ้างอิง: <a href="#chapter-21/section/topic-22">From Scratch</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch21-exercise-09"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-10" class="exercise-item"><h3>ข้อ 10</h3><p>Add deterministic tests for Exercise 9.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Gradient Checking: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): assertoutputs[0,0,3],grads[0,0,1]ตามsubgradient…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: assertoutputs[0,0,3],grads[0,0,1]ตามsubgradient0; inputemptyรักษาshapeและNaNต้องแจ้ง;…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>assertoutputs[0,0,3],grads[0,0,1]ตามsubgradient0; inputemptyรักษาshapeและNaNต้องแจ้ง; finite differenceห่างจาก0เท่านั้น</p><p>อ้างอิง: <a href="#chapter-21/section/topic-23">Gradient Checking</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch21-exercise-10"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-11" class="exercise-item"><h3>ข้อ 11</h3><p>Implement the main computation behind SiLU.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ SiLU / Swish: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): `s=stable_sigmoid(z); out=z*s; g…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: <code>s=stable_sigmoid(z); out=z*s; grad=s+z*s*(1-s)</code>; z0ได้out…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p><code>s=stable_sigmoid(z); out=z*s; grad=s+z*s*(1-s)</code>; z0ได้out0,grad.5; z1out≈.731059</p><p>อ้างอิง: <a href="#chapter-21/section/topic-7">SiLU / Swish</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch21-exercise-11"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-12" class="exercise-item"><h3>ข้อ 12</h3><p>Run a small seeded experiment using GELU, softmax, and contrastive loss.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ GELU, Softmax, Loss/Task Pairing: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): seed7XORเปรียบGELU/ReLUคงweights/batches/lr; softmax…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: seed7XORเปรียบGELU/ReLUคงweights/batches/lr; softmaxCEกับcontrastiveเป็นคนละtaskต้องกำหนดlabels…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>seed7XORเปรียบGELU/ReLUคงweights/batches/lr; softmaxCEกับcontrastiveเป็นคนละtaskต้องกำหนดlabels/pairsก่อน อย่าลากlossเปรียบscaleตรงๆ</p><p>อ้างอิง: <a href="#chapter-21/section/topic-6">GELU</a>, <a href="#chapter-21/section/topic-10">Softmax</a>, <a href="#chapter-21/section/topic-21">Loss/Task Pairing</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch21-exercise-12"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-13" class="exercise-item"><h3>ข้อ 13</h3><p>Explain a common shape or data mismatch for this topic.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Logits, Multiclass Cross Entropy: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): logits(B,C),labels(B,)long; softmaxaxis−1 ไม่ใช…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: logits(B,C),labels(B,)long; softmaxaxis−1 ไม่ใช่batchaxis0; probabilityแต่ละsampleรวม…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>logits(B,C),labels(B,)long; softmaxaxis−1 ไม่ใช่batchaxis0; probabilityแต่ละsampleรวม1 และpaddingtokensต้องignoreในloss</p><p>อ้างอิง: <a href="#chapter-21/section/topic-11">Logits</a>, <a href="#chapter-21/section/topic-15">Multiclass Cross Entropy</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch21-exercise-13"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-14" class="exercise-item"><h3>ข้อ 14</h3><p>Explain one numerical-stability concern.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Numerical Stability Rules: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): logsumexp=maxz+logΣexp(z−maxz); CE=logsu…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: logsumexp=maxz+logΣexp(z−maxz); CE=logsumexp−zy; logits[1000,1001]ไม่ควร…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>logsumexp=maxz+logΣexp(z−maxz); CE=logsumexp−zy; logits[1000,1001]ไม่ควรNaN; log(softmax)ตรงๆอาจlog0</p><p>อ้างอิง: <a href="#chapter-21/section/topic-19">Numerical Stability Rules</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch21-exercise-14"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-15" class="exercise-item"><h3>ข้อ 15</h3><p>Explain the correct train, validation, and test workflow.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Loss/Task Pairing: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): tuneactivation/temperatureบนvalidation; classweights…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: tuneactivation/temperatureบนvalidation; classweightsคำนวณtrainเท่านั้น; testใช้calibrationที่fr…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>tuneactivation/temperatureบนvalidation; classweightsคำนวณtrainเท่านั้น; testใช้calibrationที่freezeแล้วไม่เลือกthresholdหลังเห็นtest</p><p>อ้างอิง: <a href="#chapter-21/section/topic-21">Loss/Task Pairing</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch21-exercise-15"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-16" class="exercise-item"><h3>ข้อ 16</h3><p>Measure runtime and memory of the main computation.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Softmax: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): activationsO(numberofelements); fullcontrastives…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: activationsO(numberofelements); fullcontrastivesimilarity(B,B)ใช้O(B²d)เวลาO(B²)memory;…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>activationsO(numberofelements); fullcontrastivesimilarity(B,B)ใช้O(B²d)เวลาO(B²)memory; วัดbatchsizeและmasksemanticsให้ตรง</p><p>อ้างอิง: <a href="#chapter-21/section/topic-10">Softmax</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch21-exercise-16"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-17" class="exercise-item"><h3>ข้อ 17</h3><p>Derive the main input-to-output algorithm for Activations and Losses.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ From Scratch: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): logits→validmask→stable logsumexp→selectedcla…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: logits→validmask→stable logsumexp→selectedclasslogit→lossmeanvalidtokens→gradient…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>logits→validmask→stable logsumexp→selectedclasslogit→lossmeanvalidtokens→gradient(p−onehot)/N; อย่าmeanรวมpadding</p><p>อ้างอิง: <a href="#chapter-21/section/topic-22">From Scratch</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch21-exercise-17"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-18" class="exercise-item"><h3>ข้อ 18</h3><p>Compare a scratch implementation with a trusted library on identical data.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Gradient Checking: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): torch.nn.functional.cross_entropyเทียบNumPylogsu…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: torch.nn.functional.cross_entropyเทียบNumPylogsumexpด้วยfloat64; GELUexactเทียบapproxim…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>torch.nn.functional.cross_entropyเทียบNumPylogsumexpด้วยfloat64; GELUexactเทียบapproximate='none'ไม่ใช้tanhapproxโดยไม่บอก</p><p>อ้างอิง: <a href="#chapter-21/section/topic-23">Gradient Checking</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch21-exercise-18"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-19" class="exercise-item"><h3>ข้อ 19</h3><p>Compare a baseline with a controlled change involving cross-entropy.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Multiclass Cross Entropy: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): คงlogits/labels เปลี่ยนlossreductionmean→sum; gra…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: คงlogits/labels เปลี่ยนlossreductionmean→sum; gradientต้องเพิ่มfactorN; ผลต่างจากηเดิมไม…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>คงlogits/labels เปลี่ยนlossreductionmean→sum; gradientต้องเพิ่มfactorN; ผลต่างจากηเดิมไม่ใช่หลักฐานว่าsumlossเรียนรู้ดีกว่า</p><p>อ้างอิง: <a href="#chapter-21/section/topic-15">Multiclass Cross Entropy</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch21-exercise-19"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-20" class="exercise-item"><h3>ข้อ 20</h3><p>Summarize validation, reproducibility, monitoring, and one open research question.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Mini Project: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): บันทึกactivationapprox/lossaxis/mask/reduction/temperature; …</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: บันทึกactivationapprox/lossaxis/mask/reduction/temperature; monitorentropy/deadunits; ทดลองSiLUเพิ่มconverge…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>บันทึกactivationapprox/lossaxis/mask/reduction/temperature; monitorentropy/deadunits; ทดลองSiLUเพิ่มconvergenceในMLPเล็กภายใต้updatesเท่ากันพร้อม3seeds</p><p>อ้างอิง: <a href="#chapter-21/section/topic-26">Mini Project</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch21-exercise-20"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section></div><div id="local-lab-content"><section id="local-lab"><h2>Local lab: Python 3.12 บน CPU</h2><p>รันจาก repository root; ใช้ Python 3.12 แยก environment สำหรับ framework ตาม requirements ของชุดบท</p><pre><code>python3.12 -m venv .venv-course
+source .venv-course/bin/activate
+python -m pip install -r requirements-batch07.txt pytest
+(cd 21-activations-losses &amp;&amp; python -m pytest tests -q -rs)</code></pre><p>ผลที่คาดหวัง: required tests ผ่านและไม่มี required test ถูก skip; GPU/integrations ที่ยังไม่รันต้องระบุแยก Python 3.15 ที่มากับเครื่องอาจใช้กับ framework wheels เหล่านี้ไม่ได้</p><h2>Mini Project — Loss Stability Lab</h2>
+<p>Generate logits from:
+- -1000 to 1000
+- moderate random values
+- nearly tied multiclass rows</p>
+<p>Compare:
+1. naive sigmoid+BCE
+2. stable BCE-with-logits
+3. naive softmax+log
+4. stable log-sum-exp cross entropy</p>
+<p>Record:
+- finite/non-finite outputs
+- gradient magnitudes
+- finite-difference error</p>
+<p>Also compare MSE/MAE/Huber under increasing regression outliers.</p><h2>Batch 07 Integration Project — Tiny Deep Learning Framework</h2>
+<p>รวม Chapters 19–21:</p>
+<pre><code class="language-text">NumPy data
+   ↓
+Tensor graph
+   ↓
+Linear → Tanh → Linear
+   ↓
+logits
+   ↓
+stable BCE-with-logits
+   ↓
+dLoss/dLogits
+   ↓
+Tensor.backward()
+   ↓
+parameter gradients
+   ↓
+AdamW.step()
+   ↓
+learned nonlinear classifier
+</code></pre>
+<h3>Goal</h3>
+<p>พิสูจน์ว่าคุณเข้าใจ training loop โดยไม่พึ่ง PyTorch autograd</p>
+<p>framework components ถูกดึงจาก:
+- Chapter 19 Tensor/autodiff
+- Chapter 20 optimizer
+- Chapter 21 stable loss</p>
+<h3>Run</h3>
+<pre><code class="language-bash">source .venv/bin/activate
+python -m pip install -r requirements-batch07.txt
+
+python integration-project-batch07/src/tiny_dl_lab.py   --output-dir reports/batch07   --seed 42
+</code></pre>
+<h3>Dataset</h3>
+<p>ใช้ nonlinear two-moons classification</p>
+<p>เหตุผล:
+single linear boundaryไม่พอ จึงบังคับให้ hidden nonlinearityมีความหมาย</p>
+<h3>Architecture</h3>
+<pre><code class="language-text">2
+↓
+Linear(2,16)
+↓
+Tanh
+↓
+Linear(16,1)
+↓
+logit
+</code></pre>
+<h3>Training</h3>
+<pre><code class="language-text">zero_grad
+forward
+stable BCE-with-logits
+backward from dL/dlogit
+AdamW step
+repeat
+</code></pre>
+<h3>Why Loss Is External To Tensor Graph?</h3>
+<p>Chapter 21 สร้าง stable fused BCE-with-logits พร้อม analytic gradient</p>
+<p>lab นี้จึง:
+1. compute stable scalar loss
+2. compute exact dLoss/dLogits
+3. seed Tensor.backward with that upstream gradient</p>
+<p>นี่แสดงให้เห็นว่า custom differentiable operation เชื่อมกับ reverse-mode engineอย่างไร</p>
+<h3>Required Extensions</h3>
+<ol>
+<li>implement BCEWithLogits as a native Tensor operation</li>
+<li>compare SGD/Momentum/Adam/AdamW</li>
+<li>replace Tanh with ReLU/GELU/SiLU</li>
+<li>add mini-batches</li>
+<li>add shuffling</li>
+<li>add gradient clipping</li>
+<li>add cosine LR schedule</li>
+<li>multiclass softmax/CE</li>
+<li>gradient-norm logging</li>
+<li>parameter checkpoint save/load</li>
+</ol>
+<h3>Mastery Questions</h3>
+<ul>
+<li>ทำไม backward ต้องเริ่มจาก dLoss/dLogits?</li>
+<li>ทำไม parameter gradients ต้อง zero ก่อน step ใหม่?</li>
+<li>AdamW state มีอะไร?</li>
+<li>ทำไม fused BCE-with-logits stable กว่า sigmoid+log?</li>
+<li>ถ้าเอา Tanh ออก network นี้กลายเป็นอะไร?</li>
+</ul>
+<h3>Exit Gate</h3>
+<p>ก่อน PyTorch:
+- trace forward shapes
+- explain every gradient path
+- gradient-check primitives
+- optimizer updates verified
+- tiny nonlinear classifier learns</p></section></div><label class="local-confirm"><input type="checkbox" id="local-lab-confirm"> ฉันรัน local lab และตรวจผลตาม rubric ด้วยตัวเองแล้ว</label><p class="local-note">สถานะนี้เป็นคำยืนยันของผู้เรียน เว็บไม่ได้รันหรือตรวจ Python บนเครื่องแทนคุณ</p></section>
+<section id="mastery-review" class="practice-section"><h2>หลักฐานตามเกณฑ์การเรียนรู้</h2><p>ทุก objective ต้องแสดงหลักฐานอธิบาย ทำนาย คำนวณ อ่าน shape/state debug และประยุกต์ พร้อมกรณีใหม่ ผลรัน source ผู้เรียนจริง และการประเมินซ้ำ เกณฑ์นี้ไม่รับประกันความเข้าใจทุกสถานการณ์ เปิด JavaScript เพื่อดูรายการที่ยังขาดและนำเข้ารายงานผู้ตรวจ</p></section><section class="coverage-section"><h2>แผนที่สิ่งที่เรียน → สิ่งที่ต้องแสดงให้ได้</h2><div id="coverage-table"></div></section><footer><span>ZERO TO ELITE AI ENGINEER · LEARNING STUDIO</span><span>อ่าน · derive · implement · debug · experiment · build</span></footer></div></main><noscript><style>.workbench,.sidebar,.reading-route,.lesson-toc,.mastery-status,#web-checks{display:none}main{margin-left:0}</style>อ่านเนื้อหา HTML ได้ตามปกติ เปิด JavaScript เพื่อใช้ห้องทดลองและตรวจคำตอบ</noscript></body></html>

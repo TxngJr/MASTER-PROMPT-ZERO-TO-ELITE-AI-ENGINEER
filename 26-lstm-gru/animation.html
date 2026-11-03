@@ -1,0 +1,1397 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="บทเรียน AI Engineer ภาษาไทย พร้อมคณิตศาสตร์ทีละขั้นและห้องทดลองที่คำนวณจริง"><title>LSTM/GRU: gate เลือกเก็บ ลืม และเขียน · AI Engineer Studio</title><link rel="stylesheet" href="../visual-lab/assets/styles.css"><link rel="stylesheet" href="../visual-lab/assets/course.css"><script defer src="../visual-lab/assets/lessons.js"></script><script defer src="../visual-lab/assets/chapter-meta.js"></script><script defer src="../visual-lab/assets/course-math.js"></script><script defer src="../visual-lab/assets/course-models.js"></script><script defer src="../visual-lab/assets/course-models-v3.js"></script><script defer src="../visual-lab/assets/course-assessment.js"></script><script defer src="../visual-lab/assets/course-mastery.js"></script><script defer src="../visual-lab/assets/course-catalog.js"></script><script defer src="../visual-lab/assets/book-content.js"></script><script defer src="../visual-lab/assets/course-render.js"></script><script defer src="../visual-lab/assets/course-mastery-panel.js"></script><script defer src="../visual-lab/assets/quality-report.js"></script><script defer src="../visual-lab/assets/course-app.js"></script></head>
+<body data-chapter="26" data-root="../"><a class="skip-link" href="#main">ข้ามไปบทเรียน</a>
+<aside class="sidebar" id="sidebar" aria-label="เลือกบทเรียน"><a class="brand" href="../visual-lab/index.html"><span class="brand-mark">ai</span><span>AI ENGINEER<small>LEARN · DERIVE · BUILD</small></span></a><div class="sidebar-intro">อ่านให้เข้าใจ · คำนวณให้เห็น · เขียนให้เป็น</div><label class="search-box"><input id="search" type="search" placeholder="ค้นหาบท / attention" aria-label="ค้นหาบทเรียน"></label><label class="filter-label" for="phase-filter">เส้นทางการเรียน <span id="nav-count"></span></label><select id="phase-filter"><option value="">ทุก Phase</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option></select><nav id="chapter-list" class="chapter-list" aria-label="รายชื่อบท"></nav><div class="course-progress"><div><span>ผ่านโจทย์ในเว็บ</span><strong id="progress-count">0 / 80</strong></div><progress id="course-progress" max="80" value="0" aria-label="บทที่ผ่านโจทย์"></progress><a id="resume-link" href="#chapter-1">อ่านต่อจากเดิม →</a></div></aside>
+<button class="nav-backdrop" id="nav-backdrop" aria-label="ปิดเมนู" hidden></button>
+<main id="main" tabindex="-1"><header class="topbar"><div><button id="nav-toggle" class="icon-button mobile-menu" aria-label="เปิดเมนูบทเรียน" aria-expanded="false" aria-controls="sidebar">☰</button><span id="breadcrumb"></span></div><span class="local-badge"><i></i> คำนวณในเครื่อง · ไม่มี API</span></header><div class="content">
+<div class="chapter-navigation"><label for="chapter-select" class="sr-only">เลือกบทเรียน</label><select id="chapter-select"></select><div class="chapter-arrows"><button id="prev-chapter" class="icon-button" aria-label="บทก่อนหน้า">←</button><button id="next-chapter" class="icon-button" aria-label="บทถัดไป">→</button></div></div>
+<section class="chapter-hero"><div><p id="chapter-kicker" class="eyebrow"></p><h1 id="chapter-title">LSTM/GRU: gate เลือกเก็บ ลืม และเขียน</h1><p class="english-title" id="chapter-english"></p></div><span class="hero-symbol">f(x) ↗</span></section>
+<p id="quality-status" class="quality-status"></p><div id="mastery-status" class="mastery-status"></div><div class="reading-route"><a href="#chapter-26/section/overview">01 อ่านบทเรียน</a><a href="#workbench">02 ทดลองสมการ</a><a href="#practice">03 ฝึกและตรวจงาน</a><a href="#mastery-review">04 หลักฐานตามเกณฑ์</a></div>
+<nav id="lesson-toc" class="lesson-toc" aria-label="สารบัญบท"></nav>
+<section id="overview" class="course-overview"><span class="eyebrow">THE LEARNING CONTRACT</span><h2>เรียนบทนี้แล้วต้องทำอะไรได้</h2><p id="chapter-purpose"></p><div id="chapter-objectives"></div><div class="learning-hint">ทำนาย → เปลี่ยนทีละค่า → ตรวจตัวเลข → อธิบายเหตุผล → เขียนด้วย Python เอง</div></section>
+<section class="workbench lab-card" id="workbench" aria-label="ห้องทดลองคำนวณจริง"><div class="card-header"><div><span class="live-dot"></span><span class="eyebrow">COMPUTATION WORKBENCH</span></div><span class="simulation-label">ทุกภาพใช้ผลคำนวณชุดเดียวกัน</span></div><div class="lab-top"><label for="lab-select">เลือกกลไกที่ต้องการทดลอง</label><select id="lab-select"></select><p id="lab-question"></p></div><div class="workbench-grid"><div class="viz-column"><div class="compare-labels"><span>เส้นทึบ: ปัจจุบัน</span><span>เส้นประ: baseline ที่ตรึงไว้</span></div><div id="simulation" class="simulation"></div><div id="metrics" class="metrics"></div><div id="baseline-diff" class="baseline-diff"></div><div class="playback"><div class="playback-buttons"><button class="primary-button" id="update-once">อัปเดตหนึ่งก้าว</button><button class="secondary-button" id="train-many">▶ ฝึก 30 ก้าว</button><button class="icon-button" id="back-state" aria-label="ย้อนประวัติ">↶</button><button class="icon-button" id="forward-state" aria-label="ประวัติถัดไป">↷</button></div></div><div class="lab-secondary-actions"><button id="pin-baseline" class="text-button">ตรึง baseline ปัจจุบัน</button><button id="reset-lab" class="text-button">คืนค่าเริ่มต้น</button><button id="download-state" class="text-button">บันทึกผล JSON</button><span id="history-status"></span></div><p id="simulation-note" class="simulation-note"></p><p class="lab-error" id="lab-error" role="alert" hidden></p></div><div class="controls-column"><h3>เปลี่ยนทีละตัว แล้วสังเกตผล</h3><div id="lab-controls"></div><p class="control-note">แก้ weight ด้วยมือจะคำนวณ forward ใหม่; optimizer เปลี่ยน weights เมื่อกดอัปเดตเท่านั้น</p></div></div>
+<div class="trace-section"><div class="trace-toolbar"><h3>เดินสมการทีละ operation</h3><div><button id="trace-prev" class="icon-button" aria-label="operation ก่อนหน้า">←</button><button id="play-trace" class="secondary-button" aria-pressed="false">▶ เล่น flow</button><button id="trace-next" class="icon-button" aria-label="operation ถัดไป">→</button><span id="stage-counter"></span></div></div><label class="motion-control"><input id="reduce-motion" type="checkbox"> ลดภาพเคลื่อนไหว (หยุดการเล่นที่ค้างอยู่)</label><div id="operation-steps" class="operation-steps"></div><div id="flow-diagram" class="flow-diagram"></div><div id="active-operation" class="active-operation" aria-live="polite"></div><p class="control-note">ตัวเลขบนภาพปัดเศษเพื่อให้อ่านง่าย; บันทึก JSON เพื่อดูค่าที่ใช้คำนวณเต็ม precision</p><details open><summary>ตารางค่าระหว่างทาง — ตรวจด้วยมือได้</summary><div id="result-table"></div></details><div id="tensor-tables" class="tensor-tables"></div><details id="surface-details"><summary>ดู loss surface และเส้นทางของ w₁,b (ตรึง controls อื่น)</summary><div id="surface-chart"></div><p>surface คำนวณ objective ปัจจุบันโดยตรึง degree, penalty, ข้อมูล และ weights อื่น เส้นทางแสดงเฉพาะ snapshots ที่ค่าเหล่านี้ตรงกัน; นอกช่วง w=[−1,5], b=[−2,4] ให้ตรวจค่าจริงใน history</p></details><details><summary>ประวัติการเปลี่ยนค่า</summary><div id="history-table"></div></details></div></section>
+<article id="chapter-article" class="chapter-article"><section id="mechanism-1" class="teaching-section"><span class="section-kicker">CHAPTER 26 · ภาพ → สมการ → โค้ด</span><h2>1. LSTM มี additive memory path</h2><h3>โจทย์และเหตุผล</h3><p>c_t=f_t*c_(t-1)+i_t*g_t แล้ว h_t=o_t*tanh(c_t) forget gate ที่ใกล้หนึ่งช่วยรักษา state เดิมโดยไม่ต้องผ่าน tanh ทุกครั้งบนเส้นทาง cell</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Define forget gate.</p><p>forgetgate fₜ=σ(Wfx+Ufhprev+bf)ควบคุมส่วนcprevที่เก็บ; cprev2,f.8ให้ส่วนเดิม1.6 ก่อนรับcandidateใหม่</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>f: forget gate,initial=0.8; i: input gate,initial=0.3; g: candidate,initial=0.5; o: output gate,initial=0.9; steps: steps,initial=6</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = 1; ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</li><li>c_t=f c_(t−1)+i g; h=o tanh(c) = 0.8155360000000004; gates ในภาพเป็นค่าที่เลือกเองเพื่อแยกบทบาท; LSTM จริงคำนวณ gates ด้วย learned affine projections</li><li>finite / normalized / bounded = 0.8155360000000004; เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="gates-forget-input-output-gate">เปิดการทดลองนี้</a><p class="failure-box">sigmoidใช้stablelogits,cellstateสะสมโตได้; checkcและhแยกและclipgrad; อย่าclipcellโดยเงียบเพราะเปลี่ยนกลไก; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>forgetgate fₜ=σ(Wfx+Ufhprev+bf)ควบคุมส่วนcprevที่เก็บ; cprev2,f.8ให้ส่วนเดิม1.6 ก่อนรับcandidateใหม่</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-1-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = 1<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>c_t=f c_(t−1)+i g; h=o tanh(c)</code> = 0.8155360000000004<p>gates ในภาพเป็นค่าที่เลือกเองเพื่อแยกบทบาท; LSTM จริงคำนวณ gates ด้วย learned affine projections</p></li><li><code>finite / normalized / bounded</code> = 0.8155360000000004<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-1-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>shape / range</code> = 1<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>c_t=f c_(t−1)+i g; h=o tanh(c)</code> = 0.8155360000000004<p>gates ในภาพเป็นค่าที่เลือกเองเพื่อแยกบทบาท; LSTM จริงคำนวณ gates ด้วย learned affine projections</p></li><li><code>finite / normalized / bounded</code> = 0.8155360000000004<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-1-code"><summary>โค้ด</summary><p>forgetgate fₜ=σ(Wfx+Ufhprev+bf)ควบคุมส่วนcprevที่เก็บ; cprev2,f.8ให้ส่วนเดิม1.6 ก่อนรับcandidateใหม่</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-1-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = 1<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>c_t=f c_(t−1)+i g; h=o tanh(c)</code> = 0.8155360000000004<p>gates ในภาพเป็นค่าที่เลือกเองเพื่อแยกบทบาท; LSTM จริงคำนวณ gates ด้วย learned affine projections</p></li><li><code>finite / normalized / bounded</code> = 0.8155360000000004<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-1"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-2" class="teaching-section"><span class="section-kicker">CHAPTER 26 · ภาพ → สมการ → โค้ด</span><h2>2. gates เป็นค่าต่อเนื่องที่เรียนได้</h2><h3>โจทย์และเหตุผล</h3><p>f=.9 ไม่ได้แปลว่าเก็บถาวร เมื่อผ่านหลายเวลาก็คูณ .9 ซ้ำ ตั้ง input contribution เป็นศูนย์เพื่อแยกผล retention แล้วเปิดกลับเพื่อดูการเขียนทับอย่างค่อยเป็นค่อยไป</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Explain cell state.</p><p>cellstate cₜ=fₜcprev+iₜgₜมีadditivepathที่ช่วยgradientไหล; ไม่ได้รับประกันไม่มีvanishingเพราะproductfยังเล็กได้</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>f: forget gate,initial=0.95; i: input gate,initial=0; g: candidate,initial=0.5; o: output gate,initial=0.9; steps: steps,initial=6</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = 1; ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</li><li>c_t=f c_(t−1)+i g; h=o tanh(c) = 0.7350918906249998; gates ในภาพเป็นค่าที่เลือกเองเพื่อแยกบทบาท; LSTM จริงคำนวณ gates ด้วย learned affine projections</li><li>finite / normalized / bounded = 0.7350918906249998; เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="gates-ไม-ม-ข-อม-ลใหม---ด--f-t-">เปิดการทดลองนี้</a><p class="failure-box">sigmoidใช้stablelogits,cellstateสะสมโตได้; checkcและhแยกและclipgrad; อย่าclipcellโดยเงียบเพราะเปลี่ยนกลไก; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>cellstate cₜ=fₜcprev+iₜgₜมีadditivepathที่ช่วยgradientไหล; ไม่ได้รับประกันไม่มีvanishingเพราะproductfยังเล็กได้</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-2-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = 1<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>c_t=f c_(t−1)+i g; h=o tanh(c)</code> = 0.7350918906249998<p>gates ในภาพเป็นค่าที่เลือกเองเพื่อแยกบทบาท; LSTM จริงคำนวณ gates ด้วย learned affine projections</p></li><li><code>finite / normalized / bounded</code> = 0.7350918906249998<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-2-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>shape / range</code> = 1<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>c_t=f c_(t−1)+i g; h=o tanh(c)</code> = 0.7350918906249998<p>gates ในภาพเป็นค่าที่เลือกเองเพื่อแยกบทบาท; LSTM จริงคำนวณ gates ด้วย learned affine projections</p></li><li><code>finite / normalized / bounded</code> = 0.7350918906249998<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-2-code"><summary>โค้ด</summary><p>cellstate cₜ=fₜcprev+iₜgₜมีadditivepathที่ช่วยgradientไหล; ไม่ได้รับประกันไม่มีvanishingเพราะproductfยังเล็กได้</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-2-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = 1<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>c_t=f c_(t−1)+i g; h=o tanh(c)</code> = 0.7350918906249998<p>gates ในภาพเป็นค่าที่เลือกเองเพื่อแยกบทบาท; LSTM จริงคำนวณ gates ด้วย learned affine projections</p></li><li><code>finite / normalized / bounded</code> = 0.7350918906249998<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-2"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-3" class="teaching-section"><span class="section-kicker">CHAPTER 26 · ภาพ → สมการ → โค้ด</span><h2>3. GRU รวม state และใช้นิยาม update gate ที่ต้องอ่านสมการ</h2><h3>โจทย์และเหตุผล</h3><p>บางสัญลักษณ์ convention กลับด้านได้ ตรวจสูตร implementation ก่อนอธิบายว่า gate สูงคือเก็บหรือลืม และใช้ sequence masks เพื่อไม่ให้อ่าน padding เป็นข้อมูล</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Explain a limitation involving GRU update gate.</p><p>GRUupdategateมีสองconvention z·hprev+(1−z)gหรือกลับกัน ต้องอ่านAPIก่อนcopyweights; ค่าz1อาจหมายkeepหรือreplaceต่างกัน</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>weight: recurrent / AR coefficient,initial=0.8; inputScale: input scale,initial=1; horizon: steps,initial=5; mode: recurrence,initial=rnn</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = 0; ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</li><li>h_t=tanh(w h_(t−1)+x_t) = 0.9081018463563757; weights ใช้ซ้ำทุกเวลา; RNN มี nonlinear state ส่วน AR ในภาพไม่มี input innovation</li><li>finite / normalized / bounded = 0.9081018463563757; เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="sequence-เท-ยบก-บ-tanh-recurrence">เปิดการทดลองนี้</a><p class="failure-box">sigmoidใช้stablelogits,cellstateสะสมโตได้; checkcและhแยกและclipgrad; อย่าclipcellโดยเงียบเพราะเปลี่ยนกลไก; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>GRUupdategateมีสองconvention z·hprev+(1−z)gหรือกลับกัน ต้องอ่านAPIก่อนcopyweights; ค่าz1อาจหมายkeepหรือreplaceต่างกัน</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-3-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = 0<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>h_t=tanh(w h_(t−1)+x_t)</code> = 0.9081018463563757<p>weights ใช้ซ้ำทุกเวลา; RNN มี nonlinear state ส่วน AR ในภาพไม่มี input innovation</p></li><li><code>finite / normalized / bounded</code> = 0.9081018463563757<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-3-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>shape / range</code> = 0<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>h_t=tanh(w h_(t−1)+x_t)</code> = 0.9081018463563757<p>weights ใช้ซ้ำทุกเวลา; RNN มี nonlinear state ส่วน AR ในภาพไม่มี input innovation</p></li><li><code>finite / normalized / bounded</code> = 0.9081018463563757<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol></details><details id="help-mechanism-3-code"><summary>โค้ด</summary><p>GRUupdategateมีสองconvention z·hprev+(1−z)gหรือกลับกัน ต้องอ่านAPIก่อนcopyweights; ค่าz1อาจหมายkeepหรือreplaceต่างกัน</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-3-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = 0<p>ตรวจจำนวนสมาชิกและความหมายก่อนคำนวณ</p></li><li><code>h_t=tanh(w h_(t−1)+x_t)</code> = 0.9081018463563757<p>weights ใช้ซ้ำทุกเวลา; RNN มี nonlinear state ส่วน AR ในภาพไม่มี input innovation</p></li><li><code>finite / normalized / bounded</code> = 0.9081018463563757<p>เทียบค่าระหว่างทางกับ expected calculation และข้อจำกัด</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-3"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="reference" class="canonical-section"><h2>เนื้อหาครบทุกหัวข้อ พร้อมแผนที่ objective</h2><nav class="source-toc"><a href="#chapter-26/section/topic-1">1. Why Gated RNNs?</a> <a href="#chapter-26/section/topic-2">2. Learning Objectives</a> <a href="#chapter-26/section/topic-3">3. LSTM State</a> <a href="#chapter-26/section/topic-4">4. LSTM Gates</a> <a href="#chapter-26/section/topic-5">5. Why Cell State Helps</a> <a href="#chapter-26/section/topic-6">6. Forget Gate Interpretation</a> <a href="#chapter-26/section/topic-7">7. Forget-Bias Intuition</a> <a href="#chapter-26/section/topic-8">8. GRU Overview</a> <a href="#chapter-26/section/topic-9">9. GRU Equations</a> <a href="#chapter-26/section/topic-10">10. Update Gate Intuition</a> <a href="#chapter-26/section/topic-11">11. Reset Gate Intuition</a> <a href="#chapter-26/section/topic-12">12. LSTM vs GRU</a> <a href="#chapter-26/section/topic-13">13. Parameter Count</a> <a href="#chapter-26/section/topic-14">14. PyTorch Shapes</a> <a href="#chapter-26/section/topic-15">15. GRU Shapes</a> <a href="#chapter-26/section/topic-16">16. Final State vs Last Padded Timestep</a> <a href="#chapter-26/section/topic-17">17. Packed Sequences</a> <a href="#chapter-26/section/topic-18">18. Masking</a> <a href="#chapter-26/section/topic-19">19. Bidirectionality</a> <a href="#chapter-26/section/topic-20">20. Dropout in PyTorch Recurrent Layers</a> <a href="#chapter-26/section/topic-21">21. From Scratch</a> <a href="#chapter-26/section/topic-22">22. Debugging Gates</a> <a href="#chapter-26/section/topic-23">23. Common Mistakes</a> <a href="#chapter-26/section/topic-24">24. Exercises / Mini Project</a> <a href="#chapter-26/section/topic-25">25. Checklist</a> <a href="#chapter-26/section/topic-26">26. What&#x27;s Next</a> </nav><section id="topic-1" class="source-topic"><span id="source-26-lstm-gru-canonical-chapter-26-lstm-gru" class="legacy-anchor"></span><span id="source-26-lstm-gru-canonical-1-why-gated-rnns" class="legacy-anchor"></span><h3>1. Why Gated RNNs?</h3>
+<p>Vanilla RNN repeatedly transforms hidden state through the same recurrent dynamics.</p>
+<p>LSTM and GRU introduce gates that learn:</p>
+<ul>
+<li>what to keep</li>
+<li>what to overwrite</li>
+<li>what to expose</li>
+<li>how much past state should flow forward</li>
+</ul>
+<p>This creates more controlled memory paths and usually improves long-range optimization.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>1. Why Gated RNNs?</h3>
+<p>Vanilla RNN repeatedly transforms hidden state through the same recurrent dynamics.</p>
+<p>LSTM and GRU introduce gates that learn:</p>
+<ul>
+<li>what to keep</li>
+<li>what to overwrite</li>
+<li>what to expose</li>
+<li>how much past state should flow forward</li>
+</ul>
+<p>This creates more controlled memory paths and usually improves long-range optimization.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-1-equation"><summary>สมการ</summary><h3>1. Why Gated RNNs?</h3>
+<p>Vanilla RNN repeatedly transforms hidden state through the same recurrent dynamics.</p>
+<p>LSTM and GRU introduce gates that learn:</p>
+<ul>
+<li>what to keep</li>
+<li>what to overwrite</li>
+<li>what to expose</li>
+<li>how much past state should flow forward</li>
+</ul>
+<p>This creates more controlled memory paths and usually improves long-range optimization.</p></details><details id="help-topic-1-visual"><summary>ภาพและ shape</summary><h3>1. Why Gated RNNs?</h3>
+<p>Vanilla RNN repeatedly transforms hidden state through the same recurrent dynamics.</p>
+<p>LSTM and GRU introduce gates that learn:</p>
+<ul>
+<li>what to keep</li>
+<li>what to overwrite</li>
+<li>what to expose</li>
+<li>how much past state should flow forward</li>
+</ul>
+<p>This creates more controlled memory paths and usually improves long-range optimization.</p></details><details id="help-topic-1-code"><summary>โค้ด</summary><h3>1. Why Gated RNNs?</h3>
+<p>Vanilla RNN repeatedly transforms hidden state through the same recurrent dynamics.</p>
+<p>LSTM and GRU introduce gates that learn:</p>
+<ul>
+<li>what to keep</li>
+<li>what to overwrite</li>
+<li>what to expose</li>
+<li>how much past state should flow forward</li>
+</ul>
+<p>This creates more controlled memory paths and usually improves long-range optimization.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-1-result"><summary>ผลการทดลอง</summary><h3>1. Why Gated RNNs?</h3>
+<p>Vanilla RNN repeatedly transforms hidden state through the same recurrent dynamics.</p>
+<p>LSTM and GRU introduce gates that learn:</p>
+<ul>
+<li>what to keep</li>
+<li>what to overwrite</li>
+<li>what to expose</li>
+<li>how much past state should flow forward</li>
+</ul>
+<p>This creates more controlled memory paths and usually improves long-range optimization.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-1"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-2" class="source-topic"><span id="source-26-lstm-gru-canonical-2-learning-objectives" class="legacy-anchor"></span><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>derive LSTM gate equations</li>
+<li>explain cell state</li>
+<li>implement an LSTM cell from scratch</li>
+<li>derive GRU gate equations</li>
+<li>implement a GRU cell from scratch</li>
+<li>compare LSTM vs GRU</li>
+<li>understand multi-layer/bidirectional shapes</li>
+<li>handle variable-length sequences</li>
+<li>explain masking/packing</li>
+<li>use PyTorch nn.LSTM / nn.GRU</li>
+<li>debug hidden/cell-state shape mismatches</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>derive LSTM gate equations</li>
+<li>explain cell state</li>
+<li>implement an LSTM cell from scratch</li>
+<li>derive GRU gate equations</li>
+<li>implement a GRU cell from scratch</li>
+<li>compare LSTM vs GRU</li>
+<li>understand multi-layer/bidirectional shapes</li>
+<li>handle variable-length sequences</li>
+<li>explain masking/packing</li>
+<li>use PyTorch nn.LSTM / nn.GRU</li>
+<li>debug hidden/cell-state shape mismatches</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-2-equation"><summary>สมการ</summary><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>derive LSTM gate equations</li>
+<li>explain cell state</li>
+<li>implement an LSTM cell from scratch</li>
+<li>derive GRU gate equations</li>
+<li>implement a GRU cell from scratch</li>
+<li>compare LSTM vs GRU</li>
+<li>understand multi-layer/bidirectional shapes</li>
+<li>handle variable-length sequences</li>
+<li>explain masking/packing</li>
+<li>use PyTorch nn.LSTM / nn.GRU</li>
+<li>debug hidden/cell-state shape mismatches</li>
+</ul></details><details id="help-topic-2-visual"><summary>ภาพและ shape</summary><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>derive LSTM gate equations</li>
+<li>explain cell state</li>
+<li>implement an LSTM cell from scratch</li>
+<li>derive GRU gate equations</li>
+<li>implement a GRU cell from scratch</li>
+<li>compare LSTM vs GRU</li>
+<li>understand multi-layer/bidirectional shapes</li>
+<li>handle variable-length sequences</li>
+<li>explain masking/packing</li>
+<li>use PyTorch nn.LSTM / nn.GRU</li>
+<li>debug hidden/cell-state shape mismatches</li>
+</ul></details><details id="help-topic-2-code"><summary>โค้ด</summary><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>derive LSTM gate equations</li>
+<li>explain cell state</li>
+<li>implement an LSTM cell from scratch</li>
+<li>derive GRU gate equations</li>
+<li>implement a GRU cell from scratch</li>
+<li>compare LSTM vs GRU</li>
+<li>understand multi-layer/bidirectional shapes</li>
+<li>handle variable-length sequences</li>
+<li>explain masking/packing</li>
+<li>use PyTorch nn.LSTM / nn.GRU</li>
+<li>debug hidden/cell-state shape mismatches</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-2-result"><summary>ผลการทดลอง</summary><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>derive LSTM gate equations</li>
+<li>explain cell state</li>
+<li>implement an LSTM cell from scratch</li>
+<li>derive GRU gate equations</li>
+<li>implement a GRU cell from scratch</li>
+<li>compare LSTM vs GRU</li>
+<li>understand multi-layer/bidirectional shapes</li>
+<li>handle variable-length sequences</li>
+<li>explain masking/packing</li>
+<li>use PyTorch nn.LSTM / nn.GRU</li>
+<li>debug hidden/cell-state shape mismatches</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-2"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-3" class="source-topic"><span id="source-26-lstm-gru-canonical-3-lstm-state" class="legacy-anchor"></span><h3>3. LSTM State</h3>
+<p>LSTM maintains two states:</p>
+<pre><code class="language-text">h_t = exposed hidden state
+c_t = cell state / memory path
+</code></pre>
+<p>This is the key architectural difference from a vanilla RNN.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>cellstate cₜ=fₜcprev+iₜgₜมีadditivepathที่ช่วยgradientไหล; ไม่ได้รับประกันไม่มีvanishingเพราะproductfยังเล็กได้</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>cellstate cₜ=fₜcprev+iₜgₜมีadditivepathที่ช่วยgradientไหล; ไม่ได้รับประกันไม่มีvanishingเพราะproductfยังเล็กได้</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-3-equation"><summary>สมการ</summary><p>cellstate cₜ=fₜcprev+iₜgₜมีadditivepathที่ช่วยgradientไหล; ไม่ได้รับประกันไม่มีvanishingเพราะproductfยังเล็กได้</p></details><details id="help-topic-3-visual"><summary>ภาพและ shape</summary><p>cellstate cₜ=fₜcprev+iₜgₜมีadditivepathที่ช่วยgradientไหล; ไม่ได้รับประกันไม่มีvanishingเพราะproductfยังเล็กได้</p></details><details id="help-topic-3-code"><summary>โค้ด</summary><p>cellstate cₜ=fₜcprev+iₜgₜมีadditivepathที่ช่วยgradientไหล; ไม่ได้รับประกันไม่มีvanishingเพราะproductfยังเล็กได้</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-3-result"><summary>ผลการทดลอง</summary><p>cellstate cₜ=fₜcprev+iₜgₜมีadditivepathที่ช่วยgradientไหล; ไม่ได้รับประกันไม่มีvanishingเพราะproductfยังเล็กได้</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-3"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-4" class="source-topic"><span id="source-26-lstm-gru-canonical-4-lstm-gates" class="legacy-anchor"></span><span id="source-26-lstm-gru-canonical-forget-gate" class="legacy-anchor"></span><span id="source-26-lstm-gru-canonical-input-gate" class="legacy-anchor"></span><span id="source-26-lstm-gru-canonical-candidate" class="legacy-anchor"></span><span id="source-26-lstm-gru-canonical-cell-update" class="legacy-anchor"></span><span id="source-26-lstm-gru-canonical-output-gate" class="legacy-anchor"></span><span id="source-26-lstm-gru-canonical-hidden-output" class="legacy-anchor"></span><h3>4. LSTM Gates</h3>
+<p>Using concatenation conceptually:</p>
+<pre><code class="language-text">[x_t, h_(t-1)]
+</code></pre>
+<h4>Forget gate</h4>
+<pre><code class="language-text">f_t = sigmoid(
+    x_t W_xf
+    + h_(t-1) W_hf
+    + b_f
+)
+</code></pre>
+<p>Controls how much old cell state remains.</p>
+<h4>Input gate</h4>
+<pre><code class="language-text">i_t = sigmoid(
+    x_t W_xi
+    + h_(t-1) W_hi
+    + b_i
+)
+</code></pre>
+<p>Controls how much new candidate memory is written.</p>
+<h4>Candidate</h4>
+<pre><code class="language-text">g_t = tanh(
+    x_t W_xg
+    + h_(t-1) W_hg
+    + b_g
+)
+</code></pre>
+<h4>Cell update</h4>
+<pre><code class="language-text">c_t =
+f_t ⊙ c_(t-1)
++
+i_t ⊙ g_t
+</code></pre>
+<h4>Output gate</h4>
+<pre><code class="language-text">o_t = sigmoid(
+    x_t W_xo
+    + h_(t-1) W_ho
+    + b_o
+)
+</code></pre>
+<h4>Hidden output</h4>
+<pre><code class="language-text">h_t = o_t ⊙ tanh(c_t)
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>inputgate iₜควบคุมcandidategₜที่เขียนลงcell; i.25,g.4ให้ส่วนใหม่.1 จึงcnew1.7เมื่อส่วนเก่า1.6</p><p>outputgate oₜควบคุมhidden hₜ=oₜtanh(cₜ); c1.7,o.5ให้h≈.467705 ไม่แก้cellstateโดยตรง</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-4-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>inputgate iₜควบคุมcandidategₜที่เขียนลงcell; i.25,g.4ให้ส่วนใหม่.1 จึงcnew1.7เมื่อส่วนเก่า1.6</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-4-equation"><summary>สมการ</summary><p>inputgate iₜควบคุมcandidategₜที่เขียนลงcell; i.25,g.4ให้ส่วนใหม่.1 จึงcnew1.7เมื่อส่วนเก่า1.6</p></details><details id="help-topic-4-visual"><summary>ภาพและ shape</summary><p>inputgate iₜควบคุมcandidategₜที่เขียนลงcell; i.25,g.4ให้ส่วนใหม่.1 จึงcnew1.7เมื่อส่วนเก่า1.6</p></details><details id="help-topic-4-code"><summary>โค้ด</summary><p>inputgate iₜควบคุมcandidategₜที่เขียนลงcell; i.25,g.4ให้ส่วนใหม่.1 จึงcnew1.7เมื่อส่วนเก่า1.6</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-4-result"><summary>ผลการทดลอง</summary><p>inputgate iₜควบคุมcandidategₜที่เขียนลงcell; i.25,g.4ให้ส่วนใหม่.1 จึงcnew1.7เมื่อส่วนเก่า1.6</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-4"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-5" class="source-topic"><span id="source-26-lstm-gru-canonical-5-why-cell-state-helps" class="legacy-anchor"></span><h3>5. Why Cell State Helps</h3>
+<p>The cell update has an additive path:</p>
+<pre><code class="language-text">c_t =
+f_t * c_(t-1)
++
+new_information
+</code></pre>
+<p>The gradient through c can travel through repeated elementwise forget-gate factors rather than repeated dense recurrent matrices alone.</p>
+<p>This does not eliminate vanishing gradients completely, but it creates a more controllable path.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>cellstate cₜ=fₜcprev+iₜgₜมีadditivepathที่ช่วยgradientไหล; ไม่ได้รับประกันไม่มีvanishingเพราะproductfยังเล็กได้</p><p>เปลี่ยนcellstateส่งผลhผ่านtanhและoutputgate; cใหญ่มากtanhอิ่มตัวจึงhแทบไม่เปลี่ยนแม้cเปลี่ยนมาก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-5-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>cellstate cₜ=fₜcprev+iₜgₜมีadditivepathที่ช่วยgradientไหล; ไม่ได้รับประกันไม่มีvanishingเพราะproductfยังเล็กได้</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-5-equation"><summary>สมการ</summary><p>cellstate cₜ=fₜcprev+iₜgₜมีadditivepathที่ช่วยgradientไหล; ไม่ได้รับประกันไม่มีvanishingเพราะproductfยังเล็กได้</p></details><details id="help-topic-5-visual"><summary>ภาพและ shape</summary><p>cellstate cₜ=fₜcprev+iₜgₜมีadditivepathที่ช่วยgradientไหล; ไม่ได้รับประกันไม่มีvanishingเพราะproductfยังเล็กได้</p></details><details id="help-topic-5-code"><summary>โค้ด</summary><p>cellstate cₜ=fₜcprev+iₜgₜมีadditivepathที่ช่วยgradientไหล; ไม่ได้รับประกันไม่มีvanishingเพราะproductfยังเล็กได้</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-5-result"><summary>ผลการทดลอง</summary><p>cellstate cₜ=fₜcprev+iₜgₜมีadditivepathที่ช่วยgradientไหล; ไม่ได้รับประกันไม่มีvanishingเพราะproductfยังเล็กได้</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-5"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-6" class="source-topic"><span id="source-26-lstm-gru-canonical-6-forget-gate-interpretation" class="legacy-anchor"></span><h3>6. Forget Gate Interpretation</h3>
+<p>If:</p>
+<pre><code class="language-text">f_t ≈ 1
+</code></pre>
+<p>old memory is mostly preserved.</p>
+<p>If:</p>
+<pre><code class="language-text">f_t ≈ 0
+</code></pre>
+<p>old memory is mostly erased.</p>
+<p>The gate is learned per hidden dimension.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>forgetgate fₜ=σ(Wfx+Ufhprev+bf)ควบคุมส่วนcprevที่เก็บ; cprev2,f.8ให้ส่วนเดิม1.6 ก่อนรับcandidateใหม่</p><p>forgetgateลด/เก็บอดีต ส่วนinputgateเลือกข้อมูลใหม่; f1,i0รักษาcellเดิม ขณะที่f0,i1แทนด้วยcandidate</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-6-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>forgetgate fₜ=σ(Wfx+Ufhprev+bf)ควบคุมส่วนcprevที่เก็บ; cprev2,f.8ให้ส่วนเดิม1.6 ก่อนรับcandidateใหม่</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-6-equation"><summary>สมการ</summary><p>forgetgate fₜ=σ(Wfx+Ufhprev+bf)ควบคุมส่วนcprevที่เก็บ; cprev2,f.8ให้ส่วนเดิม1.6 ก่อนรับcandidateใหม่</p></details><details id="help-topic-6-visual"><summary>ภาพและ shape</summary><p>forgetgate fₜ=σ(Wfx+Ufhprev+bf)ควบคุมส่วนcprevที่เก็บ; cprev2,f.8ให้ส่วนเดิม1.6 ก่อนรับcandidateใหม่</p></details><details id="help-topic-6-code"><summary>โค้ด</summary><p>forgetgate fₜ=σ(Wfx+Ufhprev+bf)ควบคุมส่วนcprevที่เก็บ; cprev2,f.8ให้ส่วนเดิม1.6 ก่อนรับcandidateใหม่</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-6-result"><summary>ผลการทดลอง</summary><p>forgetgate fₜ=σ(Wfx+Ufhprev+bf)ควบคุมส่วนcprevที่เก็บ; cprev2,f.8ให้ส่วนเดิม1.6 ก่อนรับcandidateใหม่</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-6"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-7" class="source-topic"><span id="source-26-lstm-gru-canonical-7-forget-bias-intuition" class="legacy-anchor"></span><h3>7. Forget-Bias Intuition</h3>
+<p>Historically many implementations initialize forget bias toward positive values so early training tends to preserve memory.</p>
+<p>Modern framework defaults vary, so inspect actual initialization rather than assuming.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-7-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>7. Forget-Bias Intuition</h3>
+<p>Historically many implementations initialize forget bias toward positive values so early training tends to preserve memory.</p>
+<p>Modern framework defaults vary, so inspect actual initialization rather than assuming.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-7-equation"><summary>สมการ</summary><h3>7. Forget-Bias Intuition</h3>
+<p>Historically many implementations initialize forget bias toward positive values so early training tends to preserve memory.</p>
+<p>Modern framework defaults vary, so inspect actual initialization rather than assuming.</p></details><details id="help-topic-7-visual"><summary>ภาพและ shape</summary><h3>7. Forget-Bias Intuition</h3>
+<p>Historically many implementations initialize forget bias toward positive values so early training tends to preserve memory.</p>
+<p>Modern framework defaults vary, so inspect actual initialization rather than assuming.</p></details><details id="help-topic-7-code"><summary>โค้ด</summary><h3>7. Forget-Bias Intuition</h3>
+<p>Historically many implementations initialize forget bias toward positive values so early training tends to preserve memory.</p>
+<p>Modern framework defaults vary, so inspect actual initialization rather than assuming.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-7-result"><summary>ผลการทดลอง</summary><h3>7. Forget-Bias Intuition</h3>
+<p>Historically many implementations initialize forget bias toward positive values so early training tends to preserve memory.</p>
+<p>Modern framework defaults vary, so inspect actual initialization rather than assuming.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-7"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-8" class="source-topic"><span id="source-26-lstm-gru-canonical-8-gru-overview" class="legacy-anchor"></span><h3>8. GRU Overview</h3>
+<p>GRU simplifies the gated design.</p>
+<p>It usually maintains only hidden state h_t.</p>
+<p>Core gates:
+- update z_t
+- reset r_t</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-8-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>8. GRU Overview</h3>
+<p>GRU simplifies the gated design.</p>
+<p>It usually maintains only hidden state h_t.</p>
+<p>Core gates:
+- update z_t
+- reset r_t</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-8-equation"><summary>สมการ</summary><h3>8. GRU Overview</h3>
+<p>GRU simplifies the gated design.</p>
+<p>It usually maintains only hidden state h_t.</p>
+<p>Core gates:
+- update z_t
+- reset r_t</p></details><details id="help-topic-8-visual"><summary>ภาพและ shape</summary><h3>8. GRU Overview</h3>
+<p>GRU simplifies the gated design.</p>
+<p>It usually maintains only hidden state h_t.</p>
+<p>Core gates:
+- update z_t
+- reset r_t</p></details><details id="help-topic-8-code"><summary>โค้ด</summary><h3>8. GRU Overview</h3>
+<p>GRU simplifies the gated design.</p>
+<p>It usually maintains only hidden state h_t.</p>
+<p>Core gates:
+- update z_t
+- reset r_t</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-8-result"><summary>ผลการทดลอง</summary><h3>8. GRU Overview</h3>
+<p>GRU simplifies the gated design.</p>
+<p>It usually maintains only hidden state h_t.</p>
+<p>Core gates:
+- update z_t
+- reset r_t</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-8"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-9" class="source-topic"><span id="source-26-lstm-gru-canonical-9-gru-equations" class="legacy-anchor"></span><h3>9. GRU Equations</h3>
+<p>One common conceptual form:</p>
+<pre><code class="language-text">r_t = sigmoid(
+    x_t W_xr
+    + h_(t-1) W_hr
+    + b_r
+)
+
+z_t = sigmoid(
+    x_t W_xz
+    + h_(t-1) W_hz
+    + b_z
+)
+
+n_t = tanh(
+    x_t W_xn
+    + (r_t ⊙ h_(t-1)) W_hn
+    + b_n
+)
+
+h_t =
+(1-z_t) ⊙ n_t
++
+z_t ⊙ h_(t-1)
+</code></pre>
+<p>PyTorch's optimized GRU applies the reset gate at a slightly different algebraic location for efficiency, so framework equations can differ subtly from original-paper notation.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>seed7copysequence เปรียบLSTM/GRUhiddenmatchedparameterbudget; loggates/cellnorm/validationaccuracyและแยกการเปลี่ยนresetbiasทีละตัว</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-9-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>seed7copysequence เปรียบLSTM/GRUhiddenmatchedparameterbudget; loggates/cellnorm/validationaccuracyและแยกการเปลี่ยนresetbiasทีละตัว</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-9-equation"><summary>สมการ</summary><p>seed7copysequence เปรียบLSTM/GRUhiddenmatchedparameterbudget; loggates/cellnorm/validationaccuracyและแยกการเปลี่ยนresetbiasทีละตัว</p></details><details id="help-topic-9-visual"><summary>ภาพและ shape</summary><p>seed7copysequence เปรียบLSTM/GRUhiddenmatchedparameterbudget; loggates/cellnorm/validationaccuracyและแยกการเปลี่ยนresetbiasทีละตัว</p></details><details id="help-topic-9-code"><summary>โค้ด</summary><p>seed7copysequence เปรียบLSTM/GRUhiddenmatchedparameterbudget; loggates/cellnorm/validationaccuracyและแยกการเปลี่ยนresetbiasทีละตัว</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-9-result"><summary>ผลการทดลอง</summary><p>seed7copysequence เปรียบLSTM/GRUhiddenmatchedparameterbudget; loggates/cellnorm/validationaccuracyและแยกการเปลี่ยนresetbiasทีละตัว</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-9"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-10" class="source-topic"><span id="source-26-lstm-gru-canonical-10-update-gate-intuition" class="legacy-anchor"></span><h3>10. Update Gate Intuition</h3>
+<p>If:</p>
+<pre><code class="language-text">z_t ≈ 1
+</code></pre>
+<p>keep previous hidden state.</p>
+<p>If:</p>
+<pre><code class="language-text">z_t ≈ 0
+</code></pre>
+<p>replace with candidate state.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>GRUupdategateมีสองconvention z·hprev+(1−z)gหรือกลับกัน ต้องอ่านAPIก่อนcopyweights; ค่าz1อาจหมายkeepหรือreplaceต่างกัน</p><p>คงGRUทุกอย่างเปลี่ยนupdatebias−2→2โดยconventionเดิม; วัดhretentionหลังinputzeroและtaskmetric ไม่สรุปgateสูงเรียนดีเสมอ</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-10-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>GRUupdategateมีสองconvention z·hprev+(1−z)gหรือกลับกัน ต้องอ่านAPIก่อนcopyweights; ค่าz1อาจหมายkeepหรือreplaceต่างกัน</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-10-equation"><summary>สมการ</summary><p>GRUupdategateมีสองconvention z·hprev+(1−z)gหรือกลับกัน ต้องอ่านAPIก่อนcopyweights; ค่าz1อาจหมายkeepหรือreplaceต่างกัน</p></details><details id="help-topic-10-visual"><summary>ภาพและ shape</summary><p>GRUupdategateมีสองconvention z·hprev+(1−z)gหรือกลับกัน ต้องอ่านAPIก่อนcopyweights; ค่าz1อาจหมายkeepหรือreplaceต่างกัน</p></details><details id="help-topic-10-code"><summary>โค้ด</summary><p>GRUupdategateมีสองconvention z·hprev+(1−z)gหรือกลับกัน ต้องอ่านAPIก่อนcopyweights; ค่าz1อาจหมายkeepหรือreplaceต่างกัน</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-10-result"><summary>ผลการทดลอง</summary><p>GRUupdategateมีสองconvention z·hprev+(1−z)gหรือกลับกัน ต้องอ่านAPIก่อนcopyweights; ค่าz1อาจหมายkeepหรือreplaceต่างกัน</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-10"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-11" class="source-topic"><span id="source-26-lstm-gru-canonical-11-reset-gate-intuition" class="legacy-anchor"></span><h3>11. Reset Gate Intuition</h3>
+<p>The reset gate controls how much previous hidden information contributes to the candidate.</p>
+<p>Small reset value means candidate can behave more like a fresh state.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>resetgateลดอดีตในcandidate ช่วยเริ่มpatternใหม่แต่ไม่ใช่resetactualstateอัตโนมัติ; GRUไม่มีcellstateแยกและparametersน้อยกว่าLSTMทั่วไป</p><p>seed7copysequence เปรียบLSTM/GRUhiddenmatchedparameterbudget; loggates/cellnorm/validationaccuracyและแยกการเปลี่ยนresetbiasทีละตัว</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-11-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>resetgateลดอดีตในcandidate ช่วยเริ่มpatternใหม่แต่ไม่ใช่resetactualstateอัตโนมัติ; GRUไม่มีcellstateแยกและparametersน้อยกว่าLSTMทั่วไป</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-11-equation"><summary>สมการ</summary><p>resetgateลดอดีตในcandidate ช่วยเริ่มpatternใหม่แต่ไม่ใช่resetactualstateอัตโนมัติ; GRUไม่มีcellstateแยกและparametersน้อยกว่าLSTMทั่วไป</p></details><details id="help-topic-11-visual"><summary>ภาพและ shape</summary><p>resetgateลดอดีตในcandidate ช่วยเริ่มpatternใหม่แต่ไม่ใช่resetactualstateอัตโนมัติ; GRUไม่มีcellstateแยกและparametersน้อยกว่าLSTMทั่วไป</p></details><details id="help-topic-11-code"><summary>โค้ด</summary><p>resetgateลดอดีตในcandidate ช่วยเริ่มpatternใหม่แต่ไม่ใช่resetactualstateอัตโนมัติ; GRUไม่มีcellstateแยกและparametersน้อยกว่าLSTMทั่วไป</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-11-result"><summary>ผลการทดลอง</summary><p>resetgateลดอดีตในcandidate ช่วยเริ่มpatternใหม่แต่ไม่ใช่resetactualstateอัตโนมัติ; GRUไม่มีcellstateแยกและparametersน้อยกว่าLSTMทั่วไป</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-11"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-12" class="source-topic"><span id="source-26-lstm-gru-canonical-12-lstm-vs-gru" class="legacy-anchor"></span><h3>12. LSTM vs GRU</h3>
+<p>LSTM:
+- separate cell and hidden state
+- more gates/parameters
+- flexible memory control</p>
+<p>GRU:
+- one main state
+- fewer parameters
+- often faster/simpler</p>
+<p>Neither is universally better.</p>
+<p>Validate on:
+- sequence length
+- dataset size
+- latency
+- accuracy
+- memory</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-12-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>12. LSTM vs GRU</h3>
+<p>LSTM:
+- separate cell and hidden state
+- more gates/parameters
+- flexible memory control</p>
+<p>GRU:
+- one main state
+- fewer parameters
+- often faster/simpler</p>
+<p>Neither is universally better.</p>
+<p>Validate on:
+- sequence length
+- dataset size
+- latency
+- accuracy
+- memory</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-12-equation"><summary>สมการ</summary><h3>12. LSTM vs GRU</h3>
+<p>LSTM:
+- separate cell and hidden state
+- more gates/parameters
+- flexible memory control</p>
+<p>GRU:
+- one main state
+- fewer parameters
+- often faster/simpler</p>
+<p>Neither is universally better.</p>
+<p>Validate on:
+- sequence length
+- dataset size
+- latency
+- accuracy
+- memory</p></details><details id="help-topic-12-visual"><summary>ภาพและ shape</summary><h3>12. LSTM vs GRU</h3>
+<p>LSTM:
+- separate cell and hidden state
+- more gates/parameters
+- flexible memory control</p>
+<p>GRU:
+- one main state
+- fewer parameters
+- often faster/simpler</p>
+<p>Neither is universally better.</p>
+<p>Validate on:
+- sequence length
+- dataset size
+- latency
+- accuracy
+- memory</p></details><details id="help-topic-12-code"><summary>โค้ด</summary><h3>12. LSTM vs GRU</h3>
+<p>LSTM:
+- separate cell and hidden state
+- more gates/parameters
+- flexible memory control</p>
+<p>GRU:
+- one main state
+- fewer parameters
+- often faster/simpler</p>
+<p>Neither is universally better.</p>
+<p>Validate on:
+- sequence length
+- dataset size
+- latency
+- accuracy
+- memory</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-12-result"><summary>ผลการทดลอง</summary><h3>12. LSTM vs GRU</h3>
+<p>LSTM:
+- separate cell and hidden state
+- more gates/parameters
+- flexible memory control</p>
+<p>GRU:
+- one main state
+- fewer parameters
+- often faster/simpler</p>
+<p>Neither is universally better.</p>
+<p>Validate on:
+- sequence length
+- dataset size
+- latency
+- accuracy
+- memory</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-12"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-13" class="source-topic"><span id="source-26-lstm-gru-canonical-13-parameter-count" class="legacy-anchor"></span><h3>13. Parameter Count</h3>
+<p>For one-direction, one-layer LSTM:</p>
+<p>Each of 4 gates has:
+- input weights: D × H
+- recurrent weights: H × H
+- bias terms</p>
+<p>PyTorch stores input-hidden and hidden-hidden biases separately.</p>
+<p>Approximate parameter count:</p>
+<pre><code class="language-text">4 * (
+    D*H
+    + H*H
+    + 2H
+)
+</code></pre>
+<p>GRU uses 3 gate blocks instead of 4.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>LSTMประมาณ4denseprojectionsO(TBH(D+H)),GRU3; activationgatesเพิ่มmemoryO(TBH); reportparametercountและwalltimeจริง</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-13-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>LSTMประมาณ4denseprojectionsO(TBH(D+H)),GRU3; activationgatesเพิ่มmemoryO(TBH); reportparametercountและwalltimeจริง</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-13-equation"><summary>สมการ</summary><p>LSTMประมาณ4denseprojectionsO(TBH(D+H)),GRU3; activationgatesเพิ่มmemoryO(TBH); reportparametercountและwalltimeจริง</p></details><details id="help-topic-13-visual"><summary>ภาพและ shape</summary><p>LSTMประมาณ4denseprojectionsO(TBH(D+H)),GRU3; activationgatesเพิ่มmemoryO(TBH); reportparametercountและwalltimeจริง</p></details><details id="help-topic-13-code"><summary>โค้ด</summary><p>LSTMประมาณ4denseprojectionsO(TBH(D+H)),GRU3; activationgatesเพิ่มmemoryO(TBH); reportparametercountและwalltimeจริง</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-13-result"><summary>ผลการทดลอง</summary><p>LSTMประมาณ4denseprojectionsO(TBH(D+H)),GRU3; activationgatesเพิ่มmemoryO(TBH); reportparametercountและwalltimeจริง</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-13"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-14" class="source-topic"><span id="source-26-lstm-gru-canonical-14-pytorch-shapes" class="legacy-anchor"></span><h3>14. PyTorch Shapes</h3>
+<p>With:</p>
+<pre><code class="language-python">nn.LSTM(
+    input_size=D,
+    hidden_size=H,
+    num_layers=L,
+    batch_first=True,
+    bidirectional=False,
+)
+</code></pre>
+<p>Input:</p>
+<pre><code class="language-text">(B,T,D)
+</code></pre>
+<p>Output:</p>
+<pre><code class="language-text">(B,T,H)
+</code></pre>
+<p>h_n:</p>
+<pre><code class="language-text">(L,B,H)
+</code></pre>
+<p>c_n:</p>
+<pre><code class="language-text">(L,B,H)
+</code></pre>
+<p>Bidirectional:</p>
+<pre><code class="language-text">output feature dimension = 2H
+h_n/c_n first dimension = 2L
+</code></pre><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>gateconcatorderเช่นPyTorchLSTM i,f,g,o ต้องsplitlastdim4H; h,cเป็น(layers,B,H); transposeผิดทำhiddenunitsสลับโดยไม่จำเป็นต้องerror</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-14-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>gateconcatorderเช่นPyTorchLSTM i,f,g,o ต้องsplitlastdim4H; h,cเป็น(layers,B,H); transposeผิดทำhiddenunitsสลับโดยไม่จำเป็นต้องerror</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-14-equation"><summary>สมการ</summary><p>gateconcatorderเช่นPyTorchLSTM i,f,g,o ต้องsplitlastdim4H; h,cเป็น(layers,B,H); transposeผิดทำhiddenunitsสลับโดยไม่จำเป็นต้องerror</p></details><details id="help-topic-14-visual"><summary>ภาพและ shape</summary><p>gateconcatorderเช่นPyTorchLSTM i,f,g,o ต้องsplitlastdim4H; h,cเป็น(layers,B,H); transposeผิดทำhiddenunitsสลับโดยไม่จำเป็นต้องerror</p></details><details id="help-topic-14-code"><summary>โค้ด</summary><p>gateconcatorderเช่นPyTorchLSTM i,f,g,o ต้องsplitlastdim4H; h,cเป็น(layers,B,H); transposeผิดทำhiddenunitsสลับโดยไม่จำเป็นต้องerror</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-14-result"><summary>ผลการทดลอง</summary><p>gateconcatorderเช่นPyTorchLSTM i,f,g,o ต้องsplitlastdim4H; h,cเป็น(layers,B,H); transposeผิดทำhiddenunitsสลับโดยไม่จำเป็นต้องerror</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-14"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-15" class="source-topic"><span id="source-26-lstm-gru-canonical-15-gru-shapes" class="legacy-anchor"></span><h3>15. GRU Shapes</h3>
+<p>GRU returns:</p>
+<pre><code class="language-text">output
+h_n
+</code></pre>
+<p>No separate c_n.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>gateconcatorderเช่นPyTorchLSTM i,f,g,o ต้องsplitlastdim4H; h,cเป็น(layers,B,H); transposeผิดทำhiddenunitsสลับโดยไม่จำเป็นต้องerror</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-15-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>gateconcatorderเช่นPyTorchLSTM i,f,g,o ต้องsplitlastdim4H; h,cเป็น(layers,B,H); transposeผิดทำhiddenunitsสลับโดยไม่จำเป็นต้องerror</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-15-equation"><summary>สมการ</summary><p>gateconcatorderเช่นPyTorchLSTM i,f,g,o ต้องsplitlastdim4H; h,cเป็น(layers,B,H); transposeผิดทำhiddenunitsสลับโดยไม่จำเป็นต้องerror</p></details><details id="help-topic-15-visual"><summary>ภาพและ shape</summary><p>gateconcatorderเช่นPyTorchLSTM i,f,g,o ต้องsplitlastdim4H; h,cเป็น(layers,B,H); transposeผิดทำhiddenunitsสลับโดยไม่จำเป็นต้องerror</p></details><details id="help-topic-15-code"><summary>โค้ด</summary><p>gateconcatorderเช่นPyTorchLSTM i,f,g,o ต้องsplitlastdim4H; h,cเป็น(layers,B,H); transposeผิดทำhiddenunitsสลับโดยไม่จำเป็นต้องerror</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-15-result"><summary>ผลการทดลอง</summary><p>gateconcatorderเช่นPyTorchLSTM i,f,g,o ต้องsplitlastdim4H; h,cเป็น(layers,B,H); transposeผิดทำhiddenunitsสลับโดยไม่จำเป็นต้องerror</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-15"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-16" class="source-topic"><span id="source-26-lstm-gru-canonical-16-final-state-vs-last-padded-timestep" class="legacy-anchor"></span><h3>16. Final State vs Last Padded Timestep</h3>
+<p>For padded batches:</p>
+<pre><code class="language-text">output[:, -1]
+</code></pre>
+<p>may correspond to padding for shorter samples.</p>
+<p>Better options:
+- packed sequences
+- gather true final valid timestep
+- use returned final state from packed recurrence</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-16-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>16. Final State vs Last Padded Timestep</h3>
+<p>For padded batches:</p>
+<pre><code class="language-text">output[:, -1]
+</code></pre>
+<p>may correspond to padding for shorter samples.</p>
+<p>Better options:
+- packed sequences
+- gather true final valid timestep
+- use returned final state from packed recurrence</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-16-equation"><summary>สมการ</summary><h3>16. Final State vs Last Padded Timestep</h3>
+<p>For padded batches:</p>
+<pre><code class="language-text">output[:, -1]
+</code></pre>
+<p>may correspond to padding for shorter samples.</p>
+<p>Better options:
+- packed sequences
+- gather true final valid timestep
+- use returned final state from packed recurrence</p></details><details id="help-topic-16-visual"><summary>ภาพและ shape</summary><h3>16. Final State vs Last Padded Timestep</h3>
+<p>For padded batches:</p>
+<pre><code class="language-text">output[:, -1]
+</code></pre>
+<p>may correspond to padding for shorter samples.</p>
+<p>Better options:
+- packed sequences
+- gather true final valid timestep
+- use returned final state from packed recurrence</p></details><details id="help-topic-16-code"><summary>โค้ด</summary><h3>16. Final State vs Last Padded Timestep</h3>
+<p>For padded batches:</p>
+<pre><code class="language-text">output[:, -1]
+</code></pre>
+<p>may correspond to padding for shorter samples.</p>
+<p>Better options:
+- packed sequences
+- gather true final valid timestep
+- use returned final state from packed recurrence</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-16-result"><summary>ผลการทดลอง</summary><h3>16. Final State vs Last Padded Timestep</h3>
+<p>For padded batches:</p>
+<pre><code class="language-text">output[:, -1]
+</code></pre>
+<p>may correspond to padding for shorter samples.</p>
+<p>Better options:
+- packed sequences
+- gather true final valid timestep
+- use returned final state from packed recurrence</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-16"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-17" class="source-topic"><span id="source-26-lstm-gru-canonical-17-packed-sequences" class="legacy-anchor"></span><h3>17. Packed Sequences</h3>
+<p>PyTorch:</p>
+<pre><code class="language-python">packed = pack_padded_sequence(
+    padded,
+    lengths,
+    batch_first=True,
+    enforce_sorted=False,
+)
+</code></pre>
+<p>The recurrent layer can consume packed input.</p>
+<p>Afterward:</p>
+<pre><code class="language-python">pad_packed_sequence(...)
+</code></pre>
+<p>if timestep outputs are needed.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-17-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>17. Packed Sequences</h3>
+<p>PyTorch:</p>
+<pre><code class="language-python">packed = pack_padded_sequence(
+    padded,
+    lengths,
+    batch_first=True,
+    enforce_sorted=False,
+)
+</code></pre>
+<p>The recurrent layer can consume packed input.</p>
+<p>Afterward:</p>
+<pre><code class="language-python">pad_packed_sequence(...)
+</code></pre>
+<p>if timestep outputs are needed.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-17-equation"><summary>สมการ</summary><h3>17. Packed Sequences</h3>
+<p>PyTorch:</p>
+<pre><code class="language-python">packed = pack_padded_sequence(
+    padded,
+    lengths,
+    batch_first=True,
+    enforce_sorted=False,
+)
+</code></pre>
+<p>The recurrent layer can consume packed input.</p>
+<p>Afterward:</p>
+<pre><code class="language-python">pad_packed_sequence(...)
+</code></pre>
+<p>if timestep outputs are needed.</p></details><details id="help-topic-17-visual"><summary>ภาพและ shape</summary><h3>17. Packed Sequences</h3>
+<p>PyTorch:</p>
+<pre><code class="language-python">packed = pack_padded_sequence(
+    padded,
+    lengths,
+    batch_first=True,
+    enforce_sorted=False,
+)
+</code></pre>
+<p>The recurrent layer can consume packed input.</p>
+<p>Afterward:</p>
+<pre><code class="language-python">pad_packed_sequence(...)
+</code></pre>
+<p>if timestep outputs are needed.</p></details><details id="help-topic-17-code"><summary>โค้ด</summary><h3>17. Packed Sequences</h3>
+<p>PyTorch:</p>
+<pre><code class="language-python">packed = pack_padded_sequence(
+    padded,
+    lengths,
+    batch_first=True,
+    enforce_sorted=False,
+)
+</code></pre>
+<p>The recurrent layer can consume packed input.</p>
+<p>Afterward:</p>
+<pre><code class="language-python">pad_packed_sequence(...)
+</code></pre>
+<p>if timestep outputs are needed.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-17-result"><summary>ผลการทดลอง</summary><h3>17. Packed Sequences</h3>
+<p>PyTorch:</p>
+<pre><code class="language-python">packed = pack_padded_sequence(
+    padded,
+    lengths,
+    batch_first=True,
+    enforce_sorted=False,
+)
+</code></pre>
+<p>The recurrent layer can consume packed input.</p>
+<p>Afterward:</p>
+<pre><code class="language-python">pad_packed_sequence(...)
+</code></pre>
+<p>if timestep outputs are needed.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-17"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-18" class="source-topic"><span id="source-26-lstm-gru-canonical-18-masking" class="legacy-anchor"></span><h3>18. Masking</h3>
+<p>When computing sequence losses, mask padded positions.</p>
+<p>Example concept:</p>
+<pre><code class="language-text">loss_per_token * valid_mask
+</code></pre>
+<p>Then normalize by number of valid positions, not padded tensor size.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>แยกsequenceก่อนสร้างwindows,reseth/cตามboundary; teacherforcingonlytrainและvalidationfreerun; checkpointต้องเก็บarchitecturegateconvention</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-18-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>แยกsequenceก่อนสร้างwindows,reseth/cตามboundary; teacherforcingonlytrainและvalidationfreerun; checkpointต้องเก็บarchitecturegateconvention</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-18-equation"><summary>สมการ</summary><p>แยกsequenceก่อนสร้างwindows,reseth/cตามboundary; teacherforcingonlytrainและvalidationfreerun; checkpointต้องเก็บarchitecturegateconvention</p></details><details id="help-topic-18-visual"><summary>ภาพและ shape</summary><p>แยกsequenceก่อนสร้างwindows,reseth/cตามboundary; teacherforcingonlytrainและvalidationfreerun; checkpointต้องเก็บarchitecturegateconvention</p></details><details id="help-topic-18-code"><summary>โค้ด</summary><p>แยกsequenceก่อนสร้างwindows,reseth/cตามboundary; teacherforcingonlytrainและvalidationfreerun; checkpointต้องเก็บarchitecturegateconvention</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-18-result"><summary>ผลการทดลอง</summary><p>แยกsequenceก่อนสร้างwindows,reseth/cตามboundary; teacherforcingonlytrainและvalidationfreerun; checkpointต้องเก็บarchitecturegateconvention</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-18"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-19" class="source-topic"><span id="source-26-lstm-gru-canonical-19-bidirectionality" class="legacy-anchor"></span><h3>19. Bidirectionality</h3>
+<p>Bidirectional LSTM/GRU is useful for:
+- tagging
+- offline sequence classification
+- representation extraction</p>
+<p>Not valid for:
+- strict real-time causal forecasting
+- streaming systems without future context</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>แยกsequenceก่อนสร้างwindows,reseth/cตามboundary; teacherforcingonlytrainและvalidationfreerun; checkpointต้องเก็บarchitecturegateconvention</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-19-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>แยกsequenceก่อนสร้างwindows,reseth/cตามboundary; teacherforcingonlytrainและvalidationfreerun; checkpointต้องเก็บarchitecturegateconvention</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-19-equation"><summary>สมการ</summary><p>แยกsequenceก่อนสร้างwindows,reseth/cตามboundary; teacherforcingonlytrainและvalidationfreerun; checkpointต้องเก็บarchitecturegateconvention</p></details><details id="help-topic-19-visual"><summary>ภาพและ shape</summary><p>แยกsequenceก่อนสร้างwindows,reseth/cตามboundary; teacherforcingonlytrainและvalidationfreerun; checkpointต้องเก็บarchitecturegateconvention</p></details><details id="help-topic-19-code"><summary>โค้ด</summary><p>แยกsequenceก่อนสร้างwindows,reseth/cตามboundary; teacherforcingonlytrainและvalidationfreerun; checkpointต้องเก็บarchitecturegateconvention</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-19-result"><summary>ผลการทดลอง</summary><p>แยกsequenceก่อนสร้างwindows,reseth/cตามboundary; teacherforcingonlytrainและvalidationfreerun; checkpointต้องเก็บarchitecturegateconvention</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-19"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-20" class="source-topic"><span id="source-26-lstm-gru-canonical-20-dropout-in-pytorch-recurrent-layers" class="legacy-anchor"></span><h3>20. Dropout in PyTorch Recurrent Layers</h3>
+<p>The dropout argument applies between stacked recurrent layers when num_layers &gt; 1.</p>
+<p>It does not mean arbitrary dropout on every recurrent connection.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-20-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>20. Dropout in PyTorch Recurrent Layers</h3>
+<p>The dropout argument applies between stacked recurrent layers when num_layers &gt; 1.</p>
+<p>It does not mean arbitrary dropout on every recurrent connection.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-20-equation"><summary>สมการ</summary><h3>20. Dropout in PyTorch Recurrent Layers</h3>
+<p>The dropout argument applies between stacked recurrent layers when num_layers &gt; 1.</p>
+<p>It does not mean arbitrary dropout on every recurrent connection.</p></details><details id="help-topic-20-visual"><summary>ภาพและ shape</summary><h3>20. Dropout in PyTorch Recurrent Layers</h3>
+<p>The dropout argument applies between stacked recurrent layers when num_layers &gt; 1.</p>
+<p>It does not mean arbitrary dropout on every recurrent connection.</p></details><details id="help-topic-20-code"><summary>โค้ด</summary><h3>20. Dropout in PyTorch Recurrent Layers</h3>
+<p>The dropout argument applies between stacked recurrent layers when num_layers &gt; 1.</p>
+<p>It does not mean arbitrary dropout on every recurrent connection.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-20-result"><summary>ผลการทดลอง</summary><h3>20. Dropout in PyTorch Recurrent Layers</h3>
+<p>The dropout argument applies between stacked recurrent layers when num_layers &gt; 1.</p>
+<p>It does not mean arbitrary dropout on every recurrent connection.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-20"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-21" class="source-topic"><span id="source-26-lstm-gru-canonical-21-from-scratch" class="legacy-anchor"></span><h3>21. From Scratch</h3>
+<p>src/gated_rnn_numpy.py includes:
+- stable sigmoid
+- LSTMCellNumPy
+- GRUCellNumPy
+- sequence forward helpers</p>
+<p>The goal is to inspect gate values explicitly.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p><code>sigmoid=lambda z:1/(1+np.exp(-z)); f=sigmoid(np.log(4.)); retained=f*2</code> ได้f.8,retained1.6</p><p>concat[x,hprev]→4projections→σf/σi/tanhg/σo→c=f<em>cprev+i</em>g→h=o*tanhc; backwardadditivecellpathต้องรวมจากfuturecและh</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-21-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p><code>sigmoid=lambda z:1/(1+np.exp(-z)); f=sigmoid(np.log(4.)); retained=f*2</code> ได้f.8,retained1.6</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-21-equation"><summary>สมการ</summary><p><code>sigmoid=lambda z:1/(1+np.exp(-z)); f=sigmoid(np.log(4.)); retained=f*2</code> ได้f.8,retained1.6</p></details><details id="help-topic-21-visual"><summary>ภาพและ shape</summary><p><code>sigmoid=lambda z:1/(1+np.exp(-z)); f=sigmoid(np.log(4.)); retained=f*2</code> ได้f.8,retained1.6</p></details><details id="help-topic-21-code"><summary>โค้ด</summary><p><code>sigmoid=lambda z:1/(1+np.exp(-z)); f=sigmoid(np.log(4.)); retained=f*2</code> ได้f.8,retained1.6</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-21-result"><summary>ผลการทดลอง</summary><p><code>sigmoid=lambda z:1/(1+np.exp(-z)); f=sigmoid(np.log(4.)); retained=f*2</code> ได้f.8,retained1.6</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-21"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-22" class="source-topic"><span id="source-26-lstm-gru-canonical-22-debugging-gates" class="legacy-anchor"></span><h3>22. Debugging Gates</h3>
+<p>Inspect:
+- mean/min/max of f/i/o or r/z
+- hidden-state norm
+- cell-state norm
+- gradient norm
+- saturation near 0/1</p>
+<p>If every gate saturates early:
+- initialization may be poor
+- inputs may be unscaled
+- learning rate may be too high</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>assertf.8,retained1.6; logits0ให้gate.5; teststable±1000 finite; shapegateตรงcprevและbatchไม่ปนกัน</p><p>sigmoidใช้stablelogits,cellstateสะสมโตได้; checkcและhแยกและclipgrad; อย่าclipcellโดยเงียบเพราะเปลี่ยนกลไก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-22-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>assertf.8,retained1.6; logits0ให้gate.5; teststable±1000 finite; shapegateตรงcprevและbatchไม่ปนกัน</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-22-equation"><summary>สมการ</summary><p>assertf.8,retained1.6; logits0ให้gate.5; teststable±1000 finite; shapegateตรงcprevและbatchไม่ปนกัน</p></details><details id="help-topic-22-visual"><summary>ภาพและ shape</summary><p>assertf.8,retained1.6; logits0ให้gate.5; teststable±1000 finite; shapegateตรงcprevและbatchไม่ปนกัน</p></details><details id="help-topic-22-code"><summary>โค้ด</summary><p>assertf.8,retained1.6; logits0ให้gate.5; teststable±1000 finite; shapegateตรงcprevและbatchไม่ปนกัน</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-22-result"><summary>ผลการทดลอง</summary><p>assertf.8,retained1.6; logits0ให้gate.5; teststable±1000 finite; shapegateตรงcprevและbatchไม่ปนกัน</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-22"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-23" class="source-topic"><span id="source-26-lstm-gru-canonical-23-common-mistakes" class="legacy-anchor"></span><h3>23. Common Mistakes</h3>
+<ol>
+<li>swapping h and c</li>
+<li>wrong gate dimension</li>
+<li>wrong gate chunk order</li>
+<li>using padded last timestep</li>
+<li>hidden-state layer/direction shape wrong</li>
+<li>forgetting bidirectional doubles features</li>
+<li>assuming GRU equations identical across every implementation</li>
+<li>using bidirectional recurrence for causal deployment</li>
+<li>masking loss incorrectly</li>
+<li>comparing RNN/LSTM/GRU with different training budgets</li>
+</ol><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-23-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>23. Common Mistakes</h3>
+<ol>
+<li>swapping h and c</li>
+<li>wrong gate dimension</li>
+<li>wrong gate chunk order</li>
+<li>using padded last timestep</li>
+<li>hidden-state layer/direction shape wrong</li>
+<li>forgetting bidirectional doubles features</li>
+<li>assuming GRU equations identical across every implementation</li>
+<li>using bidirectional recurrence for causal deployment</li>
+<li>masking loss incorrectly</li>
+<li>comparing RNN/LSTM/GRU with different training budgets</li>
+</ol><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-23-equation"><summary>สมการ</summary><h3>23. Common Mistakes</h3>
+<ol>
+<li>swapping h and c</li>
+<li>wrong gate dimension</li>
+<li>wrong gate chunk order</li>
+<li>using padded last timestep</li>
+<li>hidden-state layer/direction shape wrong</li>
+<li>forgetting bidirectional doubles features</li>
+<li>assuming GRU equations identical across every implementation</li>
+<li>using bidirectional recurrence for causal deployment</li>
+<li>masking loss incorrectly</li>
+<li>comparing RNN/LSTM/GRU with different training budgets</li>
+</ol></details><details id="help-topic-23-visual"><summary>ภาพและ shape</summary><h3>23. Common Mistakes</h3>
+<ol>
+<li>swapping h and c</li>
+<li>wrong gate dimension</li>
+<li>wrong gate chunk order</li>
+<li>using padded last timestep</li>
+<li>hidden-state layer/direction shape wrong</li>
+<li>forgetting bidirectional doubles features</li>
+<li>assuming GRU equations identical across every implementation</li>
+<li>using bidirectional recurrence for causal deployment</li>
+<li>masking loss incorrectly</li>
+<li>comparing RNN/LSTM/GRU with different training budgets</li>
+</ol></details><details id="help-topic-23-code"><summary>โค้ด</summary><h3>23. Common Mistakes</h3>
+<ol>
+<li>swapping h and c</li>
+<li>wrong gate dimension</li>
+<li>wrong gate chunk order</li>
+<li>using padded last timestep</li>
+<li>hidden-state layer/direction shape wrong</li>
+<li>forgetting bidirectional doubles features</li>
+<li>assuming GRU equations identical across every implementation</li>
+<li>using bidirectional recurrence for causal deployment</li>
+<li>masking loss incorrectly</li>
+<li>comparing RNN/LSTM/GRU with different training budgets</li>
+</ol><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-23-result"><summary>ผลการทดลอง</summary><h3>23. Common Mistakes</h3>
+<ol>
+<li>swapping h and c</li>
+<li>wrong gate dimension</li>
+<li>wrong gate chunk order</li>
+<li>using padded last timestep</li>
+<li>hidden-state layer/direction shape wrong</li>
+<li>forgetting bidirectional doubles features</li>
+<li>assuming GRU equations identical across every implementation</li>
+<li>using bidirectional recurrence for causal deployment</li>
+<li>masking loss incorrectly</li>
+<li>comparing RNN/LSTM/GRU with different training budgets</li>
+</ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-23"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-24" class="source-topic"><span id="source-26-lstm-gru-canonical-24-exercises-mini-project" class="legacy-anchor"></span><h3>24. Exercises / Mini Project</h3>
+<ul>
+<li><a href="../26-lstm-gru/exercises/README.md">Exercises</a></li>
+<li><a href="../26-lstm-gru/solutions/README.md">Solutions</a></li>
+<li><a href="../26-lstm-gru/mini-project/README.md">Mini Project</a></li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-24-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>24. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-24-equation"><summary>สมการ</summary><h3>24. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-24-visual"><summary>ภาพและ shape</summary><h3>24. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-24-code"><summary>โค้ด</summary><h3>24. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-24-result"><summary>ผลการทดลอง</summary><h3>24. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-24"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-25" class="source-topic"><span id="source-26-lstm-gru-canonical-25-checklist" class="legacy-anchor"></span><h3>25. Checklist</h3>
+<ul>
+<li>[ ] LSTM f/i/g/o</li>
+<li>[ ] cell state</li>
+<li>[ ] hidden state</li>
+<li>[ ] GRU r/z/n</li>
+<li>[ ] LSTM vs GRU</li>
+<li>[ ] parameter count</li>
+<li>[ ] multi-layer shapes</li>
+<li>[ ] bidirectional shapes</li>
+<li>[ ] packing/masking</li>
+<li>[ ] gate debugging</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-25-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>25. Checklist</h3>
+<ul>
+<li>[ ] LSTM f/i/g/o</li>
+<li>[ ] cell state</li>
+<li>[ ] hidden state</li>
+<li>[ ] GRU r/z/n</li>
+<li>[ ] LSTM vs GRU</li>
+<li>[ ] parameter count</li>
+<li>[ ] multi-layer shapes</li>
+<li>[ ] bidirectional shapes</li>
+<li>[ ] packing/masking</li>
+<li>[ ] gate debugging</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-25-equation"><summary>สมการ</summary><h3>25. Checklist</h3>
+<ul>
+<li>[ ] LSTM f/i/g/o</li>
+<li>[ ] cell state</li>
+<li>[ ] hidden state</li>
+<li>[ ] GRU r/z/n</li>
+<li>[ ] LSTM vs GRU</li>
+<li>[ ] parameter count</li>
+<li>[ ] multi-layer shapes</li>
+<li>[ ] bidirectional shapes</li>
+<li>[ ] packing/masking</li>
+<li>[ ] gate debugging</li>
+</ul></details><details id="help-topic-25-visual"><summary>ภาพและ shape</summary><h3>25. Checklist</h3>
+<ul>
+<li>[ ] LSTM f/i/g/o</li>
+<li>[ ] cell state</li>
+<li>[ ] hidden state</li>
+<li>[ ] GRU r/z/n</li>
+<li>[ ] LSTM vs GRU</li>
+<li>[ ] parameter count</li>
+<li>[ ] multi-layer shapes</li>
+<li>[ ] bidirectional shapes</li>
+<li>[ ] packing/masking</li>
+<li>[ ] gate debugging</li>
+</ul></details><details id="help-topic-25-code"><summary>โค้ด</summary><h3>25. Checklist</h3>
+<ul>
+<li>[ ] LSTM f/i/g/o</li>
+<li>[ ] cell state</li>
+<li>[ ] hidden state</li>
+<li>[ ] GRU r/z/n</li>
+<li>[ ] LSTM vs GRU</li>
+<li>[ ] parameter count</li>
+<li>[ ] multi-layer shapes</li>
+<li>[ ] bidirectional shapes</li>
+<li>[ ] packing/masking</li>
+<li>[ ] gate debugging</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-25-result"><summary>ผลการทดลอง</summary><h3>25. Checklist</h3>
+<ul>
+<li>[ ] LSTM f/i/g/o</li>
+<li>[ ] cell state</li>
+<li>[ ] hidden state</li>
+<li>[ ] GRU r/z/n</li>
+<li>[ ] LSTM vs GRU</li>
+<li>[ ] parameter count</li>
+<li>[ ] multi-layer shapes</li>
+<li>[ ] bidirectional shapes</li>
+<li>[ ] packing/masking</li>
+<li>[ ] gate debugging</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-25"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-26" class="source-topic"><span id="source-26-lstm-gru-canonical-26-whats-next" class="legacy-anchor"></span><span id="source-26-lstm-gru-canonical-26-lstm-gru-lstm-and-gru" class="legacy-anchor"></span><h3>26. What's Next</h3>
+<p>Chapter 27 moves from sequence memory to latent-variable representation learning: Autoencoders and Variational Autoencoders.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-26-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>26. What's Next</h3>
+<p>Chapter 27 moves from sequence memory to latent-variable representation learning: Autoencoders and Variational Autoencoders.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-26-equation"><summary>สมการ</summary><h3>26. What's Next</h3>
+<p>Chapter 27 moves from sequence memory to latent-variable representation learning: Autoencoders and Variational Autoencoders.</p></details><details id="help-topic-26-visual"><summary>ภาพและ shape</summary><h3>26. What's Next</h3>
+<p>Chapter 27 moves from sequence memory to latent-variable representation learning: Autoencoders and Variational Autoencoders.</p></details><details id="help-topic-26-code"><summary>โค้ด</summary><h3>26. What's Next</h3>
+<p>Chapter 27 moves from sequence memory to latent-variable representation learning: Autoencoders and Variational Autoencoders.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-26-result"><summary>ผลการทดลอง</summary><h3>26. What's Next</h3>
+<p>Chapter 27 moves from sequence memory to latent-variable representation learning: Autoencoders and Variational Autoencoders.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-26"> อ่านหัวข้อนี้แล้ว</label></section><details><summary>รายละเอียดเพิ่มเติมและข้อกำหนดของ local lab</summary><h3>26-lstm-gru — LSTM and GRU</h3>
+<p><strong>Prerequisites:</strong> Complete 25-rnn; be able to trace array/tensor shapes, separate train/validation/test data, and explain the core objective of the current chapter.</p>
+<p><strong>Mental model:</strong> Treat LSTM and GRU as a pipeline: input representation → central mechanism → objective/state update → observable output. At every boundary, state shape/state, allowed information flow, and the invariant that should remain true.</p>
+<p><strong>Code walkthrough:</strong> Read public API first, then input checks, state/shape transformations, numerical core, returned values and tests. Connect each important code block to the equation or algorithm in the chapter README.</p>
+<p><strong>Visualization / inspection:</strong> Use a tiny case. Inspect intermediate values, distributions, norms, scores, states or trajectories appropriate to LSTM and GRU; do not rely only on the final metric.</p>
+<p><strong>Experiment:</strong> Run a baseline, one controlled parameter change, one edge case and one repeated seeded comparison. Record seed, environment, data version, configuration and metric.</p>
+<p><strong>Limitations:</strong> List at least one assumption, one data-related limitation, one numerical/optimization limitation and one scaling limitation for LSTM and GRU.</p>
+<p><strong>Analysis workflow:</strong> Check inputs → preprocessing → shapes/state → finite numerical values → objective/update → evaluation protocol. The earliest unexpected state is more informative than a downstream metric.</p>
+<p><strong>Performance:</strong> Identify the dominant time and memory terms and measure them on the local learning run before attempting optimization.</p>
+<p><strong>Production perspective:</strong> Define input validation, artifact/configuration versioning, quality and resource measurements, staged release criteria and a way to return to the previous known-good artifact.</p>
+<p><strong>Research perspective:</strong> State a falsifiable hypothesis, baseline, one-factor change, metric, repeated-run plan when stochastic, and how negative results will be recorded.</p>
+<p><strong>Interview questions:</strong>
+1. Explain LSTM and GRU from first principles without naming a library API.
+2. Trace one input through the central mechanism and give the important intermediate shapes/state.
+3. Name the strongest assumption and a case where it fails.
+4. State the dominant compute/memory cost.
+5. Describe how you would validate a new implementation against a trusted baseline.</p>
+<p><strong>Summary / exit condition:</strong> You may move on when you can explain, derive or trace, implement, test, analyze, measure and evaluate LSTM and GRU, and when the chapter mini-project plus twenty total exercises are complete.</p></details></section><section id="objective-evidence" class="canonical-section"><h2>พิสูจน์ความสามารถทีละ objective</h2><p>ทำกรณีใหม่ก่อนเปิด reference แล้วบันทึกงานด้านล่าง ให้ผู้ตรวจใช้ rubric ตรวจคำอธิบาย ผลคำนวณ โค้ด และข้อจำกัด บันทึกเก็บในเบราว์เซอร์เครื่องนี้ กดส่งออกเพื่อสำรองหรือส่งให้ผู้ตรวจ เว็บไม่ได้รันโค้ดหรือตัดสินผลงานแทนผู้ตรวจ</p><button type="button" class="secondary-button" data-export-evidence>ส่งออกหลักฐานบทนี้เป็น JSON</button><p role="status" id="evidence-export-status"></p><details id="ch26-objective-01" class="objective-proof"><summary>derive LSTM gate equations</summary><p>derive LSTM gate equations: ใช้กรณีในหัวข้อ LSTM Gates เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch26-evidence-01"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch26-evidence-01-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch26-evidence-01-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch26-evidence-01-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch26-evidence-01-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch26-evidence-01-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch26-evidence-01-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch26-evidence-01-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch26-evidence-01-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>inputgate iₜควบคุมcandidategₜที่เขียนลงcell; i.25,g.4ให้ส่วนใหม่.1 จึงcnew1.7เมื่อส่วนเก่า1.6</p><h3>4. LSTM Gates</h3>
+<p>Using concatenation conceptually:</p>
+<pre><code class="language-text">[x_t, h_(t-1)]
+</code></pre>
+<h4>Forget gate</h4>
+<pre><code class="language-text">f_t = sigmoid(
+    x_t W_xf
+    + h_(t-1) W_hf
+    + b_f
+)
+</code></pre>
+<p>Controls how much old cell state remains.</p>
+<h4>Input gate</h4>
+<pre><code class="language-text">i_t = sigmoid(
+    x_t W_xi
+    + h_(t-1) W_hi
+    + b_i
+)
+</code></pre>
+<p>Controls how much new candidate memory is written.</p>
+<h4>Candidate</h4>
+<pre><code class="language-text">g_t = tanh(
+    x_t W_xg
+    + h_(t-1) W_hg
+    + b_g
+)
+</code></pre>
+<h4>Cell update</h4>
+<pre><code class="language-text">c_t =
+f_t ⊙ c_(t-1)
++
+i_t ⊙ g_t
+</code></pre>
+<h4>Output gate</h4>
+<pre><code class="language-text">o_t = sigmoid(
+    x_t W_xo
+    + h_(t-1) W_ho
+    + b_o
+)
+</code></pre>
+<h4>Hidden output</h4>
+<pre><code class="language-text">h_t = o_t ⊙ tanh(c_t)
+</code></pre></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch26-objective-02" class="objective-proof"><summary>explain cell state</summary><p>explain cell state: ใช้กรณีในหัวข้อ LSTM State, Why Cell State Helps เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch26-evidence-02"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch26-evidence-02-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch26-evidence-02-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch26-evidence-02-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch26-evidence-02-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch26-evidence-02-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch26-evidence-02-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch26-evidence-02-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch26-evidence-02-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>cellstate cₜ=fₜcprev+iₜgₜมีadditivepathที่ช่วยgradientไหล; ไม่ได้รับประกันไม่มีvanishingเพราะproductfยังเล็กได้</p><h3>3. LSTM State</h3>
+<p>LSTM maintains two states:</p>
+<pre><code class="language-text">h_t = exposed hidden state
+c_t = cell state / memory path
+</code></pre>
+<p>This is the key architectural difference from a vanilla RNN.</p>
+<h3>5. Why Cell State Helps</h3>
+<p>The cell update has an additive path:</p>
+<pre><code class="language-text">c_t =
+f_t * c_(t-1)
++
+new_information
+</code></pre>
+<p>The gradient through c can travel through repeated elementwise forget-gate factors rather than repeated dense recurrent matrices alone.</p>
+<p>This does not eliminate vanishing gradients completely, but it creates a more controllable path.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch26-objective-03" class="objective-proof"><summary>implement an LSTM cell from scratch</summary><p>implement an LSTM cell from scratch: ใช้กรณีในหัวข้อ From Scratch เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch26-evidence-03"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch26-evidence-03-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch26-evidence-03-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch26-evidence-03-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch26-evidence-03-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch26-evidence-03-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch26-evidence-03-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch26-evidence-03-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch26-evidence-03-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p><code>sigmoid=lambda z:1/(1+np.exp(-z)); f=sigmoid(np.log(4.)); retained=f*2</code> ได้f.8,retained1.6</p><h3>21. From Scratch</h3>
+<p>src/gated_rnn_numpy.py includes:
+- stable sigmoid
+- LSTMCellNumPy
+- GRUCellNumPy
+- sequence forward helpers</p>
+<p>The goal is to inspect gate values explicitly.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch26-objective-04" class="objective-proof"><summary>derive GRU gate equations</summary><p>derive GRU gate equations: ใช้กรณีในหัวข้อ GRU Overview, GRU Equations เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch26-evidence-04"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch26-evidence-04-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch26-evidence-04-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch26-evidence-04-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch26-evidence-04-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch26-evidence-04-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch26-evidence-04-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch26-evidence-04-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch26-evidence-04-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>seed7copysequence เปรียบLSTM/GRUhiddenmatchedparameterbudget; loggates/cellnorm/validationaccuracyและแยกการเปลี่ยนresetbiasทีละตัว</p><h3>8. GRU Overview</h3>
+<p>GRU simplifies the gated design.</p>
+<p>It usually maintains only hidden state h_t.</p>
+<p>Core gates:
+- update z_t
+- reset r_t</p>
+<h3>9. GRU Equations</h3>
+<p>One common conceptual form:</p>
+<pre><code class="language-text">r_t = sigmoid(
+    x_t W_xr
+    + h_(t-1) W_hr
+    + b_r
+)
+
+z_t = sigmoid(
+    x_t W_xz
+    + h_(t-1) W_hz
+    + b_z
+)
+
+n_t = tanh(
+    x_t W_xn
+    + (r_t ⊙ h_(t-1)) W_hn
+    + b_n
+)
+
+h_t =
+(1-z_t) ⊙ n_t
++
+z_t ⊙ h_(t-1)
+</code></pre>
+<p>PyTorch's optimized GRU applies the reset gate at a slightly different algebraic location for efficiency, so framework equations can differ subtly from original-paper notation.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch26-objective-05" class="objective-proof"><summary>implement a GRU cell from scratch</summary><p>implement a GRU cell from scratch: ใช้กรณีในหัวข้อ From Scratch เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch26-evidence-05"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch26-evidence-05-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch26-evidence-05-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch26-evidence-05-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch26-evidence-05-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch26-evidence-05-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch26-evidence-05-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch26-evidence-05-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch26-evidence-05-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p><code>sigmoid=lambda z:1/(1+np.exp(-z)); f=sigmoid(np.log(4.)); retained=f*2</code> ได้f.8,retained1.6</p><h3>21. From Scratch</h3>
+<p>src/gated_rnn_numpy.py includes:
+- stable sigmoid
+- LSTMCellNumPy
+- GRUCellNumPy
+- sequence forward helpers</p>
+<p>The goal is to inspect gate values explicitly.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch26-objective-06" class="objective-proof"><summary>compare LSTM vs GRU</summary><p>compare LSTM vs GRU: ใช้กรณีในหัวข้อ LSTM vs GRU, Parameter Count เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch26-evidence-06"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch26-evidence-06-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch26-evidence-06-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch26-evidence-06-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch26-evidence-06-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch26-evidence-06-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch26-evidence-06-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch26-evidence-06-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch26-evidence-06-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>LSTMประมาณ4denseprojectionsO(TBH(D+H)),GRU3; activationgatesเพิ่มmemoryO(TBH); reportparametercountและwalltimeจริง</p><h3>12. LSTM vs GRU</h3>
+<p>LSTM:
+- separate cell and hidden state
+- more gates/parameters
+- flexible memory control</p>
+<p>GRU:
+- one main state
+- fewer parameters
+- often faster/simpler</p>
+<p>Neither is universally better.</p>
+<p>Validate on:
+- sequence length
+- dataset size
+- latency
+- accuracy
+- memory</p>
+<h3>13. Parameter Count</h3>
+<p>For one-direction, one-layer LSTM:</p>
+<p>Each of 4 gates has:
+- input weights: D × H
+- recurrent weights: H × H
+- bias terms</p>
+<p>PyTorch stores input-hidden and hidden-hidden biases separately.</p>
+<p>Approximate parameter count:</p>
+<pre><code class="language-text">4 * (
+    D*H
+    + H*H
+    + 2H
+)
+</code></pre>
+<p>GRU uses 3 gate blocks instead of 4.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch26-objective-07" class="objective-proof"><summary>understand multi-layer/bidirectional shapes</summary><p>understand multi-layer/bidirectional shapes: ใช้กรณีในหัวข้อ PyTorch Shapes, GRU Shapes, Bidirectionality เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch26-evidence-07"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch26-evidence-07-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch26-evidence-07-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch26-evidence-07-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch26-evidence-07-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch26-evidence-07-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch26-evidence-07-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch26-evidence-07-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch26-evidence-07-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>gateconcatorderเช่นPyTorchLSTM i,f,g,o ต้องsplitlastdim4H; h,cเป็น(layers,B,H); transposeผิดทำhiddenunitsสลับโดยไม่จำเป็นต้องerror</p><h3>14. PyTorch Shapes</h3>
+<p>With:</p>
+<pre><code class="language-python">nn.LSTM(
+    input_size=D,
+    hidden_size=H,
+    num_layers=L,
+    batch_first=True,
+    bidirectional=False,
+)
+</code></pre>
+<p>Input:</p>
+<pre><code class="language-text">(B,T,D)
+</code></pre>
+<p>Output:</p>
+<pre><code class="language-text">(B,T,H)
+</code></pre>
+<p>h_n:</p>
+<pre><code class="language-text">(L,B,H)
+</code></pre>
+<p>c_n:</p>
+<pre><code class="language-text">(L,B,H)
+</code></pre>
+<p>Bidirectional:</p>
+<pre><code class="language-text">output feature dimension = 2H
+h_n/c_n first dimension = 2L
+</code></pre>
+<h3>15. GRU Shapes</h3>
+<p>GRU returns:</p>
+<pre><code class="language-text">output
+h_n
+</code></pre>
+<p>No separate c_n.</p>
+<h3>19. Bidirectionality</h3>
+<p>Bidirectional LSTM/GRU is useful for:
+- tagging
+- offline sequence classification
+- representation extraction</p>
+<p>Not valid for:
+- strict real-time causal forecasting
+- streaming systems without future context</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch26-objective-08" class="objective-proof"><summary>handle variable-length sequences</summary><p>handle variable-length sequences: ใช้กรณีในหัวข้อ Final State vs Last Padded Timestep, Packed Sequences เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch26-evidence-08"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch26-evidence-08-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch26-evidence-08-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch26-evidence-08-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch26-evidence-08-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch26-evidence-08-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch26-evidence-08-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch26-evidence-08-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch26-evidence-08-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>16. Final State vs Last Padded Timestep</h3>
+<p>For padded batches:</p>
+<pre><code class="language-text">output[:, -1]
+</code></pre>
+<p>may correspond to padding for shorter samples.</p>
+<p>Better options:
+- packed sequences
+- gather true final valid timestep
+- use returned final state from packed recurrence</p>
+<h3>17. Packed Sequences</h3>
+<p>PyTorch:</p>
+<pre><code class="language-python">packed = pack_padded_sequence(
+    padded,
+    lengths,
+    batch_first=True,
+    enforce_sorted=False,
+)
+</code></pre>
+<p>The recurrent layer can consume packed input.</p>
+<p>Afterward:</p>
+<pre><code class="language-python">pad_packed_sequence(...)
+</code></pre>
+<p>if timestep outputs are needed.</p><h3>16. Final State vs Last Padded Timestep</h3>
+<p>For padded batches:</p>
+<pre><code class="language-text">output[:, -1]
+</code></pre>
+<p>may correspond to padding for shorter samples.</p>
+<p>Better options:
+- packed sequences
+- gather true final valid timestep
+- use returned final state from packed recurrence</p>
+<h3>17. Packed Sequences</h3>
+<p>PyTorch:</p>
+<pre><code class="language-python">packed = pack_padded_sequence(
+    padded,
+    lengths,
+    batch_first=True,
+    enforce_sorted=False,
+)
+</code></pre>
+<p>The recurrent layer can consume packed input.</p>
+<p>Afterward:</p>
+<pre><code class="language-python">pad_packed_sequence(...)
+</code></pre>
+<p>if timestep outputs are needed.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch26-objective-09" class="objective-proof"><summary>explain masking/packing</summary><p>explain masking/packing: ใช้กรณีในหัวข้อ Masking เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch26-evidence-09"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch26-evidence-09-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch26-evidence-09-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch26-evidence-09-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch26-evidence-09-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch26-evidence-09-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch26-evidence-09-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch26-evidence-09-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch26-evidence-09-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>แยกsequenceก่อนสร้างwindows,reseth/cตามboundary; teacherforcingonlytrainและvalidationfreerun; checkpointต้องเก็บarchitecturegateconvention</p><h3>18. Masking</h3>
+<p>When computing sequence losses, mask padded positions.</p>
+<p>Example concept:</p>
+<pre><code class="language-text">loss_per_token * valid_mask
+</code></pre>
+<p>Then normalize by number of valid positions, not padded tensor size.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch26-objective-10" class="objective-proof"><summary>use PyTorch nn.LSTM / nn.GRU</summary><p>use PyTorch nn.LSTM / nn.GRU: ใช้กรณีในหัวข้อ PyTorch Shapes, GRU Shapes เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch26-evidence-10"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch26-evidence-10-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch26-evidence-10-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch26-evidence-10-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch26-evidence-10-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch26-evidence-10-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch26-evidence-10-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch26-evidence-10-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch26-evidence-10-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>gateconcatorderเช่นPyTorchLSTM i,f,g,o ต้องsplitlastdim4H; h,cเป็น(layers,B,H); transposeผิดทำhiddenunitsสลับโดยไม่จำเป็นต้องerror</p><h3>14. PyTorch Shapes</h3>
+<p>With:</p>
+<pre><code class="language-python">nn.LSTM(
+    input_size=D,
+    hidden_size=H,
+    num_layers=L,
+    batch_first=True,
+    bidirectional=False,
+)
+</code></pre>
+<p>Input:</p>
+<pre><code class="language-text">(B,T,D)
+</code></pre>
+<p>Output:</p>
+<pre><code class="language-text">(B,T,H)
+</code></pre>
+<p>h_n:</p>
+<pre><code class="language-text">(L,B,H)
+</code></pre>
+<p>c_n:</p>
+<pre><code class="language-text">(L,B,H)
+</code></pre>
+<p>Bidirectional:</p>
+<pre><code class="language-text">output feature dimension = 2H
+h_n/c_n first dimension = 2L
+</code></pre>
+<h3>15. GRU Shapes</h3>
+<p>GRU returns:</p>
+<pre><code class="language-text">output
+h_n
+</code></pre>
+<p>No separate c_n.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch26-objective-11" class="objective-proof"><summary>debug hidden/cell-state shape mismatches</summary><p>debug hidden/cell-state shape mismatches: ใช้กรณีในหัวข้อ Debugging Gates เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch26-evidence-11"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch26-evidence-11-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch26-evidence-11-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch26-evidence-11-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch26-evidence-11-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch26-evidence-11-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch26-evidence-11-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch26-evidence-11-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch26-evidence-11-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>assertf.8,retained1.6; logits0ให้gate.5; teststable±1000 finite; shapegateตรงcprevและbatchไม่ปนกัน</p><h3>22. Debugging Gates</h3>
+<p>Inspect:
+- mean/min/max of f/i/o or r/z
+- hidden-state norm
+- cell-state norm
+- gradient norm
+- saturation near 0/1</p>
+<p>If every gate saturates early:
+- initialization may be poor
+- inputs may be unscaled
+- learning rate may be too high</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch26-objective-12" class="objective-proof"><summary>Forget Gate Interpretation</summary><p>Forget Gate Interpretation: ใช้กรณีในหัวข้อ Forget Gate Interpretation เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch26-evidence-12"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch26-evidence-12-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch26-evidence-12-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch26-evidence-12-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch26-evidence-12-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch26-evidence-12-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch26-evidence-12-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch26-evidence-12-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch26-evidence-12-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>forgetgate fₜ=σ(Wfx+Ufhprev+bf)ควบคุมส่วนcprevที่เก็บ; cprev2,f.8ให้ส่วนเดิม1.6 ก่อนรับcandidateใหม่</p><h3>6. Forget Gate Interpretation</h3>
+<p>If:</p>
+<pre><code class="language-text">f_t ≈ 1
+</code></pre>
+<p>old memory is mostly preserved.</p>
+<p>If:</p>
+<pre><code class="language-text">f_t ≈ 0
+</code></pre>
+<p>old memory is mostly erased.</p>
+<p>The gate is learned per hidden dimension.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch26-objective-13" class="objective-proof"><summary>Update Gate Intuition</summary><p>Update Gate Intuition: ใช้กรณีในหัวข้อ Update Gate Intuition เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch26-evidence-13"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch26-evidence-13-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch26-evidence-13-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch26-evidence-13-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch26-evidence-13-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch26-evidence-13-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch26-evidence-13-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch26-evidence-13-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch26-evidence-13-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>GRUupdategateมีสองconvention z·hprev+(1−z)gหรือกลับกัน ต้องอ่านAPIก่อนcopyweights; ค่าz1อาจหมายkeepหรือreplaceต่างกัน</p><h3>10. Update Gate Intuition</h3>
+<p>If:</p>
+<pre><code class="language-text">z_t ≈ 1
+</code></pre>
+<p>keep previous hidden state.</p>
+<p>If:</p>
+<pre><code class="language-text">z_t ≈ 0
+</code></pre>
+<p>replace with candidate state.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch26-objective-14" class="objective-proof"><summary>Reset Gate Intuition</summary><p>Reset Gate Intuition: ใช้กรณีในหัวข้อ Reset Gate Intuition เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch26-evidence-14"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch26-evidence-14-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch26-evidence-14-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch26-evidence-14-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch26-evidence-14-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch26-evidence-14-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch26-evidence-14-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch26-evidence-14-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch26-evidence-14-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>resetgateลดอดีตในcandidate ช่วยเริ่มpatternใหม่แต่ไม่ใช่resetactualstateอัตโนมัติ; GRUไม่มีcellstateแยกและparametersน้อยกว่าLSTMทั่วไป</p><h3>11. Reset Gate Intuition</h3>
+<p>The reset gate controls how much previous hidden information contributes to the candidate.</p>
+<p>Small reset value means candidate can behave more like a fresh state.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details></section><section id="implementation" class="canonical-section"><h2>Implementation และ tests ที่รันบนเครื่องได้</h2><details><summary>26-lstm-gru/src/gated_rnn_numpy.py</summary><pre><code>&quot;&quot;&quot;Educational LSTM and GRU cells implemented with NumPy.&quot;&quot;&quot;
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+import numpy as np
+
+
+def sigmoid(x: np.ndarray) -&gt; np.ndarray:
+    values = np.asarray(x, dtype=float)
+    out = np.empty_like(values)
+    positive = values &gt;= 0
+    out[positive] = 1.0 / (1.0 + np.exp(-values[positive]))
+    exp_values = np.exp(values[~positive])
+    out[~positive] = exp_values / (1.0 + exp_values)
+    return out
+
+
+@dataclass
+class LSTMCellNumPy:
+    input_size: int
+    hidden_size: int
+    seed: int = 42
+
+    def __post_init__(self) -&gt; None:
+        if self.input_size &lt;= 0 or self.hidden_size &lt;= 0:
+            raise ValueError(&quot;sizes must be positive&quot;)
+
+        rng = np.random.default_rng(self.seed)
+        scale_x = 1.0 / np.sqrt(self.input_size)
+        scale_h = 1.0 / np.sqrt(self.hidden_size)
+
+        self.w_x = rng.normal(
+            0.0,
+            scale_x,
+            size=(self.input_size, 4 * self.hidden_size),
+        )
+        self.w_h = rng.normal(
+            0.0,
+            scale_h,
+            size=(self.hidden_size, 4 * self.hidden_size),
+        )
+        self.bias = np.zeros(4 * self.hidden_size, dtype=float)
+
+    def step(
+        self,
+        x_t: np.ndarray,
+        h_prev: np.ndarray,
+        c_prev: np.ndarray,
+    ) -&gt; tuple[np.ndarray, np.ndarray, dict[str, np.ndarray]]:
+        x = np.asarray(x_t, dtype=float)
+        h = np.asarray(h_prev, dtype=float)
+        c = np.asarray(c_prev, dtype=float)
+
+        batch = x.shape[0]
+        if x.shape != (batch, self.input_size):
+            raise ValueError(&quot;x_t shape mismatch&quot;)
+        if h.shape != (batch, self.hidden_size):
+            raise ValueError(&quot;h_prev shape mismatch&quot;)
+        if c.shape != (batch, self.hidden_size):
+            raise ValueError(&quot;c_prev shape mismatch&quot;)
+
+        gates = x @ self.w_x + h @ self.w_h + self.bias
+        f_raw, i_raw, g_raw, o_raw = np.split(gates, 4, axis=1)
+
+        f = sigmoid(f_raw)
+        i = sigmoid(i_raw)
+        g = np.tanh(g_raw)
+        o = sigmoid(o_raw)
+
+        c_next = f * c + i * g
+        h_next = o * np.tanh(c_next)
+
+        return h_next, c_next, {
+            &quot;forget&quot;: f,
+            &quot;input&quot;: i,
+            &quot;candidate&quot;: g,
+            &quot;output&quot;: o,
+        }
+
+    def forward(
+        self,
+        x: np.ndarray,
+    ) -&gt; tuple[np.ndarray, np.ndarray, np.ndarray]:
+        sequence = np.asarray(x, dtype=float)
+        if sequence.ndim != 3 or sequence.shape[2] != self.input_size:
+            raise ValueError(&quot;expected (B,T,input_size)&quot;)
+
+        batch, timesteps, _ = sequence.shape
+        h = np.zeros((batch, self.hidden_size), dtype=float)
+        c = np.zeros((batch, self.hidden_size), dtype=float)
+        outputs = np.empty((batch, timesteps, self.hidden_size), dtype=float)
+
+        for t in range(timesteps):
+            h, c, _ = self.step(sequence[:, t, :], h, c)
+            outputs[:, t, :] = h
+
+        return outputs, h, c
+
+
+@dataclass
+class GRUCellNumPy:
+    input_size: int
+    hidden_size: int
+    seed: int = 42
+
+    def __post_init__(self) -&gt; None:
+        if self.input_size &lt;= 0 or self.hidden_size &lt;= 0:
+            raise ValueError(&quot;sizes must be positive&quot;)
+
+        rng = np.random.default_rng(self.seed)
+        sx = 1.0 / np.sqrt(self.input_size)
+        sh = 1.0 / np.sqrt(self.hidden_size)
+
+        self.w_xr = rng.normal(0.0, sx, (self.input_size, self.hidden_size))
+        self.w_hr = rng.normal(0.0, sh, (self.hidden_size, self.hidden_size))
+        self.b_r = np.zeros(self.hidden_size)
+
+        self.w_xz = rng.normal(0.0, sx, (self.input_size, self.hidden_size))
+        self.w_hz = rng.normal(0.0, sh, (self.hidden_size, self.hidden_size))
+        self.b_z = np.zeros(self.hidden_size)
+
+        self.w_xn = rng.normal(0.0, sx, (self.input_size, self.hidden_size))
+        self.w_hn = rng.normal(0.0, sh, (self.hidden_size, self.hidden_size))
+        self.b_n = np.zeros(self.hidden_size)
+
+    def step(
+        self,
+        x_t: np.ndarray,
+        h_prev: np.ndarray,
+    ) -&gt; tuple[np.ndarray, dict[str, np.ndarray]]:
+        x = np.asarray(x_t, dtype=float)
+        h = np.asarray(h_prev, dtype=float)
+        batch = x.shape[0]
+
+        if x.shape != (batch, self.input_size):
+            raise ValueError(&quot;x_t shape mismatch&quot;)
+        if h.shape != (batch, self.hidden_size):
+            raise ValueError(&quot;h_prev shape mismatch&quot;)
+
+        r = sigmoid(x @ self.w_xr + h @ self.w_hr + self.b_r)
+        z = sigmoid(x @ self.w_xz + h @ self.w_hz + self.b_z)
+        n = np.tanh(x @ self.w_xn + (r * h) @ self.w_hn + self.b_n)
+        h_next = (1.0 - z) * n + z * h
+
+        return h_next, {&quot;reset&quot;: r, &quot;update&quot;: z, &quot;candidate&quot;: n}
+
+    def forward(self, x: np.ndarray) -&gt; tuple[np.ndarray, np.ndarray]:
+        sequence = np.asarray(x, dtype=float)
+        if sequence.ndim != 3 or sequence.shape[2] != self.input_size:
+            raise ValueError(&quot;expected (B,T,input_size)&quot;)
+
+        batch, timesteps, _ = sequence.shape
+        h = np.zeros((batch, self.hidden_size), dtype=float)
+        outputs = np.empty((batch, timesteps, self.hidden_size), dtype=float)
+
+        for t in range(timesteps):
+            h, _ = self.step(sequence[:, t, :], h)
+            outputs[:, t, :] = h
+
+        return outputs, h
+</code></pre></details><details><summary>26-lstm-gru/tests/test_gated_rnn_numpy.py</summary><pre><code>from pathlib import Path
+import importlib.util
+import sys
+
+import numpy as np
+
+
+MODULE_PATH = Path(__file__).parents[1] / &quot;src&quot; / &quot;gated_rnn_numpy.py&quot;
+SPEC = importlib.util.spec_from_file_location(&quot;gated_rnn_numpy_course&quot;, MODULE_PATH)
+assert SPEC and SPEC.loader
+mod = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = mod
+SPEC.loader.exec_module(mod)
+
+
+def test_lstm_shapes_and_gate_ranges() -&gt; None:
+    cell = mod.LSTMCellNumPy(3, 4, seed=2)
+    x = np.ones((5, 3))
+    h = np.zeros((5, 4))
+    c = np.zeros((5, 4))
+
+    h_next, c_next, gates = cell.step(x, h, c)
+
+    assert h_next.shape == (5, 4)
+    assert c_next.shape == (5, 4)
+    assert set(gates) == {&quot;forget&quot;, &quot;input&quot;, &quot;candidate&quot;, &quot;output&quot;}
+
+    for name in [&quot;forget&quot;, &quot;input&quot;, &quot;output&quot;]:
+        assert np.all(gates[name] &gt;= 0.0)
+        assert np.all(gates[name] &lt;= 1.0)
+
+
+def test_lstm_sequence_shapes() -&gt; None:
+    cell = mod.LSTMCellNumPy(2, 6, seed=7)
+    x = np.ones((4, 8, 2))
+
+    output, h, c = cell.forward(x)
+
+    assert output.shape == (4, 8, 6)
+    assert h.shape == (4, 6)
+    assert c.shape == (4, 6)
+
+
+def test_gru_shapes_and_gate_ranges() -&gt; None:
+    cell = mod.GRUCellNumPy(3, 5, seed=4)
+    x = np.ones((2, 3))
+    h = np.zeros((2, 5))
+
+    h_next, gates = cell.step(x, h)
+
+    assert h_next.shape == (2, 5)
+    assert np.all((gates[&quot;reset&quot;] &gt;= 0.0) &amp; (gates[&quot;reset&quot;] &lt;= 1.0))
+    assert np.all((gates[&quot;update&quot;] &gt;= 0.0) &amp; (gates[&quot;update&quot;] &lt;= 1.0))
+
+
+def test_gru_sequence_final_matches_last_output() -&gt; None:
+    cell = mod.GRUCellNumPy(1, 3, seed=5)
+    x = np.arange(10, dtype=float).reshape(2, 5, 1)
+
+    output, final_hidden = cell.forward(x)
+
+    np.testing.assert_allclose(output[:, -1, :], final_hidden)
+</code></pre></details></section><section id="glossary" class="canonical-section"><h2>อภิธานศัพท์ — คำไทย ความหมาย และข้อควรตรวจ</h2><dl><dt>tensor</dt><dd>เทนเซอร์: ชุดตัวเลขที่มีแกน เช่น scalar ไม่มีแกน, vector หนึ่งแกน, matrix สองแกน; shape บอกขนาดแต่ละแกน ไม่บอกความหมายของแกนจนกว่าจะระบุ</dd><dt>shape</dt><dd>รูปทรงข้อมูล: (B,T,d) หมายถึง batch × เวลา/ตำแหน่ง × features; ใช้ชื่อแกนกำกับเสมอ การ transpose เปลี่ยนแกนแต่ไม่ใช่แค่เปลี่ยนชื่อ</dd><dt>batch</dt><dd>กลุ่มตัวอย่างที่คำนวณร่วมกันหนึ่งครั้ง; B คือจำนวนตัวอย่าง ไม่ใช่จำนวน features หรือจำนวน optimizer updates</dd><dt>weight w / θ</dt><dd>น้ำหนักหรือพารามิเตอร์ที่โมเดลใช้คำนวณ; แก้ด้วยมือทำ forward ใหม่ ส่วน optimizer ต้องรับ gradient แล้วกด update จึงแก้ state</dd><dt>bias b</dt><dd>ค่าคงที่ที่บวกกับผลเชิงเส้น; regression scalar bias เพิ่ม Δ ทำให้ prediction ทุกจุดเพิ่ม Δ เท่ากัน</dd><dt>prediction ŷ</dt><dd>ค่าที่โมเดลทำนายจาก input และพารามิเตอร์ปัจจุบัน; เครื่องหมายหมวกแยกจาก target y ที่มาจากข้อมูล</dd><dt>residual e</dt><dd>ความคลาดเคลื่อน ในเว็บนี้นิยาม prediction − target; บางตำราใช้เครื่องหมายกลับกัน จึงต้องตรวจนิยามก่อนเทียบสูตร gradient</dd><dt>MSE</dt><dd>mean squared error = ผลรวม residual กำลังสองหารจำนวนรายการที่ระบุ; มีหน่วยเป็น target ยกกำลังสอง และการใช้ sum แทน mean เปลี่ยน scale gradient</dd><dt>loss L / objective J</dt><dd>จำนวนที่ optimizer ต้องการลด; objective อาจรวม data loss และ regularization จึงต้องดูองค์ประกอบและ reduction ให้ตรง implementation</dd><dt>gradient ∇ / ∂</dt><dd>เวกเตอร์ของ partial derivatives บอกอัตราเปลี่ยน loss ต่อพารามิเตอร์แต่ละตัว; ∂ ใช้เมื่อเปลี่ยนตัวหนึ่งโดยตรึงตัวอื่น</dd><dt>chain rule</dt><dd>กฎลูกโซ่: คูณอนุพันธ์ตามเส้นทาง และบวก contribution จากทุกเส้นทางที่มารวมกัน ใช้ย้อนจาก loss ถึง weights</dd><dt>learning rate η</dt><dd>ขนาดตัวคูณ gradient ใน update θnew=θ−ηg; η≥0, ศูนย์หมายถึงไม่มีการขยับพารามิเตอร์ ก้าวใหญ่เกินอาจ diverge</dd><dt>regularization λ</dt><dd>ตัวคูณค่าลงโทษ ต้อง λ≥0 ตามนิยามการลงโทษ; Ridge λΣw² เพิ่ม gradient 2λw โดยบท Regression นี้ไม่ลงโทษ bias</dd><dt>baseline</dt><dd>สถานะอ้างอิงที่ตรึงไว้สำหรับเทียบ; ต้องเก็บ snapshot ไม่อ้าง object ปัจจุบันที่แก้ตามไปด้วย</dd><dt>invariant</dt><dd>คุณสมบัติที่กลไกต้องรักษา เช่น probability รวม1, shape สอดคล้อง, queue ไม่เกิน capacity; ใช้ tests ตรวจได้มากกว่าดูภาพสวย</dd><dt>optimizer state</dt><dd>ความจำของอัลกอริทึม เช่น velocity, moments และ completed updates; คืนเฉพาะ weights ยังไม่เท่ากับเริ่มการฝึกใหม่ทั้งหมด</dd><dt>finite difference</dt><dd>ประมาณ derivative ด้วย [f(x+h)−f(x−h)]/(2h); h&gt;0, ใช้ smooth point และลองหลาย h เพื่อแยก truncation error จาก roundoff</dd><dt>softmax</dt><dd>แปลง logits เป็นความน่าจะเป็นตามแกนที่กำหนด; ลบ max ก่อน exp เพื่อความเสถียร และ fully masked row ต้องมีนโยบายชัดเจน</dd><dt>logit</dt><dd>คะแนนก่อน sigmoid/softmax ไม่ใช่ probability; อาจเป็นจำนวนจริงติดลบหรือเกิน1ได้ จึงห้ามส่งให้ loss ที่คาด probability โดยไม่แปลง</dd><dt>temperature τ / T</dt><dd>ตัวหาร logits ก่อน softmax; ต้องเป็นบวก ค่าเล็กทำ distribution แหลมขึ้น โดยไม่เท่ากับ retrain weights</dd><dt>mask</dt><dd>ตัวกำหนดตำแหน่งที่อ่านหรือคิด loss ได้; causal mask ปิดอนาคต, padding mask ปิดข้อมูลเติม, loss mask เลือก target แต่ละอย่างคนละหน้าที่</dd><dt>Q / K / V</dt><dd>query ใช้ค้นข้อมูล, key ใช้จับคู่ query, value เป็นข้อมูลที่ถูกถัวเฉลี่ย; เป็น learned projections ของ representation ไม่ใช่ป้ายความหมายตายตัว</dd><dt>head</dt><dd>ส่วนของ feature representation ที่ทำ attention แยกกัน แล้ว concat/project กลับ; ต้องตรวจ d_model หารจำนวน heads ลงตัว</dd><dt>ε-neighborhood</dt><dd>เพื่อนบ้านทั้งหมดที่มีระยะไม่เกิน ε รวมจุดตัวเองใน DBSCAN นี้; ε มีหน่วยเดียวกับพิกัด ไม่ใช่จำนวน k ที่ใช้โหวต</dd><dt>core / border / noise</dt><dd>DBSCAN core มีเพื่อนบ้านรวมตัวเองถึง min_samples; border อยู่ใกล้ core แต่เพื่อนบ้านไม่ถึง; noise ไม่ถูกเชื่อมกับ core cluster ใด</dd><dt>bootstrap</dt><dd>สุ่ม observations แบบ replacement ขนาดเท่าเดิมซ้ำหลายครั้งแล้วคำนวณ statistic ใหม่; seed ทำให้ตรวจซ้ำได้ แต่ไม่แก้สมมติฐาน IID ที่ผิด</dd><dt>confidence interval</dt><dd>ช่วงที่สร้างด้วย procedure ที่มี coverage ตามสมมติฐาน; ช่วงหนึ่งที่ได้แล้วไม่ใช่ posterior probability ของ parameter และ sample เล็กยังไม่แน่นอนมาก</dd><dt>validation / test</dt><dd>validation ใช้เลือกโมเดล/ค่าตั้ง ส่วน test ใช้ประเมินหลัง freeze การตัดสินใจ; fit preprocessing/tokenizer จาก test เป็น leakage</dd><dt>leakage</dt><dd>ข้อมูลที่ควรยังไม่รู้ไหลเข้า training/การเลือกโมเดล เช่น future feature หรือเอกสารซ้ำข้าม split ทำให้ metric ดูดีเกินการใช้งานจริง</dd><dt>queue / capacity</dt><dd>queue คือรายการรอ, capacity การให้บริการรวม = workers × service rate ตามแบบจำลอง; เพิ่ม timeout ไม่เพิ่มกำลังประมวลผล</dd><dt>state transition</dt><dd>การเปลี่ยนสถานะเมื่อเกิดเหตุการณ์ที่อนุญาต เช่น queued→active→done; ต้องระบุ guard, side effect และเหตุผลเมื่อ transition ถูกปฏิเสธ</dd><dt>latency / throughput</dt><dd>latency คือเวลาต่อคำขอ, throughput คือปริมาณงานต่อหน่วยเวลา; batching อาจเพิ่ม throughput แต่เพิ่มเวลารอ จึงต้องวัดทั้งคู่</dd><dt>idempotency</dt><dd>ทำคำขอ business operation เดิมซ้ำแล้ว side effect เกิดครั้งเดียวตาม key และ transaction protocol; ไม่ได้รับประกันจากการใช้ UUID ใหม่ทุก attempt</dd><dt>local lab</dt><dd>โปรแกรม Python และ tests ที่ผู้เรียนรันบนเครื่อง; เว็บเก็บเพียงคำยืนยันของผู้เรียน การผ่าน tests ของโค้ดต้นแบบไม่ใช่ผลตรวจโค้ดผู้เรียน</dd></dl></section></article>
+<section id="practice" class="practice-section"><span class="eyebrow">PRACTICE · DEBUG · BUILD</span><h2>พิสูจน์ด้วยการลงมือทำ</h2><div id="web-checks"></div><div class="retry-actions"><button class="secondary-button" id="retry-checks">เริ่มทำโจทย์ในเว็บใหม่</button><button class="text-button" id="undo-retry" hidden>คืนผลก่อนเริ่มใหม่</button></div><div id="exercise-content"><h2>แบบฝึก 20 ข้อ — เฉลยเฉพาะข้อ</h2><p>ทำคำตอบก่อนเปิด hints; โจทย์ปลายเปิดให้ใช้ตัวอย่างคำตอบและหลักฐานราย objective ตรวจงานจริง</p><section id="exercise-1" class="exercise-item"><h3>ข้อ 1</h3><p>Define forget gate.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Forget Gate Interpretation: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): forgetgate fₜ=σ(Wfx+Ufhprev+bf)ควบคุมส่ว…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: forgetgate fₜ=σ(Wfx+Ufhprev+bf)ควบคุมส่วนcprevที่เก็บ; cprev2,f.8ให้ส่วน…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>forgetgate fₜ=σ(Wfx+Ufhprev+bf)ควบคุมส่วนcprevที่เก็บ; cprev2,f.8ให้ส่วนเดิม1.6 ก่อนรับcandidateใหม่</p><p>อ้างอิง: <a href="#chapter-26/section/topic-6">Forget Gate Interpretation</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch26-exercise-01"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-2" class="exercise-item"><h3>ข้อ 2</h3><p>Define input gate.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ LSTM Gates: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): inputgate iₜควบคุมcandidategₜที่เขียน…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: inputgate iₜควบคุมcandidategₜที่เขียนลงcell; i.25,g.4ให้ส่วนใหม่.1…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>inputgate iₜควบคุมcandidategₜที่เขียนลงcell; i.25,g.4ให้ส่วนใหม่.1 จึงcnew1.7เมื่อส่วนเก่า1.6</p><p>อ้างอิง: <a href="#chapter-26/section/topic-4">LSTM Gates</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch26-exercise-02"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-3" class="exercise-item"><h3>ข้อ 3</h3><p>Explain output gate.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ LSTM Gates: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): outputgate oₜควบคุมhidden hₜ=oₜta…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: outputgate oₜควบคุมhidden hₜ=oₜtanh(cₜ); c1.7,o.5ให้h≈.4677…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>outputgate oₜควบคุมhidden hₜ=oₜtanh(cₜ); c1.7,o.5ให้h≈.467705 ไม่แก้cellstateโดยตรง</p><p>อ้างอิง: <a href="#chapter-26/section/topic-4">LSTM Gates</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch26-exercise-03"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-4" class="exercise-item"><h3>ข้อ 4</h3><p>Explain cell state.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ LSTM State, Why Cell State Helps: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): cellstate cₜ=fₜcprev+iₜgₜมีadditivepathที่ช่…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: cellstate cₜ=fₜcprev+iₜgₜมีadditivepathที่ช่วยgradientไหล; ไม่ได้รับประกันไม่มี…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>cellstate cₜ=fₜcprev+iₜgₜมีadditivepathที่ช่วยgradientไหล; ไม่ได้รับประกันไม่มีvanishingเพราะproductfยังเล็กได้</p><p>อ้างอิง: <a href="#chapter-26/section/topic-3">LSTM State</a>, <a href="#chapter-26/section/topic-5">Why Cell State Helps</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch26-exercise-04"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-5" class="exercise-item"><h3>ข้อ 5</h3><p>Compare forget gate and input gate.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ LSTM Gates, Forget Gate Interpretation: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): forgetgateลด/เก็บอดีต ส่วนinputgateเลือ…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: forgetgateลด/เก็บอดีต ส่วนinputgateเลือกข้อมูลใหม่; f1,i0รักษาcellเดิม…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>forgetgateลด/เก็บอดีต ส่วนinputgateเลือกข้อมูลใหม่; f1,i0รักษาcellเดิม ขณะที่f0,i1แทนด้วยcandidate</p><p>อ้างอิง: <a href="#chapter-26/section/topic-4">LSTM Gates</a>, <a href="#chapter-26/section/topic-6">Forget Gate Interpretation</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch26-exercise-05"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-6" class="exercise-item"><h3>ข้อ 6</h3><p>Explain how cell state changes model behavior.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Why Cell State Helps: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): เปลี่ยนcellstateส่งผลhผ่านtanhและoutpu…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: เปลี่ยนcellstateส่งผลhผ่านtanhและoutputgate; cใหญ่มากtanhอิ่มตัวจึงh…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>เปลี่ยนcellstateส่งผลhผ่านtanhและoutputgate; cใหญ่มากtanhอิ่มตัวจึงhแทบไม่เปลี่ยนแม้cเปลี่ยนมาก</p><p>อ้างอิง: <a href="#chapter-26/section/topic-5">Why Cell State Helps</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch26-exercise-06"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-7" class="exercise-item"><h3>ข้อ 7</h3><p>Explain a limitation involving GRU update gate.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Update Gate Intuition: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): GRUupdategateมีสองconvention z·hprev+(1−z)gหรื…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: GRUupdategateมีสองconvention z·hprev+(1−z)gหรือกลับกัน ต้องอ่านAPIก่อนcopyweights; ค…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>GRUupdategateมีสองconvention z·hprev+(1−z)gหรือกลับกัน ต้องอ่านAPIก่อนcopyweights; ค่าz1อาจหมายkeepหรือreplaceต่างกัน</p><p>อ้างอิง: <a href="#chapter-26/section/topic-10">Update Gate Intuition</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch26-exercise-07"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-8" class="exercise-item"><h3>ข้อ 8</h3><p>Explain the tradeoff introduced by GRU reset gate.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Reset Gate Intuition: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): resetgateลดอดีตในcandidate ช่วยเริ่มpatternใหม่แต่ไม่…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: resetgateลดอดีตในcandidate ช่วยเริ่มpatternใหม่แต่ไม่ใช่resetactualstateอัตโนมัติ; GRUไม่มีcells…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>resetgateลดอดีตในcandidate ช่วยเริ่มpatternใหม่แต่ไม่ใช่resetactualstateอัตโนมัติ; GRUไม่มีcellstateแยกและparametersน้อยกว่าLSTMทั่วไป</p><p>อ้างอิง: <a href="#chapter-26/section/topic-11">Reset Gate Intuition</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch26-exercise-08"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-9" class="exercise-item"><h3>ข้อ 9</h3><p>Implement a small example of forget gate.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ From Scratch: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): `sigmoid=lambda z:1/(1+np.exp(-z)); …</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: `sigmoid=lambda z:1/(1+np.exp(-z)); f=sigmoid(np.log(4.)); retain…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p><code>sigmoid=lambda z:1/(1+np.exp(-z)); f=sigmoid(np.log(4.)); retained=f*2</code> ได้f.8,retained1.6</p><p>อ้างอิง: <a href="#chapter-26/section/topic-21">From Scratch</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch26-exercise-09"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-10" class="exercise-item"><h3>ข้อ 10</h3><p>Add deterministic tests for Exercise 9.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Debugging Gates: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): assertf.8,retained1.6; logits0ให้gate.5…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: assertf.8,retained1.6; logits0ให้gate.5; teststable±1000 finite; shape…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>assertf.8,retained1.6; logits0ให้gate.5; teststable±1000 finite; shapegateตรงcprevและbatchไม่ปนกัน</p><p>อ้างอิง: <a href="#chapter-26/section/topic-22">Debugging Gates</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch26-exercise-10"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-11" class="exercise-item"><h3>ข้อ 11</h3><p>Implement the main calculation behind output gate.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ LSTM Gates: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): `c=.8<em>2+.25</em>.4; h=.5*np.tanh(c)…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: <code>c=.8*2+.25*.4; h=.5*np.tanh(c)</code> ได้c1.7,h≈.467705; outp…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p><code>c=.8*2+.25*.4; h=.5*np.tanh(c)</code> ได้c1.7,h≈.467705; outputgate0ให้h0แต่cยัง1.7</p><p>อ้างอิง: <a href="#chapter-26/section/topic-4">LSTM Gates</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch26-exercise-11"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-12" class="exercise-item"><h3>ข้อ 12</h3><p>Run a small seeded experiment using input gate, cell state, and GRU reset gate.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ LSTM Gates, GRU Equations, Reset Gate Intuition: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): seed7copysequence เปรียบLSTM/GRUhiddenmatchedparamet…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: seed7copysequence เปรียบLSTM/GRUhiddenmatchedparameterbudget; loggates/cellnorm/validationacc…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>seed7copysequence เปรียบLSTM/GRUhiddenmatchedparameterbudget; loggates/cellnorm/validationaccuracyและแยกการเปลี่ยนresetbiasทีละตัว</p><p>อ้างอิง: <a href="#chapter-26/section/topic-4">LSTM Gates</a>, <a href="#chapter-26/section/topic-9">GRU Equations</a>, <a href="#chapter-26/section/topic-11">Reset Gate Intuition</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch26-exercise-12"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-13" class="exercise-item"><h3>ข้อ 13</h3><p>Explain a common shape or data mismatch.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ PyTorch Shapes, GRU Shapes: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): gateconcatorderเช่นPyTorchLSTM i,f,g,o ต้องsplitlast…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: gateconcatorderเช่นPyTorchLSTM i,f,g,o ต้องsplitlastdim4H; h,cเป็น(layers,B,H); transposeผิดท…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>gateconcatorderเช่นPyTorchLSTM i,f,g,o ต้องsplitlastdim4H; h,cเป็น(layers,B,H); transposeผิดทำhiddenunitsสลับโดยไม่จำเป็นต้องerror</p><p>อ้างอิง: <a href="#chapter-26/section/topic-14">PyTorch Shapes</a>, <a href="#chapter-26/section/topic-15">GRU Shapes</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch26-exercise-13"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-14" class="exercise-item"><h3>ข้อ 14</h3><p>Explain one numerical-stability concern.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Debugging Gates: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): sigmoidใช้stablelogits,cellstateสะสมโตได้;…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: sigmoidใช้stablelogits,cellstateสะสมโตได้; checkcและhแยกและclipgrad; อย่าcl…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>sigmoidใช้stablelogits,cellstateสะสมโตได้; checkcและhแยกและclipgrad; อย่าclipcellโดยเงียบเพราะเปลี่ยนกลไก</p><p>อ้างอิง: <a href="#chapter-26/section/topic-22">Debugging Gates</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch26-exercise-14"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-15" class="exercise-item"><h3>ข้อ 15</h3><p>Explain a correct train, validation, and test workflow.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Masking, Bidirectionality: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): แยกsequenceก่อนสร้างwindows,reseth/cตามboundary; teache…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: แยกsequenceก่อนสร้างwindows,reseth/cตามboundary; teacherforcingonlytrainและvalidationfreerun; check…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>แยกsequenceก่อนสร้างwindows,reseth/cตามboundary; teacherforcingonlytrainและvalidationfreerun; checkpointต้องเก็บarchitecturegateconvention</p><p>อ้างอิง: <a href="#chapter-26/section/topic-18">Masking</a>, <a href="#chapter-26/section/topic-19">Bidirectionality</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch26-exercise-15"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-16" class="exercise-item"><h3>ข้อ 16</h3><p>Measure runtime and memory of the main calculation.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Parameter Count: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): LSTMประมาณ4denseprojectionsO(TBH(D+H)),GRU3; …</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: LSTMประมาณ4denseprojectionsO(TBH(D+H)),GRU3; activationgatesเพิ่มmemoryO(TBH); rep…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>LSTMประมาณ4denseprojectionsO(TBH(D+H)),GRU3; activationgatesเพิ่มmemoryO(TBH); reportparametercountและwalltimeจริง</p><p>อ้างอิง: <a href="#chapter-26/section/topic-13">Parameter Count</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch26-exercise-16"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-17" class="exercise-item"><h3>ข้อ 17</h3><p>Derive the main input-to-output algorithm for LSTM and GRU.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ From Scratch: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): concat[x,hprev]→4projections→σf/σi/tanhg/σo→c…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: concat[x,hprev]→4projections→σf/σi/tanhg/σo→c=f<em>cprev+i</em>g→h=o*tanhc; backwardaddit…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>concat[x,hprev]→4projections→σf/σi/tanhg/σo→c=f<em>cprev+i</em>g→h=o*tanhc; backwardadditivecellpathต้องรวมจากfuturecและh</p><p>อ้างอิง: <a href="#chapter-26/section/topic-21">From Scratch</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch26-exercise-17"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-18" class="exercise-item"><h3>ข้อ 18</h3><p>Compare a scratch implementation with a trusted library on identical data.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ From Scratch: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): torch.nn.LSTMCellcopygateweightsตามi,f,g,o,sp…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: torch.nn.LSTMCellcopygateweightsตามi,f,g,o,splitbiasให้ผลรวมตรง; compareh,cหนึ่งก้…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>torch.nn.LSTMCellcopygateweightsตามi,f,g,o,splitbiasให้ผลรวมตรง; compareh,cหนึ่งก้าวและหลายก้าวfloat64ก่อนtraining</p><p>อ้างอิง: <a href="#chapter-26/section/topic-21">From Scratch</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch26-exercise-18"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-19" class="exercise-item"><h3>ข้อ 19</h3><p>Compare a baseline with one controlled change involving GRU update gate.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Update Gate Intuition: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): คงGRUทุกอย่างเปลี่ยนupdatebias−2→2โดยconvention…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: คงGRUทุกอย่างเปลี่ยนupdatebias−2→2โดยconventionเดิม; วัดhretentionหลังinputzeroและta…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>คงGRUทุกอย่างเปลี่ยนupdatebias−2→2โดยconventionเดิม; วัดhretentionหลังinputzeroและtaskmetric ไม่สรุปgateสูงเรียนดีเสมอ</p><p>อ้างอิง: <a href="#chapter-26/section/topic-10">Update Gate Intuition</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch26-exercise-19"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-20" class="exercise-item"><h3>ข้อ 20</h3><p>Summarize validation, reproducibility, and one open research question.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Debugging Gates: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): บันทึกgateorder/biasinit/statepolicy/seed; ทดลอง…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: บันทึกgateorder/biasinit/statepolicy/seed; ทดลองforgetbias1เทียบ0ช่วยdelay20taskที่upda…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>บันทึกgateorder/biasinit/statepolicy/seed; ทดลองforgetbias1เทียบ0ช่วยdelay20taskที่updatesเท่ากันและreportgate saturation</p><p>อ้างอิง: <a href="#chapter-26/section/topic-22">Debugging Gates</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch26-exercise-20"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section></div><div id="local-lab-content"><section id="local-lab"><h2>Local lab: Python 3.12 บน CPU</h2><p>รันจาก repository root; ใช้ Python 3.12 แยก environment สำหรับ framework ตาม requirements ของชุดบท</p><pre><code>python3.12 -m venv .venv-course
+source .venv-course/bin/activate
+python -m pip install -r requirements-batch09.txt pytest
+(cd 26-lstm-gru &amp;&amp; python -m pytest tests -q -rs)</code></pre><p>ผลที่คาดหวัง: required tests ผ่านและไม่มี required test ถูก skip; GPU/integrations ที่ยังไม่รันต้องระบุแยก Python 3.15 ที่มากับเครื่องอาจใช้กับ framework wheels เหล่านี้ไม่ได้</p><h2>Mini Project — Gated Memory Benchmark</h2>
+<p>Use the same synthetic long-memory dataset for:
+- vanilla RNN
+- LSTM
+- GRU</p>
+<p>Measure:
+- validation accuracy
+- training loss
+- gradient norm
+- parameter count
+- training time
+- inference latency</p>
+<p>Sweep sequence length and identify where vanilla RNN degrades relative to gated models.</p><h2>Batch 09 Integration Project — Sequence &amp; Latent Representation Lab</h2>
+<p>Batch 09 has two complementary experiments.</p>
+<h3>Part A — Sequence Memory Benchmark</h3>
+<p>Train equivalent PyTorch classifiers using:</p>
+<ul>
+<li>vanilla RNN</li>
+<li>LSTM</li>
+<li>GRU</li>
+</ul>
+<p>on a synthetic delayed-memory task.</p>
+<p>The label depends on information near the beginning of the sequence, while distracting noise continues afterward.</p>
+<p>This exposes long-range credit-assignment behavior.</p>
+<h3>Part B — Variational Autoencoder</h3>
+<p>Train a small VAE on sklearn digits.</p>
+<p>Track:</p>
+<ul>
+<li>reconstruction loss</li>
+<li>KL divergence</li>
+<li>total ELBO-style loss</li>
+<li>latent mean/std</li>
+<li>prior samples</li>
+</ul>
+<p>No external dataset download is required.</p>
+<h3>Run Sequence Benchmark</h3>
+<pre><code class="language-bash">python integration-project-batch09/src/sequence_latent_lab.py \
+  --mode sequence \
+  --epochs 5 \
+  --output-dir reports/batch09-sequence
+</code></pre>
+<h3>Run VAE Benchmark</h3>
+<pre><code class="language-bash">python integration-project-batch09/src/sequence_latent_lab.py \
+  --mode vae \
+  --epochs 5 \
+  --output-dir reports/batch09-vae
+</code></pre>
+<h3>Methodology Rules</h3>
+<h4>Sequence branch</h4>
+<ul>
+<li>same train/validation/test split for RNN/LSTM/GRU</li>
+<li>same hidden size</li>
+<li>same optimizer family</li>
+<li>same epoch budget</li>
+<li>validation selects model</li>
+<li>test evaluated once</li>
+</ul>
+<h4>VAE branch</h4>
+<ul>
+<li>training split only for optimization</li>
+<li>validation tracks reconstruction/KL</li>
+<li>test remains held out</li>
+<li>do not select latent plots by test appearance</li>
+</ul>
+<h3>What To Compare</h3>
+<h4>RNN/LSTM/GRU</h4>
+<ul>
+<li>parameter count</li>
+<li>best validation accuracy</li>
+<li>final test accuracy</li>
+<li>training time</li>
+<li>gradient clipping</li>
+<li>sequence-length sensitivity</li>
+</ul>
+<h4>VAE</h4>
+<ul>
+<li>reconstruction</li>
+<li>KL</li>
+<li>latent statistics</li>
+<li>prior-sample range</li>
+<li>beta sensitivity</li>
+</ul>
+<h3>Required Extensions</h3>
+<ol>
+<li>sequence-length sweep</li>
+<li>bidirectional offline benchmark</li>
+<li>packed variable-length sequences</li>
+<li>gradient norm logging</li>
+<li>truncated BPTT</li>
+<li>deterministic AE baseline</li>
+<li>beta-VAE sweep</li>
+<li>2D latent visualization</li>
+<li>latent linear-probe classifier</li>
+<li>posterior-collapse diagnostics</li>
+</ol>
+<h3>Mastery Questions</h3>
+<ul>
+<li>Why can LSTM/GRU retain useful gradients longer than vanilla RNN?</li>
+<li>Why is bidirectional recurrence invalid for causal streaming?</li>
+<li>Why is a plain autoencoder not automatically sampleable from N(0,I)?</li>
+<li>Why does reparameterization preserve gradient flow?</li>
+<li>What does KL≈0 mean in a VAE?</li>
+</ul></section></div><label class="local-confirm"><input type="checkbox" id="local-lab-confirm"> ฉันรัน local lab และตรวจผลตาม rubric ด้วยตัวเองแล้ว</label><p class="local-note">สถานะนี้เป็นคำยืนยันของผู้เรียน เว็บไม่ได้รันหรือตรวจ Python บนเครื่องแทนคุณ</p></section>
+<section id="mastery-review" class="practice-section"><h2>หลักฐานตามเกณฑ์การเรียนรู้</h2><p>ทุก objective ต้องแสดงหลักฐานอธิบาย ทำนาย คำนวณ อ่าน shape/state debug และประยุกต์ พร้อมกรณีใหม่ ผลรัน source ผู้เรียนจริง และการประเมินซ้ำ เกณฑ์นี้ไม่รับประกันความเข้าใจทุกสถานการณ์ เปิด JavaScript เพื่อดูรายการที่ยังขาดและนำเข้ารายงานผู้ตรวจ</p></section><section class="coverage-section"><h2>แผนที่สิ่งที่เรียน → สิ่งที่ต้องแสดงให้ได้</h2><div id="coverage-table"></div></section><footer><span>ZERO TO ELITE AI ENGINEER · LEARNING STUDIO</span><span>อ่าน · derive · implement · debug · experiment · build</span></footer></div></main><noscript><style>.workbench,.sidebar,.reading-route,.lesson-toc,.mastery-status,#web-checks{display:none}main{margin-left:0}</style>อ่านเนื้อหา HTML ได้ตามปกติ เปิด JavaScript เพื่อใช้ห้องทดลองและตรวจคำตอบ</noscript></body></html>

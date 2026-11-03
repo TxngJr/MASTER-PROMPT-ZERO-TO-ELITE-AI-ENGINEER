@@ -1,0 +1,1187 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="บทเรียน AI Engineer ภาษาไทย พร้อมคณิตศาสตร์ทีละขั้นและห้องทดลองที่คำนวณจริง"><title>GPT: ฝึกทำนายอนาคตโดยไม่อ่านอนาคต · AI Engineer Studio</title><link rel="stylesheet" href="../visual-lab/assets/styles.css"><link rel="stylesheet" href="../visual-lab/assets/course.css"><script defer src="../visual-lab/assets/lessons.js"></script><script defer src="../visual-lab/assets/chapter-meta.js"></script><script defer src="../visual-lab/assets/course-math.js"></script><script defer src="../visual-lab/assets/course-models.js"></script><script defer src="../visual-lab/assets/course-models-v3.js"></script><script defer src="../visual-lab/assets/course-assessment.js"></script><script defer src="../visual-lab/assets/course-mastery.js"></script><script defer src="../visual-lab/assets/course-catalog.js"></script><script defer src="../visual-lab/assets/book-content.js"></script><script defer src="../visual-lab/assets/course-render.js"></script><script defer src="../visual-lab/assets/course-mastery-panel.js"></script><script defer src="../visual-lab/assets/quality-report.js"></script><script defer src="../visual-lab/assets/course-app.js"></script></head>
+<body data-chapter="35" data-root="../"><a class="skip-link" href="#main">ข้ามไปบทเรียน</a>
+<aside class="sidebar" id="sidebar" aria-label="เลือกบทเรียน"><a class="brand" href="../visual-lab/index.html"><span class="brand-mark">ai</span><span>AI ENGINEER<small>LEARN · DERIVE · BUILD</small></span></a><div class="sidebar-intro">อ่านให้เข้าใจ · คำนวณให้เห็น · เขียนให้เป็น</div><label class="search-box"><input id="search" type="search" placeholder="ค้นหาบท / attention" aria-label="ค้นหาบทเรียน"></label><label class="filter-label" for="phase-filter">เส้นทางการเรียน <span id="nav-count"></span></label><select id="phase-filter"><option value="">ทุก Phase</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option></select><nav id="chapter-list" class="chapter-list" aria-label="รายชื่อบท"></nav><div class="course-progress"><div><span>ผ่านโจทย์ในเว็บ</span><strong id="progress-count">0 / 80</strong></div><progress id="course-progress" max="80" value="0" aria-label="บทที่ผ่านโจทย์"></progress><a id="resume-link" href="#chapter-1">อ่านต่อจากเดิม →</a></div></aside>
+<button class="nav-backdrop" id="nav-backdrop" aria-label="ปิดเมนู" hidden></button>
+<main id="main" tabindex="-1"><header class="topbar"><div><button id="nav-toggle" class="icon-button mobile-menu" aria-label="เปิดเมนูบทเรียน" aria-expanded="false" aria-controls="sidebar">☰</button><span id="breadcrumb"></span></div><span class="local-badge"><i></i> คำนวณในเครื่อง · ไม่มี API</span></header><div class="content">
+<div class="chapter-navigation"><label for="chapter-select" class="sr-only">เลือกบทเรียน</label><select id="chapter-select"></select><div class="chapter-arrows"><button id="prev-chapter" class="icon-button" aria-label="บทก่อนหน้า">←</button><button id="next-chapter" class="icon-button" aria-label="บทถัดไป">→</button></div></div>
+<section class="chapter-hero"><div><p id="chapter-kicker" class="eyebrow"></p><h1 id="chapter-title">GPT: ฝึกทำนายอนาคตโดยไม่อ่านอนาคต</h1><p class="english-title" id="chapter-english"></p></div><span class="hero-symbol">f(x) ↗</span></section>
+<p id="quality-status" class="quality-status"></p><div id="mastery-status" class="mastery-status"></div><div class="reading-route"><a href="#chapter-35/section/overview">01 อ่านบทเรียน</a><a href="#workbench">02 ทดลองสมการ</a><a href="#practice">03 ฝึกและตรวจงาน</a><a href="#mastery-review">04 หลักฐานตามเกณฑ์</a></div>
+<nav id="lesson-toc" class="lesson-toc" aria-label="สารบัญบท"></nav>
+<section id="overview" class="course-overview"><span class="eyebrow">THE LEARNING CONTRACT</span><h2>เรียนบทนี้แล้วต้องทำอะไรได้</h2><p id="chapter-purpose"></p><div id="chapter-objectives"></div><div class="learning-hint">ทำนาย → เปลี่ยนทีละค่า → ตรวจตัวเลข → อธิบายเหตุผล → เขียนด้วย Python เอง</div></section>
+<section class="workbench lab-card" id="workbench" aria-label="ห้องทดลองคำนวณจริง"><div class="card-header"><div><span class="live-dot"></span><span class="eyebrow">COMPUTATION WORKBENCH</span></div><span class="simulation-label">ทุกภาพใช้ผลคำนวณชุดเดียวกัน</span></div><div class="lab-top"><label for="lab-select">เลือกกลไกที่ต้องการทดลอง</label><select id="lab-select"></select><p id="lab-question"></p></div><div class="workbench-grid"><div class="viz-column"><div class="compare-labels"><span>เส้นทึบ: ปัจจุบัน</span><span>เส้นประ: baseline ที่ตรึงไว้</span></div><div id="simulation" class="simulation"></div><div id="metrics" class="metrics"></div><div id="baseline-diff" class="baseline-diff"></div><div class="playback"><div class="playback-buttons"><button class="primary-button" id="update-once">อัปเดตหนึ่งก้าว</button><button class="secondary-button" id="train-many">▶ ฝึก 30 ก้าว</button><button class="icon-button" id="back-state" aria-label="ย้อนประวัติ">↶</button><button class="icon-button" id="forward-state" aria-label="ประวัติถัดไป">↷</button></div></div><div class="lab-secondary-actions"><button id="pin-baseline" class="text-button">ตรึง baseline ปัจจุบัน</button><button id="reset-lab" class="text-button">คืนค่าเริ่มต้น</button><button id="download-state" class="text-button">บันทึกผล JSON</button><span id="history-status"></span></div><p id="simulation-note" class="simulation-note"></p><p class="lab-error" id="lab-error" role="alert" hidden></p></div><div class="controls-column"><h3>เปลี่ยนทีละตัว แล้วสังเกตผล</h3><div id="lab-controls"></div><p class="control-note">แก้ weight ด้วยมือจะคำนวณ forward ใหม่; optimizer เปลี่ยน weights เมื่อกดอัปเดตเท่านั้น</p></div></div>
+<div class="trace-section"><div class="trace-toolbar"><h3>เดินสมการทีละ operation</h3><div><button id="trace-prev" class="icon-button" aria-label="operation ก่อนหน้า">←</button><button id="play-trace" class="secondary-button" aria-pressed="false">▶ เล่น flow</button><button id="trace-next" class="icon-button" aria-label="operation ถัดไป">→</button><span id="stage-counter"></span></div></div><label class="motion-control"><input id="reduce-motion" type="checkbox"> ลดภาพเคลื่อนไหว (หยุดการเล่นที่ค้างอยู่)</label><div id="operation-steps" class="operation-steps"></div><div id="flow-diagram" class="flow-diagram"></div><div id="active-operation" class="active-operation" aria-live="polite"></div><p class="control-note">ตัวเลขบนภาพปัดเศษเพื่อให้อ่านง่าย; บันทึก JSON เพื่อดูค่าที่ใช้คำนวณเต็ม precision</p><details open><summary>ตารางค่าระหว่างทาง — ตรวจด้วยมือได้</summary><div id="result-table"></div></details><div id="tensor-tables" class="tensor-tables"></div><details id="surface-details"><summary>ดู loss surface และเส้นทางของ w₁,b (ตรึง controls อื่น)</summary><div id="surface-chart"></div><p>surface คำนวณ objective ปัจจุบันโดยตรึง degree, penalty, ข้อมูล และ weights อื่น เส้นทางแสดงเฉพาะ snapshots ที่ค่าเหล่านี้ตรงกัน; นอกช่วง w=[−1,5], b=[−2,4] ให้ตรวจค่าจริงใน history</p></details><details><summary>ประวัติการเปลี่ยนค่า</summary><div id="history-table"></div></details></div></section>
+<article id="chapter-article" class="chapter-article"><section id="mechanism-1" class="teaching-section"><span class="section-kicker">CHAPTER 35 · ภาพ → สมการ → โค้ด</span><h2>1. training มีทุก targets แต่ต้องคุมข้อมูลที่อ่าน</h2><h3>โจทย์และเหตุผล</h3><p>causal mask ทำให้ตำแหน่ง t อ่านได้ถึง t จึงทำนาย token t+1 โดยไม่ใช้อนาคต การปล่อย mask ผิดอาจทำ loss ต่ำจากการรั่วและ generation ใช้จริงไม่ได้</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Build shifted LM input/target pairs.</p><p>tokens[2,5,7,9]ทำinput[2,5,7],target[5,7,9]; ไม่ใช้targetเท่ากับinputเพราะmodelเพียงcopycurrenttokenก็lossต่ำ</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>q1: query q₁,initial=1; q2: query q₂,initial=0; k11: key1 coordinate1,initial=1; k12: key1 coordinate2,initial=0; v1: value1,initial=1; temperature: extra temperature,initial=1; queryPosition: query position,initial=2; window: window size,initial=4; mask: mask,initial=causal</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>q in R²; K (4,2); V (4,1) = [1, 0]; scalar values ใช้เพื่ออ่าน output ได้; learned projections ในบทเต็ม</li><li>score_j=q·k_j/√2/temperature = [0.7071067811865475, 0, 0.7071067811865475, -0.7071067811865475]; หาร √d_k ลดขนาด score ตามมิติ; extra temperature แยกเพื่อทดลองความคม</li><li>disallowed scores → −∞ = [0.7071067811865475, 0, 0.7071067811865475, &quot;−∞&quot;]; mask ต้องมาก่อน normalize จึงได้ weight ศูนย์จริง</li><li>a=exp(score−max)/sum(exp(score−max)) = [0.4011120926797859, 0.1977758146404282, 0.4011120926797859, 0]; ผลรวมหนึ่งต่อ query; ห้าม mask ทุก key</li><li>output=Σ_j a_j v_j = 2; ค่าทุกตำแหน่งมีส่วนตาม attention weight ไม่ใช่ hard select</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="attention-causal-mask-ก-อน-softmax">เปิดการทดลองนี้</a><p class="failure-box">overlappingdocumentwindowsข้ามsplitทำPPLต่ำปลอม; reportdedup/tokenizer/lengthและไม่รวมprompt/paddingในcompletionmetricโดยไม่บอก; คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>tokens[2,5,7,9]ทำinput[2,5,7],target[5,7,9]; ไม่ใช้targetเท่ากับinputเพราะmodelเพียงcopycurrenttokenก็lossต่ำ</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-1-equation"><summary>สมการ</summary><ol><li><code>q in R²; K (4,2); V (4,1)</code> = [1, 0]<p>scalar values ใช้เพื่ออ่าน output ได้; learned projections ในบทเต็ม</p></li><li><code>score_j=q·k_j/√2/temperature</code> = [0.7071067811865475, 0, 0.7071067811865475, -0.7071067811865475]<p>หาร √d_k ลดขนาด score ตามมิติ; extra temperature แยกเพื่อทดลองความคม</p></li><li><code>disallowed scores → −∞</code> = [0.7071067811865475, 0, 0.7071067811865475, &quot;−∞&quot;]<p>mask ต้องมาก่อน normalize จึงได้ weight ศูนย์จริง</p></li><li><code>a=exp(score−max)/sum(exp(score−max))</code> = [0.4011120926797859, 0.1977758146404282, 0.4011120926797859, 0]<p>ผลรวมหนึ่งต่อ query; ห้าม mask ทุก key</p></li><li><code>output=Σ_j a_j v_j</code> = 2<p>ค่าทุกตำแหน่งมีส่วนตาม attention weight ไม่ใช่ hard select</p></li></ol></details><details id="help-mechanism-1-visual"><summary>ภาพและ shape</summary><p>คำนวณจาก input ปัจจุบันใน browser; ไม่มีการเรียก model ภายนอก</p><ol><li><code>q in R²; K (4,2); V (4,1)</code> = [1, 0]<p>scalar values ใช้เพื่ออ่าน output ได้; learned projections ในบทเต็ม</p></li><li><code>score_j=q·k_j/√2/temperature</code> = [0.7071067811865475, 0, 0.7071067811865475, -0.7071067811865475]<p>หาร √d_k ลดขนาด score ตามมิติ; extra temperature แยกเพื่อทดลองความคม</p></li><li><code>disallowed scores → −∞</code> = [0.7071067811865475, 0, 0.7071067811865475, &quot;−∞&quot;]<p>mask ต้องมาก่อน normalize จึงได้ weight ศูนย์จริง</p></li><li><code>a=exp(score−max)/sum(exp(score−max))</code> = [0.4011120926797859, 0.1977758146404282, 0.4011120926797859, 0]<p>ผลรวมหนึ่งต่อ query; ห้าม mask ทุก key</p></li><li><code>output=Σ_j a_j v_j</code> = 2<p>ค่าทุกตำแหน่งมีส่วนตาม attention weight ไม่ใช่ hard select</p></li></ol></details><details id="help-mechanism-1-code"><summary>โค้ด</summary><p>tokens[2,5,7,9]ทำinput[2,5,7],target[5,7,9]; ไม่ใช้targetเท่ากับinputเพราะmodelเพียงcopycurrenttokenก็lossต่ำ</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-1-result"><summary>ผลการทดลอง</summary><ol><li><code>q in R²; K (4,2); V (4,1)</code> = [1, 0]<p>scalar values ใช้เพื่ออ่าน output ได้; learned projections ในบทเต็ม</p></li><li><code>score_j=q·k_j/√2/temperature</code> = [0.7071067811865475, 0, 0.7071067811865475, -0.7071067811865475]<p>หาร √d_k ลดขนาด score ตามมิติ; extra temperature แยกเพื่อทดลองความคม</p></li><li><code>disallowed scores → −∞</code> = [0.7071067811865475, 0, 0.7071067811865475, &quot;−∞&quot;]<p>mask ต้องมาก่อน normalize จึงได้ weight ศูนย์จริง</p></li><li><code>a=exp(score−max)/sum(exp(score−max))</code> = [0.4011120926797859, 0.1977758146404282, 0.4011120926797859, 0]<p>ผลรวมหนึ่งต่อ query; ห้าม mask ทุก key</p></li><li><code>output=Σ_j a_j v_j</code> = 2<p>ค่าทุกตำแหน่งมีส่วนตาม attention weight ไม่ใช่ hard select</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-1"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-2" class="teaching-section"><span class="section-kicker">CHAPTER 35 · ภาพ → สมการ → โค้ด</span><h2>2. sampling เป็นการเลือกจาก distribution ที่โมเดลให้</h2><h3>โจทย์และเหตุผล</h3><p>temperature, top-k และ top-p เปลี่ยน distribution/ชุดผู้สมัครหลัง logits ไม่ใช่การปรับ weights ทดลอง temperature โดยสังเกตว่า training CE เดิมยังไม่เปลี่ยน</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Implement top-k filtering.</p><p>topk2ของlogits[3,2,1]เก็บindices0,1และsetindex2−∞ก่อนsoftmax; k≤0หรือk&gt;Vต้องreject/กำหนดนโยบายชัด</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>corpus: corpus over a,b,c,initial=abacaba; eta: learning rate,initial=0.2; temperature: sampling temperature,initial=1; query: query token ID (a=0,b=1,c=2),initial=0; ignorePrefix: ignore first target positions,initial=0; l0: logit W[0,0],initial=0; l1: logit W[0,1],initial=0; l2: logit W[0,2],initial=0; l3: logit W[1,0],initial=0; l4: logit W[1,1],initial=0; l5: logit W[1,2],initial=0; l6: logit W[2,0],initial=0; l7: logit W[2,1],initial=0; l8: logit W[2,2],initial=0</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>inputs=tokens[:-1], targets=tokens[1:] = [0, 1, 0, 2, 0, 1, 0]; causal bigram model ใช้ current token ทำนาย next token</li><li>logits=W[current token] = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]; weights เริ่มจาก 0 จึง probability=1/3; ไม่มี pretrained weights</li><li>valid=t &gt;= ignorePrefix = 6; ignore label ไม่ได้ลบ input; ใช้สอน assistant-only loss</li><li>L=−mean log p(target) = 1.0986122886681098; normalize เฉพาะ valid targets</li><li>∂L/∂W[x,j] += (p_j−1[j=target])/N_valid = [[0.16666666666666666, -0.1666666666666667, -1.850371707708594e-17], [-0.22222222222222224, 0.1111111111111111, 0.1111111111111111], [-0.11111111111111112, 0.05555555555555555, 0.05555555555555555]]; accumulate เมื่อ context token เดียวถูกใช้หลายครั้ง</li><li>softmax(W[query]/temperature) = [0.3333333333333333, 0.3333333333333333, 0.3333333333333333]; temperature ใช้เฉพาะ distribution ตอน inference ไม่แก้ training CE</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="language-train-next-token-model-จ">เปิดการทดลองนี้</a><p class="failure-box">overlappingdocumentwindowsข้ามsplitทำPPLต่ำปลอม; reportdedup/tokenizer/lengthและไม่รวมprompt/paddingในcompletionmetricโดยไม่บอก; tiny trainable bigram LM ใน browser ไม่ใช่ Transformer; full decoder-only implementation และ training loop อยู่ในบทเต็ม/local lab</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>topk2ของlogits[3,2,1]เก็บindices0,1และsetindex2−∞ก่อนsoftmax; k≤0หรือk&gt;Vต้องreject/กำหนดนโยบายชัด</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-2-equation"><summary>สมการ</summary><ol><li><code>inputs=tokens[:-1], targets=tokens[1:]</code> = [0, 1, 0, 2, 0, 1, 0]<p>causal bigram model ใช้ current token ทำนาย next token</p></li><li><code>logits=W[current token]</code> = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]<p>weights เริ่มจาก 0 จึง probability=1/3; ไม่มี pretrained weights</p></li><li><code>valid=t &gt;= ignorePrefix</code> = 6<p>ignore label ไม่ได้ลบ input; ใช้สอน assistant-only loss</p></li><li><code>L=−mean log p(target)</code> = 1.0986122886681098<p>normalize เฉพาะ valid targets</p></li><li><code>∂L/∂W[x,j] += (p_j−1[j=target])/N_valid</code> = [[0.16666666666666666, -0.1666666666666667, -1.850371707708594e-17], [-0.22222222222222224, 0.1111111111111111, 0.1111111111111111], [-0.11111111111111112, 0.05555555555555555, 0.05555555555555555]]<p>accumulate เมื่อ context token เดียวถูกใช้หลายครั้ง</p></li><li><code>softmax(W[query]/temperature)</code> = [0.3333333333333333, 0.3333333333333333, 0.3333333333333333]<p>temperature ใช้เฉพาะ distribution ตอน inference ไม่แก้ training CE</p></li></ol></details><details id="help-mechanism-2-visual"><summary>ภาพและ shape</summary><p>tiny trainable bigram LM ใน browser ไม่ใช่ Transformer; full decoder-only implementation และ training loop อยู่ในบทเต็ม/local lab</p><ol><li><code>inputs=tokens[:-1], targets=tokens[1:]</code> = [0, 1, 0, 2, 0, 1, 0]<p>causal bigram model ใช้ current token ทำนาย next token</p></li><li><code>logits=W[current token]</code> = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]<p>weights เริ่มจาก 0 จึง probability=1/3; ไม่มี pretrained weights</p></li><li><code>valid=t &gt;= ignorePrefix</code> = 6<p>ignore label ไม่ได้ลบ input; ใช้สอน assistant-only loss</p></li><li><code>L=−mean log p(target)</code> = 1.0986122886681098<p>normalize เฉพาะ valid targets</p></li><li><code>∂L/∂W[x,j] += (p_j−1[j=target])/N_valid</code> = [[0.16666666666666666, -0.1666666666666667, -1.850371707708594e-17], [-0.22222222222222224, 0.1111111111111111, 0.1111111111111111], [-0.11111111111111112, 0.05555555555555555, 0.05555555555555555]]<p>accumulate เมื่อ context token เดียวถูกใช้หลายครั้ง</p></li><li><code>softmax(W[query]/temperature)</code> = [0.3333333333333333, 0.3333333333333333, 0.3333333333333333]<p>temperature ใช้เฉพาะ distribution ตอน inference ไม่แก้ training CE</p></li></ol></details><details id="help-mechanism-2-code"><summary>โค้ด</summary><p>topk2ของlogits[3,2,1]เก็บindices0,1และsetindex2−∞ก่อนsoftmax; k≤0หรือk&gt;Vต้องreject/กำหนดนโยบายชัด</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-2-result"><summary>ผลการทดลอง</summary><ol><li><code>inputs=tokens[:-1], targets=tokens[1:]</code> = [0, 1, 0, 2, 0, 1, 0]<p>causal bigram model ใช้ current token ทำนาย next token</p></li><li><code>logits=W[current token]</code> = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]<p>weights เริ่มจาก 0 จึง probability=1/3; ไม่มี pretrained weights</p></li><li><code>valid=t &gt;= ignorePrefix</code> = 6<p>ignore label ไม่ได้ลบ input; ใช้สอน assistant-only loss</p></li><li><code>L=−mean log p(target)</code> = 1.0986122886681098<p>normalize เฉพาะ valid targets</p></li><li><code>∂L/∂W[x,j] += (p_j−1[j=target])/N_valid</code> = [[0.16666666666666666, -0.1666666666666667, -1.850371707708594e-17], [-0.22222222222222224, 0.1111111111111111, 0.1111111111111111], [-0.11111111111111112, 0.05555555555555555, 0.05555555555555555]]<p>accumulate เมื่อ context token เดียวถูกใช้หลายครั้ง</p></li><li><code>softmax(W[query]/temperature)</code> = [0.3333333333333333, 0.3333333333333333, 0.3333333333333333]<p>temperature ใช้เฉพาะ distribution ตอน inference ไม่แก้ training CE</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-2"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="mechanism-3" class="teaching-section"><span class="section-kicker">CHAPTER 35 · ภาพ → สมการ → โค้ด</span><h2>3. cache ลดงานซ้ำแต่ไม่ลบการอ่านอดีต</h2><h3>โจทย์และเหตุผล</h3><p>เก็บ K,V จาก prompt และ tokens ที่สร้างแล้ว query ใหม่ยังอ่าน cache ตามความยาว context ต้องจัด position, stopping และ cache lifecycle ให้ตรงกัน</p><h3>ตัวอย่างและคำอธิบาย</h3><p>Estimate KV-cache memory for a toy model.</p>
+<p>Challenge:
+- implement a one-layer cached attention decoder
+- compare cached vs naive generation numerically</p><p>bytes=2·L·B·nkv·T·dk·bytes_per_element; L2,B1,nkv2,T16,dk4,fp32ได้2048bytesไม่รวมweights/allocator</p><div class="symbols"><h3>สัญลักษณ์ / input controls</h3><p>tokens: context T,initial=64; heads: KV heads,initial=2; layers: layers L,initial=4; batch: active requests B,initial=1; page: tokens per cache page,initial=16; length2: request2 tokens,initial=20</p></div><h3>แทนค่าจริงทีละ operation</h3><ol><li>shape / range = &quot;L=4, B=1, T=64, Hkv=2&quot;; กำหนดความหมายและหน่วยของ input ก่อนทดลอง</li><li>KV bytes=2*L*B*T*Hkv*Dhead*bytesPerElement = 32768; uniform estimate ใช้ T เดียวทุก request; paging example ด้านล่างแสดงสูงสุดสอง request ตามความยาวจริง</li><li>normal / boundary / comparison = 32768; ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</li></ol><p>ก่อนเปลี่ยนค่าหนึ่งตัว ให้ทำนายว่า output และค่าระหว่างทางใดควรเปลี่ยน แล้วคงตัวอื่นเพื่อทดสอบเหตุผลของคุณ</p><a href="#workbench" data-open-lab="cache-decode-อ-านอด-ตจาก-kv-ca">เปิดการทดลองนี้</a><p class="failure-box">overlappingdocumentwindowsข้ามsplitทำPPLต่ำปลอม; reportdedup/tokenizer/lengthและไม่รวมprompt/paddingในcompletionmetricโดยไม่บอก; head_dim=16, FP16; ไม่รวม model weights, metadata และ buffers; paged allocator เป็น arithmetic example</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-mechanism-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>bytes=2·L·B·nkv·T·dk·bytes_per_element; L2,B1,nkv2,T16,dk4,fp32ได้2048bytesไม่รวมweights/allocator</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-mechanism-3-equation"><summary>สมการ</summary><ol><li><code>shape / range</code> = &quot;L=4, B=1, T=64, Hkv=2&quot;<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>KV bytes=2*L*B*T*Hkv*Dhead*bytesPerElement</code> = 32768<p>uniform estimate ใช้ T เดียวทุก request; paging example ด้านล่างแสดงสูงสุดสอง request ตามความยาวจริง</p></li><li><code>normal / boundary / comparison</code> = 32768<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-3-visual"><summary>ภาพและ shape</summary><p>head_dim=16, FP16; ไม่รวม model weights, metadata และ buffers; paged allocator เป็น arithmetic example</p><ol><li><code>shape / range</code> = &quot;L=4, B=1, T=64, Hkv=2&quot;<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>KV bytes=2*L*B*T*Hkv*Dhead*bytesPerElement</code> = 32768<p>uniform estimate ใช้ T เดียวทุก request; paging example ด้านล่างแสดงสูงสุดสอง request ตามความยาวจริง</p></li><li><code>normal / boundary / comparison</code> = 32768<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol></details><details id="help-mechanism-3-code"><summary>โค้ด</summary><p>bytes=2·L·B·nkv·T·dk·bytes_per_element; L2,B1,nkv2,T16,dk4,fp32ได้2048bytesไม่รวมweights/allocator</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-mechanism-3-result"><summary>ผลการทดลอง</summary><ol><li><code>shape / range</code> = &quot;L=4, B=1, T=64, Hkv=2&quot;<p>กำหนดความหมายและหน่วยของ input ก่อนทดลอง</p></li><li><code>KV bytes=2*L*B*T*Hkv*Dhead*bytesPerElement</code> = 32768<p>uniform estimate ใช้ T เดียวทุก request; paging example ด้านล่างแสดงสูงสุดสอง request ตามความยาวจริง</p></li><li><code>normal / boundary / comparison</code> = 32768<p>ตรวจค่าจริงและเทียบกับ baseline โดยคงตัวแปรอื่น</p></li></ol><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="mechanism-3"> อ่านและอธิบายหัวข้อนี้แล้ว</label></section><section id="reference" class="canonical-section"><h2>เนื้อหาครบทุกหัวข้อ พร้อมแผนที่ objective</h2><nav class="source-toc"><a href="#chapter-35/section/topic-1">1. Decoder-Only Language Modeling</a> <a href="#chapter-35/section/topic-2">2. Learning Objectives</a> <a href="#chapter-35/section/topic-3">3. Causal Language Model Objective</a> <a href="#chapter-35/section/topic-4">4. Shifted Inputs and Targets</a> <a href="#chapter-35/section/topic-5">5. Causal Attention</a> <a href="#chapter-35/section/topic-6">6. Decoder-Only Block</a> <a href="#chapter-35/section/topic-7">7. Vocabulary Logits</a> <a href="#chapter-35/section/topic-8">8. Weight Tying</a> <a href="#chapter-35/section/topic-9">9. Training Teacher Forcing</a> <a href="#chapter-35/section/topic-10">10. Autoregressive Generation</a> <a href="#chapter-35/section/topic-11">11. Greedy Decoding</a> <a href="#chapter-35/section/topic-12">12. Temperature</a> <a href="#chapter-35/section/topic-13">13. Top-k Sampling</a> <a href="#chapter-35/section/topic-14">14. Top-p / Nucleus Sampling</a> <a href="#chapter-35/section/topic-15">15. Top-k vs Top-p</a> <a href="#chapter-35/section/topic-16">16. Numerical Stability</a> <a href="#chapter-35/section/topic-17">17. Repetition</a> <a href="#chapter-35/section/topic-18">18. Context Window</a> <a href="#chapter-35/section/topic-19">19. Position Handling</a> <a href="#chapter-35/section/topic-20">20. KV Cache Motivation</a> <a href="#chapter-35/section/topic-21">21. KV Cache Concept</a> <a href="#chapter-35/section/topic-22">22. Why Cache Does Not Remove All Cost</a> <a href="#chapter-35/section/topic-23">23. Training vs Cached Inference</a> <a href="#chapter-35/section/topic-24">24. Stopping</a> <a href="#chapter-35/section/topic-25">25. Perplexity</a> <a href="#chapter-35/section/topic-26">26. From Scratch</a> <a href="#chapter-35/section/topic-27">27. Common Mistakes</a> <a href="#chapter-35/section/topic-28">28. Exercises / Mini Project</a> <a href="#chapter-35/section/topic-29">29. Checklist</a> <a href="#chapter-35/section/topic-30">30. What&#x27;s Next</a> </nav><section id="topic-1" class="source-topic"><span id="source-35-gpt-decoder-models-canonical-chapter-35-gpt-decoder-only-models" class="legacy-anchor"></span><span id="source-35-gpt-decoder-models-canonical-1-decoder-only-language-modeling" class="legacy-anchor"></span><h3>1. Decoder-Only Language Modeling</h3>
+<p>GPT-style models use stacked causal Transformer blocks:</p>
+<pre><code class="language-text">token ids
+↓
+token + position representation
+↓
+causal self-attention blocks × N
+↓
+final normalization
+↓
+vocabulary logits
+</code></pre>
+<p>They are trained to predict the next token.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-1-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>1. Decoder-Only Language Modeling</h3>
+<p>GPT-style models use stacked causal Transformer blocks:</p>
+<pre><code class="language-text">token ids
+↓
+token + position representation
+↓
+causal self-attention blocks × N
+↓
+final normalization
+↓
+vocabulary logits
+</code></pre>
+<p>They are trained to predict the next token.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-1-equation"><summary>สมการ</summary><h3>1. Decoder-Only Language Modeling</h3>
+<p>GPT-style models use stacked causal Transformer blocks:</p>
+<pre><code class="language-text">token ids
+↓
+token + position representation
+↓
+causal self-attention blocks × N
+↓
+final normalization
+↓
+vocabulary logits
+</code></pre>
+<p>They are trained to predict the next token.</p></details><details id="help-topic-1-visual"><summary>ภาพและ shape</summary><h3>1. Decoder-Only Language Modeling</h3>
+<p>GPT-style models use stacked causal Transformer blocks:</p>
+<pre><code class="language-text">token ids
+↓
+token + position representation
+↓
+causal self-attention blocks × N
+↓
+final normalization
+↓
+vocabulary logits
+</code></pre>
+<p>They are trained to predict the next token.</p></details><details id="help-topic-1-code"><summary>โค้ด</summary><h3>1. Decoder-Only Language Modeling</h3>
+<p>GPT-style models use stacked causal Transformer blocks:</p>
+<pre><code class="language-text">token ids
+↓
+token + position representation
+↓
+causal self-attention blocks × N
+↓
+final normalization
+↓
+vocabulary logits
+</code></pre>
+<p>They are trained to predict the next token.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-1-result"><summary>ผลการทดลอง</summary><h3>1. Decoder-Only Language Modeling</h3>
+<p>GPT-style models use stacked causal Transformer blocks:</p>
+<pre><code class="language-text">token ids
+↓
+token + position representation
+↓
+causal self-attention blocks × N
+↓
+final normalization
+↓
+vocabulary logits
+</code></pre>
+<p>They are trained to predict the next token.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-1"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-2" class="source-topic"><span id="source-35-gpt-decoder-models-canonical-2-learning-objectives" class="legacy-anchor"></span><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>explain decoder-only Transformers</li>
+<li>construct causal language-model inputs/targets</li>
+<li>explain teacher forcing for next-token training</li>
+<li>implement causal masks</li>
+<li>explain autoregressive generation</li>
+<li>implement greedy decoding</li>
+<li>implement temperature sampling</li>
+<li>implement top-k sampling</li>
+<li>implement top-p / nucleus filtering</li>
+<li>explain repetition and degeneration</li>
+<li>understand context windows</li>
+<li>explain KV-cache motivation</li>
+<li>distinguish training-time and generation-time computation</li>
+<li>understand weight tying</li>
+<li>build a tiny GPT-style PyTorch model</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-2-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>explain decoder-only Transformers</li>
+<li>construct causal language-model inputs/targets</li>
+<li>explain teacher forcing for next-token training</li>
+<li>implement causal masks</li>
+<li>explain autoregressive generation</li>
+<li>implement greedy decoding</li>
+<li>implement temperature sampling</li>
+<li>implement top-k sampling</li>
+<li>implement top-p / nucleus filtering</li>
+<li>explain repetition and degeneration</li>
+<li>understand context windows</li>
+<li>explain KV-cache motivation</li>
+<li>distinguish training-time and generation-time computation</li>
+<li>understand weight tying</li>
+<li>build a tiny GPT-style PyTorch model</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-2-equation"><summary>สมการ</summary><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>explain decoder-only Transformers</li>
+<li>construct causal language-model inputs/targets</li>
+<li>explain teacher forcing for next-token training</li>
+<li>implement causal masks</li>
+<li>explain autoregressive generation</li>
+<li>implement greedy decoding</li>
+<li>implement temperature sampling</li>
+<li>implement top-k sampling</li>
+<li>implement top-p / nucleus filtering</li>
+<li>explain repetition and degeneration</li>
+<li>understand context windows</li>
+<li>explain KV-cache motivation</li>
+<li>distinguish training-time and generation-time computation</li>
+<li>understand weight tying</li>
+<li>build a tiny GPT-style PyTorch model</li>
+</ul></details><details id="help-topic-2-visual"><summary>ภาพและ shape</summary><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>explain decoder-only Transformers</li>
+<li>construct causal language-model inputs/targets</li>
+<li>explain teacher forcing for next-token training</li>
+<li>implement causal masks</li>
+<li>explain autoregressive generation</li>
+<li>implement greedy decoding</li>
+<li>implement temperature sampling</li>
+<li>implement top-k sampling</li>
+<li>implement top-p / nucleus filtering</li>
+<li>explain repetition and degeneration</li>
+<li>understand context windows</li>
+<li>explain KV-cache motivation</li>
+<li>distinguish training-time and generation-time computation</li>
+<li>understand weight tying</li>
+<li>build a tiny GPT-style PyTorch model</li>
+</ul></details><details id="help-topic-2-code"><summary>โค้ด</summary><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>explain decoder-only Transformers</li>
+<li>construct causal language-model inputs/targets</li>
+<li>explain teacher forcing for next-token training</li>
+<li>implement causal masks</li>
+<li>explain autoregressive generation</li>
+<li>implement greedy decoding</li>
+<li>implement temperature sampling</li>
+<li>implement top-k sampling</li>
+<li>implement top-p / nucleus filtering</li>
+<li>explain repetition and degeneration</li>
+<li>understand context windows</li>
+<li>explain KV-cache motivation</li>
+<li>distinguish training-time and generation-time computation</li>
+<li>understand weight tying</li>
+<li>build a tiny GPT-style PyTorch model</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-2-result"><summary>ผลการทดลอง</summary><h3>2. Learning Objectives</h3>
+<p>By the end of this chapter you should be able to:</p>
+<ul>
+<li>explain decoder-only Transformers</li>
+<li>construct causal language-model inputs/targets</li>
+<li>explain teacher forcing for next-token training</li>
+<li>implement causal masks</li>
+<li>explain autoregressive generation</li>
+<li>implement greedy decoding</li>
+<li>implement temperature sampling</li>
+<li>implement top-k sampling</li>
+<li>implement top-p / nucleus filtering</li>
+<li>explain repetition and degeneration</li>
+<li>understand context windows</li>
+<li>explain KV-cache motivation</li>
+<li>distinguish training-time and generation-time computation</li>
+<li>understand weight tying</li>
+<li>build a tiny GPT-style PyTorch model</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-2"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-3" class="source-topic"><span id="source-35-gpt-decoder-models-canonical-3-causal-language-model-objective" class="legacy-anchor"></span><h3>3. Causal Language Model Objective</h3>
+<p>Factorization:</p>
+<pre><code class="language-text">P(x_1,...,x_T)
+=
+Π_t P(x_t | x_&lt;t)
+</code></pre>
+<p>Training minimizes the negative log probability of the observed next tokens.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-3-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>3. Causal Language Model Objective</h3>
+<p>Factorization:</p>
+<pre><code class="language-text">P(x_1,...,x_T)
+=
+Π_t P(x_t | x_&lt;t)
+</code></pre>
+<p>Training minimizes the negative log probability of the observed next tokens.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-3-equation"><summary>สมการ</summary><h3>3. Causal Language Model Objective</h3>
+<p>Factorization:</p>
+<pre><code class="language-text">P(x_1,...,x_T)
+=
+Π_t P(x_t | x_&lt;t)
+</code></pre>
+<p>Training minimizes the negative log probability of the observed next tokens.</p></details><details id="help-topic-3-visual"><summary>ภาพและ shape</summary><h3>3. Causal Language Model Objective</h3>
+<p>Factorization:</p>
+<pre><code class="language-text">P(x_1,...,x_T)
+=
+Π_t P(x_t | x_&lt;t)
+</code></pre>
+<p>Training minimizes the negative log probability of the observed next tokens.</p></details><details id="help-topic-3-code"><summary>โค้ด</summary><h3>3. Causal Language Model Objective</h3>
+<p>Factorization:</p>
+<pre><code class="language-text">P(x_1,...,x_T)
+=
+Π_t P(x_t | x_&lt;t)
+</code></pre>
+<p>Training minimizes the negative log probability of the observed next tokens.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-3-result"><summary>ผลการทดลอง</summary><h3>3. Causal Language Model Objective</h3>
+<p>Factorization:</p>
+<pre><code class="language-text">P(x_1,...,x_T)
+=
+Π_t P(x_t | x_&lt;t)
+</code></pre>
+<p>Training minimizes the negative log probability of the observed next tokens.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-3"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-4" class="source-topic"><span id="source-35-gpt-decoder-models-canonical-4-shifted-inputs-and-targets" class="legacy-anchor"></span><h3>4. Shifted Inputs and Targets</h3>
+<p>Sequence:</p>
+<pre><code class="language-text">[A,B,C,D,E]
+</code></pre>
+<p>Input:</p>
+<pre><code class="language-text">[A,B,C,D]
+</code></pre>
+<p>Target:</p>
+<pre><code class="language-text">[B,C,D,E]
+</code></pre>
+<p>Each position predicts exactly one token ahead.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>tokens[2,5,7,9]ทำinput[2,5,7],target[5,7,9]; ไม่ใช้targetเท่ากับinputเพราะmodelเพียงcopycurrenttokenก็lossต่ำ</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-4-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>tokens[2,5,7,9]ทำinput[2,5,7],target[5,7,9]; ไม่ใช้targetเท่ากับinputเพราะmodelเพียงcopycurrenttokenก็lossต่ำ</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-4-equation"><summary>สมการ</summary><p>tokens[2,5,7,9]ทำinput[2,5,7],target[5,7,9]; ไม่ใช้targetเท่ากับinputเพราะmodelเพียงcopycurrenttokenก็lossต่ำ</p></details><details id="help-topic-4-visual"><summary>ภาพและ shape</summary><p>tokens[2,5,7,9]ทำinput[2,5,7],target[5,7,9]; ไม่ใช้targetเท่ากับinputเพราะmodelเพียงcopycurrenttokenก็lossต่ำ</p></details><details id="help-topic-4-code"><summary>โค้ด</summary><p>tokens[2,5,7,9]ทำinput[2,5,7],target[5,7,9]; ไม่ใช้targetเท่ากับinputเพราะmodelเพียงcopycurrenttokenก็lossต่ำ</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-4-result"><summary>ผลการทดลอง</summary><p>tokens[2,5,7,9]ทำinput[2,5,7],target[5,7,9]; ไม่ใช้targetเท่ากับinputเพราะmodelเพียงcopycurrenttokenก็lossต่ำ</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-4"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-5" class="source-topic"><span id="source-35-gpt-decoder-models-canonical-5-causal-attention" class="legacy-anchor"></span><h3>5. Causal Attention</h3>
+<p>Position t may attend only to positions &lt;= t.</p>
+<pre><code class="language-text">1 0 0 0
+1 1 0 0
+1 1 1 0
+1 1 1 1
+</code></pre>
+<p>Future-token leakage invalidates the language-model objective.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>T6keepmaskแถว0..5คือ100000,110000,111000,111100,111110,111111; futurej&gt;iเป็น−∞ก่อนsoftmax ไม่ใช่0logit</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-5-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>T6keepmaskแถว0..5คือ100000,110000,111000,111100,111110,111111; futurej&gt;iเป็น−∞ก่อนsoftmax ไม่ใช่0logit</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-5-equation"><summary>สมการ</summary><p>T6keepmaskแถว0..5คือ100000,110000,111000,111100,111110,111111; futurej&gt;iเป็น−∞ก่อนsoftmax ไม่ใช่0logit</p></details><details id="help-topic-5-visual"><summary>ภาพและ shape</summary><p>T6keepmaskแถว0..5คือ100000,110000,111000,111100,111110,111111; futurej&gt;iเป็น−∞ก่อนsoftmax ไม่ใช่0logit</p></details><details id="help-topic-5-code"><summary>โค้ด</summary><p>T6keepmaskแถว0..5คือ100000,110000,111000,111100,111110,111111; futurej&gt;iเป็น−∞ก่อนsoftmax ไม่ใช่0logit</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-5-result"><summary>ผลการทดลอง</summary><p>T6keepmaskแถว0..5คือ100000,110000,111000,111100,111110,111111; futurej&gt;iเป็น−∞ก่อนsoftmax ไม่ใช่0logit</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-5"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-6" class="source-topic"><span id="source-35-gpt-decoder-models-canonical-6-decoder-only-block" class="legacy-anchor"></span><h3>6. Decoder-Only Block</h3>
+<p>A modernized educational block:</p>
+<pre><code class="language-text">x
+↓ LayerNorm
+↓ causal self-attention
++ residual
+↓ LayerNorm
+↓ FFN
++ residual
+</code></pre>
+<p>This is pre-norm.</p>
+<p>Architectural details vary across GPT families.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>ทดลอง“GQAลดKVbytes4×โดยqualityลด≤1จุด”; baselineMHA,เปลี่ยนheadsharingพร้อมtrainingbudgetเท่ากัน,วัดholdoutquality/TPOT/bytes</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-6-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>ทดลอง“GQAลดKVbytes4×โดยqualityลด≤1จุด”; baselineMHA,เปลี่ยนheadsharingพร้อมtrainingbudgetเท่ากัน,วัดholdoutquality/TPOT/bytes</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-6-equation"><summary>สมการ</summary><p>ทดลอง“GQAลดKVbytes4×โดยqualityลด≤1จุด”; baselineMHA,เปลี่ยนheadsharingพร้อมtrainingbudgetเท่ากัน,วัดholdoutquality/TPOT/bytes</p></details><details id="help-topic-6-visual"><summary>ภาพและ shape</summary><p>ทดลอง“GQAลดKVbytes4×โดยqualityลด≤1จุด”; baselineMHA,เปลี่ยนheadsharingพร้อมtrainingbudgetเท่ากัน,วัดholdoutquality/TPOT/bytes</p></details><details id="help-topic-6-code"><summary>โค้ด</summary><p>ทดลอง“GQAลดKVbytes4×โดยqualityลด≤1จุด”; baselineMHA,เปลี่ยนheadsharingพร้อมtrainingbudgetเท่ากัน,วัดholdoutquality/TPOT/bytes</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-6-result"><summary>ผลการทดลอง</summary><p>ทดลอง“GQAลดKVbytes4×โดยqualityลด≤1จุด”; baselineMHA,เปลี่ยนheadsharingพร้อมtrainingbudgetเท่ากัน,วัดholdoutquality/TPOT/bytes</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-6"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-7" class="source-topic"><span id="source-35-gpt-decoder-models-canonical-7-vocabulary-logits" class="legacy-anchor"></span><h3>7. Vocabulary Logits</h3>
+<p>Final hidden states:</p>
+<pre><code class="language-text">(B,T,D)
+</code></pre>
+<p>Projection:</p>
+<pre><code class="language-text">D → V
+</code></pre>
+<p>Logits:</p>
+<pre><code class="language-text">(B,T,V)
+</code></pre>
+<p>Use raw logits with CrossEntropyLoss.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>recordids(B,T),Q(B,h,Tq,dk),cacheK/V,logits(B,Tq,V),peakbytesและtokenNLL; prefillกับdecodeแยกstage</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-7-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>recordids(B,T),Q(B,h,Tq,dk),cacheK/V,logits(B,Tq,V),peakbytesและtokenNLL; prefillกับdecodeแยกstage</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-7-equation"><summary>สมการ</summary><p>recordids(B,T),Q(B,h,Tq,dk),cacheK/V,logits(B,Tq,V),peakbytesและtokenNLL; prefillกับdecodeแยกstage</p></details><details id="help-topic-7-visual"><summary>ภาพและ shape</summary><p>recordids(B,T),Q(B,h,Tq,dk),cacheK/V,logits(B,Tq,V),peakbytesและtokenNLL; prefillกับdecodeแยกstage</p></details><details id="help-topic-7-code"><summary>โค้ด</summary><p>recordids(B,T),Q(B,h,Tq,dk),cacheK/V,logits(B,Tq,V),peakbytesและtokenNLL; prefillกับdecodeแยกstage</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-7-result"><summary>ผลการทดลอง</summary><p>recordids(B,T),Q(B,h,Tq,dk),cacheK/V,logits(B,Tq,V),peakbytesและtokenNLL; prefillกับdecodeแยกstage</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-7"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-8" class="source-topic"><span id="source-35-gpt-decoder-models-canonical-8-weight-tying" class="legacy-anchor"></span><h3>8. Weight Tying</h3>
+<p>A model may reuse the token embedding matrix for the output projection:</p>
+<pre><code class="language-text">logits =
+h E^T
+</code></pre>
+<p>This reduces parameter count and couples input/output token geometry.</p>
+<p>Not every model family ties weights identically.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-8-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>8. Weight Tying</h3>
+<p>A model may reuse the token embedding matrix for the output projection:</p>
+<pre><code class="language-text">logits =
+h E^T
+</code></pre>
+<p>This reduces parameter count and couples input/output token geometry.</p>
+<p>Not every model family ties weights identically.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-8-equation"><summary>สมการ</summary><h3>8. Weight Tying</h3>
+<p>A model may reuse the token embedding matrix for the output projection:</p>
+<pre><code class="language-text">logits =
+h E^T
+</code></pre>
+<p>This reduces parameter count and couples input/output token geometry.</p>
+<p>Not every model family ties weights identically.</p></details><details id="help-topic-8-visual"><summary>ภาพและ shape</summary><h3>8. Weight Tying</h3>
+<p>A model may reuse the token embedding matrix for the output projection:</p>
+<pre><code class="language-text">logits =
+h E^T
+</code></pre>
+<p>This reduces parameter count and couples input/output token geometry.</p>
+<p>Not every model family ties weights identically.</p></details><details id="help-topic-8-code"><summary>โค้ด</summary><h3>8. Weight Tying</h3>
+<p>A model may reuse the token embedding matrix for the output projection:</p>
+<pre><code class="language-text">logits =
+h E^T
+</code></pre>
+<p>This reduces parameter count and couples input/output token geometry.</p>
+<p>Not every model family ties weights identically.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-8-result"><summary>ผลการทดลอง</summary><h3>8. Weight Tying</h3>
+<p>A model may reuse the token embedding matrix for the output projection:</p>
+<pre><code class="language-text">logits =
+h E^T
+</code></pre>
+<p>This reduces parameter count and couples input/output token geometry.</p>
+<p>Not every model family ties weights identically.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-8"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-9" class="source-topic"><span id="source-35-gpt-decoder-models-canonical-9-training-teacher-forcing" class="legacy-anchor"></span><h3>9. Training Teacher Forcing</h3>
+<p>During training, each position receives the true previous tokens from the dataset.</p>
+<p>The model is not forced to consume its own mistakes during training.</p>
+<p>Generation is therefore a different runtime process.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-9-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>9. Training Teacher Forcing</h3>
+<p>During training, each position receives the true previous tokens from the dataset.</p>
+<p>The model is not forced to consume its own mistakes during training.</p>
+<p>Generation is therefore a different runtime process.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-9-equation"><summary>สมการ</summary><h3>9. Training Teacher Forcing</h3>
+<p>During training, each position receives the true previous tokens from the dataset.</p>
+<p>The model is not forced to consume its own mistakes during training.</p>
+<p>Generation is therefore a different runtime process.</p></details><details id="help-topic-9-visual"><summary>ภาพและ shape</summary><h3>9. Training Teacher Forcing</h3>
+<p>During training, each position receives the true previous tokens from the dataset.</p>
+<p>The model is not forced to consume its own mistakes during training.</p>
+<p>Generation is therefore a different runtime process.</p></details><details id="help-topic-9-code"><summary>โค้ด</summary><h3>9. Training Teacher Forcing</h3>
+<p>During training, each position receives the true previous tokens from the dataset.</p>
+<p>The model is not forced to consume its own mistakes during training.</p>
+<p>Generation is therefore a different runtime process.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-9-result"><summary>ผลการทดลอง</summary><h3>9. Training Teacher Forcing</h3>
+<p>During training, each position receives the true previous tokens from the dataset.</p>
+<p>The model is not forced to consume its own mistakes during training.</p>
+<p>Generation is therefore a different runtime process.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-9"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-10" class="source-topic"><span id="source-35-gpt-decoder-models-canonical-10-autoregressive-generation" class="legacy-anchor"></span><h3>10. Autoregressive Generation</h3>
+<pre><code class="language-text">prompt
+↓
+forward
+↓
+last-position logits
+↓
+choose next token
+↓
+append token
+↓
+repeat
+</code></pre><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-10-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>10. Autoregressive Generation</h3>
+<pre><code class="language-text">prompt
+↓
+forward
+↓
+last-position logits
+↓
+choose next token
+↓
+append token
+↓
+repeat
+</code></pre><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-10-equation"><summary>สมการ</summary><h3>10. Autoregressive Generation</h3>
+<pre><code class="language-text">prompt
+↓
+forward
+↓
+last-position logits
+↓
+choose next token
+↓
+append token
+↓
+repeat
+</code></pre></details><details id="help-topic-10-visual"><summary>ภาพและ shape</summary><h3>10. Autoregressive Generation</h3>
+<pre><code class="language-text">prompt
+↓
+forward
+↓
+last-position logits
+↓
+choose next token
+↓
+append token
+↓
+repeat
+</code></pre></details><details id="help-topic-10-code"><summary>โค้ด</summary><h3>10. Autoregressive Generation</h3>
+<pre><code class="language-text">prompt
+↓
+forward
+↓
+last-position logits
+↓
+choose next token
+↓
+append token
+↓
+repeat
+</code></pre><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-10-result"><summary>ผลการทดลอง</summary><h3>10. Autoregressive Generation</h3>
+<pre><code class="language-text">prompt
+↓
+forward
+↓
+last-position logits
+↓
+choose next token
+↓
+append token
+↓
+repeat
+</code></pre><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-10"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-11" class="source-topic"><span id="source-35-gpt-decoder-models-canonical-11-greedy-decoding" class="legacy-anchor"></span><h3>11. Greedy Decoding</h3>
+<pre><code class="language-text">next =
+argmax(logits)
+</code></pre>
+<p>Deterministic.</p>
+<p>Pros:
+- simple
+- reproducible</p>
+<p>Cons:
+- can become repetitive
+- may miss diverse high-probability continuations</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p><code>next_id=np.argmax(logits[-1]); ids.append(int(next_id))</code> วนจนEOS/max_new_tokens; ไม่sampleและtieใช้indexแรกตามpolicy</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-11-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p><code>next_id=np.argmax(logits[-1]); ids.append(int(next_id))</code> วนจนEOS/max_new_tokens; ไม่sampleและtieใช้indexแรกตามpolicy</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-11-equation"><summary>สมการ</summary><p><code>next_id=np.argmax(logits[-1]); ids.append(int(next_id))</code> วนจนEOS/max_new_tokens; ไม่sampleและtieใช้indexแรกตามpolicy</p></details><details id="help-topic-11-visual"><summary>ภาพและ shape</summary><p><code>next_id=np.argmax(logits[-1]); ids.append(int(next_id))</code> วนจนEOS/max_new_tokens; ไม่sampleและtieใช้indexแรกตามpolicy</p></details><details id="help-topic-11-code"><summary>โค้ด</summary><p><code>next_id=np.argmax(logits[-1]); ids.append(int(next_id))</code> วนจนEOS/max_new_tokens; ไม่sampleและtieใช้indexแรกตามpolicy</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-11-result"><summary>ผลการทดลอง</summary><p><code>next_id=np.argmax(logits[-1]); ids.append(int(next_id))</code> วนจนEOS/max_new_tokens; ไม่sampleและtieใช้indexแรกตามpolicy</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-11"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-12" class="source-topic"><span id="source-35-gpt-decoder-models-canonical-12-temperature" class="legacy-anchor"></span><h3>12. Temperature</h3>
+<p>Adjust logits:</p>
+<pre><code class="language-text">logits_scaled =
+logits / temperature
+</code></pre>
+<p>Temperature &lt; 1:
+- sharper distribution
+- more deterministic</p>
+<p>Temperature &gt; 1:
+- flatter distribution
+- more randomness</p>
+<p>Temperature must be positive.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>logits[0,log3],T1prob[.25,.75],T.5prob[.1,.9],T2prob≈[.366025,.633975]; T&gt;0และไม่แก้weights</p><p>คงprompt/model/seed เปรียบT.5/1ด้วยtopk/toppเดิม; recordentropy/repetitionและtaskaccuracy ห้ามอ้างprobเปลี่ยนคือmodelretrained</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-12-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>logits[0,log3],T1prob[.25,.75],T.5prob[.1,.9],T2prob≈[.366025,.633975]; T&gt;0และไม่แก้weights</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-12-equation"><summary>สมการ</summary><p>logits[0,log3],T1prob[.25,.75],T.5prob[.1,.9],T2prob≈[.366025,.633975]; T&gt;0และไม่แก้weights</p></details><details id="help-topic-12-visual"><summary>ภาพและ shape</summary><p>logits[0,log3],T1prob[.25,.75],T.5prob[.1,.9],T2prob≈[.366025,.633975]; T&gt;0และไม่แก้weights</p></details><details id="help-topic-12-code"><summary>โค้ด</summary><p>logits[0,log3],T1prob[.25,.75],T.5prob[.1,.9],T2prob≈[.366025,.633975]; T&gt;0และไม่แก้weights</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-12-result"><summary>ผลการทดลอง</summary><p>logits[0,log3],T1prob[.25,.75],T.5prob[.1,.9],T2prob≈[.366025,.633975]; T&gt;0และไม่แก้weights</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-12"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-13" class="source-topic"><span id="source-35-gpt-decoder-models-canonical-13-top-k-sampling" class="legacy-anchor"></span><h3>13. Top-k Sampling</h3>
+<p>Keep only the k highest-scoring tokens.</p>
+<p>All others receive probability zero after filtering.</p>
+<p>This caps candidate count.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>topk2ของlogits[3,2,1]เก็บindices0,1และsetindex2−∞ก่อนsoftmax; k≤0หรือk&gt;Vต้องreject/กำหนดนโยบายชัด</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-13-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>topk2ของlogits[3,2,1]เก็บindices0,1และsetindex2−∞ก่อนsoftmax; k≤0หรือk&gt;Vต้องreject/กำหนดนโยบายชัด</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-13-equation"><summary>สมการ</summary><p>topk2ของlogits[3,2,1]เก็บindices0,1และsetindex2−∞ก่อนsoftmax; k≤0หรือk&gt;Vต้องreject/กำหนดนโยบายชัด</p></details><details id="help-topic-13-visual"><summary>ภาพและ shape</summary><p>topk2ของlogits[3,2,1]เก็บindices0,1และsetindex2−∞ก่อนsoftmax; k≤0หรือk&gt;Vต้องreject/กำหนดนโยบายชัด</p></details><details id="help-topic-13-code"><summary>โค้ด</summary><p>topk2ของlogits[3,2,1]เก็บindices0,1และsetindex2−∞ก่อนsoftmax; k≤0หรือk&gt;Vต้องreject/กำหนดนโยบายชัด</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-13-result"><summary>ผลการทดลอง</summary><p>topk2ของlogits[3,2,1]เก็บindices0,1และsetindex2−∞ก่อนsoftmax; k≤0หรือk&gt;Vต้องreject/กำหนดนโยบายชัด</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-13"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-14" class="source-topic"><span id="source-35-gpt-decoder-models-canonical-14-top-p-nucleus-sampling" class="legacy-anchor"></span><h3>14. Top-p / Nucleus Sampling</h3>
+<p>Sort tokens by probability.</p>
+<p>Keep the smallest set whose cumulative probability reaches p.</p>
+<p>Candidate count adapts to distribution sharpness.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>probs[.6,.3,.1],p.7เก็บสองtokenแรกเพราะcumulativeข้าม.7ที่ตัวสอง; ต้องเก็บtokenที่ทำให้ข้ามthresholdและอย่างน้อย1token</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-14-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>probs[.6,.3,.1],p.7เก็บสองtokenแรกเพราะcumulativeข้าม.7ที่ตัวสอง; ต้องเก็บtokenที่ทำให้ข้ามthresholdและอย่างน้อย1token</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-14-equation"><summary>สมการ</summary><p>probs[.6,.3,.1],p.7เก็บสองtokenแรกเพราะcumulativeข้าม.7ที่ตัวสอง; ต้องเก็บtokenที่ทำให้ข้ามthresholdและอย่างน้อย1token</p></details><details id="help-topic-14-visual"><summary>ภาพและ shape</summary><p>probs[.6,.3,.1],p.7เก็บสองtokenแรกเพราะcumulativeข้าม.7ที่ตัวสอง; ต้องเก็บtokenที่ทำให้ข้ามthresholdและอย่างน้อย1token</p></details><details id="help-topic-14-code"><summary>โค้ด</summary><p>probs[.6,.3,.1],p.7เก็บสองtokenแรกเพราะcumulativeข้าม.7ที่ตัวสอง; ต้องเก็บtokenที่ทำให้ข้ามthresholdและอย่างน้อย1token</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-14-result"><summary>ผลการทดลอง</summary><p>probs[.6,.3,.1],p.7เก็บสองtokenแรกเพราะcumulativeข้าม.7ที่ตัวสอง; ต้องเก็บtokenที่ทำให้ข้ามthresholdและอย่างน้อย1token</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-14"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-15" class="source-topic"><span id="source-35-gpt-decoder-models-canonical-15-top-k-vs-top-p" class="legacy-anchor"></span><h3>15. Top-k vs Top-p</h3>
+<p>Top-k:
+- fixed number of candidates</p>
+<p>Top-p:
+- variable candidate set based on probability mass</p>
+<p>They can also be combined.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>แบ่งlogitsด้วยT→topkfilter→toppfilter→renormalize→sampleด้วยseed; การเรียงfilterมีผลจึงต้องบันทึกpolicy</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-15-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>แบ่งlogitsด้วยT→topkfilter→toppfilter→renormalize→sampleด้วยseed; การเรียงfilterมีผลจึงต้องบันทึกpolicy</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-15-equation"><summary>สมการ</summary><p>แบ่งlogitsด้วยT→topkfilter→toppfilter→renormalize→sampleด้วยseed; การเรียงfilterมีผลจึงต้องบันทึกpolicy</p></details><details id="help-topic-15-visual"><summary>ภาพและ shape</summary><p>แบ่งlogitsด้วยT→topkfilter→toppfilter→renormalize→sampleด้วยseed; การเรียงfilterมีผลจึงต้องบันทึกpolicy</p></details><details id="help-topic-15-code"><summary>โค้ด</summary><p>แบ่งlogitsด้วยT→topkfilter→toppfilter→renormalize→sampleด้วยseed; การเรียงfilterมีผลจึงต้องบันทึกpolicy</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-15-result"><summary>ผลการทดลอง</summary><p>แบ่งlogitsด้วยT→topkfilter→toppfilter→renormalize→sampleด้วยseed; การเรียงfilterมีผลจึงต้องบันทึกpolicy</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-15"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-16" class="source-topic"><span id="source-35-gpt-decoder-models-canonical-16-numerical-stability" class="legacy-anchor"></span><h3>16. Numerical Stability</h3>
+<p>Before softmax:</p>
+<pre><code class="language-text">logits -= max(logits)
+</code></pre>
+<p>Then exponentiate.</p>
+<p>Filtering should happen consistently before sampling.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-16-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>16. Numerical Stability</h3>
+<p>Before softmax:</p>
+<pre><code class="language-text">logits -= max(logits)
+</code></pre>
+<p>Then exponentiate.</p>
+<p>Filtering should happen consistently before sampling.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-16-equation"><summary>สมการ</summary><h3>16. Numerical Stability</h3>
+<p>Before softmax:</p>
+<pre><code class="language-text">logits -= max(logits)
+</code></pre>
+<p>Then exponentiate.</p>
+<p>Filtering should happen consistently before sampling.</p></details><details id="help-topic-16-visual"><summary>ภาพและ shape</summary><h3>16. Numerical Stability</h3>
+<p>Before softmax:</p>
+<pre><code class="language-text">logits -= max(logits)
+</code></pre>
+<p>Then exponentiate.</p>
+<p>Filtering should happen consistently before sampling.</p></details><details id="help-topic-16-code"><summary>โค้ด</summary><h3>16. Numerical Stability</h3>
+<p>Before softmax:</p>
+<pre><code class="language-text">logits -= max(logits)
+</code></pre>
+<p>Then exponentiate.</p>
+<p>Filtering should happen consistently before sampling.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-16-result"><summary>ผลการทดลอง</summary><h3>16. Numerical Stability</h3>
+<p>Before softmax:</p>
+<pre><code class="language-text">logits -= max(logits)
+</code></pre>
+<p>Then exponentiate.</p>
+<p>Filtering should happen consistently before sampling.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-16"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-17" class="source-topic"><span id="source-35-gpt-decoder-models-canonical-17-repetition" class="legacy-anchor"></span><h3>17. Repetition</h3>
+<p>Autoregressive models can fall into repetitive loops.</p>
+<p>Possible decoding controls include:
+- repetition penalties
+- no-repeat n-grams
+- frequency/presence penalties
+- better sampling strategy</p>
+<p>These alter generation behavior and should not be confused with model training quality.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>greedyrepeatableแต่ไม่สำรวจdistribution,stochasticsampleให้diversityและอาจผิดมากขึ้น; ประเมินquality/diversityหลายseedและbudgetเท่ากัน</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-17-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>greedyrepeatableแต่ไม่สำรวจdistribution,stochasticsampleให้diversityและอาจผิดมากขึ้น; ประเมินquality/diversityหลายseedและbudgetเท่ากัน</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-17-equation"><summary>สมการ</summary><p>greedyrepeatableแต่ไม่สำรวจdistribution,stochasticsampleให้diversityและอาจผิดมากขึ้น; ประเมินquality/diversityหลายseedและbudgetเท่ากัน</p></details><details id="help-topic-17-visual"><summary>ภาพและ shape</summary><p>greedyrepeatableแต่ไม่สำรวจdistribution,stochasticsampleให้diversityและอาจผิดมากขึ้น; ประเมินquality/diversityหลายseedและbudgetเท่ากัน</p></details><details id="help-topic-17-code"><summary>โค้ด</summary><p>greedyrepeatableแต่ไม่สำรวจdistribution,stochasticsampleให้diversityและอาจผิดมากขึ้น; ประเมินquality/diversityหลายseedและbudgetเท่ากัน</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-17-result"><summary>ผลการทดลอง</summary><p>greedyrepeatableแต่ไม่สำรวจdistribution,stochasticsampleให้diversityและอาจผิดมากขึ้น; ประเมินquality/diversityหลายseedและbudgetเท่ากัน</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-17"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-18" class="source-topic"><span id="source-35-gpt-decoder-models-canonical-18-context-window" class="legacy-anchor"></span><h3>18. Context Window</h3>
+<p>A decoder model can only condition on tokens included in its active context.</p>
+<p>If context length is T_max:</p>
+<pre><code class="language-text">input length &lt;= T_max
+</code></pre>
+<p>Longer prompts require:
+- truncation
+- sliding-window strategies
+- architecture/model support for longer context</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-18-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>18. Context Window</h3>
+<p>A decoder model can only condition on tokens included in its active context.</p>
+<p>If context length is T_max:</p>
+<pre><code class="language-text">input length &lt;= T_max
+</code></pre>
+<p>Longer prompts require:
+- truncation
+- sliding-window strategies
+- architecture/model support for longer context</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-18-equation"><summary>สมการ</summary><h3>18. Context Window</h3>
+<p>A decoder model can only condition on tokens included in its active context.</p>
+<p>If context length is T_max:</p>
+<pre><code class="language-text">input length &lt;= T_max
+</code></pre>
+<p>Longer prompts require:
+- truncation
+- sliding-window strategies
+- architecture/model support for longer context</p></details><details id="help-topic-18-visual"><summary>ภาพและ shape</summary><h3>18. Context Window</h3>
+<p>A decoder model can only condition on tokens included in its active context.</p>
+<p>If context length is T_max:</p>
+<pre><code class="language-text">input length &lt;= T_max
+</code></pre>
+<p>Longer prompts require:
+- truncation
+- sliding-window strategies
+- architecture/model support for longer context</p></details><details id="help-topic-18-code"><summary>โค้ด</summary><h3>18. Context Window</h3>
+<p>A decoder model can only condition on tokens included in its active context.</p>
+<p>If context length is T_max:</p>
+<pre><code class="language-text">input length &lt;= T_max
+</code></pre>
+<p>Longer prompts require:
+- truncation
+- sliding-window strategies
+- architecture/model support for longer context</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-18-result"><summary>ผลการทดลอง</summary><h3>18. Context Window</h3>
+<p>A decoder model can only condition on tokens included in its active context.</p>
+<p>If context length is T_max:</p>
+<pre><code class="language-text">input length &lt;= T_max
+</code></pre>
+<p>Longer prompts require:
+- truncation
+- sliding-window strategies
+- architecture/model support for longer context</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-18"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-19" class="source-topic"><span id="source-35-gpt-decoder-models-canonical-19-position-handling" class="legacy-anchor"></span><h3>19. Position Handling</h3>
+<p>GPT-family models may use:
+- learned absolute positions
+- sinusoidal positions
+- RoPE
+- other relative schemes</p>
+<p>Later long-context chapters cover these deeply.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>บันทึกcheckpoint/tokenizer/promptIDs/T/k/p/EOS/seed/cachelayout/dtype/positionoffset/commitและhardware; hashlogitsfixtureช่วยตรวจregression</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-19-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>บันทึกcheckpoint/tokenizer/promptIDs/T/k/p/EOS/seed/cachelayout/dtype/positionoffset/commitและhardware; hashlogitsfixtureช่วยตรวจregression</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-19-equation"><summary>สมการ</summary><p>บันทึกcheckpoint/tokenizer/promptIDs/T/k/p/EOS/seed/cachelayout/dtype/positionoffset/commitและhardware; hashlogitsfixtureช่วยตรวจregression</p></details><details id="help-topic-19-visual"><summary>ภาพและ shape</summary><p>บันทึกcheckpoint/tokenizer/promptIDs/T/k/p/EOS/seed/cachelayout/dtype/positionoffset/commitและhardware; hashlogitsfixtureช่วยตรวจregression</p></details><details id="help-topic-19-code"><summary>โค้ด</summary><p>บันทึกcheckpoint/tokenizer/promptIDs/T/k/p/EOS/seed/cachelayout/dtype/positionoffset/commitและhardware; hashlogitsfixtureช่วยตรวจregression</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-19-result"><summary>ผลการทดลอง</summary><p>บันทึกcheckpoint/tokenizer/promptIDs/T/k/p/EOS/seed/cachelayout/dtype/positionoffset/commitและhardware; hashlogitsfixtureช่วยตรวจregression</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-19"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-20" class="source-topic"><span id="source-35-gpt-decoder-models-canonical-20-kv-cache-motivation" class="legacy-anchor"></span><h3>20. KV Cache Motivation</h3>
+<p>Naive generation recomputes K/V projections for all prior tokens at every new step.</p>
+<p>At generation step t:</p>
+<pre><code class="language-text">old tokens' K/V
+do not change
+</code></pre>
+<p>Cache them and compute only new-token projections.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>fullprefillO(T²d),singlecacheddecodeattentionO(Td)แต่KVmemoryO(LTdnkv/h); naiveทั้งprefixซ้ำแพงกว่าและweightsprojectioncostยังมี</p><p>cacheon/offคงgeneratedtokenpathด้วยgreedyเพื่อเทียบnumerical/latency; warmupและจับprefill/decodeแยกพร้อมcontextlengthหลายค่า</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-20-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>fullprefillO(T²d),singlecacheddecodeattentionO(Td)แต่KVmemoryO(LTdnkv/h); naiveทั้งprefixซ้ำแพงกว่าและweightsprojectioncostยังมี</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-20-equation"><summary>สมการ</summary><p>fullprefillO(T²d),singlecacheddecodeattentionO(Td)แต่KVmemoryO(LTdnkv/h); naiveทั้งprefixซ้ำแพงกว่าและweightsprojectioncostยังมี</p></details><details id="help-topic-20-visual"><summary>ภาพและ shape</summary><p>fullprefillO(T²d),singlecacheddecodeattentionO(Td)แต่KVmemoryO(LTdnkv/h); naiveทั้งprefixซ้ำแพงกว่าและweightsprojectioncostยังมี</p></details><details id="help-topic-20-code"><summary>โค้ด</summary><p>fullprefillO(T²d),singlecacheddecodeattentionO(Td)แต่KVmemoryO(LTdnkv/h); naiveทั้งprefixซ้ำแพงกว่าและweightsprojectioncostยังมี</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-20-result"><summary>ผลการทดลอง</summary><p>fullprefillO(T²d),singlecacheddecodeattentionO(Td)แต่KVmemoryO(LTdnkv/h); naiveทั้งprefixซ้ำแพงกว่าและweightsprojectioncostยังมี</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-20"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-21" class="source-topic"><span id="source-35-gpt-decoder-models-canonical-21-kv-cache-concept" class="legacy-anchor"></span><h3>21. KV Cache Concept</h3>
+<p>For every layer store:</p>
+<pre><code class="language-text">K_cached
+V_cached
+</code></pre>
+<p>New token:</p>
+<pre><code class="language-text">q_new
+k_new
+v_new
+</code></pre>
+<p>Append k_new/v_new to cache and attend q_new over all cached keys/values.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>KVแต่ละlayer shape(B,nkv,Tcache,dk); เพิ่มtokenหนึ่งทำTcache+1,K/Vเก่าคงเดิมและqueryใหม่length1; ไม่appendqueryเข้าcache</p><p>recordids(B,T),Q(B,h,Tq,dk),cacheK/V,logits(B,Tq,V),peakbytesและtokenNLL; prefillกับdecodeแยกstage</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-21-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>KVแต่ละlayer shape(B,nkv,Tcache,dk); เพิ่มtokenหนึ่งทำTcache+1,K/Vเก่าคงเดิมและqueryใหม่length1; ไม่appendqueryเข้าcache</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-21-equation"><summary>สมการ</summary><p>KVแต่ละlayer shape(B,nkv,Tcache,dk); เพิ่มtokenหนึ่งทำTcache+1,K/Vเก่าคงเดิมและqueryใหม่length1; ไม่appendqueryเข้าcache</p></details><details id="help-topic-21-visual"><summary>ภาพและ shape</summary><p>KVแต่ละlayer shape(B,nkv,Tcache,dk); เพิ่มtokenหนึ่งทำTcache+1,K/Vเก่าคงเดิมและqueryใหม่length1; ไม่appendqueryเข้าcache</p></details><details id="help-topic-21-code"><summary>โค้ด</summary><p>KVแต่ละlayer shape(B,nkv,Tcache,dk); เพิ่มtokenหนึ่งทำTcache+1,K/Vเก่าคงเดิมและqueryใหม่length1; ไม่appendqueryเข้าcache</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-21-result"><summary>ผลการทดลอง</summary><p>KVแต่ละlayer shape(B,nkv,Tcache,dk); เพิ่มtokenหนึ่งทำTcache+1,K/Vเก่าคงเดิมและqueryใหม่length1; ไม่appendqueryเข้าcache</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-21"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-22" class="source-topic"><span id="source-35-gpt-decoder-models-canonical-22-why-cache-does-not-remove-all-cost" class="legacy-anchor"></span><h3>22. Why Cache Does Not Remove All Cost</h3>
+<p>Attention for a new token still compares against previous keys.</p>
+<p>KV cache reduces repeated projection/computation, but:
+- memory grows with sequence length
+- per-token attention work still grows with context
+- cache bandwidth becomes important</p>
+<p>Serving chapters revisit this in detail.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>bytes=2·L·B·nkv·T·dk·bytes_per_element; L2,B1,nkv2,T16,dk4,fp32ได้2048bytesไม่รวมweights/allocator</p><p>fullprefillO(T²d),singlecacheddecodeattentionO(Td)แต่KVmemoryO(LTdnkv/h); naiveทั้งprefixซ้ำแพงกว่าและweightsprojectioncostยังมี</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-22-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>bytes=2·L·B·nkv·T·dk·bytes_per_element; L2,B1,nkv2,T16,dk4,fp32ได้2048bytesไม่รวมweights/allocator</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-22-equation"><summary>สมการ</summary><p>bytes=2·L·B·nkv·T·dk·bytes_per_element; L2,B1,nkv2,T16,dk4,fp32ได้2048bytesไม่รวมweights/allocator</p></details><details id="help-topic-22-visual"><summary>ภาพและ shape</summary><p>bytes=2·L·B·nkv·T·dk·bytes_per_element; L2,B1,nkv2,T16,dk4,fp32ได้2048bytesไม่รวมweights/allocator</p></details><details id="help-topic-22-code"><summary>โค้ด</summary><p>bytes=2·L·B·nkv·T·dk·bytes_per_element; L2,B1,nkv2,T16,dk4,fp32ได้2048bytesไม่รวมweights/allocator</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-22-result"><summary>ผลการทดลอง</summary><p>bytes=2·L·B·nkv·T·dk·bytes_per_element; L2,B1,nkv2,T16,dk4,fp32ได้2048bytesไม่รวมweights/allocator</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-22"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-23" class="source-topic"><span id="source-35-gpt-decoder-models-canonical-23-training-vs-cached-inference" class="legacy-anchor"></span><h3>23. Training vs Cached Inference</h3>
+<p>Training:
+- process many positions in parallel
+- full causal attention matrix</p>
+<p>Generation:
+- one/few new tokens at a time
+- reuse past K/V
+- sequential token dependency</p>
+<p>Optimization priorities differ.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>cached/uncachedlogitsallcloseทุกstepในevaldropout0; maskfuture0และcachelengthเพิ่ม1; testprefixlength2กับpositionoffset2จับRoPEoffbyone</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-23-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>cached/uncachedlogitsallcloseทุกstepในevaldropout0; maskfuture0และcachelengthเพิ่ม1; testprefixlength2กับpositionoffset2จับRoPEoffbyone</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-23-equation"><summary>สมการ</summary><p>cached/uncachedlogitsallcloseทุกstepในevaldropout0; maskfuture0และcachelengthเพิ่ม1; testprefixlength2กับpositionoffset2จับRoPEoffbyone</p></details><details id="help-topic-23-visual"><summary>ภาพและ shape</summary><p>cached/uncachedlogitsallcloseทุกstepในevaldropout0; maskfuture0และcachelengthเพิ่ม1; testprefixlength2กับpositionoffset2จับRoPEoffbyone</p></details><details id="help-topic-23-code"><summary>โค้ด</summary><p>cached/uncachedlogitsallcloseทุกstepในevaldropout0; maskfuture0และcachelengthเพิ่ม1; testprefixlength2กับpositionoffset2จับRoPEoffbyone</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-23-result"><summary>ผลการทดลอง</summary><p>cached/uncachedlogitsallcloseทุกstepในevaldropout0; maskfuture0และcachelengthเพิ่ม1; testprefixlength2กับpositionoffset2จับRoPEoffbyone</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-23"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-24" class="source-topic"><span id="source-35-gpt-decoder-models-canonical-24-stopping" class="legacy-anchor"></span><h3>24. Stopping</h3>
+<p>Generation may stop on:
+- EOS token
+- max new tokens
+- task-specific delimiter</p>
+<p>Always bound generation loops.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>บันทึกcheckpoint/tokenizer/promptIDs/T/k/p/EOS/seed/cachelayout/dtype/positionoffset/commitและhardware; hashlogitsfixtureช่วยตรวจregression</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-24-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>บันทึกcheckpoint/tokenizer/promptIDs/T/k/p/EOS/seed/cachelayout/dtype/positionoffset/commitและhardware; hashlogitsfixtureช่วยตรวจregression</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-24-equation"><summary>สมการ</summary><p>บันทึกcheckpoint/tokenizer/promptIDs/T/k/p/EOS/seed/cachelayout/dtype/positionoffset/commitและhardware; hashlogitsfixtureช่วยตรวจregression</p></details><details id="help-topic-24-visual"><summary>ภาพและ shape</summary><p>บันทึกcheckpoint/tokenizer/promptIDs/T/k/p/EOS/seed/cachelayout/dtype/positionoffset/commitและhardware; hashlogitsfixtureช่วยตรวจregression</p></details><details id="help-topic-24-code"><summary>โค้ด</summary><p>บันทึกcheckpoint/tokenizer/promptIDs/T/k/p/EOS/seed/cachelayout/dtype/positionoffset/commitและhardware; hashlogitsfixtureช่วยตรวจregression</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-24-result"><summary>ผลการทดลอง</summary><p>บันทึกcheckpoint/tokenizer/promptIDs/T/k/p/EOS/seed/cachelayout/dtype/positionoffset/commitและhardware; hashlogitsfixtureช่วยตรวจregression</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-24"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-25" class="source-topic"><span id="source-35-gpt-decoder-models-canonical-25-perplexity" class="legacy-anchor"></span><h3>25. Perplexity</h3>
+<p>Causal LM validation metric:</p>
+<pre><code class="language-text">PPL = exp(mean token CE)
+</code></pre>
+<p>Compare only under compatible tokenization/objective/data.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>correctnexttokenprob[.5,.25]สองตำแหน่งCE1.039721,PPLexp(CE)=2.828427; PADไม่อยู่denominatorและtokenizerต้องตรงตอนcompare</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-25-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>correctnexttokenprob[.5,.25]สองตำแหน่งCE1.039721,PPLexp(CE)=2.828427; PADไม่อยู่denominatorและtokenizerต้องตรงตอนcompare</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-25-equation"><summary>สมการ</summary><p>correctnexttokenprob[.5,.25]สองตำแหน่งCE1.039721,PPLexp(CE)=2.828427; PADไม่อยู่denominatorและtokenizerต้องตรงตอนcompare</p></details><details id="help-topic-25-visual"><summary>ภาพและ shape</summary><p>correctnexttokenprob[.5,.25]สองตำแหน่งCE1.039721,PPLexp(CE)=2.828427; PADไม่อยู่denominatorและtokenizerต้องตรงตอนcompare</p></details><details id="help-topic-25-code"><summary>โค้ด</summary><p>correctnexttokenprob[.5,.25]สองตำแหน่งCE1.039721,PPLexp(CE)=2.828427; PADไม่อยู่denominatorและtokenizerต้องตรงตอนcompare</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-25-result"><summary>ผลการทดลอง</summary><p>correctnexttokenprob[.5,.25]สองตำแหน่งCE1.039721,PPLexp(CE)=2.828427; PADไม่อยู่denominatorและtokenizerต้องตรงตอนcompare</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-25"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-26" class="source-topic"><span id="source-35-gpt-decoder-models-canonical-26-from-scratch" class="legacy-anchor"></span><h3>26. From Scratch</h3>
+<p>src/gpt_sampling.py includes:</p>
+<ul>
+<li>make_causal_lm_pairs</li>
+<li>stable_softmax</li>
+<li>apply_temperature</li>
+<li>top_k_filter</li>
+<li>top_p_filter</li>
+<li>sample_from_logits</li>
+</ul>
+<p>These isolate generation mechanics from model architecture.</p><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>copytinydecoderweightsไปtorchmanualcausalattention,dropout0; compareprefillและperstepcachedlogitsatol1e−6พร้อมsametokenIDs</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-26-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>copytinydecoderweightsไปtorchmanualcausalattention,dropout0; compareprefillและperstepcachedlogitsatol1e−6พร้อมsametokenIDs</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-26-equation"><summary>สมการ</summary><p>copytinydecoderweightsไปtorchmanualcausalattention,dropout0; compareprefillและperstepcachedlogitsatol1e−6พร้อมsametokenIDs</p></details><details id="help-topic-26-visual"><summary>ภาพและ shape</summary><p>copytinydecoderweightsไปtorchmanualcausalattention,dropout0; compareprefillและperstepcachedlogitsatol1e−6พร้อมsametokenIDs</p></details><details id="help-topic-26-code"><summary>โค้ด</summary><p>copytinydecoderweightsไปtorchmanualcausalattention,dropout0; compareprefillและperstepcachedlogitsatol1e−6พร้อมsametokenIDs</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-26-result"><summary>ผลการทดลอง</summary><p>copytinydecoderweightsไปtorchmanualcausalattention,dropout0; compareprefillและperstepcachedlogitsatol1e−6พร้อมsametokenIDs</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-26"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-27" class="source-topic"><span id="source-35-gpt-decoder-models-canonical-27-common-mistakes" class="legacy-anchor"></span><h3>27. Common Mistakes</h3>
+<ol>
+<li>future-token leakage</li>
+<li>softmax before CrossEntropyLoss</li>
+<li>temperature &lt;= 0</li>
+<li>applying top-p to unsorted probabilities incorrectly</li>
+<li>forgetting to renormalize after filtering</li>
+<li>unbounded generation loop</li>
+<li>treating greedy output as model's only possible answer</li>
+<li>assuming KV cache makes attention O(1)</li>
+<li>comparing perplexity across tokenizers blindly</li>
+<li>using training dropout during deterministic evaluation unintentionally</li>
+</ol><h3>อธิบายภาษาไทยและตัวอย่างที่ใช้ตรวจความเข้าใจ</h3><p>overlappingdocumentwindowsข้ามsplitทำPPLต่ำปลอม; reportdedup/tokenizer/lengthและไม่รวมprompt/paddingในcompletionmetricโดยไม่บอก</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-27-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><p>overlappingdocumentwindowsข้ามsplitทำPPLต่ำปลอม; reportdedup/tokenizer/lengthและไม่รวมprompt/paddingในcompletionmetricโดยไม่บอก</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-27-equation"><summary>สมการ</summary><p>overlappingdocumentwindowsข้ามsplitทำPPLต่ำปลอม; reportdedup/tokenizer/lengthและไม่รวมprompt/paddingในcompletionmetricโดยไม่บอก</p></details><details id="help-topic-27-visual"><summary>ภาพและ shape</summary><p>overlappingdocumentwindowsข้ามsplitทำPPLต่ำปลอม; reportdedup/tokenizer/lengthและไม่รวมprompt/paddingในcompletionmetricโดยไม่บอก</p></details><details id="help-topic-27-code"><summary>โค้ด</summary><p>overlappingdocumentwindowsข้ามsplitทำPPLต่ำปลอม; reportdedup/tokenizer/lengthและไม่รวมprompt/paddingในcompletionmetricโดยไม่บอก</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-27-result"><summary>ผลการทดลอง</summary><p>overlappingdocumentwindowsข้ามsplitทำPPLต่ำปลอม; reportdedup/tokenizer/lengthและไม่รวมprompt/paddingในcompletionmetricโดยไม่บอก</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-27"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-28" class="source-topic"><span id="source-35-gpt-decoder-models-canonical-28-exercises-mini-project" class="legacy-anchor"></span><h3>28. Exercises / Mini Project</h3>
+<ul>
+<li><a href="../35-gpt-decoder-models/exercises/README.md">Exercises</a></li>
+<li><a href="../35-gpt-decoder-models/solutions/README.md">Solutions</a></li>
+<li><a href="../35-gpt-decoder-models/mini-project/README.md">Mini Project</a></li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-28-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>28. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-28-equation"><summary>สมการ</summary><h3>28. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-28-visual"><summary>ภาพและ shape</summary><h3>28. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul></details><details id="help-topic-28-code"><summary>โค้ด</summary><h3>28. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-28-result"><summary>ผลการทดลอง</summary><h3>28. Exercises / Mini Project</h3>
+<ul>
+<li><a href="exercises/README.md">Exercises</a></li>
+<li><a href="solutions/README.md">Solutions</a></li>
+<li><a href="mini-project/README.md">Mini Project</a></li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-28"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-29" class="source-topic"><span id="source-35-gpt-decoder-models-canonical-29-checklist" class="legacy-anchor"></span><h3>29. Checklist</h3>
+<ul>
+<li>[ ] decoder-only stack</li>
+<li>[ ] causal mask</li>
+<li>[ ] shifted targets</li>
+<li>[ ] teacher forcing</li>
+<li>[ ] greedy generation</li>
+<li>[ ] temperature</li>
+<li>[ ] top-k</li>
+<li>[ ] top-p</li>
+<li>[ ] context window</li>
+<li>[ ] EOS</li>
+<li>[ ] KV cache concept</li>
+<li>[ ] training vs inference</li>
+</ul><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-29-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>29. Checklist</h3>
+<ul>
+<li>[ ] decoder-only stack</li>
+<li>[ ] causal mask</li>
+<li>[ ] shifted targets</li>
+<li>[ ] teacher forcing</li>
+<li>[ ] greedy generation</li>
+<li>[ ] temperature</li>
+<li>[ ] top-k</li>
+<li>[ ] top-p</li>
+<li>[ ] context window</li>
+<li>[ ] EOS</li>
+<li>[ ] KV cache concept</li>
+<li>[ ] training vs inference</li>
+</ul><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-29-equation"><summary>สมการ</summary><h3>29. Checklist</h3>
+<ul>
+<li>[ ] decoder-only stack</li>
+<li>[ ] causal mask</li>
+<li>[ ] shifted targets</li>
+<li>[ ] teacher forcing</li>
+<li>[ ] greedy generation</li>
+<li>[ ] temperature</li>
+<li>[ ] top-k</li>
+<li>[ ] top-p</li>
+<li>[ ] context window</li>
+<li>[ ] EOS</li>
+<li>[ ] KV cache concept</li>
+<li>[ ] training vs inference</li>
+</ul></details><details id="help-topic-29-visual"><summary>ภาพและ shape</summary><h3>29. Checklist</h3>
+<ul>
+<li>[ ] decoder-only stack</li>
+<li>[ ] causal mask</li>
+<li>[ ] shifted targets</li>
+<li>[ ] teacher forcing</li>
+<li>[ ] greedy generation</li>
+<li>[ ] temperature</li>
+<li>[ ] top-k</li>
+<li>[ ] top-p</li>
+<li>[ ] context window</li>
+<li>[ ] EOS</li>
+<li>[ ] KV cache concept</li>
+<li>[ ] training vs inference</li>
+</ul></details><details id="help-topic-29-code"><summary>โค้ด</summary><h3>29. Checklist</h3>
+<ul>
+<li>[ ] decoder-only stack</li>
+<li>[ ] causal mask</li>
+<li>[ ] shifted targets</li>
+<li>[ ] teacher forcing</li>
+<li>[ ] greedy generation</li>
+<li>[ ] temperature</li>
+<li>[ ] top-k</li>
+<li>[ ] top-p</li>
+<li>[ ] context window</li>
+<li>[ ] EOS</li>
+<li>[ ] KV cache concept</li>
+<li>[ ] training vs inference</li>
+</ul><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-29-result"><summary>ผลการทดลอง</summary><h3>29. Checklist</h3>
+<ul>
+<li>[ ] decoder-only stack</li>
+<li>[ ] causal mask</li>
+<li>[ ] shifted targets</li>
+<li>[ ] teacher forcing</li>
+<li>[ ] greedy generation</li>
+<li>[ ] temperature</li>
+<li>[ ] top-k</li>
+<li>[ ] top-p</li>
+<li>[ ] context window</li>
+<li>[ ] EOS</li>
+<li>[ ] KV cache concept</li>
+<li>[ ] training vs inference</li>
+</ul><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-29"> อ่านหัวข้อนี้แล้ว</label></section><section id="topic-30" class="source-topic"><span id="source-35-gpt-decoder-models-canonical-30-whats-next" class="legacy-anchor"></span><span id="source-35-gpt-decoder-models-canonical-35-gpt-decoder-models-gpt-and-decoder-models" class="legacy-anchor"></span><h3>30. What's Next</h3>
+<p>Chapter 36 combines a bidirectional encoder with a causal decoder and cross-attention: encoder-decoder / T5-style sequence-to-sequence models.</p><details class="help-panel"><summary>ยังไม่เข้าใจตรงนี้</summary><p>เลือกจุดที่ติด เพื่อเปิดคำอธิบายและตัวอย่างของหัวข้อนี้ (ใช้ได้ offline)</p><details id="help-topic-30-terms"><summary>ศัพท์ / สัญลักษณ์</summary><p>เปิดอภิธานศัพท์เพื่ออ่านคำไทยและหน่วย แล้วอ่านคำอธิบายที่ตรงกับกรณีนี้:</p><h3>30. What's Next</h3>
+<p>Chapter 36 combines a bidirectional encoder with a causal decoder and cross-attention: encoder-decoder / T5-style sequence-to-sequence models.</p><a href="#glossary">อภิธานศัพท์</a></details><details id="help-topic-30-equation"><summary>สมการ</summary><h3>30. What's Next</h3>
+<p>Chapter 36 combines a bidirectional encoder with a causal decoder and cross-attention: encoder-decoder / T5-style sequence-to-sequence models.</p></details><details id="help-topic-30-visual"><summary>ภาพและ shape</summary><h3>30. What's Next</h3>
+<p>Chapter 36 combines a bidirectional encoder with a causal decoder and cross-attention: encoder-decoder / T5-style sequence-to-sequence models.</p></details><details id="help-topic-30-code"><summary>โค้ด</summary><h3>30. What's Next</h3>
+<p>Chapter 36 combines a bidirectional encoder with a causal decoder and cross-attention: encoder-decoder / T5-style sequence-to-sequence models.</p><p><a href="#implementation">ดู implementation และ tests ของบท</a> · <a href="#local-lab">วิธีรัน local lab</a></p></details><details id="help-topic-30-result"><summary>ผลการทดลอง</summary><h3>30. What's Next</h3>
+<p>Chapter 36 combines a bidirectional encoder with a causal decoder and cross-attention: encoder-decoder / T5-style sequence-to-sequence models.</p><p>ตรึง baseline ก่อนเปลี่ยนข้อมูล ใช้ค่าใน trace นี้ตรวจขั้นแรกที่ต่างจากการทำนาย</p></details></details><label class="read-marker"><input type="checkbox" data-read="topic-30"> อ่านหัวข้อนี้แล้ว</label></section><details><summary>รายละเอียดเพิ่มเติมและข้อกำหนดของ local lab</summary><h3>35-gpt-decoder-models — GPT and Decoder Models</h3>
+<p><strong>Prerequisites:</strong> Complete 34-bert-encoder-models; be able to trace array/tensor shapes, separate train/validation/test data, and explain the core objective of the current chapter.</p>
+<p><strong>Mental model:</strong> Treat GPT and Decoder Models as a pipeline: input representation → central mechanism → objective/state update → observable output. At every boundary, state shape/state, allowed information flow, and the invariant that should remain true.</p>
+<p><strong>Code walkthrough:</strong> Read public API first, then input checks, state/shape transformations, numerical core, returned values and tests. Connect each important code block to the equation or algorithm in the chapter README.</p>
+<p><strong>Visualization / inspection:</strong> Use a tiny case. Inspect intermediate values, distributions, norms, scores, states or trajectories appropriate to GPT and Decoder Models; do not rely only on the final metric.</p>
+<p><strong>Experiment:</strong> Run a baseline, one controlled parameter change, one edge case and one repeated seeded comparison. Record seed, environment, data version, configuration and metric.</p>
+<p><strong>Limitations:</strong> List at least one assumption, one data-related limitation, one numerical/optimization limitation and one scaling limitation for GPT and Decoder Models.</p>
+<p><strong>Analysis workflow:</strong> Check inputs → preprocessing → shapes/state → finite numerical values → objective/update → evaluation protocol. The earliest unexpected state is more informative than a downstream metric.</p>
+<p><strong>Performance:</strong> Identify the dominant time and memory terms and measure them on the local learning run before attempting optimization.</p>
+<p><strong>Production perspective:</strong> Define input validation, artifact/configuration versioning, quality and resource measurements, staged release criteria and a way to return to the previous known-good artifact.</p>
+<p><strong>Research perspective:</strong> State a falsifiable hypothesis, baseline, one-factor change, metric, repeated-run plan when stochastic, and how negative results will be recorded.</p>
+<p><strong>Interview questions:</strong>
+1. Explain GPT and Decoder Models from first principles without naming a library API.
+2. Trace one input through the central mechanism and give the important intermediate shapes/state.
+3. Name the strongest assumption and a case where it fails.
+4. State the dominant compute/memory cost.
+5. Describe how you would validate a new implementation against a trusted baseline.</p>
+<p><strong>Summary / exit condition:</strong> You may move on when you can explain, derive or trace, implement, test, analyze, measure and evaluate GPT and Decoder Models, and when the chapter mini-project plus twenty total exercises are complete.</p></details></section><section id="objective-evidence" class="canonical-section"><h2>พิสูจน์ความสามารถทีละ objective</h2><p>ทำกรณีใหม่ก่อนเปิด reference แล้วบันทึกงานด้านล่าง ให้ผู้ตรวจใช้ rubric ตรวจคำอธิบาย ผลคำนวณ โค้ด และข้อจำกัด บันทึกเก็บในเบราว์เซอร์เครื่องนี้ กดส่งออกเพื่อสำรองหรือส่งให้ผู้ตรวจ เว็บไม่ได้รันโค้ดหรือตัดสินผลงานแทนผู้ตรวจ</p><button type="button" class="secondary-button" data-export-evidence>ส่งออกหลักฐานบทนี้เป็น JSON</button><p role="status" id="evidence-export-status"></p><details id="ch35-objective-01" class="objective-proof"><summary>explain decoder-only Transformers</summary><p>explain decoder-only Transformers: ใช้กรณีในหัวข้อ Decoder-Only Block เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch35-evidence-01"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch35-evidence-01-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch35-evidence-01-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch35-evidence-01-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch35-evidence-01-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch35-evidence-01-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch35-evidence-01-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch35-evidence-01-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch35-evidence-01-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>ทดลอง“GQAลดKVbytes4×โดยqualityลด≤1จุด”; baselineMHA,เปลี่ยนheadsharingพร้อมtrainingbudgetเท่ากัน,วัดholdoutquality/TPOT/bytes</p><h3>6. Decoder-Only Block</h3>
+<p>A modernized educational block:</p>
+<pre><code class="language-text">x
+↓ LayerNorm
+↓ causal self-attention
++ residual
+↓ LayerNorm
+↓ FFN
++ residual
+</code></pre>
+<p>This is pre-norm.</p>
+<p>Architectural details vary across GPT families.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch35-objective-02" class="objective-proof"><summary>construct causal language-model inputs/targets</summary><p>construct causal language-model inputs/targets: ใช้กรณีในหัวข้อ Causal Language Model Objective, Shifted Inputs and Targets เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch35-evidence-02"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch35-evidence-02-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch35-evidence-02-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch35-evidence-02-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch35-evidence-02-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch35-evidence-02-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch35-evidence-02-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch35-evidence-02-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch35-evidence-02-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>tokens[2,5,7,9]ทำinput[2,5,7],target[5,7,9]; ไม่ใช้targetเท่ากับinputเพราะmodelเพียงcopycurrenttokenก็lossต่ำ</p><h3>3. Causal Language Model Objective</h3>
+<p>Factorization:</p>
+<pre><code class="language-text">P(x_1,...,x_T)
+=
+Π_t P(x_t | x_&lt;t)
+</code></pre>
+<p>Training minimizes the negative log probability of the observed next tokens.</p>
+<h3>4. Shifted Inputs and Targets</h3>
+<p>Sequence:</p>
+<pre><code class="language-text">[A,B,C,D,E]
+</code></pre>
+<p>Input:</p>
+<pre><code class="language-text">[A,B,C,D]
+</code></pre>
+<p>Target:</p>
+<pre><code class="language-text">[B,C,D,E]
+</code></pre>
+<p>Each position predicts exactly one token ahead.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch35-objective-03" class="objective-proof"><summary>explain teacher forcing for next-token training</summary><p>explain teacher forcing for next-token training: ใช้กรณีในหัวข้อ Training Teacher Forcing เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch35-evidence-03"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch35-evidence-03-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch35-evidence-03-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch35-evidence-03-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch35-evidence-03-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch35-evidence-03-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch35-evidence-03-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch35-evidence-03-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch35-evidence-03-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>9. Training Teacher Forcing</h3>
+<p>During training, each position receives the true previous tokens from the dataset.</p>
+<p>The model is not forced to consume its own mistakes during training.</p>
+<p>Generation is therefore a different runtime process.</p><h3>9. Training Teacher Forcing</h3>
+<p>During training, each position receives the true previous tokens from the dataset.</p>
+<p>The model is not forced to consume its own mistakes during training.</p>
+<p>Generation is therefore a different runtime process.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch35-objective-04" class="objective-proof"><summary>implement causal masks</summary><p>implement causal masks: ใช้กรณีในหัวข้อ Causal Attention เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch35-evidence-04"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch35-evidence-04-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch35-evidence-04-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch35-evidence-04-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch35-evidence-04-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch35-evidence-04-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch35-evidence-04-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch35-evidence-04-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch35-evidence-04-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>T6keepmaskแถว0..5คือ100000,110000,111000,111100,111110,111111; futurej&gt;iเป็น−∞ก่อนsoftmax ไม่ใช่0logit</p><h3>5. Causal Attention</h3>
+<p>Position t may attend only to positions &lt;= t.</p>
+<pre><code class="language-text">1 0 0 0
+1 1 0 0
+1 1 1 0
+1 1 1 1
+</code></pre>
+<p>Future-token leakage invalidates the language-model objective.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch35-objective-05" class="objective-proof"><summary>explain autoregressive generation</summary><p>explain autoregressive generation: ใช้กรณีในหัวข้อ Autoregressive Generation เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch35-evidence-05"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch35-evidence-05-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch35-evidence-05-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch35-evidence-05-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch35-evidence-05-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch35-evidence-05-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch35-evidence-05-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch35-evidence-05-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch35-evidence-05-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>10. Autoregressive Generation</h3>
+<pre><code class="language-text">prompt
+↓
+forward
+↓
+last-position logits
+↓
+choose next token
+↓
+append token
+↓
+repeat
+</code></pre><h3>10. Autoregressive Generation</h3>
+<pre><code class="language-text">prompt
+↓
+forward
+↓
+last-position logits
+↓
+choose next token
+↓
+append token
+↓
+repeat
+</code></pre></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch35-objective-06" class="objective-proof"><summary>implement greedy decoding</summary><p>implement greedy decoding: ใช้กรณีในหัวข้อ Greedy Decoding เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch35-evidence-06"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch35-evidence-06-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch35-evidence-06-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch35-evidence-06-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch35-evidence-06-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch35-evidence-06-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch35-evidence-06-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch35-evidence-06-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch35-evidence-06-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p><code>next_id=np.argmax(logits[-1]); ids.append(int(next_id))</code> วนจนEOS/max_new_tokens; ไม่sampleและtieใช้indexแรกตามpolicy</p><h3>11. Greedy Decoding</h3>
+<pre><code class="language-text">next =
+argmax(logits)
+</code></pre>
+<p>Deterministic.</p>
+<p>Pros:
+- simple
+- reproducible</p>
+<p>Cons:
+- can become repetitive
+- may miss diverse high-probability continuations</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch35-objective-07" class="objective-proof"><summary>implement temperature sampling</summary><p>implement temperature sampling: ใช้กรณีในหัวข้อ Temperature เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch35-evidence-07"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch35-evidence-07-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch35-evidence-07-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch35-evidence-07-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch35-evidence-07-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch35-evidence-07-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch35-evidence-07-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch35-evidence-07-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch35-evidence-07-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>logits[0,log3],T1prob[.25,.75],T.5prob[.1,.9],T2prob≈[.366025,.633975]; T&gt;0และไม่แก้weights</p><h3>12. Temperature</h3>
+<p>Adjust logits:</p>
+<pre><code class="language-text">logits_scaled =
+logits / temperature
+</code></pre>
+<p>Temperature &lt; 1:
+- sharper distribution
+- more deterministic</p>
+<p>Temperature &gt; 1:
+- flatter distribution
+- more randomness</p>
+<p>Temperature must be positive.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch35-objective-08" class="objective-proof"><summary>implement top-k sampling</summary><p>implement top-k sampling: ใช้กรณีในหัวข้อ Top-k Sampling เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch35-evidence-08"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch35-evidence-08-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch35-evidence-08-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch35-evidence-08-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch35-evidence-08-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch35-evidence-08-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch35-evidence-08-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch35-evidence-08-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch35-evidence-08-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>topk2ของlogits[3,2,1]เก็บindices0,1และsetindex2−∞ก่อนsoftmax; k≤0หรือk&gt;Vต้องreject/กำหนดนโยบายชัด</p><h3>13. Top-k Sampling</h3>
+<p>Keep only the k highest-scoring tokens.</p>
+<p>All others receive probability zero after filtering.</p>
+<p>This caps candidate count.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch35-objective-09" class="objective-proof"><summary>implement top-p / nucleus filtering</summary><p>implement top-p / nucleus filtering: ใช้กรณีในหัวข้อ Top-p / Nucleus Sampling เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch35-evidence-09"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch35-evidence-09-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch35-evidence-09-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch35-evidence-09-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch35-evidence-09-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch35-evidence-09-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch35-evidence-09-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch35-evidence-09-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch35-evidence-09-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>probs[.6,.3,.1],p.7เก็บสองtokenแรกเพราะcumulativeข้าม.7ที่ตัวสอง; ต้องเก็บtokenที่ทำให้ข้ามthresholdและอย่างน้อย1token</p><h3>14. Top-p / Nucleus Sampling</h3>
+<p>Sort tokens by probability.</p>
+<p>Keep the smallest set whose cumulative probability reaches p.</p>
+<p>Candidate count adapts to distribution sharpness.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch35-objective-10" class="objective-proof"><summary>explain repetition and degeneration</summary><p>explain repetition and degeneration: ใช้กรณีในหัวข้อ Repetition เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch35-evidence-10"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch35-evidence-10-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch35-evidence-10-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch35-evidence-10-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch35-evidence-10-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch35-evidence-10-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch35-evidence-10-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch35-evidence-10-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch35-evidence-10-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>greedyrepeatableแต่ไม่สำรวจdistribution,stochasticsampleให้diversityและอาจผิดมากขึ้น; ประเมินquality/diversityหลายseedและbudgetเท่ากัน</p><h3>17. Repetition</h3>
+<p>Autoregressive models can fall into repetitive loops.</p>
+<p>Possible decoding controls include:
+- repetition penalties
+- no-repeat n-grams
+- frequency/presence penalties
+- better sampling strategy</p>
+<p>These alter generation behavior and should not be confused with model training quality.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch35-objective-11" class="objective-proof"><summary>understand context windows</summary><p>understand context windows: ใช้กรณีในหัวข้อ Context Window, Position Handling เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch35-evidence-11"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch35-evidence-11-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch35-evidence-11-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch35-evidence-11-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch35-evidence-11-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch35-evidence-11-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch35-evidence-11-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch35-evidence-11-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch35-evidence-11-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>บันทึกcheckpoint/tokenizer/promptIDs/T/k/p/EOS/seed/cachelayout/dtype/positionoffset/commitและhardware; hashlogitsfixtureช่วยตรวจregression</p><h3>18. Context Window</h3>
+<p>A decoder model can only condition on tokens included in its active context.</p>
+<p>If context length is T_max:</p>
+<pre><code class="language-text">input length &lt;= T_max
+</code></pre>
+<p>Longer prompts require:
+- truncation
+- sliding-window strategies
+- architecture/model support for longer context</p>
+<h3>19. Position Handling</h3>
+<p>GPT-family models may use:
+- learned absolute positions
+- sinusoidal positions
+- RoPE
+- other relative schemes</p>
+<p>Later long-context chapters cover these deeply.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch35-objective-12" class="objective-proof"><summary>explain KV-cache motivation</summary><p>explain KV-cache motivation: ใช้กรณีในหัวข้อ KV Cache Motivation, KV Cache Concept, Why Cache Does Not Remove All Cost เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch35-evidence-12"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch35-evidence-12-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch35-evidence-12-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch35-evidence-12-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch35-evidence-12-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch35-evidence-12-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch35-evidence-12-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch35-evidence-12-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch35-evidence-12-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>KVแต่ละlayer shape(B,nkv,Tcache,dk); เพิ่มtokenหนึ่งทำTcache+1,K/Vเก่าคงเดิมและqueryใหม่length1; ไม่appendqueryเข้าcache</p><h3>20. KV Cache Motivation</h3>
+<p>Naive generation recomputes K/V projections for all prior tokens at every new step.</p>
+<p>At generation step t:</p>
+<pre><code class="language-text">old tokens' K/V
+do not change
+</code></pre>
+<p>Cache them and compute only new-token projections.</p>
+<h3>21. KV Cache Concept</h3>
+<p>For every layer store:</p>
+<pre><code class="language-text">K_cached
+V_cached
+</code></pre>
+<p>New token:</p>
+<pre><code class="language-text">q_new
+k_new
+v_new
+</code></pre>
+<p>Append k_new/v_new to cache and attend q_new over all cached keys/values.</p>
+<h3>22. Why Cache Does Not Remove All Cost</h3>
+<p>Attention for a new token still compares against previous keys.</p>
+<p>KV cache reduces repeated projection/computation, but:
+- memory grows with sequence length
+- per-token attention work still grows with context
+- cache bandwidth becomes important</p>
+<p>Serving chapters revisit this in detail.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch35-objective-13" class="objective-proof"><summary>distinguish training-time and generation-time computation</summary><p>distinguish training-time and generation-time computation: ใช้กรณีในหัวข้อ Training vs Cached Inference เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch35-evidence-13"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch35-evidence-13-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch35-evidence-13-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch35-evidence-13-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch35-evidence-13-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch35-evidence-13-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch35-evidence-13-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch35-evidence-13-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch35-evidence-13-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>cached/uncachedlogitsallcloseทุกstepในevaldropout0; maskfuture0และcachelengthเพิ่ม1; testprefixlength2กับpositionoffset2จับRoPEoffbyone</p><h3>23. Training vs Cached Inference</h3>
+<p>Training:
+- process many positions in parallel
+- full causal attention matrix</p>
+<p>Generation:
+- one/few new tokens at a time
+- reuse past K/V
+- sequential token dependency</p>
+<p>Optimization priorities differ.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch35-objective-14" class="objective-proof"><summary>understand weight tying</summary><p>understand weight tying: ใช้กรณีในหัวข้อ Weight Tying เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch35-evidence-14"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch35-evidence-14-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch35-evidence-14-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch35-evidence-14-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch35-evidence-14-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch35-evidence-14-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch35-evidence-14-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch35-evidence-14-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch35-evidence-14-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><h3>8. Weight Tying</h3>
+<p>A model may reuse the token embedding matrix for the output projection:</p>
+<pre><code class="language-text">logits =
+h E^T
+</code></pre>
+<p>This reduces parameter count and couples input/output token geometry.</p>
+<p>Not every model family ties weights identically.</p><h3>8. Weight Tying</h3>
+<p>A model may reuse the token embedding matrix for the output projection:</p>
+<pre><code class="language-text">logits =
+h E^T
+</code></pre>
+<p>This reduces parameter count and couples input/output token geometry.</p>
+<p>Not every model family ties weights identically.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch35-objective-15" class="objective-proof"><summary>build a tiny GPT-style PyTorch model</summary><p>build a tiny GPT-style PyTorch model: ใช้กรณีในหัวข้อ From Scratch เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch35-evidence-15"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch35-evidence-15-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch35-evidence-15-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch35-evidence-15-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch35-evidence-15-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch35-evidence-15-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch35-evidence-15-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch35-evidence-15-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch35-evidence-15-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>copytinydecoderweightsไปtorchmanualcausalattention,dropout0; compareprefillและperstepcachedlogitsatol1e−6พร้อมsametokenIDs</p><h3>26. From Scratch</h3>
+<p>src/gpt_sampling.py includes:</p>
+<ul>
+<li>make_causal_lm_pairs</li>
+<li>stable_softmax</li>
+<li>apply_temperature</li>
+<li>top_k_filter</li>
+<li>top_p_filter</li>
+<li>sample_from_logits</li>
+</ul>
+<p>These isolate generation mechanics from model architecture.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch35-objective-16" class="objective-proof"><summary>Top-k vs Top-p</summary><p>Top-k vs Top-p: ใช้กรณีในหัวข้อ Top-k vs Top-p เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch35-evidence-16"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch35-evidence-16-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch35-evidence-16-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch35-evidence-16-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch35-evidence-16-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch35-evidence-16-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch35-evidence-16-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch35-evidence-16-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch35-evidence-16-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>แบ่งlogitsด้วยT→topkfilter→toppfilter→renormalize→sampleด้วยseed; การเรียงfilterมีผลจึงต้องบันทึกpolicy</p><h3>15. Top-k vs Top-p</h3>
+<p>Top-k:
+- fixed number of candidates</p>
+<p>Top-p:
+- variable candidate set based on probability mass</p>
+<p>They can also be combined.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch35-objective-17" class="objective-proof"><summary>Perplexity</summary><p>Perplexity: ใช้กรณีในหัวข้อ Perplexity เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch35-evidence-17"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch35-evidence-17-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch35-evidence-17-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch35-evidence-17-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch35-evidence-17-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch35-evidence-17-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch35-evidence-17-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch35-evidence-17-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch35-evidence-17-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>correctnexttokenprob[.5,.25]สองตำแหน่งCE1.039721,PPLexp(CE)=2.828427; PADไม่อยู่denominatorและtokenizerต้องตรงตอนcompare</p><h3>25. Perplexity</h3>
+<p>Causal LM validation metric:</p>
+<pre><code class="language-text">PPL = exp(mean token CE)
+</code></pre>
+<p>Compare only under compatible tokenization/objective/data.</p></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details><details id="ch35-objective-18" class="objective-proof"><summary>Common Mistakes</summary><p>Common Mistakes: ใช้กรณีในหัวข้อ Common Mistakes เป็น reference แล้วสร้างกรณีใหม่ด้วยตัวเอง แสดง input/หน่วย/shape หรือ state ก่อนทำงาน ไล่ operation จนได้ผล พร้อมกรณีที่กลไกนี้ใช้ไม่ได้และหลักฐานตรวจคำตอบ</p><div class="evidence-notebook" data-evidence="ch35-evidence-18"><h3>งานของฉันสำหรับ objective นี้</h3><label for="ch35-evidence-18-explanation">อธิบายด้วยคำของตัวเอง</label><textarea id="ch35-evidence-18-explanation" data-evidence-text="explanation" rows="4" placeholder="ระบุนิยาม สมมติฐาน และเหตุผลของ operation ที่ใช้"></textarea><label for="ch35-evidence-18-calculation">กรณีใหม่และการคำนวณ</label><textarea id="ch35-evidence-18-calculation" data-evidence-text="calculation" rows="4" placeholder="กำหนด input หน่วย shape/state และค่าระหว่างทาง ตรวจคำตอบด้วยวิธีอิสระ"></textarea><label for="ch35-evidence-18-implementation">โค้ดและหลักฐานทดสอบบนเครื่อง</label><textarea id="ch35-evidence-18-implementation" data-evidence-text="implementation" rows="4" placeholder="บันทึกโค้ดหรือ path, คำสั่งรัน, environment และผลที่รันจริง หากยังไม่ได้รันให้ระบุไว้"></textarea><label for="ch35-evidence-18-limits">กรณีล้มเหลวและวิธีแก้</label><textarea id="ch35-evidence-18-limits" data-evidence-text="limits" rows="4" placeholder="แสดง input ที่ทำให้ล้มเหลว อาการ ขั้นแรกที่ผิด และวิธีตรวจ/แก้"></textarea><fieldset><legend>ฉันตรวจงานตนเองตามรายการนี้แล้ว</legend><label><input type="checkbox" data-evidence-review="0"> คำอธิบายกลไกตามนิยามและสมมติฐานใน reference นี้</label><label><input type="checkbox" data-evidence-review="1"> กรณีใหม่พร้อมค่าระหว่างทางและผลที่ตรวจด้วย reference implementation หรือการคำนวณมือ</label><label><input type="checkbox" data-evidence-review="2"> กรณีล้มเหลวของกลไกนี้ พร้อมสาเหตุและวิธีตรวจ</label></fieldset><p class="evidence-status" role="status"></p></div><details><summary>ตัวอย่างคำตอบที่ใช้เป็นจุดเริ่มต้น + reference เฉพาะเรื่อง</summary><p>overlappingdocumentwindowsข้ามsplitทำPPLต่ำปลอม; reportdedup/tokenizer/lengthและไม่รวมprompt/paddingในcompletionmetricโดยไม่บอก</p><h3>27. Common Mistakes</h3>
+<ol>
+<li>future-token leakage</li>
+<li>softmax before CrossEntropyLoss</li>
+<li>temperature &lt;= 0</li>
+<li>applying top-p to unsorted probabilities incorrectly</li>
+<li>forgetting to renormalize after filtering</li>
+<li>unbounded generation loop</li>
+<li>treating greedy output as model's only possible answer</li>
+<li>assuming KV cache makes attention O(1)</li>
+<li>comparing perplexity across tokenizers blindly</li>
+<li>using training dropout during deterministic evaluation unintentionally</li>
+</ol></details><p>ไม่ผ่าน: ตอบเพียงชื่อหัวข้อหรือผลสุดท้าย โดยข้ามนิยาม/เงื่อนไข/operation ที่ reference นี้กำหนด</p></details></section><section id="implementation" class="canonical-section"><h2>Implementation และ tests ที่รันบนเครื่องได้</h2><details><summary>35-gpt-decoder-models/src/gpt_sampling.py</summary><pre><code>&quot;&quot;&quot;GPT-style causal LM data and sampling utilities implemented with NumPy.&quot;&quot;&quot;
+
+from __future__ import annotations
+
+import numpy as np
+
+
+def make_causal_lm_pairs(
+    token_ids: list[int],
+    context_length: int,
+) -&gt; tuple[np.ndarray, np.ndarray]:
+    if context_length &lt;= 0:
+        raise ValueError(&quot;context_length must be positive&quot;)
+    if len(token_ids) &lt;= context_length:
+        raise ValueError(&quot;token sequence too short&quot;)
+
+    inputs = []
+    targets = []
+
+    for start in range(len(token_ids) - context_length):
+        chunk = token_ids[start : start + context_length + 1]
+        inputs.append(chunk[:-1])
+        targets.append(chunk[1:])
+
+    return (
+        np.asarray(inputs, dtype=np.int64),
+        np.asarray(targets, dtype=np.int64),
+    )
+
+
+def stable_softmax(logits: np.ndarray) -&gt; np.ndarray:
+    values = np.asarray(logits, dtype=float)
+    shifted = values - np.max(values, axis=-1, keepdims=True)
+    exp_values = np.exp(shifted)
+    return exp_values / np.sum(exp_values, axis=-1, keepdims=True)
+
+
+def apply_temperature(
+    logits: np.ndarray,
+    temperature: float,
+) -&gt; np.ndarray:
+    if temperature &lt;= 0:
+        raise ValueError(&quot;temperature must be positive&quot;)
+    return np.asarray(logits, dtype=float) / temperature
+
+
+def top_k_filter(
+    logits: np.ndarray,
+    k: int,
+) -&gt; np.ndarray:
+    values = np.asarray(logits, dtype=float).copy()
+
+    if values.ndim != 1:
+        raise ValueError(&quot;top_k_filter expects 1D logits&quot;)
+    if k &lt;= 0:
+        raise ValueError(&quot;k must be positive&quot;)
+    if k &gt;= len(values):
+        return values
+
+    keep_indices = np.argpartition(values, -k)[-k:]
+    mask = np.ones(len(values), dtype=bool)
+    mask[keep_indices] = False
+    values[mask] = -np.inf
+    return values
+
+
+def top_p_filter(
+    logits: np.ndarray,
+    p: float,
+) -&gt; np.ndarray:
+    values = np.asarray(logits, dtype=float).copy()
+
+    if values.ndim != 1:
+        raise ValueError(&quot;top_p_filter expects 1D logits&quot;)
+    if not 0.0 &lt; p &lt;= 1.0:
+        raise ValueError(&quot;p must lie in (0,1]&quot;)
+    if p == 1.0:
+        return values
+
+    order = np.argsort(values)[::-1]
+    sorted_logits = values[order]
+    sorted_probs = stable_softmax(sorted_logits)
+    cumulative = np.cumsum(sorted_probs)
+
+    # Keep the first token that crosses the threshold.
+    remove = cumulative &gt; p
+    if len(remove) &gt; 1:
+        remove[1:] = remove[:-1]
+    remove[0] = False
+
+    filtered_sorted = sorted_logits.copy()
+    filtered_sorted[remove] = -np.inf
+
+    filtered = np.full_like(values, -np.inf)
+    filtered[order] = filtered_sorted
+    return filtered
+
+
+def sample_from_logits(
+    logits: np.ndarray,
+    *,
+    rng: np.random.Generator,
+    temperature: float = 1.0,
+    top_k: int | None = None,
+    top_p: float | None = None,
+) -&gt; int:
+    filtered = apply_temperature(logits, temperature)
+
+    if top_k is not None:
+        filtered = top_k_filter(filtered, top_k)
+
+    if top_p is not None:
+        filtered = top_p_filter(filtered, top_p)
+
+    probabilities = stable_softmax(filtered)
+
+    if not np.all(np.isfinite(probabilities)):
+        raise ValueError(&quot;invalid probability distribution&quot;)
+    if not np.isclose(probabilities.sum(), 1.0):
+        raise ValueError(&quot;probabilities do not sum to one&quot;)
+
+    return int(rng.choice(len(probabilities), p=probabilities))
+</code></pre></details><details><summary>35-gpt-decoder-models/tests/test_gpt_sampling.py</summary><pre><code>from pathlib import Path
+import importlib.util
+
+import numpy as np
+
+
+MODULE_PATH = Path(__file__).parents[1] / &quot;src&quot; / &quot;gpt_sampling.py&quot;
+SPEC = importlib.util.spec_from_file_location(&quot;gpt_sampling_course&quot;, MODULE_PATH)
+assert SPEC and SPEC.loader
+mod = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(mod)
+
+
+def test_causal_lm_pairs() -&gt; None:
+    x, y = mod.make_causal_lm_pairs([1, 2, 3, 4, 5], 3)
+    np.testing.assert_array_equal(x, [[1, 2, 3], [2, 3, 4]])
+    np.testing.assert_array_equal(y, [[2, 3, 4], [3, 4, 5]])
+
+
+def test_temperature_changes_distribution_sharpness() -&gt; None:
+    logits = np.array([0.0, 1.0, 2.0])
+    cold = mod.stable_softmax(mod.apply_temperature(logits, 0.5))
+    hot = mod.stable_softmax(mod.apply_temperature(logits, 2.0))
+
+    assert cold[-1] &gt; hot[-1]
+
+
+def test_top_k_keeps_exactly_k() -&gt; None:
+    filtered = mod.top_k_filter(
+        np.array([1.0, 4.0, 3.0, 2.0]),
+        2,
+    )
+    assert np.isfinite(filtered).sum() == 2
+    assert np.isfinite(filtered[1])
+    assert np.isfinite(filtered[2])
+
+
+def test_top_p_keeps_threshold_crossing_token() -&gt; None:
+    logits = np.array([5.0, 4.0, 1.0, 0.0])
+    filtered = mod.top_p_filter(logits, 0.75)
+
+    assert np.isfinite(filtered[0])
+    assert np.isfinite(filtered[1])
+    assert not np.isfinite(filtered[3])
+
+
+def test_sampling_reproducible() -&gt; None:
+    logits = np.array([0.1, 0.2, 2.0, 0.3])
+    a = mod.sample_from_logits(
+        logits,
+        rng=np.random.default_rng(7),
+        top_k=3,
+        top_p=0.9,
+    )
+    b = mod.sample_from_logits(
+        logits,
+        rng=np.random.default_rng(7),
+        top_k=3,
+        top_p=0.9,
+    )
+    assert a == b
+</code></pre></details></section><section id="glossary" class="canonical-section"><h2>อภิธานศัพท์ — คำไทย ความหมาย และข้อควรตรวจ</h2><dl><dt>tensor</dt><dd>เทนเซอร์: ชุดตัวเลขที่มีแกน เช่น scalar ไม่มีแกน, vector หนึ่งแกน, matrix สองแกน; shape บอกขนาดแต่ละแกน ไม่บอกความหมายของแกนจนกว่าจะระบุ</dd><dt>shape</dt><dd>รูปทรงข้อมูล: (B,T,d) หมายถึง batch × เวลา/ตำแหน่ง × features; ใช้ชื่อแกนกำกับเสมอ การ transpose เปลี่ยนแกนแต่ไม่ใช่แค่เปลี่ยนชื่อ</dd><dt>batch</dt><dd>กลุ่มตัวอย่างที่คำนวณร่วมกันหนึ่งครั้ง; B คือจำนวนตัวอย่าง ไม่ใช่จำนวน features หรือจำนวน optimizer updates</dd><dt>weight w / θ</dt><dd>น้ำหนักหรือพารามิเตอร์ที่โมเดลใช้คำนวณ; แก้ด้วยมือทำ forward ใหม่ ส่วน optimizer ต้องรับ gradient แล้วกด update จึงแก้ state</dd><dt>bias b</dt><dd>ค่าคงที่ที่บวกกับผลเชิงเส้น; regression scalar bias เพิ่ม Δ ทำให้ prediction ทุกจุดเพิ่ม Δ เท่ากัน</dd><dt>prediction ŷ</dt><dd>ค่าที่โมเดลทำนายจาก input และพารามิเตอร์ปัจจุบัน; เครื่องหมายหมวกแยกจาก target y ที่มาจากข้อมูล</dd><dt>residual e</dt><dd>ความคลาดเคลื่อน ในเว็บนี้นิยาม prediction − target; บางตำราใช้เครื่องหมายกลับกัน จึงต้องตรวจนิยามก่อนเทียบสูตร gradient</dd><dt>MSE</dt><dd>mean squared error = ผลรวม residual กำลังสองหารจำนวนรายการที่ระบุ; มีหน่วยเป็น target ยกกำลังสอง และการใช้ sum แทน mean เปลี่ยน scale gradient</dd><dt>loss L / objective J</dt><dd>จำนวนที่ optimizer ต้องการลด; objective อาจรวม data loss และ regularization จึงต้องดูองค์ประกอบและ reduction ให้ตรง implementation</dd><dt>gradient ∇ / ∂</dt><dd>เวกเตอร์ของ partial derivatives บอกอัตราเปลี่ยน loss ต่อพารามิเตอร์แต่ละตัว; ∂ ใช้เมื่อเปลี่ยนตัวหนึ่งโดยตรึงตัวอื่น</dd><dt>chain rule</dt><dd>กฎลูกโซ่: คูณอนุพันธ์ตามเส้นทาง และบวก contribution จากทุกเส้นทางที่มารวมกัน ใช้ย้อนจาก loss ถึง weights</dd><dt>learning rate η</dt><dd>ขนาดตัวคูณ gradient ใน update θnew=θ−ηg; η≥0, ศูนย์หมายถึงไม่มีการขยับพารามิเตอร์ ก้าวใหญ่เกินอาจ diverge</dd><dt>regularization λ</dt><dd>ตัวคูณค่าลงโทษ ต้อง λ≥0 ตามนิยามการลงโทษ; Ridge λΣw² เพิ่ม gradient 2λw โดยบท Regression นี้ไม่ลงโทษ bias</dd><dt>baseline</dt><dd>สถานะอ้างอิงที่ตรึงไว้สำหรับเทียบ; ต้องเก็บ snapshot ไม่อ้าง object ปัจจุบันที่แก้ตามไปด้วย</dd><dt>invariant</dt><dd>คุณสมบัติที่กลไกต้องรักษา เช่น probability รวม1, shape สอดคล้อง, queue ไม่เกิน capacity; ใช้ tests ตรวจได้มากกว่าดูภาพสวย</dd><dt>optimizer state</dt><dd>ความจำของอัลกอริทึม เช่น velocity, moments และ completed updates; คืนเฉพาะ weights ยังไม่เท่ากับเริ่มการฝึกใหม่ทั้งหมด</dd><dt>finite difference</dt><dd>ประมาณ derivative ด้วย [f(x+h)−f(x−h)]/(2h); h&gt;0, ใช้ smooth point และลองหลาย h เพื่อแยก truncation error จาก roundoff</dd><dt>softmax</dt><dd>แปลง logits เป็นความน่าจะเป็นตามแกนที่กำหนด; ลบ max ก่อน exp เพื่อความเสถียร และ fully masked row ต้องมีนโยบายชัดเจน</dd><dt>logit</dt><dd>คะแนนก่อน sigmoid/softmax ไม่ใช่ probability; อาจเป็นจำนวนจริงติดลบหรือเกิน1ได้ จึงห้ามส่งให้ loss ที่คาด probability โดยไม่แปลง</dd><dt>temperature τ / T</dt><dd>ตัวหาร logits ก่อน softmax; ต้องเป็นบวก ค่าเล็กทำ distribution แหลมขึ้น โดยไม่เท่ากับ retrain weights</dd><dt>mask</dt><dd>ตัวกำหนดตำแหน่งที่อ่านหรือคิด loss ได้; causal mask ปิดอนาคต, padding mask ปิดข้อมูลเติม, loss mask เลือก target แต่ละอย่างคนละหน้าที่</dd><dt>Q / K / V</dt><dd>query ใช้ค้นข้อมูล, key ใช้จับคู่ query, value เป็นข้อมูลที่ถูกถัวเฉลี่ย; เป็น learned projections ของ representation ไม่ใช่ป้ายความหมายตายตัว</dd><dt>head</dt><dd>ส่วนของ feature representation ที่ทำ attention แยกกัน แล้ว concat/project กลับ; ต้องตรวจ d_model หารจำนวน heads ลงตัว</dd><dt>ε-neighborhood</dt><dd>เพื่อนบ้านทั้งหมดที่มีระยะไม่เกิน ε รวมจุดตัวเองใน DBSCAN นี้; ε มีหน่วยเดียวกับพิกัด ไม่ใช่จำนวน k ที่ใช้โหวต</dd><dt>core / border / noise</dt><dd>DBSCAN core มีเพื่อนบ้านรวมตัวเองถึง min_samples; border อยู่ใกล้ core แต่เพื่อนบ้านไม่ถึง; noise ไม่ถูกเชื่อมกับ core cluster ใด</dd><dt>bootstrap</dt><dd>สุ่ม observations แบบ replacement ขนาดเท่าเดิมซ้ำหลายครั้งแล้วคำนวณ statistic ใหม่; seed ทำให้ตรวจซ้ำได้ แต่ไม่แก้สมมติฐาน IID ที่ผิด</dd><dt>confidence interval</dt><dd>ช่วงที่สร้างด้วย procedure ที่มี coverage ตามสมมติฐาน; ช่วงหนึ่งที่ได้แล้วไม่ใช่ posterior probability ของ parameter และ sample เล็กยังไม่แน่นอนมาก</dd><dt>validation / test</dt><dd>validation ใช้เลือกโมเดล/ค่าตั้ง ส่วน test ใช้ประเมินหลัง freeze การตัดสินใจ; fit preprocessing/tokenizer จาก test เป็น leakage</dd><dt>leakage</dt><dd>ข้อมูลที่ควรยังไม่รู้ไหลเข้า training/การเลือกโมเดล เช่น future feature หรือเอกสารซ้ำข้าม split ทำให้ metric ดูดีเกินการใช้งานจริง</dd><dt>queue / capacity</dt><dd>queue คือรายการรอ, capacity การให้บริการรวม = workers × service rate ตามแบบจำลอง; เพิ่ม timeout ไม่เพิ่มกำลังประมวลผล</dd><dt>state transition</dt><dd>การเปลี่ยนสถานะเมื่อเกิดเหตุการณ์ที่อนุญาต เช่น queued→active→done; ต้องระบุ guard, side effect และเหตุผลเมื่อ transition ถูกปฏิเสธ</dd><dt>latency / throughput</dt><dd>latency คือเวลาต่อคำขอ, throughput คือปริมาณงานต่อหน่วยเวลา; batching อาจเพิ่ม throughput แต่เพิ่มเวลารอ จึงต้องวัดทั้งคู่</dd><dt>idempotency</dt><dd>ทำคำขอ business operation เดิมซ้ำแล้ว side effect เกิดครั้งเดียวตาม key และ transaction protocol; ไม่ได้รับประกันจากการใช้ UUID ใหม่ทุก attempt</dd><dt>local lab</dt><dd>โปรแกรม Python และ tests ที่ผู้เรียนรันบนเครื่อง; เว็บเก็บเพียงคำยืนยันของผู้เรียน การผ่าน tests ของโค้ดต้นแบบไม่ใช่ผลตรวจโค้ดผู้เรียน</dd></dl></section></article>
+<section id="practice" class="practice-section"><span class="eyebrow">PRACTICE · DEBUG · BUILD</span><h2>พิสูจน์ด้วยการลงมือทำ</h2><div id="web-checks"></div><div class="retry-actions"><button class="secondary-button" id="retry-checks">เริ่มทำโจทย์ในเว็บใหม่</button><button class="text-button" id="undo-retry" hidden>คืนผลก่อนเริ่มใหม่</button></div><div id="exercise-content"><h2>แบบฝึก 20 ข้อ — เฉลยเฉพาะข้อ</h2><p>ทำคำตอบก่อนเปิด hints; โจทย์ปลายเปิดให้ใช้ตัวอย่างคำตอบและหลักฐานราย objective ตรวจงานจริง</p><section id="exercise-1" class="exercise-item"><h3>ข้อ 1</h3><p>Build shifted LM input/target pairs.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Shifted Inputs and Targets: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): tokens[2,5,7,9]ทำinput[2,5,7],target[5,7,9]…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: tokens[2,5,7,9]ทำinput[2,5,7],target[5,7,9]; ไม่ใช้targetเท่ากับinputเพราะmode…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>tokens[2,5,7,9]ทำinput[2,5,7],target[5,7,9]; ไม่ใช้targetเท่ากับinputเพราะmodelเพียงcopycurrenttokenก็lossต่ำ</p><p>อ้างอิง: <a href="#chapter-35/section/topic-4">Shifted Inputs and Targets</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch35-exercise-01"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-2" class="exercise-item"><h3>ข้อ 2</h3><p>Draw a causal attention matrix for T=6.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Causal Attention: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): T6keepmaskแถว0..5คือ100000,110000,111000…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: T6keepmaskแถว0..5คือ100000,110000,111000,111100,111110,111111; futurej&gt;iเ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>T6keepmaskแถว0..5คือ100000,110000,111000,111100,111110,111111; futurej&gt;iเป็น−∞ก่อนsoftmax ไม่ใช่0logit</p><p>อ้างอิง: <a href="#chapter-35/section/topic-5">Causal Attention</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch35-exercise-02"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-3" class="exercise-item"><h3>ข้อ 3</h3><p>Implement greedy generation.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Greedy Decoding: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): `next_id=np.argmax(logits[-1]); ids.append(int…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: <code>next_id=np.argmax(logits[-1]); ids.append(int(next_id))</code> วนจนEOS/max_new_tokens; ไม…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p><code>next_id=np.argmax(logits[-1]); ids.append(int(next_id))</code> วนจนEOS/max_new_tokens; ไม่sampleและtieใช้indexแรกตามpolicy</p><p>อ้างอิง: <a href="#chapter-35/section/topic-11">Greedy Decoding</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch35-exercise-03"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-4" class="exercise-item"><h3>ข้อ 4</h3><p>Plot temperature effects on one logit vector.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Temperature: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): logits[0,log3],T1prob[.25,.75],T.5pr…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: logits[0,log3],T1prob[.25,.75],T.5prob[.1,.9],T2prob≈[.366025,.63…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>logits[0,log3],T1prob[.25,.75],T.5prob[.1,.9],T2prob≈[.366025,.633975]; T&gt;0และไม่แก้weights</p><p>อ้างอิง: <a href="#chapter-35/section/topic-12">Temperature</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch35-exercise-04"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-5" class="exercise-item"><h3>ข้อ 5</h3><p>Implement top-k filtering.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Top-k Sampling: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): topk2ของlogits[3,2,1]เก็บindices0,1และ…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: topk2ของlogits[3,2,1]เก็บindices0,1และsetindex2−∞ก่อนsoftmax; k≤0หรือ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>topk2ของlogits[3,2,1]เก็บindices0,1และsetindex2−∞ก่อนsoftmax; k≤0หรือk&gt;Vต้องreject/กำหนดนโยบายชัด</p><p>อ้างอิง: <a href="#chapter-35/section/topic-13">Top-k Sampling</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch35-exercise-05"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-6" class="exercise-item"><h3>ข้อ 6</h3><p>Implement top-p filtering.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Top-p / Nucleus Sampling: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): probs[.6,.3,.1],p.7เก็บสองtokenแรกเพราะcumulati…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: probs[.6,.3,.1],p.7เก็บสองtokenแรกเพราะcumulativeข้าม.7ที่ตัวสอง; ต้องเก็บtokenที่ทำ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>probs[.6,.3,.1],p.7เก็บสองtokenแรกเพราะcumulativeข้าม.7ที่ตัวสอง; ต้องเก็บtokenที่ทำให้ข้ามthresholdและอย่างน้อย1token</p><p>อ้างอิง: <a href="#chapter-35/section/topic-14">Top-p / Nucleus Sampling</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch35-exercise-06"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-7" class="exercise-item"><h3>ข้อ 7</h3><p>Combine temperature + top-k + top-p.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Top-k vs Top-p: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): แบ่งlogitsด้วยT→topkfilter→toppfilter→ren…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: แบ่งlogitsด้วยT→topkfilter→toppfilter→renormalize→sampleด้วยseed; การเรียง…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>แบ่งlogitsด้วยT→topkfilter→toppfilter→renormalize→sampleด้วยseed; การเรียงfilterมีผลจึงต้องบันทึกpolicy</p><p>อ้างอิง: <a href="#chapter-35/section/topic-15">Top-k vs Top-p</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch35-exercise-07"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-8" class="exercise-item"><h3>ข้อ 8</h3><p>Compare greedy and stochastic generation.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Repetition: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): greedyrepeatableแต่ไม่สำรวจdistribution,stochasticsam…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: greedyrepeatableแต่ไม่สำรวจdistribution,stochasticsampleให้diversityและอาจผิดมากขึ้น; ประเมินqua…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>greedyrepeatableแต่ไม่สำรวจdistribution,stochasticsampleให้diversityและอาจผิดมากขึ้น; ประเมินquality/diversityหลายseedและbudgetเท่ากัน</p><p>อ้างอิง: <a href="#chapter-35/section/topic-17">Repetition</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch35-exercise-08"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-9" class="exercise-item"><h3>ข้อ 9</h3><p>Trace KV-cache shapes for several layers/heads.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ KV Cache Concept: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): KVแต่ละlayer shape(B,nkv,Tcache,dk); เพิ่มtokenห…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: KVแต่ละlayer shape(B,nkv,Tcache,dk); เพิ่มtokenหนึ่งทำTcache+1,K/Vเก่าคงเดิมและqueryให…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>KVแต่ละlayer shape(B,nkv,Tcache,dk); เพิ่มtokenหนึ่งทำTcache+1,K/Vเก่าคงเดิมและqueryใหม่length1; ไม่appendqueryเข้าcache</p><p>อ้างอิง: <a href="#chapter-35/section/topic-21">KV Cache Concept</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch35-exercise-09"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-10" class="exercise-item"><h3>ข้อ 10</h3><p>Estimate KV-cache memory for a toy model.</p>
+<p>Challenge:
+- implement a one-layer cached attention decoder
+- compare cached vs naive generation numerically</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Why Cache Does Not Remove All Cost: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): bytes=2·L·B·nkv·T·dk·bytes_per_element;…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: bytes=2·L·B·nkv·T·dk·bytes_per_element; L2,B1,nkv2,T16,dk4,fp32ได้2048…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>bytes=2·L·B·nkv·T·dk·bytes_per_element; L2,B1,nkv2,T16,dk4,fp32ได้2048bytesไม่รวมweights/allocator</p><p>อ้างอิง: <a href="#chapter-35/section/topic-22">Why Cache Does Not Remove All Cost</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch35-exercise-10"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-11" class="exercise-item"><h3>ข้อ 11</h3><p>Reproduce one central calculation from GPT/Decoder Models using a tiny hand-checkable input.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Perplexity: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): correctnexttokenprob[.5,.25]สองตำแหน่งCE1.039721…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: correctnexttokenprob[.5,.25]สองตำแหน่งCE1.039721,PPLexp(CE)=2.828427; PADไม่อยู่denomi…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>correctnexttokenprob[.5,.25]สองตำแหน่งCE1.039721,PPLexp(CE)=2.828427; PADไม่อยู่denominatorและtokenizerต้องตรงตอนcompare</p><p>อ้างอิง: <a href="#chapter-35/section/topic-25">Perplexity</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch35-exercise-11"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-12" class="exercise-item"><h3>ข้อ 12</h3><p>Write a deterministic test that verifies the most important invariant in GPT/Decoder Models.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Training vs Cached Inference: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): cached/uncachedlogitsallcloseทุกstepในevaldropout0; ma…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: cached/uncachedlogitsallcloseทุกstepในevaldropout0; maskfuture0และcachelengthเพิ่ม1; testprefixle…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>cached/uncachedlogitsallcloseทุกstepในevaldropout0; maskfuture0และcachelengthเพิ่ม1; testprefixlength2กับpositionoffset2จับRoPEoffbyone</p><p>อ้างอิง: <a href="#chapter-35/section/topic-23">Training vs Cached Inference</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch35-exercise-12"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-13" class="exercise-item"><h3>ข้อ 13</h3><p>Compare two meaningful configurations while keeping data and seed fixed.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Temperature: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): คงprompt/model/seed เปรียบT.5/1ด้วยtopk/toppเดิม; …</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: คงprompt/model/seed เปรียบT.5/1ด้วยtopk/toppเดิม; recordentropy/repetitionและtaskaccuracy …</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>คงprompt/model/seed เปรียบT.5/1ด้วยtopk/toppเดิม; recordentropy/repetitionและtaskaccuracy ห้ามอ้างprobเปลี่ยนคือmodelretrained</p><p>อ้างอิง: <a href="#chapter-35/section/topic-12">Temperature</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch35-exercise-13"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-14" class="exercise-item"><h3>ข้อ 14</h3><p>Record intermediate shapes, ranges, and one quality metric for a tiny end-to-end run.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Vocabulary Logits, KV Cache Concept: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): recordids(B,T),Q(B,h,Tq,dk),cacheK/V,lo…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: recordids(B,T),Q(B,h,Tq,dk),cacheK/V,logits(B,Tq,V),peakbytesและtokenN…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>recordids(B,T),Q(B,h,Tq,dk),cacheK/V,logits(B,Tq,V),peakbytesและtokenNLL; prefillกับdecodeแยกstage</p><p>อ้างอิง: <a href="#chapter-35/section/topic-7">Vocabulary Logits</a>, <a href="#chapter-35/section/topic-21">KV Cache Concept</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch35-exercise-14"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-15" class="exercise-item"><h3>ข้อ 15</h3><p>Explain one evaluation mistake that could make a GPT/Decoder Models result look better than it really is.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Common Mistakes: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): overlappingdocumentwindowsข้ามsplitทำPPLต่ำปลอม; r…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: overlappingdocumentwindowsข้ามsplitทำPPLต่ำปลอม; reportdedup/tokenizer/lengthและไม่รวมpromp…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>overlappingdocumentwindowsข้ามsplitทำPPLต่ำปลอม; reportdedup/tokenizer/lengthและไม่รวมprompt/paddingในcompletionmetricโดยไม่บอก</p><p>อ้างอิง: <a href="#chapter-35/section/topic-27">Common Mistakes</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch35-exercise-15"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-16" class="exercise-item"><h3>ข้อ 16</h3><p>State the dominant time and memory complexity for the main operation in GPT/Decoder Models.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ KV Cache Motivation, Why Cache Does Not Remove All Cost: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): fullprefillO(T²d),singlecacheddecodeattentionO(Td)แ…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: fullprefillO(T²d),singlecacheddecodeattentionO(Td)แต่KVmemoryO(LTdnkv/h); naiveทั้งprefixซ้ำ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>fullprefillO(T²d),singlecacheddecodeattentionO(Td)แต่KVmemoryO(LTdnkv/h); naiveทั้งprefixซ้ำแพงกว่าและweightsprojectioncostยังมี</p><p>อ้างอิง: <a href="#chapter-35/section/topic-20">KV Cache Motivation</a>, <a href="#chapter-35/section/topic-22">Why Cache Does Not Remove All Cost</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch35-exercise-16"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-17" class="exercise-item"><h3>ข้อ 17</h3><p>Compare a from-scratch result with a trusted implementation using identical inputs and settings.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ From Scratch: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): copytinydecoderweightsไปtorchmanualcausalattenti…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: copytinydecoderweightsไปtorchmanualcausalattention,dropout0; compareprefillและperstepca…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>copytinydecoderweightsไปtorchmanualcausalattention,dropout0; compareprefillและperstepcachedlogitsatol1e−6พร้อมsametokenIDs</p><p>อ้างอิง: <a href="#chapter-35/section/topic-26">From Scratch</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch35-exercise-17"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-18" class="exercise-item"><h3>ข้อ 18</h3><p>Run a one-factor ablation and report the measured change over repeated runs when randomness matters.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ KV Cache Motivation, KV Cache Concept: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): cacheon/offคงgeneratedtokenpathด้วยgreedyเพื่อเที…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: cacheon/offคงgeneratedtokenpathด้วยgreedyเพื่อเทียบnumerical/latency; warmupและจับprefill…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>cacheon/offคงgeneratedtokenpathด้วยgreedyเพื่อเทียบnumerical/latency; warmupและจับprefill/decodeแยกพร้อมcontextlengthหลายค่า</p><p>อ้างอิง: <a href="#chapter-35/section/topic-20">KV Cache Motivation</a>, <a href="#chapter-35/section/topic-21">KV Cache Concept</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch35-exercise-18"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-19" class="exercise-item"><h3>ข้อ 19</h3><p>Design a small reproducibility record containing seed, code version, data version, configuration, and metric.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Position Handling, Stopping: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): บันทึกcheckpoint/tokenizer/promptIDs/T/k/p/EOS/seed/cac…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: บันทึกcheckpoint/tokenizer/promptIDs/T/k/p/EOS/seed/cachelayout/dtype/positionoffset/commitและhardwa…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>บันทึกcheckpoint/tokenizer/promptIDs/T/k/p/EOS/seed/cachelayout/dtype/positionoffset/commitและhardware; hashlogitsfixtureช่วยตรวจregression</p><p>อ้างอิง: <a href="#chapter-35/section/topic-19">Position Handling</a>, <a href="#chapter-35/section/topic-24">Stopping</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch35-exercise-19"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section><section id="exercise-20" class="exercise-item"><h3>ข้อ 20</h3><p>Propose one falsifiable research question for GPT/Decoder Models and specify the baseline, changed factor, and acceptance metric.</p><details><summary>คำใบ้ขั้นที่ 1</summary><p>ใช้แนวคิดในหัวข้อ Decoder-Only Block: ระบุสิ่งที่โจทย์ถามก่อนดูเฉลย</p></details><details><summary>คำใบ้ขั้นที่ 2</summary><p>ส่วนต้นของแนวคำตอบ (ยังไม่ครบ): ทดลอง“GQAลดKVbytes4×โดยqualityลด≤1จุด”; baselineMH…</p></details><details><summary>คำใบ้ขั้นที่ 3</summary><p>เปิดแนวคำตอบเพิ่ม แล้วลองเติมขั้นที่เหลือเอง: ทดลอง“GQAลดKVbytes4×โดยqualityลด≤1จุด”; baselineMHA,เปลี่ยนheadsharingพร้อมtrainingbudgetเ…</p></details><details><summary>เฉลยพร้อมเหตุผล / เกณฑ์ตรวจเฉพาะข้อนี้</summary><p>ทดลอง“GQAลดKVbytes4×โดยqualityลด≤1จุด”; baselineMHA,เปลี่ยนheadsharingพร้อมtrainingbudgetเท่ากัน,วัดholdoutquality/TPOT/bytes</p><p>อ้างอิง: <a href="#chapter-35/section/topic-6">Decoder-Only Block</a></p></details><label class="read-marker"><input type="checkbox" data-exercise-reviewed="ch35-exercise-20"> ฉันทำข้อนี้และตรวจตามเฉลยด้วยตนเองแล้ว</label></section></div><div id="local-lab-content"><section id="local-lab"><h2>Local lab: Python 3.12 บน CPU</h2><p>รันจาก repository root; ใช้ Python 3.12 แยก environment สำหรับ framework ตาม requirements ของชุดบท</p><pre><code>python3.12 -m venv .venv-course
+source .venv-course/bin/activate
+python -m pip install -r requirements-batch12.txt pytest
+(cd 35-gpt-decoder-models &amp;&amp; python -m pytest tests -q -rs)</code></pre><p>ผลที่คาดหวัง: required tests ผ่านและไม่มี required test ถูก skip; GPU/integrations ที่ยังไม่รันต้องระบุแยก Python 3.15 ที่มากับเครื่องอาจใช้กับ framework wheels เหล่านี้ไม่ได้</p><h2>Mini Project — Tiny GPT</h2>
+<p>Use a small internal text corpus.</p>
+<p>Build:
+- vocabulary
+- context windows
+- decoder-only Transformer
+- causal self-attention
+- vocabulary head
+- next-token cross-entropy
+- validation perplexity
+- generation</p>
+<p>Generation modes:
+- greedy
+- temperature
+- top-k
+- top-p</p>
+<p>Extension:
+- implement KV cache for one attention layer and compare outputs with naive full-prefix generation.</p><h2>Batch 12 Integration Project — BERT vs GPT vs T5 Lab</h2>
+<p>This lab trains three tiny Transformer families under deliberately different objectives.</p>
+<h3>Part A — Tiny BERT</h3>
+<pre><code class="language-text">masked token sequence
+↓
+bidirectional encoder
+↓
+vocabulary logits at every position
+↓
+MLM loss on selected positions only
+</code></pre>
+<p>Checks:
+- full encoder attention
+- masked positions
+- ignore_index behavior
+- finite MLM loss</p>
+<h3>Part B — Tiny GPT</h3>
+<pre><code class="language-text">token prefix
+↓
+causal decoder-only block
+↓
+next-token logits
+↓
+causal LM cross-entropy
+↓
+autoregressive generation
+</code></pre>
+<p>Checks:
+- causal attention
+- shifted labels
+- next-token loss
+- bounded generation loop</p>
+<h3>Part C — Tiny T5-Style Seq2Seq</h3>
+<p>Synthetic task:</p>
+<pre><code class="language-text">source sequence
+↓ encoder
+memory
+↓
+causal decoder + cross-attention
+↓
+reversed source sequence
+</code></pre>
+<p>Checks:
+- encoder/decoder separation
+- target shift-right
+- target causal mask
+- cross-attention path
+- finite seq2seq loss</p>
+<h3>Run</h3>
+<pre><code class="language-bash">python integration-project-batch12/src/bert_gpt_t5_lab.py --mode bert --steps 20
+python integration-project-batch12/src/bert_gpt_t5_lab.py --mode gpt --steps 20
+python integration-project-batch12/src/bert_gpt_t5_lab.py --mode t5 --steps 20
+</code></pre>
+<h3>Methodology</h3>
+<p>These are architecture/objective labs, not benchmark-quality pretrained models.</p>
+<p>They use:
+- tiny dimensions
+- internal/synthetic data
+- short runs
+- deterministic seeds</p>
+<p>The purpose is to verify that the correct information flow and loss are used for each model family.</p>
+<h3>Required Extensions</h3>
+<ol>
+<li>BERT classifier fine-tuning</li>
+<li>MLM 80/10/10 corruption measurement</li>
+<li>GPT top-k/top-p generation</li>
+<li>GPT tied embeddings</li>
+<li>GPT cached decoding</li>
+<li>T5 span-corrupted pretraining examples</li>
+<li>T5 greedy autoregressive decoder</li>
+<li>beam-search implementation</li>
+<li>source/target padding masks</li>
+<li>compare parameter counts at equal d_model/depth</li>
+</ol></section></div><label class="local-confirm"><input type="checkbox" id="local-lab-confirm"> ฉันรัน local lab และตรวจผลตาม rubric ด้วยตัวเองแล้ว</label><p class="local-note">สถานะนี้เป็นคำยืนยันของผู้เรียน เว็บไม่ได้รันหรือตรวจ Python บนเครื่องแทนคุณ</p></section>
+<section id="mastery-review" class="practice-section"><h2>หลักฐานตามเกณฑ์การเรียนรู้</h2><p>ทุก objective ต้องแสดงหลักฐานอธิบาย ทำนาย คำนวณ อ่าน shape/state debug และประยุกต์ พร้อมกรณีใหม่ ผลรัน source ผู้เรียนจริง และการประเมินซ้ำ เกณฑ์นี้ไม่รับประกันความเข้าใจทุกสถานการณ์ เปิด JavaScript เพื่อดูรายการที่ยังขาดและนำเข้ารายงานผู้ตรวจ</p></section><section class="coverage-section"><h2>แผนที่สิ่งที่เรียน → สิ่งที่ต้องแสดงให้ได้</h2><div id="coverage-table"></div></section><footer><span>ZERO TO ELITE AI ENGINEER · LEARNING STUDIO</span><span>อ่าน · derive · implement · debug · experiment · build</span></footer></div></main><noscript><style>.workbench,.sidebar,.reading-route,.lesson-toc,.mastery-status,#web-checks{display:none}main{margin-left:0}</style>อ่านเนื้อหา HTML ได้ตามปกติ เปิด JavaScript เพื่อใช้ห้องทดลองและตรวจคำตอบ</noscript></body></html>
